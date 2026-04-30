@@ -38,13 +38,35 @@ const Navbar = () => {
 		>
 			<div className="flex justify-between items-center max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
 				{/* Logo */}
-				<img
-					src="./logo.png"
-					alt="Place4U Logo"
-					className="h-10 sm:h-12 w-auto filter brightness-0 invert cursor-pointer
-                     hover:scale-105 transition-transform duration-300"
-				/>
-
+				<div style={{
+          width: "42px",
+          height: "42px",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          borderRadius: "10px",
+          overflow: "hidden",
+          background: "transparent"
+        }}>
+          <img
+            src="/logo.png"
+            alt="Place4U Logo"
+            style={{
+              width: "100%",
+              height: "100%",
+              objectFit: "contain",
+              filter: "brightness(0) invert(1)",
+              transition: "transform 0.3s ease-in-out"
+            }}
+            className="hover:scale-105"
+            onMouseEnter={(e) => {
+              e.currentTarget.style.transform = "scale(1.05)";
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.transform = "scale(1)";
+            }}
+          />
+        </div>
 				{/* Desktop Menu - Hidden on mobile */}
 				<div className="hidden lg:flex items-center gap-8">
 					{navItems.map((item) => (

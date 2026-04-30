@@ -5,7 +5,7 @@ import Landing from './pages/Landing'
 import Login from './pages/Login'
 import Signup from './pages/SignUp'
 import TenantDashboard from './pages/TenantDashboard'
-import LandlordDashboard from './pages/LandlordDashboard'
+import LandlordDashboard from './pages/Landlord/MainLandLord'
 import AdminDashboard from './pages/AdminDashboard'
 import ResetPassword from './pages/resetpassword'
 //ssh-keygen -t ed25519 -C "your@email.com"

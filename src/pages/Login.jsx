@@ -20,25 +20,25 @@ const Login = () => {
 	const location = useLocation() // Get location for redirect after login
 	const from = location.state?.from?.pathname || '/' // Where user tried to go
 
-	// Check if user is already logged in
-	useEffect(() => {
-		const checkUser = async () => {
-			const {
-				data: { user }
-			} = await supabase.auth.getUser()
-			if (user) {
-				// Fetch user type and redirect to appropriate dashboard
-				const { data: userData } = await supabase
-					.from('users')
-					.select('user_type')
-					.eq('id', user.id)
-					.single()
+	// // Check if user is already logged in
+	// useEffect(() => {
+	// 	const checkUser = async () => {
+	// 		const {
+	// 			data: { user }
+	// 		} = await supabase.auth.getUser()
+	// 		if (user) {
+	// 			// Fetch user type and redirect to appropriate dashboard
+	// 			const { data: userData } = await supabase
+	// 				.from('users')
+	// 				.select('user_type')
+	// 				.eq('id', user.id)
+	// 				.single()
 
-				redirectToDashboard(userData?.user_type)
-			}
-		}
-		checkUser()
-	}, [navigate])
+	// 			redirectToDashboard(userData?.user_type)
+	// 		}
+	// 	}
+	// 	checkUser()
+	// }, [navigate])
 
 	const redirectToDashboard = (userType) => {
 		switch (userType) {

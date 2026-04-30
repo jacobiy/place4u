@@ -1,2 +1,4 @@
 # Place4U
 Place4U is a relocation assistance and tenant–property matching platform designed to simplify the process of finding accommodation
+NEXT_PUBLIC_SUPABASE_URL=https://rfajxzjrzmckroitcqxz.supabase.co
+NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=sb_publishable_mGvaE8MgMQ6PcfPtmSS2Zw_mInWWc_s
