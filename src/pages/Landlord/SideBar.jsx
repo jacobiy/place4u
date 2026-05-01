@@ -1,8 +1,8 @@
-import { Building, MessageSquare, Home, Users, Settings, LogOut, Bell, ChevronDown, DollarSign, FileText, Calendar, BarChart3, User } from "lucide-react";
+import { Building, MessageSquare, Home, Users, Settings, LogOut, ChevronDown, DollarSign, FileText, Calendar, BarChart3, User } from "lucide-react";
 import { T } from './styles/designTokens';
 import { useState } from "react";
 
-export const Sidebar = ({ activeView, setActiveView, unreadCount, setShowProfileModal, onLogout }) => {
+export const Sidebar = ({ activeView, setActiveView, unreadCount, onLogout }) => {
   const [isProfileOpen, setIsProfileOpen] = useState(false);
 
   const NavItem = ({ id, icon: Icon, label, badge }) => {
@@ -56,8 +56,7 @@ export const Sidebar = ({ activeView, setActiveView, unreadCount, setShowProfile
     { id: "messages", icon: MessageSquare, label: "Messages", badge: unreadCount },
     { id: "payments", icon: DollarSign, label: "Payments" },
     { id: "maintenance", icon: FileText, label: "Maintenance" },
-    { id: "calendar", icon: Calendar, label: "Calendar" },
-    { id: "reports", icon: BarChart3, label: "Reports" },
+    { id: "profile", icon: User, label: "Profile" },
     { id: "settings", icon: Settings, label: "Settings" },
   ];
 
@@ -74,7 +73,7 @@ export const Sidebar = ({ activeView, setActiveView, unreadCount, setShowProfile
       flexDirection: "column",
       zIndex: 50
     }}>
-      {/* Logo Section - Properly handling 500x500 logo */}
+      {/* Logo Section */}
       <div style={{
         padding: "1.5rem",
         borderBottom: `1px solid ${T.border}`,
@@ -84,25 +83,29 @@ export const Sidebar = ({ activeView, setActiveView, unreadCount, setShowProfile
         gap: "10px",
         flexShrink: 0
       }}>
-        {/* Logo Image Container */}
         <div style={{
-  height: "42px",
-  display: "flex",
-  alignItems: "center"
-}}>
-  <img
-    src="/logo.png"
-    alt="Place4U Logo"
-    style={{
-      height: "100%",
-      width: "auto",
-      objectFit: "contain",
-      filter: "brightness(0) invert(1)"
-    }}
-  />
-</div>
-        <div>
-</div>
+          width: "42px",
+          height: "48px",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          borderRadius: "10px",
+          overflow: "hidden",
+          background: "transparent"
+        }}>
+          <img
+            src="/logo.png"
+            alt="Place4U Logo"
+            style={{
+              width: "100%",
+              height: "100%",
+              objectFit: "contain",
+              filter: "brightness(0) invert(1)",
+              transition: "transform 0.3s ease-in-out"
+            }}
+            className="hover:scale-105"
+          />
+        </div>
       </div>
 
       {/* Navigation - Scrollable */}
@@ -167,7 +170,7 @@ export const Sidebar = ({ activeView, setActiveView, unreadCount, setShowProfile
             />
           </button>
           
-          {/* Profile Dropdown - Appears above the button */}
+          {/* Profile Dropdown */}
           {isProfileOpen && (
             <div style={{
               position: "absolute",
@@ -182,7 +185,7 @@ export const Sidebar = ({ activeView, setActiveView, unreadCount, setShowProfile
             }}>
               <button
                 onClick={() => {
-                  setShowProfileModal(true);
+                  setActiveView("profile");
                   setIsProfileOpen(false);
                 }}
                 style={{

@@ -5,12 +5,11 @@ import { Sidebar } from './SideBar';
 import { Dashboard } from './Dashboard';
 import { MyProperties } from './MyProperties';
 import { Messages } from './Messages';
-import { ProfileModal } from './Profile';
+import { Profile } from './Profile';
 import { properties as initialProperties, messages as initialMessages, stats } from './data/mockData';
 
 export default function MainLandlord() {
   const [activeView, setActiveView] = useState("dashboard");
-  const [showProfileModal, setShowProfileModal] = useState(false);
   const [properties, setProperties] = useState(initialProperties);
   const [messages, setMessages] = useState(initialMessages);
   const [unreadCount] = useState(3);
@@ -59,6 +58,8 @@ export default function MainLandlord() {
     switch(activeView) {
       case "dashboard":
         return <Dashboard />;
+      case "profile":
+        return <Profile />;
       case "properties":
         return (
           <MyProperties 
@@ -91,8 +92,6 @@ export default function MainLandlord() {
     <>
       <style>{globalStyle}</style>
       
-      <ProfileModal isOpen={showProfileModal} onClose={() => setShowProfileModal(false)} />
-      
       <div style={{ display: "flex", minHeight: "100vh" }}>
         {/* Sidebar - Fixed on desktop, modal on mobile */}
         {!isMobile && (
@@ -100,7 +99,6 @@ export default function MainLandlord() {
             activeView={activeView}
             setActiveView={setActiveView}
             unreadCount={unreadCount}
-            setShowProfileModal={setShowProfileModal}
             onLogout={handleLogout}
           />
         )}
@@ -133,7 +131,6 @@ export default function MainLandlord() {
                   setIsMobileMenuOpen(false);
                 }}
                 unreadCount={unreadCount}
-                setShowProfileModal={setShowProfileModal}
                 onLogout={handleLogout}
               />
             </div>
