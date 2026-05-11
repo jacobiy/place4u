@@ -1,22 +1,29 @@
-// pages/TenantDashboard.jsx
+// pages/TenantDashboard.jsx - Updated Sidebar Only
 import React, { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { supabase } from '../utils/Supabase'
 import { useNavigate } from 'react-router-dom'
+import { Home, DollarSign, ChevronDown } from "lucide-react";
+import CustomApplication from './Tenant/Components/CustomApplication';
 
 const TenantDashboard = () => {
 	const [user, setUser] = useState(null)
 	const [profile, setProfile] = useState(null)
 	const [applications, setApplications] = useState([])
+	const [properties, setProperties] = useState([])	//Stores the properties from the database
 	const [matches, setMatches] = useState([])
 	const [loading, setLoading] = useState(true)
 	const [activeTab, setActiveTab] = useState('overview')
+	const [showCustomForm, setShowCustomForm] = useState(false)
 	const navigate = useNavigate()
 
 	useEffect(() => {
 		fetchUserData()
 	}, [])
 
+	const closeCustomForm = () =>{
+		setShowCustomForm(false)
+	}
 	const fetchUserData = async () => {
 		try {
 			// Get current user
@@ -98,6 +105,16 @@ const TenantDashboard = () => {
 		}
 	}
 
+	// Get initials from full name (JD for John Doe)
+	const getUserInitials = () => {
+		if (!profile?.full_name) return 'JD'
+		const nameParts = profile.full_name.trim().split(' ')
+		if (nameParts.length >= 2) {
+			return (nameParts[0][0] + nameParts[1][0]).toUpperCase()
+		}
+		return profile.full_name[0].toUpperCase()
+	}
+
 	if (loading) {
 		return (
 			<div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 flex items-center justify-center">
@@ -108,51 +125,115 @@ const TenantDashboard = () => {
 
 	return (
 		<div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900">
-			{/* Sidebar */}
-			<div className="fixed left-0 top-0 w-64 h-full bg-gray-900/90 border-r border-gray-800 p-6">
-				<div className="mb-8">
-					<h2 className="text-2xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
-						Place4U
-					</h2>
-					<p className="text-sm text-gray-500 mt-1">
-						Tenant Dashboard
-					</p>
+			{/* Sidebar - Updated to match the attached image design */}
+			<div className="fixed left-0 top-0 w-64 h-full bg-gray-900/95 backdrop-blur-sm border-r border-gray-800 flex flex-col">
+				{/* Logo */}
+				<div className="p-6 pl-[6dvw] border-b border-gray-800">	{/*TODO: Update Logo Position properly*/}
+					<img 
+    				  src="/logo.png" 
+    				  alt="Place4U Logo"
+    				  className="mb-2"
+    				  style={{
+    				    height: "auto",
+    				    width: "auto",
+    				    maxHeight: "40px",
+    				    filter: "brightness(0) invert(1)"
+    				  }}
+    				/>
 				</div>
 
-				{/* User Profile Summary */}
-				<div className="bg-gray-800/50 rounded-lg p-4 mb-6">
-					<div className="flex items-center gap-3">
-						<div className="w-12 h-12 rounded-full bg-gradient-to-r from-blue-500 to-purple-500 flex items-center justify-center text-white font-bold text-lg">
-							{profile?.full_name?.charAt(0) || 'T'}
-						</div>
-						<div>
-							<p className="text-white font-medium">
-								{profile?.full_name}
-							</p>
-							<p className="text-xs text-gray-400">
-								{profile?.email}
-							</p>
-						</div>
+				{/* Welcome Section */}
+				{/* <div className="px-6 pb-3">
+					<p className="text-xs text-gray-500 uppercase tracking-wider">
+						Welcome back,
+					</p>
+					<p className="text-white font-medium text-lg mt-0.5">
+						{profile?.full_name?.split(' ')[0] || 'John'}
+					</p>
+				</div> */}
+
+				{/* Applications Section */}
+				<div className="px-6 py-3">
+					{/* User Profile Card with Initials JD */}
+					<div className="grid grid-cols-1 gap-4 items-center rounded-xl p-3 mb-4">
+							<div className="w-30 h-30 mx-auto rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-bold text-[32px] shadow-lg">
+								{getUserInitials()}
+							</div>
+							<div className='flex items-center justify-between'>
+								<div>
+									<p className="text-white font-medium text-sm">
+										{profile?.full_name || 'John Doe'}
+									</p>
+									<p className="text-xs text-blue-400 font-medium">
+										Premium Tenant
+									</p>
+								</div>
+								<button className='text-gray-400 hover:text-white cursor-pointer' onClick={() => setActiveTab('profile')}>
+									<ChevronDown />
+								</button>
+							</div>
 					</div>
 				</div>
 
-				{/* Navigation */}
-				<nav className="space-y-2">
+				{/* Properties Section */}
+				{/* <div className="px-6 py-3">
+					<p className="text-xs text-gray-500 uppercase tracking-wider mb-3">
+						Properties
+					</p>
+					
+					{/* Search *
+					<button className="w-full text-left px-3 py-2 rounded-lg text-gray-400 hover:bg-gray-800 transition-all duration-200 flex items-center gap-3 text-sm">
+						<span className="text-lg">🔍</span>
+						<span>Search</span>
+					</button>
+					
+					{/* All Properties 
+					<button className="w-full text-left px-3 py-2 rounded-lg text-gray-400 hover:bg-gray-800 transition-all duration-200 flex items-center gap-3 text-sm">
+						<span className="text-lg">🏠</span>
+						<span>All Properties</span>
+					</button>
+				</div> */}
+
+				{/* Dashboard & Payments Section */}
+				<div className="px-6 py-3">
+					{/* <p className="text-xs text-gray-500 uppercase tracking-wider mb-3">
+						Menu
+					</p> */}
+					
+					{/* Dashboard / Overview */}
 					<button
 						onClick={() => setActiveTab('overview')}
-						className={`w-full text-left px-4 py-3 rounded-lg transition-all duration-200 flex items-center gap-3
+						className={`w-full text-left px-3 py-2 rounded-lg transition-all duration-200 flex items-center gap-3 text-sm mb-1 cursor-pointer
               ${
 					activeTab === 'overview'
 						? 'bg-blue-600 text-white'
 						: 'text-gray-400 hover:bg-gray-800'
 				}`}
 					>
-						<span className="text-lg">📊</span>
-						<span>Overview</span>
+						<span className="text-lg"><Home /></span>
+						<span>Dashboard</span>
 					</button>
+					
+					{/* Payments */}
 					<button
+						onClick={() => setActiveTab('payments')}
+						className={`w-full text-left px-3 py-2 rounded-lg transition-all duration-200 flex items-center gap-3 text-sm cursor-pointer
+              ${
+					activeTab === 'payments'
+						? 'bg-blue-600 text-white'
+						: 'text-gray-400 hover:bg-gray-800'
+				}`}
+					>
+						<span className="text-lg"><DollarSign /></span>
+						<span>Payments</span>
+					</button>
+				</div>
+
+				{/* Applications Tab Button (for the applications section) */}
+				<div className="px-6 py-3 mt-2">
+					{/*<button
 						onClick={() => setActiveTab('applications')}
-						className={`w-full text-left px-4 py-3 rounded-lg transition-all duration-200 flex items-center gap-3
+						className={`w-full text-left px-3 py-2 rounded-lg transition-all duration-200 flex items-center gap-3 text-sm
               ${
 					activeTab === 'applications'
 						? 'bg-blue-600 text-white'
@@ -160,11 +241,12 @@ const TenantDashboard = () => {
 				}`}
 					>
 						<span className="text-lg">📄</span>
-						<span>Applications</span>
+						<span>My Applications</span>
 					</button>
+					
 					<button
 						onClick={() => setActiveTab('matches')}
-						className={`w-full text-left px-4 py-3 rounded-lg transition-all duration-200 flex items-center gap-3
+						className={`w-full text-left px-3 py-2 rounded-lg transition-all duration-200 flex items-center gap-3 text-sm mt-1
               ${
 					activeTab === 'matches'
 						? 'bg-blue-600 text-white'
@@ -173,10 +255,11 @@ const TenantDashboard = () => {
 					>
 						<span className="text-lg">👁️</span>
 						<span>Matches</span>
-					</button>
-					<button
+					</button>*/}
+					
+					{/* <button
 						onClick={() => setActiveTab('profile')}
-						className={`w-full text-left px-4 py-3 rounded-lg transition-all duration-200 flex items-center gap-3
+						className={`w-full text-left px-3 py-2 rounded-lg transition-all duration-200 flex items-center gap-3 text-sm mt-1
               ${
 					activeTab === 'profile'
 						? 'bg-blue-600 text-white'
@@ -185,33 +268,58 @@ const TenantDashboard = () => {
 					>
 						<span className="text-lg">👤</span>
 						<span>Profile</span>
-					</button>
-				</nav>
+					</button> */}
+				</div>
 
-				{/* Logout */}
-				<button
-					onClick={handleLogout}
-					className="absolute bottom-6 left-6 right-6 bg-red-500/10 hover:bg-red-500 text-red-400 hover:text-white py-3 rounded-lg transition-all duration-200"
-				>
-					<span className="mr-2">🚪</span>
-					Logout
-				</button>
+				{/* Spacer */}
+				<div className="flex-1"></div>
+
+				{/* Sign Out Button */}
+				<div className="p-6 pt-0">
+					<button
+						onClick={handleLogout}
+						className="w-full bg-red-500/10 hover:bg-red-500 text-red-400 hover:text-white py-3 rounded-lg transition-all duration-200 flex items-center justify-center gap-2"
+					>
+						<span>🚪</span>
+						<span>Sign Out</span>
+					</button>
+				</div>
 			</div>
 
 			{/* Main Content */}
 			<div className="ml-64 p-8">
 				{activeTab === 'overview' && (
-					<motion.div
-						initial={{ opacity: 0, y: 20 }}
-						animate={{ opacity: 1, y: 0 }}
-					>
-						<h1 className="text-3xl font-bold text-white mb-8">
-							Welcome back, {profile?.full_name?.split(' ')[0]}!
-						</h1>
-
+					<motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
+						<div style={{ marginBottom: "2rem" }}>
+							<p className='text-3xl font-semibold mb-8 text-[#64748b]'>Tenant Portal</p>
+								<h1 className="text-3xl font-bold text-white mb-8">
+								Welcome back, {profile?.full_name?.split(' ')[0]}!
+								</h1>
+						</div>
 						{/* Stats Cards */}
+						<div className=''>
+							<h2 className="text-xl font-semibold text-white mb-4">
+								Applications
+							</h2>
 						<div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-							<div className="bg-gray-800/50 rounded-xl p-6 border border-gray-700">
+							{applications.length === 0 ?(
+								<p className="text-gray-400 text-center py-8">
+									No Applications yet.{' '}
+									<button className="text-blue-400 hover:underline">
+										Please make an application
+									</button>
+								</p>
+							):(
+								applications.map((app)=>{
+									<div key={app.id} className="flex items-center justify-between p-4 bg-gray-700/30 rounded-lg">
+										<button>View</button>
+									</div>
+								})
+							)}
+							<div className='custom-application '>
+								<button onClick={()=>setShowCustomForm(true)} className='bg-blue-600 text-white p-2 rounded-xl cursor-pointer'>Custom Application</button>
+							</div>
+							{/* <div className="bg-gray-800/50 rounded-xl p-6 border border-gray-700">
 								<div className="text-3xl mb-3">📄</div>
 								<p className="text-3xl font-bold text-white">
 									{applications.length}
@@ -237,15 +345,38 @@ const TenantDashboard = () => {
 									}
 								</p>
 								<p className="text-gray-400">Under Review</p>
-							</div>
+							</div> */}
+						</div>
 						</div>
 
 						{/* Recent Applications */}
-						<div className="bg-gray-800/50 rounded-xl p-6 border border-gray-700">
-							<h2 className="text-xl font-semibold text-white mb-4">
-								Recent Applications
-							</h2>
-							{applications.length > 0 ? (
+						<div className="">
+							<div className='flex items-center justify-between'>
+								<h2 className="text-xl font-semibold text-white mb-4">Properties</h2>
+								<div className='flex gap-2'>
+									<input type='text' placeholder='Search'className='w-full px-4 py-2 border border-[#4f7ef8] rounded-lg focus:outline-none focus:ring-1 focus:ring-[#4f7ef8] focus:border-[#4f7ef8] transition-all text-gray-500'/>
+									<select className='w-full px-4 py-2 border border-[#4f7ef8] rounded-lg focus:outline-none focus:ring-1 focus:ring-[#4f7ef8] focus:border-[#4f7ef8] transition-all text-gray-500'>
+										<option className='text-gray-500 rounded-xl p-2 border border-gray-700'>All Properties</option>
+									</select>
+								</div>
+							</div>
+
+							{properties.length === 0 ? (
+								<p className="text-gray-400 text-center py-8">
+									No properties yet.{' '}
+									<button className="text-blue-400 hover:underline">
+										Please try again later
+									</button>
+								</p>
+							):(
+								properties.map((property) => {
+									<div key={property.id} className="flex items-center justify-between p-4 bg-gray-700/30 rounded-lg">
+										<button>Apply</button>
+									</div>
+								})
+							)}
+
+							{/* {applications.length > 0 ? (
 								<div className="space-y-4">
 									{applications.slice(0, 3).map((app) => (
 										<div
@@ -287,7 +418,7 @@ const TenantDashboard = () => {
 										Start your search
 									</button>
 								</p>
-							)}
+							)} */}
 						</div>
 					</motion.div>
 				)}
@@ -507,6 +638,29 @@ const TenantDashboard = () => {
 							</div>
 						</div>
 					</motion.div>
+				)}
+
+				{activeTab === 'payments' && (
+					<motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
+						<div className="flex items-center justify-center mt-6">
+							<h1 className="text-3xl font-bold text-white mb-8">Payment History</h1>
+						</div>
+						<div className='flex items-center justify-end'>
+							<button className='bg-[#4f7ef8] hover:bg-[#3d6be0] text-white font-semibold px-6 py-2 rounded-lg transition-colors duration-300 cursor-pointer'>
+								New Payment
+							</button>
+						</div>
+						<div className="bg-gray-800/50 rounded-xl p-6 mt-4 border border-gray-700">
+							<p className="text-gray-400 text-center py-12">
+								Payment history and methods will appear here.
+							</p>
+						</div>
+					</motion.div>
+				)}
+				{showCustomForm && (
+					<CustomApplication 
+						onCancel={closeCustomForm}
+					/>
 				)}
 			</div>
 		</div>
