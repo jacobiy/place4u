@@ -11,15 +11,14 @@ export const LandlordQueries = {
           *,
           users:user_id (
             email,
-            created_at,
-            last_sign_in_at
+            created_at
           )
         `)
         .eq('user_id', userId)
-        .single();
+        .maybeSingle();
       
       if (error) throw error;
-      return { success: true, data };
+      return { success: true, data: data || null };
     } catch (error) {
       console.error('Error fetching landlord profile:', error);
       return { success: false, error: error.message };
@@ -33,10 +32,10 @@ export const LandlordQueries = {
         .from('landlord_profiles')
         .select('*')
         .eq('id', profileId)
-        .single();
+        .maybeSingle();
       
       if (error) throw error;
-      return { success: true, data };
+      return { success: true, data: data || null };
     } catch (error) {
       console.error('Error fetching landlord profile by ID:', error);
       return { success: false, error: error.message };
@@ -50,10 +49,10 @@ export const LandlordQueries = {
         .from('landlord_profiles')
         .select('*')
         .eq('landlord_code', landlordCode)
-        .single();
+        .maybeSingle();
       
       if (error) throw error;
-      return { success: true, data };
+      return { success: true, data: data || null };
     } catch (error) {
       console.error('Error fetching landlord profile by code:', error);
       return { success: false, error: error.message };
@@ -63,24 +62,33 @@ export const LandlordQueries = {
   // Create new landlord profile
   async createLandlordProfile(profileData) {
     try {
+      // Check if profile already exists to prevent duplicate
+      const existingProfile = await this.getLandlordProfile(profileData.userId);
+      if (existingProfile.success && existingProfile.data) {
+        return { success: true, data: existingProfile.data, message: 'Profile already exists' };
+      }
+
+      // Generate landlord code if not provided
+      const landlordCode = profileData.landlordCode || await this.generateLandlordCode();
+
       const { data, error } = await supabase
         .from('landlord_profiles')
         .insert([{
           user_id: profileData.userId,
-          landlord_code: profileData.landlordCode || await this.generateLandlordCode(),
-          full_name: profileData.fullName,
-          company_name: profileData.companyName,
-          tax_id: profileData.taxId,
-          profile_image_url: profileData.profileImageUrl,
-          email: profileData.email,
-          phone: profileData.phone,
-          alternative_phone: profileData.alternativePhone,
+          landlord_code: landlordCode,
+          full_name: profileData.fullName || null,
+          company_name: profileData.companyName || null,
+          tax_id: profileData.taxId || null,
+          profile_image_url: profileData.profileImageUrl || null,
+          email: profileData.email || null,
+          phone: profileData.phone || null,
+          alternative_phone: profileData.alternativePhone || null,
           contact_preference: profileData.contactPreference || 'both',
-          address: profileData.address,
-          city: profileData.city,
-          state: profileData.state,
-          country: profileData.country,
-          postal_code: profileData.postalCode,
+          address: profileData.address || null,
+          city: profileData.city || null,
+          state: profileData.state || null,
+          country: profileData.country || null,
+          postal_code: profileData.postalCode || null,
           id_verified: profileData.idVerified || false,
           email_verified: profileData.emailVerified || false,
           phone_verified: profileData.phoneVerified || false,
@@ -100,13 +108,15 @@ export const LandlordQueries = {
             messages: true
           },
           two_factor_enabled: profileData.twoFactorEnabled || false,
-          two_factor_secret: profileData.twoFactorSecret,
+          two_factor_secret: profileData.twoFactorSecret || null,
           account_status: profileData.accountStatus || 'active',
           account_tier: profileData.accountTier || 'basic',
           language: profileData.language || 'en',
           timezone: profileData.timezone || 'Africa/Johannesburg',
           date_format: profileData.dateFormat || 'DD/MM/YYYY',
-          metadata: profileData.metadata || {}
+          metadata: profileData.metadata || {},
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
         }])
         .select()
         .single();
@@ -284,7 +294,7 @@ export const LandlordQueries = {
         .select('*', { count: 'exact', head: true })
         .eq('landlord_id', profileId);
       
-      if (propertiesError) throw propertiesError;
+      if (propertiesError && propertiesError.code !== '42P01') throw propertiesError;
       
       // Get total tenants count
       const { count: tenantsCount, error: tenantsError } = await supabase
@@ -292,7 +302,7 @@ export const LandlordQueries = {
         .select('*', { count: 'exact', head: true })
         .eq('landlord_id', profileId);
       
-      if (tenantsError) throw tenantsError;
+      if (tenantsError && tenantsError.code !== '42P01') throw tenantsError;
       
       // Get total income
       const { data: payments, error: paymentsError } = await supabase
@@ -301,15 +311,15 @@ export const LandlordQueries = {
         .eq('landlord_id', profileId)
         .eq('status', 'completed');
       
-      if (paymentsError) throw paymentsError;
+      if (paymentsError && paymentsError.code !== '42P01') throw paymentsError;
       
       const totalIncome = payments?.reduce((sum, payment) => sum + payment.amount, 0) || 0;
       
       const { data, error } = await supabase
         .from('landlord_profiles')
         .update({
-          total_properties: propertiesCount,
-          total_tenants: tenantsCount,
+          total_properties: propertiesCount || 0,
+          total_tenants: tenantsCount || 0,
           total_income: totalIncome,
           updated_at: new Date().toISOString()
         })
@@ -321,7 +331,8 @@ export const LandlordQueries = {
       return { success: true, data };
     } catch (error) {
       console.error('Error updating statistics:', error);
-      return { success: false, error: error.message };
+      // Don't throw error for missing tables, just return success with current data
+      return { success: true, data: null };
     }
   },
 
@@ -508,7 +519,7 @@ export const LandlordQueries = {
   async generateLandlordCode() {
     try {
       const year = new Date().getFullYear();
-      const randomNum = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
+      const randomNum = Math.floor(Math.random() * 10000).toString().padStart(4, '0');
       const code = `LD-${year}-${randomNum}`;
       
       // Check if code exists
@@ -516,9 +527,7 @@ export const LandlordQueries = {
         .from('landlord_profiles')
         .select('landlord_code')
         .eq('landlord_code', code)
-        .single();
-      
-      if (error && error.code !== 'PGRST116') throw error;
+        .maybeSingle();
       
       // If code exists, generate new one recursively
       if (data) {
@@ -535,6 +544,17 @@ export const LandlordQueries = {
   // Get landlord activity log
   async getActivityLog(profileId, limit = 50) {
     try {
+      // Check if table exists
+      const { data: tableExists, error: checkError } = await supabase
+        .from('landlord_activity_log')
+        .select('id')
+        .limit(1);
+      
+      if (checkError && checkError.code === '42P01') {
+        // Table doesn't exist yet, return empty array
+        return { success: true, data: [] };
+      }
+      
       const { data, error } = await supabase
         .from('landlord_activity_log')
         .select('*')
@@ -543,16 +563,27 @@ export const LandlordQueries = {
         .limit(limit);
       
       if (error) throw error;
-      return { success: true, data };
+      return { success: true, data: data || [] };
     } catch (error) {
       console.error('Error fetching activity log:', error);
-      return { success: false, error: error.message };
+      return { success: true, data: [] }; // Return empty array instead of error
     }
   },
 
   // Log activity
   async logActivity(profileId, activityType, description, metadata = {}) {
     try {
+      // Check if table exists
+      const { error: checkError } = await supabase
+        .from('landlord_activity_log')
+        .select('id')
+        .limit(1);
+      
+      if (checkError && checkError.code === '42P01') {
+        // Table doesn't exist yet, skip logging
+        return { success: true, message: 'Activity log table not available' };
+      }
+      
       const { data, error } = await supabase
         .from('landlord_activity_log')
         .insert([{
@@ -568,6 +599,177 @@ export const LandlordQueries = {
       return { success: true, data };
     } catch (error) {
       console.error('Error logging activity:', error);
+      return { success: false, error: error.message };
+    }
+  },
+
+  // Get landlord properties (properties.landlord_id references users.id)
+  async getLandlordProperties(userId) {
+    try {
+      const { data, error } = await supabase
+        .from('properties')
+        .select('*')
+        .eq('landlord_id', userId)
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        if (error.code === '42P01') return { success: true, data: [] }; // table missing
+        throw error;
+      }
+
+      return { success: true, data: data || [] };
+    } catch (error) {
+      console.error('Error fetching landlord properties:', error);
+      return { success: false, error: error.message };
+    }
+  },
+
+  // Create property
+  async createProperty(userId, propertyData) {
+    try {
+      const payload = {
+        landlord_id: userId,
+        ...propertyData,
+        created_at: propertyData.created_at || new Date().toISOString(),
+        updated_at: propertyData.updated_at || new Date().toISOString()
+      };
+
+      const attemptInsert = async (p) =>
+        supabase.from('properties').insert([p]).select().single();
+
+      let { data, error } = await attemptInsert(payload);
+      if (error && typeof error.message === 'string') {
+        const match = error.message.match(/Could not find the '([^']+)' column/);
+        if (match?.[1] && Object.prototype.hasOwnProperty.call(payload, match[1])) {
+          const { [match[1]]: _removed, ...retryPayload } = payload;
+          ({ data, error } = await attemptInsert(retryPayload));
+        }
+      }
+
+      if (error) throw error;
+      return { success: true, data };
+    } catch (error) {
+      console.error('Error creating property:', error);
+      return { success: false, error: error.message };
+    }
+  },
+
+  // Update property
+  async updateProperty(propertyId, updates) {
+    try {
+      const attemptUpdate = async (u) =>
+        supabase
+          .from('properties')
+          .update({
+            ...u,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', propertyId)
+          .select()
+          .single();
+
+      let { data, error } = await attemptUpdate(updates);
+      if (error && typeof error.message === 'string') {
+        const match = error.message.match(/Could not find the '([^']+)' column/);
+        if (match?.[1] && Object.prototype.hasOwnProperty.call(updates, match[1])) {
+          const { [match[1]]: _removed, ...retryUpdates } = updates;
+          ({ data, error } = await attemptUpdate(retryUpdates));
+        }
+      }
+
+      if (error) throw error;
+      return { success: true, data };
+    } catch (error) {
+      console.error('Error updating property:', error);
+      return { success: false, error: error.message };
+    }
+  },
+
+  // Upload property image to storage (best-effort; bucket must exist)
+  async uploadPropertyImage(userId, file) {
+    try {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${userId}/property-${Date.now()}.${fileExt}`;
+      const filePath = `properties/${fileName}`;
+
+      const tryBucket = async (bucket) => {
+        const upload = await supabase.storage.from(bucket).upload(filePath, file);
+        if (upload.error) return { ok: false, error: upload.error };
+        const { data: { publicUrl } } = supabase.storage.from(bucket).getPublicUrl(filePath);
+        return { ok: true, publicUrl };
+      };
+
+      // Prefer a dedicated bucket if you have one
+      let res = await tryBucket('properties');
+      if (!res.ok) res = await tryBucket('profiles');
+      if (!res.ok) throw res.error;
+      
+      return { success: true, url: res.publicUrl };
+    } catch (error) {
+      console.error('Error uploading property image:', error);
+      return { success: false, error: error.message };
+    }
+  },
+
+  // Get user contacts for messaging (fallback: all tenants)
+  async listTenantContacts(limit = 50) {
+    try {
+      const { data, error } = await supabase
+        .from('users')
+        .select('id, full_name, email, user_type, created_at')
+        .eq('user_type', 'tenant')
+        .order('created_at', { ascending: false })
+        .limit(limit);
+
+      if (error) throw error;
+      return { success: true, data: data || [] };
+    } catch (error) {
+      console.error('Error listing tenant contacts:', error);
+      return { success: false, error: error.message };
+    }
+  },
+
+  // Get messages between two users (requires public.messages table)
+  async getDirectMessages(userId, otherUserId, limit = 100) {
+    try {
+      const { data, error } = await supabase
+        .from('messages')
+        .select('*')
+        .or(
+          `and(sender_id.eq.${userId},receiver_id.eq.${otherUserId}),and(sender_id.eq.${otherUserId},receiver_id.eq.${userId})`
+        )
+        .order('created_at', { ascending: true })
+        .limit(limit);
+
+      if (error) {
+        if (error.code === '42P01') return { success: true, data: [], missingTable: true };
+        throw error;
+      }
+      return { success: true, data: data || [] };
+    } catch (error) {
+      console.error('Error fetching direct messages:', error);
+      return { success: false, error: error.message };
+    }
+  },
+
+  // Send a direct message (requires public.messages table)
+  async sendDirectMessage(senderId, receiverId, content) {
+    try {
+      const { data, error } = await supabase
+        .from('messages')
+        .insert([{
+          sender_id: senderId,
+          receiver_id: receiverId,
+          content,
+          created_at: new Date().toISOString()
+        }])
+        .select()
+        .single();
+
+      if (error) throw error;
+      return { success: true, data };
+    } catch (error) {
+      console.error('Error sending direct message:', error);
       return { success: false, error: error.message };
     }
   },

@@ -1,129 +1,465 @@
-import { useState } from "react";
-import { MailOpen, MessageCircle } from "lucide-react";
-import { T } from './styles/designTokens';
-import { MessageCard } from './Component/MessageCard';
-import { MessageReplyModal } from './component/MessageReplyModal';
-import { PrimaryBtn, SecondaryBtn } from './component/Buttons';
+import { useEffect, useMemo, useRef, useState } from "react";
+import { Mail, Search, Send } from "lucide-react";
+import { T } from "./Styles/designTokens";
+import { PrimaryBtn, SecondaryBtn } from "./Component/Buttons";
+import { LandlordQueries } from "./db/queries";
+import { useAuth } from "../../hooks/useAuth";
 
-export const Messages = ({ messages, onSendReply, onMarkAllRead }) => {
-  const [msgFilter, setMsgFilter] = useState("all");
-  const [showReplyModal, setShowReplyModal] = useState(false);
-  const [selectedMessage, setSelectedMessage] = useState(null);
-  const [newMessage, setNewMessage] = useState({ recipient: "", content: "" });
+const initials = (nameOrEmail) => {
+  const raw = (nameOrEmail || "").trim();
+  if (!raw) return "??";
+  if (raw.includes("@")) return raw.slice(0, 2).toUpperCase();
+  const parts = raw.split(/\s+/).filter(Boolean);
+  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+  return `${parts[0][0]}${parts[parts.length - 1][0]}`.toUpperCase();
+};
 
-  const inputStyle = {
-    background: T.surface, border: `1px solid ${T.border}`,
-    borderRadius: "0.625rem", padding: "0.6rem 0.875rem",
-    fontSize: "0.85rem", color: T.textPrimary, outline: "none", fontFamily: "inherit"
-  };
+export const Messages = () => {
+  const { user } = useAuth();
+  const [contacts, setContacts] = useState([]);
+  const [contactQuery, setContactQuery] = useState("");
+  const [selectedContact, setSelectedContact] = useState(null);
+  const [messages, setMessages] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [missingTable, setMissingTable] = useState(false);
+  const [composer, setComposer] = useState("");
+  const [error, setError] = useState("");
+  const listRef = useRef(null);
 
-  const filteredMsgs = messages.filter(m => {
-    if (msgFilter === "tenants") return m.role.startsWith("Tenant");
-    if (msgFilter === "prospects") return m.role.startsWith("Prospective");
-    return true;
-  });
+  const inputStyle = useMemo(
+    () => ({
+      background: T.surface,
+      border: `1px solid ${T.border}`,
+      borderRadius: "0.625rem",
+      padding: "0.6rem 0.875rem",
+      fontSize: "0.85rem",
+      color: T.textPrimary,
+      outline: "none",
+      fontFamily: "inherit"
+    }),
+    []
+  );
 
-  const handleReply = (message) => {
-    setSelectedMessage(message);
-    setShowReplyModal(true);
-  };
+  useEffect(() => {
+    let cancelled = false;
+    const loadContacts = async () => {
+      setIsLoading(true);
+      setError("");
+      const res = await LandlordQueries.listTenantContacts(100);
+      if (cancelled) return;
+      if (!res.success) setError(res.error || "Failed to load contacts.");
+      setContacts(res.success ? res.data : []);
+      setIsLoading(false);
+    };
 
-  const handleSendReply = (id, reply) => {
-    onSendReply(id, reply);
-    setShowReplyModal(false);
-  };
+    loadContacts();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
-  const handleSendNewMessage = () => {
-    if (newMessage.recipient && newMessage.content) {
-      // Handle sending new message
-      console.log("Sending new message:", newMessage);
-      setNewMessage({ recipient: "", content: "" });
+  useEffect(() => {
+    let cancelled = false;
+    const loadThread = async () => {
+      if (!user?.id || !selectedContact?.id) {
+        setMessages([]);
+        return;
+      }
+      setError("");
+      const res = await LandlordQueries.getDirectMessages(
+        user.id,
+        selectedContact.id,
+        200
+      );
+      if (cancelled) return;
+      setMissingTable(!!res.missingTable);
+      if (!res.success) setError(res.error || "Failed to load messages.");
+      setMessages(res.success ? res.data : []);
+      requestAnimationFrame(() => {
+        listRef.current?.scrollTo({
+          top: listRef.current.scrollHeight,
+          behavior: "smooth"
+        });
+      });
+    };
+
+    loadThread();
+    return () => {
+      cancelled = true;
+    };
+  }, [user?.id, selectedContact?.id]);
+
+  const filteredContacts = useMemo(() => {
+    const q = contactQuery.trim().toLowerCase();
+    if (!q) return contacts;
+    return contacts.filter(
+      (c) =>
+        (c.full_name || "").toLowerCase().includes(q) ||
+        (c.email || "").toLowerCase().includes(q)
+    );
+  }, [contacts, contactQuery]);
+
+  const send = async () => {
+    if (!user?.id || !selectedContact?.id) return;
+    const content = composer.trim();
+    if (!content) return;
+
+    setError("");
+    setComposer("");
+    const optimistic = {
+      id: `temp-${Date.now()}`,
+      sender_id: user.id,
+      receiver_id: selectedContact.id,
+      content,
+      created_at: new Date().toISOString()
+    };
+    setMessages((prev) => [...prev, optimistic]);
+    requestAnimationFrame(() =>
+      listRef.current?.scrollTo({ top: listRef.current.scrollHeight })
+    );
+
+    const res = await LandlordQueries.sendDirectMessage(
+      user.id,
+      selectedContact.id,
+      content
+    );
+    if (!res.success) {
+      setError(res.error || "Failed to send message.");
+      return;
     }
+
+    setMessages((prev) =>
+      prev.map((m) => (m.id === optimistic.id ? res.data : m))
+    );
   };
 
   return (
-    <>
-      <MessageReplyModal 
-        isOpen={showReplyModal} 
-        onClose={() => setShowReplyModal(false)} 
-        message={selectedMessage} 
-        onSend={handleSendReply} 
-      />
-
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: "2rem" }}>
+    <div>
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "flex-end",
+          marginBottom: "1.5rem"
+        }}
+      >
         <div>
-          <h1 style={{ fontFamily: "'DM Serif Display', Georgia, serif", fontSize: "2.5rem", color: T.textPrimary, lineHeight: 1, marginBottom: "6px" }}>
+          <h1
+            style={{
+              fontFamily: "'DM Serif Display', Georgia, serif",
+              fontSize: "2.5rem",
+              color: T.textPrimary,
+              lineHeight: 1,
+              marginBottom: "6px"
+            }}
+          >
             Messages
           </h1>
-          <p style={{ color: T.textMuted, fontSize: "0.9rem" }}>Communicate with tenants and prospective renters</p>
+          <p style={{ color: T.textMuted, fontSize: "0.9rem" }}>
+            Select a profile on the left to view and reply.
+          </p>
         </div>
-        <SecondaryBtn onClick={onMarkAllRead}>
-          <span style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-            <MailOpen size={14} /> Mark all read
-          </span>
+        <SecondaryBtn onClick={() => setContactQuery("")}>
+          Clear search
         </SecondaryBtn>
       </div>
 
-      {/* Filter pills */}
-      <div style={{ display: "flex", gap: "6px", marginBottom: "1.5rem" }}>
-        {[
-          ["all", "All"],
-          ["unread", "Unread"],
-          ["tenants", "Tenants"],
-          ["prospects", "Prospects"]
-        ].map(([val, lbl]) => (
-          <button 
-            key={val} 
-            onClick={() => setMsgFilter(val)} 
+      {missingTable && (
+        <div
+          style={{
+            background: "rgba(245,158,11,0.10)",
+            border: `1px solid ${T.amber}`,
+            borderRadius: "0.875rem",
+            padding: "0.9rem 1rem",
+            marginBottom: "1.25rem",
+            color: T.textSecondary
+          }}
+        >
+          <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
+            <Mail size={16} color={T.amber} />
+            <div>
+              <p style={{ margin: 0, fontWeight: 600, color: T.textPrimary }}>
+                Messaging backend not set up
+              </p>
+              <p
+                style={{
+                  margin: "4px 0 0 0",
+                  fontSize: "0.85rem",
+                  color: T.textMuted
+                }}
+              >
+                The app expects a `messages` table (sender_id, receiver_id,
+                content, created_at). Once it exists, chats will work
+                automatically.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "340px 1fr",
+          gap: "16px",
+          alignItems: "stretch"
+        }}
+      >
+        {/* Contacts */}
+        <div
+          style={{
+            background: T.cardBg,
+            border: `1px solid ${T.border}`,
+            borderRadius: "1rem",
+            overflow: "hidden"
+          }}
+        >
+          <div style={{ padding: "12px", borderBottom: `1px solid ${T.border}` }}>
+            <div style={{ position: "relative" }}>
+              <Search
+                size={14}
+                color={T.textMuted}
+                style={{
+                  position: "absolute",
+                  left: "12px",
+                  top: "50%",
+                  transform: "translateY(-50%)"
+                }}
+              />
+              <input
+                placeholder="Search profiles…"
+                value={contactQuery}
+                onChange={(e) => setContactQuery(e.target.value)}
+                style={{ ...inputStyle, width: "100%", paddingLeft: "36px" }}
+              />
+            </div>
+          </div>
+          <div style={{ maxHeight: "62vh", overflowY: "auto" }}>
+            {isLoading ? (
+              <p style={{ padding: "14px", color: T.textMuted }}>Loading…</p>
+            ) : filteredContacts.length === 0 ? (
+              <p style={{ padding: "14px", color: T.textMuted }}>
+                No profiles found.
+              </p>
+            ) : (
+              filteredContacts.map((c) => {
+                const active = selectedContact?.id === c.id;
+                return (
+                  <button
+                    key={c.id}
+                    onClick={() => setSelectedContact(c)}
+                    style={{
+                      width: "100%",
+                      textAlign: "left",
+                      border: "none",
+                      background: active
+                        ? "rgba(79,126,248,0.10)"
+                        : "transparent",
+                      borderBottom: `1px solid ${T.border}`,
+                      padding: "12px 14px",
+                      cursor: "pointer",
+                      display: "flex",
+                      gap: "10px",
+                      alignItems: "center",
+                      color: T.textSecondary
+                    }}
+                  >
+                    <div
+                      style={{
+                        width: "36px",
+                        height: "36px",
+                        borderRadius: "50%",
+                        background: `linear-gradient(135deg, ${T.accent} 0%, #7c5ef8 100%)`,
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        fontSize: "0.75rem",
+                        fontWeight: 700,
+                        color: "#fff"
+                      }}
+                    >
+                      {initials(c.full_name || c.email)}
+                    </div>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <p
+                        style={{
+                          margin: 0,
+                          color: T.textPrimary,
+                          fontWeight: 600,
+                          fontSize: "0.9rem",
+                          whiteSpace: "nowrap",
+                          overflow: "hidden",
+                          textOverflow: "ellipsis"
+                        }}
+                      >
+                        {c.full_name || c.email}
+                      </p>
+                      <p
+                        style={{
+                          margin: "2px 0 0 0",
+                          color: T.textMuted,
+                          fontSize: "0.75rem",
+                          whiteSpace: "nowrap",
+                          overflow: "hidden",
+                          textOverflow: "ellipsis"
+                        }}
+                      >
+                        {c.email}
+                      </p>
+                    </div>
+                  </button>
+                );
+              })
+            )}
+          </div>
+        </div>
+
+        {/* Chat */}
+        <div
+          style={{
+            background: T.cardBg,
+            border: `1px solid ${T.border}`,
+            borderRadius: "1rem",
+            overflow: "hidden",
+            display: "flex",
+            flexDirection: "column"
+          }}
+        >
+          <div
             style={{
-              padding: "6px 16px", borderRadius: "20px",
-              border: `1px solid ${msgFilter === val ? T.accent : T.border}`,
-              background: msgFilter === val ? "rgba(79,126,248,0.15)" : "transparent",
-              color: msgFilter === val ? T.accent : T.textSecondary,
-              fontSize: "0.8rem", fontWeight: msgFilter === val ? 600 : 400,
-              cursor: "pointer", fontFamily: "inherit", transition: "all 0.15s"
+              padding: "12px 14px",
+              borderBottom: `1px solid ${T.border}`,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between"
             }}
           >
-            {lbl}
-          </button>
-        ))}
-      </div>
+            <div>
+              <p style={{ margin: 0, color: T.textPrimary, fontWeight: 700 }}>
+                {selectedContact
+                  ? selectedContact.full_name || selectedContact.email
+                  : "Select a profile"}
+              </p>
+              <p
+                style={{ margin: "2px 0 0 0", color: T.textMuted, fontSize: "0.8rem" }}
+              >
+                {selectedContact ? selectedContact.email : "Start a conversation"}
+              </p>
+            </div>
+          </div>
 
-      {/* Message list */}
-      <div style={{ display: "flex", flexDirection: "column", gap: "10px", marginBottom: "2rem" }}>
-        {filteredMsgs.map(m => (
-          <MessageCard key={m.id} message={m} onReply={handleReply} />
-        ))}
-      </div>
-
-      {/* Compose */}
-      <div style={{ background: T.cardBg, border: `1px solid ${T.border}`, borderRadius: "1rem", padding: "1.5rem" }}>
-        <p style={{ fontSize: "0.9rem", fontWeight: 600, color: T.textPrimary, marginBottom: "1rem", display: "flex", alignItems: "center", gap: "6px" }}>
-          <MessageCircle size={16} color={T.accent} /> New Message
-        </p>
-        <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-          <select 
-            style={{ ...inputStyle, width: "100%" }}
-            value={newMessage.recipient}
-            onChange={(e) => setNewMessage({ ...newMessage, recipient: e.target.value })}
+          <div
+            ref={listRef}
+            style={{ flex: 1, overflowY: "auto", padding: "14px" }}
           >
-            <option value="">Select recipient…</option>
-            {messages.map(m => (
-              <option key={m.id} value={m.sender}>{m.sender} · {m.role}</option>
-            ))}
-          </select>
-          <textarea 
-            placeholder="Type your message…" 
-            rows={3} 
-            style={{ ...inputStyle, width: "100%", resize: "vertical", fontFamily: "inherit" }}
-            value={newMessage.content}
-            onChange={(e) => setNewMessage({ ...newMessage, content: e.target.value })}
-          />
-          <div style={{ display: "flex", justifyContent: "flex-end" }}>
-            <PrimaryBtn onClick={handleSendNewMessage}>Send Message</PrimaryBtn>
+            {!selectedContact ? (
+              <p
+                style={{
+                  color: T.textMuted,
+                  textAlign: "center",
+                  padding: "2rem 0"
+                }}
+              >
+                Pick a profile on the left to see the chat.
+              </p>
+            ) : messages.length === 0 ? (
+              <p
+                style={{
+                  color: T.textMuted,
+                  textAlign: "center",
+                  padding: "2rem 0"
+                }}
+              >
+                No messages yet. Say hello.
+              </p>
+            ) : (
+              messages.map((m) => {
+                const mine = m.sender_id === user?.id;
+                return (
+                  <div
+                    key={m.id}
+                    style={{
+                      display: "flex",
+                      justifyContent: mine ? "flex-end" : "flex-start",
+                      marginBottom: "10px"
+                    }}
+                  >
+                    <div
+                      style={{
+                        maxWidth: "78%",
+                        background: mine
+                          ? "rgba(79,126,248,0.18)"
+                          : T.surface,
+                        border: `1px solid ${
+                          mine ? "rgba(79,126,248,0.35)" : T.border
+                        }`,
+                        borderRadius: "14px",
+                        padding: "10px 12px",
+                        color: T.textPrimary
+                      }}
+                    >
+                      <p
+                        style={{
+                          margin: 0,
+                          whiteSpace: "pre-wrap",
+                          fontSize: "0.9rem"
+                        }}
+                      >
+                        {m.content}
+                      </p>
+                      <p
+                        style={{
+                          margin: "6px 0 0 0",
+                          fontSize: "0.7rem",
+                          color: T.textMuted,
+                          textAlign: "right"
+                        }}
+                      >
+                        {m.created_at ? new Date(m.created_at).toLocaleString() : ""}
+                      </p>
+                    </div>
+                  </div>
+                );
+              })
+            )}
+          </div>
+
+          <div style={{ padding: "12px", borderTop: `1px solid ${T.border}` }}>
+            {error && (
+              <p style={{ margin: "0 0 8px 0", color: T.red, fontSize: "0.85rem" }}>
+                {error}
+              </p>
+            )}
+            <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
+              <textarea
+                rows={2}
+                placeholder={
+                  selectedContact ? "Type a message…" : "Select a profile to chat…"
+                }
+                value={composer}
+                onChange={(e) => setComposer(e.target.value)}
+                disabled={!selectedContact}
+                style={{ ...inputStyle, width: "100%", resize: "none" }}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && !e.shiftKey) {
+                    e.preventDefault();
+                    send();
+                  }
+                }}
+              />
+              <PrimaryBtn
+                onClick={send}
+                disabled={!selectedContact || !composer.trim()}
+              >
+                <span style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                  <Send size={14} /> Send
+                </span>
+              </PrimaryBtn>
+            </div>
           </div>
         </div>
       </div>
-    </>
+    </div>
   );
 };
+

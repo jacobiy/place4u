@@ -1,5 +1,5 @@
 import { TrendingUp, DollarSign, Home, Users, Calendar, MessageSquare, ArrowUpRight, ArrowDownRight } from "lucide-react";
-import { T } from './styles/designTokens';
+import { T } from './Styles/designTokens';
 import { StatCard } from './Component/StatCard';
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 
@@ -25,13 +25,7 @@ const recentActivities = [
   { id: 4, type: "lease", message: "Lease renewal for Garden Flat", time: "2 days ago", icon: Calendar }
 ];
 
-export const Dashboard = () => {
-  const stats = [
-    { label: "Monthly Revenue", value: "R26,700", change: "+12.5%", trend: "up", icon: "DollarSign" },
-    { label: "Occupancy Rate", value: "92%", change: "+5%", trend: "up", icon: "Home" },
-    { label: "Active Properties", value: "8", change: "+2", trend: "up", icon: "Building" },
-    { label: "Total Tenants", value: "12", change: "+3", trend: "up", icon: "Users" }
-  ];
+export const Dashboard = ({ profile, stats = [] }) => {
 
   return (
     <div>
@@ -39,16 +33,14 @@ export const Dashboard = () => {
       <div style={{ marginBottom: "2rem" }}>
       <p style={{ fontSize: "2rem", color: T.textMuted, marginTop: "2px"}}>Landlord Portal</p>
         <h1 style={{ fontFamily: "'DM Serif Display', Georgia, serif", fontSize: "2rem", color: T.textPrimary, marginBottom: "8px" }}>
-          Welcome back, John
+          Welcome back{profile?.full_name ? `, ${profile.full_name.split(" ")[0]}` : ""}
         </h1>
         <p style={{ color: T.textMuted }}>Here's what's happening with your properties today.</p>
       </div>
 
       {/* Stats Grid */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: "1rem", marginBottom: "2rem" }}>
-        {stats.map((stat, index) => (
-          <StatCard key={index} {...stat} />
-        ))}
+        {stats.map((stat, index) => <StatCard key={index} {...stat} />)}
       </div>
 
       {/* Charts Row */}

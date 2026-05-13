@@ -1,11 +1,11 @@
 import { useState } from "react";
 import { Search, Download, Plus, Building, AlertCircle, MailOpen } from "lucide-react";
-import { T } from './styles/designTokens';
+import { T } from './Styles/designTokens';
 import { StatCard } from './Component/StatCard';
-import { PropertyCard } from './component/PropertyCard';
-import { PrimaryBtn, SecondaryBtn } from './component/Buttons';
-import { PropertyDetailsModal } from './component/PropertyDetailsModal';
-import { EditPropertyModal } from './component/EditPropertyModal';
+import { PropertyCard } from './Component/PropertyCard';
+import { PrimaryBtn, SecondaryBtn } from './Component/Buttons';
+import { PropertyDetailsModal } from './Component/PropertyDetailsModal';
+import { EditPropertyModal } from './Component/EditPropertyModal';
 
 export const MyProperties = ({ 
   properties, 
@@ -26,7 +26,7 @@ export const MyProperties = ({
     fontSize: "0.85rem", color: T.textPrimary, outline: "none", fontFamily: "inherit"
   };
 
-  const filteredProps = properties.filter(p => {
+  const filteredProps = (properties || []).filter(p => {
     const matchSearch = !searchQuery || p.name.toLowerCase().includes(searchQuery.toLowerCase()) || p.location.toLowerCase().includes(searchQuery.toLowerCase());
     const matchStatus = filterStatus === "all" || (filterStatus === "occupied" && p.occupied) || (filterStatus === "vacant" && !p.occupied);
     return matchSearch && matchStatus;
@@ -150,8 +150,24 @@ export const MyProperties = ({
         ) : (
           <div style={{ textAlign: "center", padding: "4rem 0" }}>
             <Building size={48} color={T.textMuted} style={{ margin: "0 auto 1rem" }} />
-            <p style={{ fontSize: "1rem", fontWeight: 500, color: T.textSecondary }}>No properties found</p>
-            <p style={{ fontSize: "0.85rem", color: T.textMuted, marginTop: "4px" }}>Try adjusting your search or add a new property</p>
+            {(!properties || properties.length === 0) && !searchQuery && filterStatus === "all" ? (
+              <>
+                <p style={{ fontSize: "1rem", fontWeight: 500, color: T.textSecondary }}>No properties yet</p>
+                <p style={{ fontSize: "0.85rem", color: T.textMuted, marginTop: "4px" }}>Upload your first property to start receiving applications and messages.</p>
+                <div style={{ display: "flex", justifyContent: "center", marginTop: "1.25rem" }}>
+                  <PrimaryBtn onClick={onAddProperty}>
+                    <span style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                      <Plus size={14} /> Add Property
+                    </span>
+                  </PrimaryBtn>
+                </div>
+              </>
+            ) : (
+              <>
+                <p style={{ fontSize: "1rem", fontWeight: 500, color: T.textSecondary }}>No properties found</p>
+                <p style={{ fontSize: "0.85rem", color: T.textMuted, marginTop: "4px" }}>Try adjusting your search or add a new property</p>
+              </>
+            )}
           </div>
         )}
       </div>

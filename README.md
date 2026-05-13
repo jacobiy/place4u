@@ -1,4 +1,13 @@
 # Place4U
-Place4U is a relocation assistance and tenant–property matching platform designed to simplify the process of finding accommodation
-NEXT_PUBLIC_SUPABASE_URL=https://rfajxzjrzmckroitcqxz.supabase.co
-NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=sb_publishable_mGvaE8MgMQ6PcfPtmSS2Zw_mInWWc_s
+
+Place4U is a relocation assistance and tenant–property matching platform designed to simplify the process of finding accommodation.
+
+## Documentation
+- [Business Requirements Document](docs/BRD.md)
+- [Implementation Steps](docs/IMPLEMENTATION_STEPS.md)
+
+## Getting Started
+```bash
+npm install
+npm run dev
+```

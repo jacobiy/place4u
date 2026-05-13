@@ -73,6 +73,7 @@ const ProtectedRoute = ({ children, allowedRoles }) => {
 		if (userType === 'admin') return <Navigate to="/admin" replace />
 		if (userType === 'landlord') return <Navigate to="/landlord" replace />
 		if (userType === 'tenant') return <Navigate to="/tenant" replace />
+		if (userType === 'agent') return <Navigate to="/agent" replace />
 		return <Navigate to="/login" replace />
 	}
 

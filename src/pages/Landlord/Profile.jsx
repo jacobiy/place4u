@@ -5,11 +5,12 @@ import {
   CreditCard, FileText, Shield, CheckCircle, 
   AlertCircle, ChevronRight, Copy, Check
 } from 'lucide-react';
-import { T } from './styles/designTokens';
-import { PrimaryBtn, SecondaryBtn } from './component/Buttons';
-import { Modal } from './component/Modal';
+import { T } from './Styles/designTokens';
+import { PrimaryBtn, SecondaryBtn } from './Component/Buttons';
+import { Modal } from './Component/Modal';
 import { LandlordQueries } from './db/queries';
-import { useAuth } from '../../hooks/useAuth'; // Adjust based on your auth setup
+import { useAuth } from '../../hooks/useAuth';
+import { supabase } from '../../utils/Supabase';
 
 const ProfileSection = ({ title, icon: Icon, children, onEdit, isEditing }) => (
   <div style={{
@@ -172,24 +173,29 @@ export const Profile = ({ onClose, isModal = false }) => {
   const [copiedField, setCopiedField] = useState(null);
   const [uploadingImage, setUploadingImage] = useState(false);
 
-  // Get current user from your auth context
-  const { user } = useAuth(); // Adjust based on your auth setup
+  const { user } = useAuth();
 
-  useEffect(() => {
-    if (user) {
-      loadProfile();
-    }
-  }, [user]);
-
-  const loadProfile = async () => {
+  const loadProfile = useCallback(async () => {
+    if (!user?.id) return;
+    
     setIsLoading(true);
     setError(null);
     try {
-      // First try to get existing profile
+      // Try to get existing profile
       let result = await LandlordQueries.getLandlordProfile(user.id);
       
-      if (!result.success || !result.data) {
-        // Profile doesn't exist, create one
+      // If profile exists, use it
+      if (result.success && result.data) {
+        setProfile(result.data);
+        setProfileId(result.data.id);
+        setEditedData(result.data);
+        
+        // Update statistics and last login in background
+        LandlordQueries.updateStatistics(result.data.id).catch(console.error);
+        LandlordQueries.updateLastLogin(result.data.id).catch(console.error);
+      } 
+      // If no profile found, create one
+      else if (result.success && !result.data) {
         const newProfileData = {
           userId: user.id,
           fullName: user.user_metadata?.full_name || user.email?.split('@')[0] || 'Landlord',
@@ -201,25 +207,19 @@ export const Profile = ({ onClose, isModal = false }) => {
         };
         
         const createResult = await LandlordQueries.createLandlordProfile(newProfileData);
-        if (createResult.success) {
-          result = createResult;
+        if (createResult.success && createResult.data) {
+          setProfile(createResult.data);
+          setProfileId(createResult.data.id);
+          setEditedData(createResult.data);
+          
+          // Update last login for new profile
+          LandlordQueries.updateLastLogin(createResult.data.id).catch(console.error);
         } else {
-          throw new Error(createResult.error);
+          throw new Error(createResult.error || 'Failed to create profile');
         }
-      }
-      
-      if (result.success && result.data) {
-        setProfile(result.data);
-        setProfileId(result.data.id);
-        setEditedData(result.data);
-        
-        // Update statistics in background
-        await LandlordQueries.updateStatistics(result.data.id);
-        
-        // Update last login
-        await LandlordQueries.updateLastLogin(result.data.id);
-      } else {
-        throw new Error('Failed to load profile');
+      } 
+      else {
+        throw new Error(result.error || 'Failed to load profile');
       }
     } catch (error) {
       console.error("Error loading profile:", error);
@@ -227,7 +227,11 @@ export const Profile = ({ onClose, isModal = false }) => {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [user]);
+
+  useEffect(() => {
+    loadProfile();
+  }, [loadProfile]);
 
   const handleEdit = (section) => {
     if (isEditing[section]) {
@@ -244,43 +248,30 @@ export const Profile = ({ onClose, isModal = false }) => {
     
     try {
       let result;
-      const updates = {};
       
       switch(section) {
         case 'personal':
-          updates.full_name = editedData.full_name || editedData.name;
-          updates.company_name = editedData.company_name || editedData.companyName;
-          updates.tax_id = editedData.tax_id || editedData.taxId;
           result = await LandlordQueries.updatePersonalInfo(profileId, {
-            fullName: updates.full_name,
-            companyName: updates.company_name,
-            taxId: updates.tax_id
+            fullName: editedData.full_name || editedData.name,
+            companyName: editedData.company_name || editedData.companyName,
+            taxId: editedData.tax_id || editedData.taxId
           });
           break;
         case 'contact':
-          updates.email = editedData.email;
-          updates.phone = editedData.phone;
-          updates.alternative_phone = editedData.alternative_phone || editedData.alternativePhone;
-          updates.contact_preference = editedData.contact_preference || 'both';
           result = await LandlordQueries.updateContactInfo(profileId, {
-            email: updates.email,
-            phone: updates.phone,
-            alternativePhone: updates.alternative_phone,
-            contactPreference: updates.contact_preference
+            email: editedData.email,
+            phone: editedData.phone,
+            alternativePhone: editedData.alternative_phone || editedData.alternativePhone,
+            contactPreference: editedData.contact_preference || 'both'
           });
           break;
         case 'address':
-          updates.address = editedData.address;
-          updates.city = editedData.city;
-          updates.state = editedData.state;
-          updates.country = editedData.country;
-          updates.postal_code = editedData.postal_code || editedData.postalCode;
           result = await LandlordQueries.updateAddressInfo(profileId, {
-            address: updates.address,
-            city: updates.city,
-            state: updates.state,
-            country: updates.country,
-            postalCode: updates.postal_code
+            address: editedData.address,
+            city: editedData.city,
+            state: editedData.state,
+            country: editedData.country,
+            postalCode: editedData.postal_code || editedData.postalCode
           });
           break;
         default:
@@ -332,7 +323,8 @@ export const Profile = ({ onClose, isModal = false }) => {
     setError(null);
     
     try {
-      // Call your password change API here
+      // Import supabase at the top of the file
+
       const { error } = await supabase.auth.updateUser({
         password: passwordData.new
       });
@@ -365,13 +357,11 @@ export const Profile = ({ onClose, isModal = false }) => {
     const file = e.target.files[0];
     if (!file) return;
     
-    // Check file size (max 5MB)
     if (file.size > 5 * 1024 * 1024) {
       setError("Image size must be less than 5MB");
       return;
     }
     
-    // Check file type
     if (!file.type.startsWith('image/')) {
       setError("Only image files are allowed");
       return;
@@ -381,11 +371,9 @@ export const Profile = ({ onClose, isModal = false }) => {
     setError(null);
     
     try {
-      // Upload image to storage
       const uploadResult = await LandlordQueries.uploadProfileImage(user.id, file);
       
       if (uploadResult.success) {
-        // Update profile with new image URL
         const updateResult = await LandlordQueries.updateProfileImage(profileId, uploadResult.url);
         
         if (updateResult.success) {
@@ -394,7 +382,6 @@ export const Profile = ({ onClose, isModal = false }) => {
           setSuccessMessage('Profile image updated successfully!');
           setTimeout(() => setSuccessMessage(null), 3000);
           
-          // Log activity
           await LandlordQueries.logActivity(profileId, 'profile_update', 'Updated profile image');
         } else {
           throw new Error(updateResult.error);
@@ -425,7 +412,6 @@ export const Profile = ({ onClose, isModal = false }) => {
       notification_preferences: updatedPreferences
     });
     
-    // Save to database
     try {
       const result = await LandlordQueries.updateNotificationPreferences(profileId, updatedPreferences);
       if (result.success) {
@@ -471,7 +457,6 @@ export const Profile = ({ onClose, isModal = false }) => {
 
   const content = (
     <div style={{ maxWidth: "1200px", margin: "0 auto", padding: isModal ? "0" : "0 1rem" }}>
-      {/* Success/Error Messages */}
       {successMessage && (
         <div style={{
           background: "rgba(16,185,129,0.1)",
@@ -527,7 +512,6 @@ export const Profile = ({ onClose, isModal = false }) => {
         }} />
         
         <div style={{ display: "flex", alignItems: "center", gap: "2rem", flexWrap: "wrap" }}>
-          {/* Profile Image */}
           <div style={{ position: "relative" }}>
             <div style={{
               width: "120px",
@@ -568,7 +552,6 @@ export const Profile = ({ onClose, isModal = false }) => {
             </label>
           </div>
 
-          {/* Basic Info */}
           <div style={{ flex: 1 }}>
             <div style={{ display: "flex", alignItems: "center", gap: "1rem", flexWrap: "wrap", marginBottom: "0.5rem" }}>
               <h1 style={{ fontSize: "1.75rem", fontWeight: 700, color: T.textPrimary }}>
@@ -614,7 +597,6 @@ export const Profile = ({ onClose, isModal = false }) => {
             </div>
           </div>
 
-          {/* Stats */}
           <div style={{ display: "flex", gap: "1rem" }}>
             <StatCard 
               label="Total Income" 
@@ -964,12 +946,10 @@ export const Profile = ({ onClose, isModal = false }) => {
     </div>
   );
 
-  // If used as modal, return content without layout wrapper
   if (isModal) {
     return content;
   }
 
-  // If used as full page
   return (
     <div style={{
       minHeight: "100vh",

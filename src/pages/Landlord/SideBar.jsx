@@ -1,9 +1,20 @@
 import { Building, MessageSquare, Home, Users, Settings, LogOut, ChevronDown, DollarSign, FileText, Calendar, BarChart3, User } from "lucide-react";
-import { T } from './styles/designTokens';
+import { T } from './Styles/designTokens';
 import { useState } from "react";
 
-export const Sidebar = ({ activeView, setActiveView, unreadCount, onLogout }) => {
+const initials = (nameOrEmail) => {
+  const raw = (nameOrEmail || "").trim();
+  if (!raw) return "JD";
+  if (raw.includes("@")) return raw.slice(0, 2).toUpperCase();
+  const parts = raw.split(/\s+/).filter(Boolean);
+  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+  return `${parts[0][0]}${parts[parts.length - 1][0]}`.toUpperCase();
+};
+
+export const Sidebar = ({ activeView, setActiveView, unreadCount, onLogout, profile, user }) => {
   const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const displayName = profile?.full_name || user?.user_metadata?.full_name || user?.email || "John Doe";
+  const tier = profile?.account_tier ? `${profile.account_tier[0].toUpperCase()}${profile.account_tier.slice(1)} Landlord` : "Landlord";
 
   const NavItem = ({ id, icon: Icon, label, badge }) => {
     const active = activeView === id;
@@ -158,10 +169,10 @@ export const Sidebar = ({ activeView, setActiveView, unreadCount, onLogout }) =>
               background: `linear-gradient(135deg, ${T.accent} 0%, #7c5ef8 100%)`,
               display: "flex", alignItems: "center", justifyContent: "center",
               fontSize: "0.9rem", fontWeight: 700, color: "#fff"
-            }}>JD</div>
+            }}>{initials(displayName)}</div>
             <div style={{ flex: 1, textAlign: "left" }}>
-              <p style={{ fontSize: "0.85rem", fontWeight: 600, color: T.textPrimary, lineHeight: 1.2 }}>John Doe</p>
-              <p style={{ fontSize: "0.7rem", color: T.textMuted }}>Premium Landlord</p>
+              <p style={{ fontSize: "0.85rem", fontWeight: 600, color: T.textPrimary, lineHeight: 1.2 }}>{displayName}</p>
+              <p style={{ fontSize: "0.7rem", color: T.textMuted }}>{tier}</p>
             </div>
             <ChevronDown 
               size={14} 
