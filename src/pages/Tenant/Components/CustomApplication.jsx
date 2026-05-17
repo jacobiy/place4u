@@ -1,7 +1,7 @@
-import React from 'react';
+import React from 'react'
 import { X } from 'lucide-react'
 
-const CustomApplication = ({onCancel}) => {
+const CustomApplication = ({ onCancel, property }) => {
   return (
     <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4 backdrop-blur-sm">
       <div className="bg-white rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl animate-in fade-in zoom-in duration-300 custom-scrollbar">
@@ -10,8 +10,13 @@ const CustomApplication = ({onCancel}) => {
             <X className="text-gray-600 hover:text-gray-800 hover:scale-110 transition-transform cursor-pointer" onClick={onCancel} size={25}/>
           </div>
           <div className='flex items-center justify-center mt-2'>
-            <h2 className="text-2xl font-bold text-black">Custom Application</h2>
+            <h2 className="text-2xl font-bold text-black">Application</h2>
           </div>
+          {property ? (
+            <p className="text-center text-sm text-gray-500 mt-1">
+              Applying for <span className="font-semibold text-gray-800">{property.title}</span>
+            </p>
+          ) : null}
         </div>
         
         {/* Form Content */}
@@ -48,7 +53,10 @@ const CustomApplication = ({onCancel}) => {
 
           {/* Submit Button */}
           <div className=" flex items-center justify-end pt-4">
-            <button className="bg-[#4f7ef8] hover:bg-[#3d6be0] text-white font-semibold px-6 py-2 rounded-lg transition-colors duration-300 cursor-pointer">
+            <button
+              type="button"
+              className="bg-[#4f7ef8] hover:bg-[#3d6be0] text-white font-semibold px-6 py-2 rounded-lg transition-colors duration-300 cursor-pointer"
+            >
               Submit
             </button>
           </div>

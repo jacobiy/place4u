@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { HiLockClosed, HiEye, HiEyeOff } from 'react-icons/hi'
 import { useNavigate } from 'react-router-dom'
-import { supabase } from '../utils/Supabase'
+import { supabase } from '../../utils/Supabase'
 
 const ResetPassword = () => {
 	const [showPassword, setShowPassword] = useState(false)

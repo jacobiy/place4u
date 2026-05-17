@@ -1,7 +1,7 @@
 // Signup.jsx
 import React, { useState } from 'react'
 import { motion } from 'framer-motion'
-import { supabase } from "../utils/Supabase";
+import { supabase } from "../../utils/Supabase";
 import { 
   HiMail, 
   HiLockClosed, 
@@ -28,7 +28,7 @@ const Signup = () => {
     confirmPassword: '',
     
     // Step 2: User Type & Verification
-    userType: 'tenant', // 'tenant' or 'landlord'
+    userType: 'tenant', // 'tenant' | 'landlord' | 'agent'
     agreeToTerms: false,
     acceptFee: false
   })
@@ -159,8 +159,23 @@ const Signup = () => {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
-        className="max-w-md w-full space-y-8 bg-gray-800/50 backdrop-blur-xl p-8 rounded-2xl border border-gray-700 shadow-2xl relative z-10"
+        className="max-w-6xl w-full bg-gray-800/50 backdrop-blur-xl rounded-2xl border border-gray-700 shadow-2xl relative z-10 overflow-hidden"
       >
+        <div className="grid grid-cols-1 lg:grid-cols-2">
+          {/* Left image */}
+          <div className="hidden lg:block relative">
+            <img src="/download.png" alt="Place4U" className="h-full w-full object-cover" />
+            <div className="absolute inset-0 bg-gradient-to-tr from-gray-900/80 via-gray-900/40 to-transparent" />
+            <div className="absolute bottom-0 left-0 right-0 p-8">
+              <h3 className="text-2xl font-bold text-white">Create your account</h3>
+              <p className="text-gray-200/80 text-sm mt-2">
+                Choose your role (Tenant, Landlord, or Agent) and get started in minutes.
+              </p>
+            </div>
+          </div>
+
+          {/* Right form */}
+          <div className="p-8 space-y-8">
         {/* Header */}
         <div className="text-center">
           <Link to="/">
@@ -377,7 +392,7 @@ const Signup = () => {
                 <label className="block text-sm font-medium text-gray-300 mb-3">
                   I am a:
                 </label>
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                   <motion.button
                     type="button"
                     whileHover={{ scale: 1.02 }}
@@ -414,6 +429,25 @@ const Signup = () => {
                       Landlord
                     </span>
                     <p className="text-xs text-gray-500 mt-1">Have property to rent</p>
+                  </motion.button>
+
+                  <motion.button
+                    type="button"
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                    onClick={() => setFormData(prev => ({ ...prev, userType: 'agent' }))}
+                    className={`p-4 rounded-xl border-2 transition-all duration-300
+                              ${formData.userType === 'agent' 
+                                ? 'border-blue-500 bg-blue-500/10' 
+                                : 'border-gray-700 hover:border-gray-600'}`}
+                  >
+                    <HiShieldCheck className={`w-6 h-6 mx-auto mb-2 
+                      ${formData.userType === 'agent' ? 'text-blue-400' : 'text-gray-500'}`} />
+                    <span className={`text-sm font-medium
+                      ${formData.userType === 'agent' ? 'text-blue-400' : 'text-gray-400'}`}>
+                      Agent
+                    </span>
+                    <p className="text-xs text-gray-500 mt-1">Help clients find homes</p>
                   </motion.button>
                 </div>
               </div>
@@ -573,6 +607,8 @@ const Signup = () => {
             </div>
           )}
         </form>
+          </div>
+        </div>
       </motion.div>
     </div>
   )

@@ -4,7 +4,7 @@ import { motion } from 'framer-motion'
 import { HiMail, HiLockClosed, HiEye, HiEyeOff } from 'react-icons/hi'
 import { FaGoogle, FaFacebook } from 'react-icons/fa'
 import { Link, useNavigate, useLocation } from 'react-router-dom' // Add useLocation
-import { supabase } from '../utils/Supabase'
+import { supabase } from '../../utils/Supabase'
 
 const Login = () => {
 	const [showPassword, setShowPassword] = useState(false)
@@ -50,6 +50,9 @@ const Login = () => {
 				break
 			case 'tenant':
 				navigate('/tenant')
+				break
+			case 'agent':
+				navigate('/agent')
 				break
 			default:
 				navigate('/') // Default to home if no role
@@ -216,8 +219,23 @@ const Login = () => {
 				initial={{ opacity: 0, y: 20 }}
 				animate={{ opacity: 1, y: 0 }}
 				transition={{ duration: 0.5 }}
-				className="max-w-md w-full space-y-8 bg-gray-800/50 backdrop-blur-xl p-8 rounded-2xl border border-gray-700 shadow-2xl relative z-10"
+				className="max-w-5xl w-full bg-gray-800/50 backdrop-blur-xl rounded-2xl border border-gray-700 shadow-2xl relative z-10 overflow-hidden"
 			>
+				<div className="grid grid-cols-1 lg:grid-cols-2">
+					{/* Left image */}
+					<div className="hidden lg:block relative">
+						<img src="/download.png" alt="Place4U" className="h-full w-full object-cover" />
+						<div className="absolute inset-0 bg-gradient-to-tr from-gray-900/80 via-gray-900/40 to-transparent" />
+						<div className="absolute bottom-0 left-0 right-0 p-8">
+							<h3 className="text-2xl font-bold text-white">Welcome back</h3>
+							<p className="text-gray-200/80 text-sm mt-2">
+								Sign in to manage your applications, payments, and messages.
+							</p>
+						</div>
+					</div>
+
+					{/* Right form */}
+					<div className="p-8 space-y-8">
 				{/* Header */}
 				<div className="text-center">
 					<Link to="/">
@@ -484,6 +502,8 @@ const Login = () => {
 						Privacy Policy
 					</Link>
 				</p>
+					</div>
+				</div>
 			</motion.div>
 		</div>
 	)

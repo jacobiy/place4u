@@ -1,14 +1,14 @@
 import { Navigate, Route, Routes } from "react-router-dom";
 
 import ProtectedRoute from "./component/ProtectedRoute";
-import AdminDashboard from "./pages/AdminDashboard";
+import AdminDashboard from "./pages/admin/AdminDashboard";
 import AgentDashboard from "./pages/Agent/MainAgent";
-import Landing from "./pages/Landing";
+import Landing from "./pages/landing/Landing";
 import LandlordDashboard from "./pages/Landlord/MainLandLord";
-import Login from "./pages/Login";
-import ResetPassword from "./pages/resetpassword";
-import Signup from "./pages/SignUp";
-import TenantDashboard from "./pages/TenantDashboard";
+import Login from "./pages/login/Login";
+import ResetPassword from "./pages/resetpassword/resetpassword";
+import Signup from "./pages/Signup/SignUp";
+import TenantDashboard from "./pages/Tenant/TenantDashboard";
 
 export default function App() {
   return (

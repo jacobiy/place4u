@@ -1,10 +1,10 @@
 // pages/AdminDashboard.jsx
 import React from 'react'
 import { Route, Routes } from 'react-router-dom'
-import AdminLayout from './admin/components/AdminLayout'
-import Dashboard from './admin/Dashboard'
-import UsersPage from './admin/Users'
-import TransactionsPage from './admin/Transactions'
+import AdminLayout from './components/AdminLayout'
+import Dashboard from './Dashboard'
+import UsersPage from './Users'
+import TransactionsPage from './Transactions'
 
 const AdminDashboard = () => {
   return (
