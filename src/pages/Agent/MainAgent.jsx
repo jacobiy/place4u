@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Menu } from "lucide-react";
 import { globalStyle, T } from "./Styles/designTokens";
+import "./MainAgent.css";
 import { Sidebar } from "./SideBar";
 import { Dashboard } from "./Dashboard";
 import { Applications } from "./Applications";
@@ -13,8 +15,10 @@ import { supabase } from "../../utils/Supabase";
 
 export default function MainAgent() {
   const { user, loading: authLoading, signOut } = useAuth();
+  const navigate = useNavigate();
   const [activeView, setActiveView] = useState("dashboard");
   const [userRow, setUserRow] = useState(null);
+  const [profile, setProfile] = useState(null);
   const [applications, setApplications] = useState([]);
   const [properties, setProperties] = useState([]);
   const [tenantById, setTenantById] = useState(new Map());
@@ -40,6 +44,16 @@ export default function MainAgent() {
     try {
       const { data: uRow } = await supabase.from("users").select("*").eq("id", user.id).maybeSingle();
       setUserRow(uRow || null);
+
+      const profileRes = await AgentQueries.getAgentProfile(user.id);
+      if (profileRes.success) {
+        if (!profileRes.data) {
+           const createRes = await AgentQueries.createAgentProfile({ userId: user.id });
+           if (createRes.success) setProfile(createRes.data);
+        } else {
+           setProfile(profileRes.data);
+        }
+      }
 
       const appsRes = await AgentQueries.listApplications(80);
       if (!appsRes.success) throw new Error(appsRes.error);
@@ -75,6 +89,7 @@ export default function MainAgent() {
   const handleLogout = async () => {
     try {
       await signOut();
+      navigate("/");
     } catch {
       // ignore
     }
@@ -110,7 +125,14 @@ export default function MainAgent() {
 
     switch (activeView) {
       case "dashboard":
-        return <Dashboard agentName={userRow?.full_name?.split(" ")?.[0]} stats={stats} />;
+        return <Dashboard 
+          agentName={userRow?.full_name?.split(" ")?.[0]} 
+          stats={stats} 
+          applications={applications} 
+          properties={properties} 
+          tenantById={tenantById} 
+          userRow={userRow} 
+        />;
       case "applications":
         return (
           <Applications
@@ -129,7 +151,7 @@ export default function MainAgent() {
       case "messages":
         return <Messages />;
       case "profile":
-        return <Profile userRow={userRow} />;
+        return <Profile userRow={userRow} profile={profile} user={user} onRefresh={refresh} />;
       default:
         return (
           <div style={{ textAlign: "center", padding: "4rem" }}>
@@ -142,13 +164,13 @@ export default function MainAgent() {
   return (
     <>
       <style>{globalStyle}</style>
-      <div style={{ display: "flex", minHeight: "100vh" }}>
-        {!isMobile && <Sidebar activeView={activeView} setActiveView={setActiveView} onLogout={handleLogout} profile={userRow} user={user} />}
+      <div className="agent-layout-wrapper">
+        {!isMobile && <Sidebar activeView={activeView} setActiveView={setActiveView} onLogout={handleLogout} profile={userRow} agentProfile={profile} user={user} />}
 
         {isMobile && isMobileMenuOpen && (
           <>
-            <div onClick={() => setIsMobileMenuOpen(false)} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", zIndex: 98 }} />
-            <div style={{ position: "fixed", left: 0, top: 0, bottom: 0, zIndex: 99 }}>
+            <div onClick={() => setIsMobileMenuOpen(false)} className="agent-sidebar-overlay" />
+            <div className="agent-sidebar-container">
               <Sidebar
                 activeView={activeView}
                 setActiveView={(view) => {
@@ -157,26 +179,19 @@ export default function MainAgent() {
                 }}
                 onLogout={handleLogout}
                 profile={userRow}
+                agentProfile={profile}
                 user={user}
               />
             </div>
           </>
         )}
 
-        <main
-          style={{
-            flex: 1,
-            marginLeft: isMobile ? 0 : "260px",
-            padding: "2rem 1.5rem",
-            width: isMobile ? "100%" : `calc(100% - 260px)`,
-            minHeight: "100vh"
-          }}
-        >
+        <main className={`agent-main-content ${isMobile ? 'is-mobile' : ''} ${activeView === 'messages' ? 'is-messages' : ''} ${activeView === 'dashboard' ? 'is-dashboard' : ''}`}>
           {isMobile && (
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1.5rem", paddingBottom: "1rem", borderBottom: `1px solid ${T.border}` }}>
+            <div className="agent-mobile-header">
               <button
                 onClick={() => setIsMobileMenuOpen(true)}
-                style={{ padding: "8px", background: T.surface, border: `1px solid ${T.border}`, borderRadius: "8px", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}
+                className="agent-mobile-menu-btn"
               >
                 <Menu size={20} color={T.textSecondary} />
               </button>

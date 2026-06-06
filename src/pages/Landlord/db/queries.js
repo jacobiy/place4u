@@ -685,29 +685,42 @@ export const LandlordQueries = {
     }
   },
 
-  // Upload property image to storage (best-effort; bucket must exist)
   async uploadPropertyImage(userId, file) {
     try {
       const fileExt = file.name.split('.').pop();
-      const fileName = `${userId}/property-${Date.now()}.${fileExt}`;
-      const filePath = `properties/${fileName}`;
-
-      const tryBucket = async (bucket) => {
-        const upload = await supabase.storage.from(bucket).upload(filePath, file);
-        if (upload.error) return { ok: false, error: upload.error };
-        const { data: { publicUrl } } = supabase.storage.from(bucket).getPublicUrl(filePath);
-        return { ok: true, publicUrl };
+      const fileName = `property-${Date.now()}.${fileExt}`;
+      const filePath = `${userId}/${fileName}`;
+      const bucket = 'properties';
+  
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from(bucket)
+        .upload(filePath, file, {
+          cacheControl: '3600',
+          upsert: false
+        });
+  
+      console.log("UPLOAD ERROR:", uploadError);
+      console.log("UPLOAD DATA:", uploadData);
+  
+      if (uploadError) throw uploadError;
+  
+      const { data } = supabase.storage
+        .from(bucket)
+        .getPublicUrl(filePath);
+  
+      console.log("PUBLIC URL:", data.publicUrl);
+  
+      return {
+        success: true,
+        url: data.publicUrl
       };
-
-      // Prefer a dedicated bucket if you have one
-      let res = await tryBucket('properties');
-      if (!res.ok) res = await tryBucket('profiles');
-      if (!res.ok) throw res.error;
-      
-      return { success: true, url: res.publicUrl };
+  
     } catch (error) {
-      console.error('Error uploading property image:', error);
-      return { success: false, error: error.message };
+      console.error("UPLOAD FAILED:", error);
+      return {
+        success: false,
+        error: error.message
+      };
     }
   },
 

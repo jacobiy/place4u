@@ -1,4 +1,5 @@
 import { useMemo, useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { Menu } from "lucide-react";
 import { globalStyle, T } from './Styles/designTokens';
 import { Sidebar } from './SideBar';
@@ -6,6 +7,8 @@ import { Dashboard } from './Dashboard';
 import { MyProperties } from './MyProperties';
 import { Messages } from './Messages';
 import { Profile } from './Profile';
+import { Settings } from './Settings';
+import { Tenants } from './Tenants';
 import { AddPropertyModal } from './Component/AddPropertyModal';
 import { LandlordQueries } from './db/queries';
 import { useAuth } from '../../hooks/useAuth';
@@ -38,7 +41,9 @@ const normalizeProperty = (row) => {
     (address ? address : "Property");
 
   const location = [area, row?.city].filter(Boolean).join(", ");
-  const image = row?.image_url || row?.image || placeholderImage;
+  
+  const hasImageUrls = Array.isArray(row?.image_urls) && row.image_urls.length > 0;
+  const image = hasImageUrls ? row.image_urls[0] : (row?.image_url || row?.image || placeholderImage);
 
   return {
     ...row,
@@ -47,6 +52,7 @@ const normalizeProperty = (row) => {
     location,
     rent: row?.rent || (row?.price ? `${formatZar(row.price)}/mo` : "—"),
     image,
+    image_urls: row?.image_urls || (row?.image_url ? [row.image_url] : []),
     bedrooms: row?.bedrooms ?? row?.beds ?? 0,
     bathrooms: row?.bathrooms ?? row?.baths ?? 0,
     size: row?.size || "—",
@@ -56,10 +62,12 @@ const normalizeProperty = (row) => {
 };
 
 export default function MainLandlord() {
+  const navigate = useNavigate();
   const [activeView, setActiveView] = useState("dashboard");
   const { user, loading: authLoading, signOut } = useAuth();
   const [profile, setProfile] = useState(null);
   const [properties, setProperties] = useState([]);
+  const [activities, setActivities] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [isCreatingProperty, setIsCreatingProperty] = useState(false);
@@ -126,6 +134,14 @@ export default function MainLandlord() {
         } else {
           if (!cancelled) setProperties([]);
         }
+
+        // Fetch activity logs
+        if (landlordProfile) {
+          const logsResult = await LandlordQueries.getActivityLog(landlordProfile.id, 5);
+          if (!cancelled && logsResult.success) {
+            setActivities(logsResult.data || []);
+          }
+        }
       } catch (e) {
         if (!cancelled) setError(e?.message || "Failed to load landlord data.");
       } finally {
@@ -146,21 +162,34 @@ export default function MainLandlord() {
 
     setIsCreatingProperty(true);
     try {
-      let imageUrl = null;
-      if (payload.imageFile) {
-        const upload = await LandlordQueries.uploadPropertyImage(user.id, payload.imageFile);
-        if (upload.success) imageUrl = upload.url;
+      let imageUrls = [];
+      if (payload.imageFiles && payload.imageFiles.length > 0) {
+        const uploadPromises = payload.imageFiles.map(file => LandlordQueries.uploadPropertyImage(user.id, file));
+        const results = await Promise.all(uploadPromises);
+        imageUrls = results.filter(r => r.success).map(r => r.url);
       }
 
-      const { imageFile, ...rest } = payload;
-      const create = await LandlordQueries.createProperty(user.id, {
+      const { imageFiles, ...rest } = payload;
+      const propertyData = {
         ...rest,
-        ...(imageUrl ? { image_url: imageUrl } : {})
-      });
+        image_urls: imageUrls
+      };
+      
+      const create = await LandlordQueries.createProperty(user.id, propertyData);
 
       if (!create.success) throw new Error(create.error || "Failed to create property.");
       setProperties([normalizeProperty(create.data), ...properties]);
       setIsAddPropertyOpen(false);
+
+      if (profile?.id) {
+        await LandlordQueries.logActivity(
+          profile.id,
+          "property_created",
+          `Created property: ${payload.name || propertyData.property_type || "New Property"}`
+        );
+        const logsResult = await LandlordQueries.getActivityLog(profile.id, 5);
+        if (logsResult.success) setActivities(logsResult.data || []);
+      }
     } catch (e) {
       setError(e?.message || "Failed to create property.");
     } finally {
@@ -170,10 +199,27 @@ export default function MainLandlord() {
 
   const handleEditProperty = async (updatedProperty) => {
     if (!updatedProperty?.id) return;
-    const result = await LandlordQueries.updateProperty(updatedProperty.id, updatedProperty);
-    if (!result.success) return;
+    
+    // Filter out computed properties before saving
+    const { id, name, location, rent, image, tenants, occupied, ...validDbFields } = updatedProperty;
+    
+    const result = await LandlordQueries.updateProperty(id, validDbFields);
+    if (!result.success) {
+      setError(result.error || "Failed to update property.");
+      return;
+    }
 
-    setProperties(properties.map(p => (p.id === updatedProperty.id ? normalizeProperty(result.data) : p)));
+    setProperties(properties.map(p => (p.id === id ? normalizeProperty(result.data) : p)));
+
+    if (profile?.id) {
+      await LandlordQueries.logActivity(
+        profile.id,
+        "property_updated",
+        `Updated property: ${updatedProperty.name || "Property details"}`
+      );
+      const logsResult = await LandlordQueries.getActivityLog(profile.id, 5);
+      if (logsResult.success) setActivities(logsResult.data || []);
+    }
   };
 
   const handleViewDetails = (property) => {
@@ -183,6 +229,7 @@ export default function MainLandlord() {
   const handleLogout = async () => {
     try {
       await signOut();
+      navigate("/");
     } catch {
       // ignore
     }
@@ -191,23 +238,37 @@ export default function MainLandlord() {
   const portfolioStats = useMemo(() => {
     const totalProperties = properties.length;
     const occupied = properties.filter(p => p.occupied).length;
+    const vacant = totalProperties - occupied;
     const occupancyRate = totalProperties ? Math.round((occupied / totalProperties) * 100) : 0;
 
-    // Best-effort: sum numeric prices for occupied properties
-    const monthlyIncome = properties.reduce((sum, p) => {
-      const price = p?.price;
-      if (!p.occupied) return sum;
-      if (price === null || price === undefined || Number.isNaN(Number(price))) return sum;
-      return sum + Number(price);
-    }, 0);
-
     return [
-      { label: "Monthly Income", value: formatZar(monthlyIncome), change: "—", trend: "neutral", icon: "DollarSign" },
-      { label: "Occupancy Rate", value: `${occupancyRate}%`, change: "—", trend: "neutral", icon: "Home" },
       { label: "Total Properties", value: `${totalProperties}`, change: "—", trend: "neutral", icon: "Building" },
-      { label: "Active Tenants", value: `${profile?.total_tenants || 0}`, change: "—", trend: "neutral", icon: "Users" }
+      { label: "Occupied Properties", value: `${occupied}`, change: "—", trend: "neutral", icon: "Home" },
+      { label: "Vacant Properties", value: `${vacant}`, change: "—", trend: "neutral", icon: "Key" },
+      { label: "Occupancy Rate", value: `${occupancyRate}%`, change: "—", trend: "neutral", icon: "Percent" }
     ];
-  }, [properties, profile?.total_tenants]);
+  }, [properties]);
+
+  const propertyDistribution = useMemo(() => {
+    if (properties.length === 0) return [];
+    const counts = {};
+    properties.forEach(p => {
+      let type = p.property_type || "Other";
+      type = type.charAt(0).toUpperCase() + type.slice(1).toLowerCase();
+      counts[type] = (counts[type] || 0) + 1;
+    });
+
+    const colors = [T.accent, T.emerald, T.amber, "#3B82F6", "#8B5CF6", "#EC4899", "#EF4444", "#10B981"];
+    return Object.entries(counts).map(([name, count], index) => {
+      const percentage = Math.round((count / properties.length) * 100);
+      return {
+        name,
+        value: percentage,
+        count,
+        color: colors[index % colors.length]
+      };
+    });
+  }, [properties]);
 
   const renderContent = () => {
     if (loading || authLoading) {
@@ -229,14 +290,26 @@ export default function MainLandlord() {
 
     switch(activeView) {
       case "dashboard":
-        return <Dashboard profile={profile} stats={portfolioStats} />;
+        return (
+          <Dashboard 
+            profile={profile} 
+            stats={portfolioStats} 
+            activities={activities} 
+            propertyDistribution={propertyDistribution} 
+          />
+        );
       case "profile":
         return <Profile />;
+      case "settings":
+        return <Settings />;
+      case "tenants":
+        return <Tenants profile={profile} />;
       case "properties":
         return (
           <MyProperties 
             properties={properties}
             stats={portfolioStats}
+            activities={activities}
             onAddProperty={handleAddProperty}
             onEditProperty={handleEditProperty}
             onViewDetails={handleViewDetails}
@@ -318,9 +391,11 @@ export default function MainLandlord() {
         <main style={{
           flex: 1,
           marginLeft: isMobile ? 0 : "260px",
-          padding: "2rem 1.5rem",
+          padding: activeView === "messages" ? "0" : "2rem 1.5rem",
           width: isMobile ? "100%" : `calc(100% - 260px)`,
-          minHeight: "100vh"
+          minHeight: "100vh",
+          display: "flex",
+          flexDirection: "column"
         }}>
           {/* Mobile Top Bar */}
           {isMobile && (
@@ -329,8 +404,8 @@ export default function MainLandlord() {
               justifyContent: "space-between",
               alignItems: "center",
               marginBottom: "1.5rem",
-              paddingBottom: "1rem",
-              borderBottom: `1px solid ${T.border}`
+              padding: activeView === "messages" ? "1rem 1rem 0" : "0 0 1rem",
+              borderBottom: activeView === "messages" ? "none" : `1px solid ${T.border}`
             }}>
               <button
                 onClick={() => setIsMobileMenuOpen(true)}

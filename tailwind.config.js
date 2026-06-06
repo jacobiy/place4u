@@ -1,4 +1,78 @@
 /** @type {import('tailwindcss').Config} */
 export default {
-  content: ["./index.html", "./src/**/*.{js,jsx}"]
+  content: ["./index.html", "./src/**/*.{js,jsx}"],
+  theme: {
+    extend: {
+      colors: {
+        "surface-container-high": "#272a32",
+        "on-primary": "#002d6e",
+        "inverse-surface": "#e1e2ed",
+        "error-container": "#93000a",
+        "tertiary-fixed-dim": "#ffb690",
+        "surface-dim": "#10131b",
+        "error": "#ffb4ab",
+        "on-tertiary": "#542100",
+        "surface-tint": "#b0c6ff",
+        "on-secondary-container": "#00311f",
+        "on-primary-fixed": "#001944",
+        "on-error": "#690005",
+        "surface-variant": "#32353d",
+        "inverse-primary": "#0058ca",
+        "on-tertiary-fixed": "#331100",
+        "on-background": "#e1e2ed",
+        "secondary": "#4edea3",
+        "on-tertiary-container": "#4a1c00",
+        "surface-container-lowest": "#0b0e15",
+        "surface-container-low": "#191b23",
+        "primary-container": "#558dff",
+        "outline": "#8c90a0",
+        "tertiary-container": "#e86d17",
+        "outline-variant": "#424654",
+        "inverse-on-surface": "#2e3039",
+        "tertiary-fixed": "#ffdbca",
+        "secondary-container": "#00a572",
+        "on-primary-container": "#002761",
+        "surface-container-highest": "#32353d",
+        "on-surface": "#e1e2ed",
+        "on-secondary-fixed-variant": "#005236",
+        "secondary-fixed": "#6ffbbe",
+        "on-tertiary-fixed-variant": "#783200",
+        "surface-container": "#1d1f27",
+        "primary-fixed": "#d9e2ff",
+        "background": "#10131b",
+        "surface-bright": "#363942",
+        "on-surface-variant": "#c2c6d7",
+        "on-secondary": "#003824",
+        "primary-fixed-dim": "#b0c6ff",
+        "on-error-container": "#ffdad6",
+        "on-secondary-fixed": "#002113",
+        "on-primary-fixed-variant": "#00429b",
+        "surface": "#10131b",
+        "tertiary": "#ffb690",
+        "primary": "#b0c6ff",
+        "secondary-fixed-dim": "#4edea3"
+      },
+      spacing: {
+        "xl": "64px",
+        "gutter": "24px",
+        "base": "8px",
+        "xs": "4px",
+        "sm": "12px",
+        "md": "24px",
+        "margin": "32px",
+        "lg": "48px"
+      },
+      fontFamily: {
+        "headline-md": ["Inter"],
+        "headline-lg": ["Inter"],
+        "label-md": ["Inter"],
+        "body-md": ["Inter"],
+        "label-sm": ["Inter"],
+        "headline-lg-mobile": ["Inter"],
+        "body-lg": ["Inter"],
+        "headline-sm": ["Inter"],
+        "display-lg": ["Inter"]
+      }
+    }
+  }
 };

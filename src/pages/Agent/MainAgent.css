@@ -1,0 +1,70 @@
+/* MainAgent.css */
+.agent-layout-wrapper {
+  display: flex;
+  min-height: 100vh;
+}
+
+.agent-sidebar-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 98;
+}
+
+.agent-sidebar-container {
+  position: fixed;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  z-index: 99;
+}
+
+.agent-main-content {
+  flex: 1;
+  margin-left: 260px;
+  padding: 2rem 3rem;
+  width: calc(100% - 260px);
+  height: 100vh;
+  overflow-y: auto;
+  background: radial-gradient(circle at top right, rgba(16,185,129,0.05) 0%, transparent 40%),
+              radial-gradient(circle at bottom left, rgba(79,126,248,0.05) 0%, transparent 40%);
+}
+
+.agent-main-content.is-mobile {
+  margin-left: 0;
+  width: 100%;
+}
+
+.agent-main-content.is-messages,
+.agent-main-content.is-dashboard {
+  padding: 0;
+  overflow-y: hidden;
+}
+
+.agent-mobile-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+.agent-mobile-menu-btn {
+  padding: 8px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 8px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.glass-card {
+  background: rgba(25, 27, 35, 0.6);
+  backdrop-filter: blur(12px);
+  border: 1px solid #30363D;
+}
+.sidebar-border { border-right: 1px solid #30363D; }
+.bottom-border { border-bottom: 1px solid #30363D; }

@@ -1,5 +1,7 @@
-import React from 'react'
-import { NavLink } from 'react-router-dom'
+import React, { useEffect, useState } from 'react'
+import { NavLink, useNavigate } from 'react-router-dom'
+import { useAuth } from '../../../hooks/useAuth'
+import { supabase } from '../../../utils/Supabase'
 import {
   LayoutGrid,
   Users,
@@ -23,6 +25,33 @@ const SectionTitle = ({ children }) => (
 )
 
 const AdminSidebar = () => {
+  const navigate = useNavigate();
+  const { user, signOut } = useAuth();
+  const [adminName, setAdminName] = useState('Super Admin');
+
+  useEffect(() => {
+    if (user?.id) {
+      supabase
+        .from('users')
+        .select('full_name')
+        .eq('id', user.id)
+        .single()
+        .then(({ data }) => {
+          if (data?.full_name) {
+            setAdminName(data.full_name);
+          }
+        });
+    }
+  }, [user]);
+
+  const handleLogout = async () => {
+    await signOut();
+    navigate('/');
+  };
+
+  const email = user?.email || 'admin@propadmin.io';
+  const initials = adminName.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
+
   return (
     <aside className="w-[240px] min-h-screen bg-[#0F1E35] flex flex-col fixed top-0 left-0 z-20">
       <div className="flex items-center gap-3 px-6 py-5 border-b border-white/10">
@@ -58,6 +87,14 @@ const AdminSidebar = () => {
         >
           <Building2 size={16} />
           Properties
+        </NavLink>
+
+        <NavLink
+          to="/admin/applications"
+          className={({ isActive }) => `${navLinkClass} ${isActive ? navLinkActiveClass : ''}`}
+        >
+          <FileText size={16} />
+          Applications
         </NavLink>
 
         <NavLink
@@ -118,13 +155,13 @@ const AdminSidebar = () => {
 
       <div className="px-4 py-4 border-t border-white/10 flex items-center gap-3">
         <div className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center text-white text-xs font-bold">
-          SA
+          {initials}
         </div>
         <div className="flex-1 min-w-0">
-          <p className="text-white text-xs font-semibold truncate">Super Admin</p>
-          <p className="text-slate-500 text-[11px] truncate">admin@propadmin.io</p>
+          <p className="text-white text-xs font-semibold truncate">{adminName}</p>
+          <p className="text-slate-500 text-[11px] truncate">{email}</p>
         </div>
-        <button type="button" className="text-slate-500 hover:text-white" aria-label="Logout">
+        <button onClick={handleLogout} type="button" className="text-slate-500 hover:text-white" aria-label="Logout">
           <LogOut size={15} />
         </button>
       </div>

@@ -1,11 +1,10 @@
 import React from 'react'
 import { FileText, Home, Heart, Search } from 'lucide-react'
-import { PROPERTIES } from '../Data/constants'
 
-export default function DashboardView({ onPropertyClick, onApplyClick, onOpenCustomApplication }) {
+export default function DashboardView({ properties = [], tenantProperties = [], applicationsCount = 0, onPropertyClick, onApplyClick, onOpenCustomApplication }) {
   const stats = [
-    { label: 'Applications', value: 0, icon: FileText, color: 'from-blue-500/20 to-purple-500/20' },
-    { label: 'Available Properties', value: PROPERTIES.length, icon: Home, color: 'from-emerald-500/20 to-teal-500/20' },
+    { label: 'Applications', value: applicationsCount, icon: FileText, color: 'from-blue-500/20 to-purple-500/20' },
+    { label: 'Available Properties', value: properties.length, icon: Home, color: 'from-emerald-500/20 to-teal-500/20' },
     { label: 'Matches', value: 0, icon: Heart, color: 'from-rose-500/20 to-orange-500/20' }
   ]
 
@@ -66,27 +65,30 @@ export default function DashboardView({ onPropertyClick, onApplyClick, onOpenCus
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          {PROPERTIES.map((property) => (
-            <div
-              key={property.id}
-              className="glass rounded-3xl overflow-hidden group cursor-pointer hover:border-blue-500/50 transition-all"
-              onClick={() => onPropertyClick(property)}
-            >
-              <div className="h-48 overflow-hidden relative">
-                <img
-                  src={property.imageUrl}
-                  alt={property.title}
-                  className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
-                <div className="absolute bottom-4 left-4">
-                  <div className="text-lg font-bold">{property.price}</div>
-                  <div className="text-xs text-white/60">
-                    {property.address}, {property.city}
+          {properties.length === 0 ? (
+            <div className="col-span-full text-center py-12 text-white/40">No properties available at the moment.</div>
+          ) : (
+            properties.slice(0, 4).map((property) => (
+              <div
+                key={property.id}
+                className="glass rounded-3xl overflow-hidden group cursor-pointer hover:border-blue-500/50 transition-all"
+                onClick={() => onPropertyClick(property)}
+              >
+                <div className="h-48 overflow-hidden relative">
+                  <img
+                    src={(property.image_urls && property.image_urls.length > 0) ? property.image_urls[0] : "https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=800&auto=format&fit=crop&q=60"}
+                    alt={`${property.bedrooms || 1} Bed ${property.property_type || 'Property'} in ${property.city || 'City'}`}
+                    className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+                  <div className="absolute bottom-4 left-4">
+                    <div className="text-lg font-bold">R{property.price || 0}</div>
+                    <div className="text-xs text-white/60">
+                      {property.address || `${property.city}, ${property.province}`}
+                    </div>
                   </div>
                 </div>
-              </div>
-              <div className="p-4">
+                <div className="p-4">
                 <div className="grid grid-cols-2 gap-3">
                   <button
                     type="button"
@@ -111,7 +113,7 @@ export default function DashboardView({ onPropertyClick, onApplyClick, onOpenCus
                 </div>
               </div>
             </div>
-          ))}
+          )))}
         </div>
       </section>
     </div>

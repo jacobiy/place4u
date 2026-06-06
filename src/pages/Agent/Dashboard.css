@@ -1,0 +1,109 @@
+/* Dashboard.css - Dedicated CSS for Agent Workspace */
+
+/* Core Colors */
+.bg-surface-dim { background-color: #10131b !important; }
+.bg-surface-container-lowest { background-color: #0b0e15 !important; }
+.bg-surface-container-low { background-color: #191b23 !important; }
+.bg-surface-container-highest { background-color: #32353d !important; }
+.bg-surface-variant { background-color: #32353d !important; }
+.bg-primary-container { background-color: #558dff !important; }
+.bg-error { background-color: #ffb4ab !important; }
+
+.text-on-primary-container { color: #002761 !important; }
+.text-on-surface-variant { color: #c2c6d7 !important; }
+.text-on-surface { color: #e1e2ed !important; }
+.text-primary { color: #b0c6ff !important; }
+.text-secondary { color: #4edea3 !important; }
+.text-tertiary { color: #ffb690 !important; }
+.text-error { color: #ffb4ab !important; }
+
+.border-outline-variant { border-color: #424654 !important; }
+.border-primary { border-color: #b0c6ff !important; }
+.border-secondary { border-color: #4edea3 !important; }
+
+/* Opacity Colors */
+.bg-primary\/10 { background-color: rgba(176, 198, 255, 0.1) !important; }
+.bg-primary\/20 { background-color: rgba(176, 198, 255, 0.2) !important; }
+.bg-secondary\/10 { background-color: rgba(78, 222, 163, 0.1) !important; }
+.bg-secondary\/20 { background-color: rgba(78, 222, 163, 0.2) !important; }
+.bg-tertiary\/10 { background-color: rgba(255, 182, 144, 0.1) !important; }
+.bg-tertiary\/20 { background-color: rgba(255, 182, 144, 0.2) !important; }
+.bg-error\/10 { background-color: rgba(255, 180, 171, 0.1) !important; }
+.bg-on-surface-variant\/10 { background-color: rgba(194, 198, 215, 0.1) !important; }
+
+.hover\:border-primary\/50:hover { border-color: rgba(176, 198, 255, 0.5) !important; }
+.hover\:border-secondary\/50:hover { border-color: rgba(78, 222, 163, 0.5) !important; }
+
+.hover\:bg-primary\/20:hover { background-color: rgba(176, 198, 255, 0.2) !important; }
+.hover\:text-primary:hover { color: #b0c6ff !important; }
+
+.hover\:bg-secondary\/20:hover { background-color: rgba(78, 222, 163, 0.2) !important; }
+.hover\:text-secondary:hover { color: #4edea3 !important; }
+
+/* Spacing and Layout */
+.p-gutter { padding: 24px !important; }
+.gap-gutter { gap: 24px !important; }
+.mb-gutter { margin-bottom: 24px !important; }
+.bottom-gutter { bottom: 24px !important; }
+.right-gutter { right: 24px !important; }
+
+.p-md { padding: 24px !important; }
+.px-md { padding-left: 24px !important; padding-right: 24px !important; }
+.gap-md { gap: 24px !important; }
+.gap-sm { gap: 12px !important; }
+.gap-xs { gap: 4px !important; }
+.mb-sm { margin-bottom: 12px !important; }
+.mt-xs { margin-top: 4px !important; }
+.pb-xl { padding-bottom: 64px !important; }
+
+/* Custom components from template */
+.glass-card {
+  background: rgba(25, 27, 35, 0.6) !important;
+  backdrop-filter: blur(12px) !important;
+  border: 1px solid #30363D !important;
+}
+.sidebar-border { border-right: 1px solid #30363D !important; }
+/* Missing Opacities from HTML */
+.bg-surface-container-low\/50 { background-color: rgba(25, 27, 35, 0.5) !important; }
+.bg-surface-container-lowest\/50 { background-color: rgba(11, 14, 21, 0.5) !important; }
+.hover\:bg-surface-container-high\/40:hover { background-color: rgba(39, 42, 50, 0.4) !important; }
+.bg-surface-container-highest\/40 { background-color: rgba(50, 53, 61, 0.4) !important; }
+.hover\:bg-surface-container-high\/50:hover { background-color: rgba(39, 42, 50, 0.5) !important; }
+
+/* Missing Layout / Spacing */
+.p-sm { padding: 12px !important; }
+.pl-10 { padding-left: 40px !important; }
+.pr-4 { padding-right: 16px !important; }
+.py-1\.5 { padding-top: 6px !important; padding-bottom: 6px !important; }
+.py-4 { padding-top: 16px !important; padding-bottom: 16px !important; }
+
+/* Typography */
+.text-headline-xl { font-size: 36px !important; line-height: 44px !important; font-family: "Inter", sans-serif; }
+.text-headline-lg { font-size: 32px !important; line-height: 40px !important; font-family: "Inter", sans-serif; }
+.text-headline-md { font-size: 28px !important; line-height: 36px !important; font-family: "Inter", sans-serif; }
+.text-headline-sm { font-size: 24px !important; line-height: 32px !important; font-family: "Inter", sans-serif; }
+.text-body-lg { font-size: 18px !important; line-height: 28px !important; font-family: "Inter", sans-serif; }
+.text-body-md { font-size: 16px !important; line-height: 24px !important; font-family: "Inter", sans-serif; }
+.text-body-sm { font-size: 14px !important; line-height: 20px !important; font-family: "Inter", sans-serif; }
+.text-label-lg { font-size: 14px !important; line-height: 20px !important; font-weight: 500 !important; font-family: "Inter", sans-serif; }
+.text-label-md { font-size: 12px !important; line-height: 16px !important; font-weight: 500 !important; font-family: "Inter", sans-serif; }
+.text-label-sm { font-size: 11px !important; line-height: 16px !important; font-weight: 500 !important; font-family: "Inter", sans-serif; }
+
+/* Missing Tailwind Standard Widths/Heights/Padding */
+.px-4 { padding-left: 16px !important; padding-right: 16px !important; }
+.px-2 { padding-left: 8px !important; padding-right: 8px !important; }
+.py-0\.5 { padding-top: 2px !important; padding-bottom: 2px !important; }
+.py-1 { padding-top: 4px !important; padding-bottom: 4px !important; }
+.w-80 { width: 320px !important; }
+.w-10 { width: 40px !important; }
+.h-10 { height: 40px !important; }
+.w-8 { width: 32px !important; }
+.h-8 { height: 32px !important; }
+.w-5 { width: 20px !important; }
+.h-5 { height: 20px !important; }
+
+/* Border Radius */
+.rounded-full { border-radius: 9999px !important; }
+.rounded-xl { border-radius: 16px !important; }
+.rounded-lg { border-radius: 8px !important; }
+.rounded { border-radius: 4px !important; }

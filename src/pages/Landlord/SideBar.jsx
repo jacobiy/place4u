@@ -63,10 +63,8 @@ export const Sidebar = ({ activeView, setActiveView, unreadCount, onLogout, prof
   const navItems = [
     { id: "dashboard", icon: Home, label: "Dashboard" },
     { id: "properties", icon: Building, label: "Properties" },
-    { id: "tenants", icon: Users, label: "Tenants" },
     { id: "messages", icon: MessageSquare, label: "Messages", badge: unreadCount },
-    { id: "payments", icon: DollarSign, label: "Payments" },
-    { id: "maintenance", icon: FileText, label: "Maintenance" },
+    { id: "tenants", icon: Users, label: "Tenants" },
     { id: "profile", icon: User, label: "Profile" },
     { id: "settings", icon: Settings, label: "Settings" },
   ];

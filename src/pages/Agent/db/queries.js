@@ -1,6 +1,56 @@
 import { supabase } from "../../../utils/Supabase";
 
 export const AgentQueries = {
+  async getAgentProfile(userId) {
+    try {
+      const { data, error } = await supabase
+        .from('agent_profiles')
+        .select('*')
+        .eq('user_id', userId)
+        .single();
+      
+      if (error && error.code !== 'PGRST116') throw error;
+      return { success: true, data };
+    } catch (error) {
+      console.error('Error fetching agent profile:', error);
+      return { success: false, error: error.message };
+    }
+  },
+
+  async createAgentProfile(profileData) {
+    try {
+      const { data, error } = await supabase
+        .from('agent_profiles')
+        .insert([{
+          user_id: profileData.userId,
+          agency_name: profileData.agencyName || null
+        }])
+        .select()
+        .single();
+      if (error) throw error;
+      return { success: true, data };
+    } catch (error) {
+      console.error('Error creating agent profile:', error);
+      return { success: false, error: error.message };
+    }
+  },
+
+  async updateAgentProfile(profileId, updates) {
+    try {
+      const { data, error } = await supabase
+        .from('agent_profiles')
+        .update(updates)
+        .eq('id', profileId)
+        .select()
+        .single();
+      if (error) throw error;
+      return { success: true, data };
+    } catch (error) {
+      console.error('Error updating agent profile:', error);
+      return { success: false, error: error.message };
+    }
+  },
+
   async listApplications(limit = 50) {
     try {
       const { data, error } = await supabase

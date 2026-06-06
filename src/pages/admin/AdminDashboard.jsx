@@ -5,6 +5,8 @@ import AdminLayout from './components/AdminLayout'
 import Dashboard from './Dashboard'
 import UsersPage from './Users'
 import TransactionsPage from './Transactions'
+import ApplicationsPage from './Applications'
+import PropertiesPage from './Properties'
 
 const AdminDashboard = () => {
   return (
@@ -12,10 +14,10 @@ const AdminDashboard = () => {
       <Route element={<AdminLayout />}>
         <Route index element={<Dashboard />} />
         <Route path="users" element={<UsersPage />} />
+        <Route path="applications" element={<ApplicationsPage />} />
         <Route path="transactions" element={<TransactionsPage />} />
 
-        {/* Placeholders to keep sidebar links non-breaking */}
-        <Route path="properties" element={<div className="text-slate-500 text-sm">Properties page coming soon.</div>} />
+        <Route path="properties" element={<PropertiesPage />} />
         <Route path="leases" element={<div className="text-slate-500 text-sm">Leases page coming soon.</div>} />
         <Route path="analytics" element={<div className="text-slate-500 text-sm">Analytics page coming soon.</div>} />
         <Route path="reports" element={<div className="text-slate-500 text-sm">Reports page coming soon.</div>} />

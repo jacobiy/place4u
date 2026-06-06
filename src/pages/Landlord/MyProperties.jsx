@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Search, Download, Plus, Building, AlertCircle, MailOpen } from "lucide-react";
+import { Search, Download, Plus, Building, AlertCircle, MailOpen, Edit, Activity } from "lucide-react";
 import { T } from './Styles/designTokens';
 import { StatCard } from './Component/StatCard';
 import { PropertyCard } from './Component/PropertyCard';
@@ -7,9 +7,21 @@ import { PrimaryBtn, SecondaryBtn } from './Component/Buttons';
 import { PropertyDetailsModal } from './Component/PropertyDetailsModal';
 import { EditPropertyModal } from './Component/EditPropertyModal';
 
+const getActivityIcon = (type) => {
+  switch (type) {
+    case 'property_created':
+      return Plus;
+    case 'property_updated':
+      return Edit;
+    default:
+      return Activity;
+  }
+};
+
 export const MyProperties = ({ 
   properties, 
-  stats, 
+  stats,
+  activities = [],
   onAddProperty,
   onEditProperty,
   onViewDetails 
@@ -53,6 +65,7 @@ export const MyProperties = ({
         isOpen={showDetailsModal} 
         onClose={() => setShowDetailsModal(false)} 
         property={selectedProperty} 
+        onEdit={handleEdit}
       />
       <EditPropertyModal 
         isOpen={showEditModal} 
@@ -94,22 +107,25 @@ export const MyProperties = ({
       {/* Recent Activity */}
       <div style={{ marginBottom: "2.5rem" }}>
         <h2 style={{ fontSize: "1.25rem", fontWeight: 600, color: T.textPrimary, marginBottom: "1rem" }}>Recent Activity</h2>
-        <div style={{ display: "flex", flexWrap: "wrap", gap: "10px" }}>
-          <div style={{
-            background: T.amber, color: T.navy, padding: "10px 16px",
-            borderRadius: "8px", fontSize: "0.85rem", fontWeight: 500,
-            display: "flex", alignItems: "center", gap: "8px"
-          }}>
-            <AlertCircle size={16} /> Garden Flat is vacant. Action needed.
+        {activities.length === 0 ? (
+          <p style={{ color: T.textMuted, fontSize: "0.85rem" }}>No recent activity to show.</p>
+        ) : (
+          <div style={{ display: "flex", flexWrap: "wrap", gap: "10px" }}>
+            {activities.map(activity => {
+              const IconComponent = getActivityIcon(activity.activity_type);
+              return (
+                <div key={activity.id} style={{
+                  background: T.cardBg, border: `1px solid ${T.border}`, padding: "10px 16px",
+                  borderRadius: "8px", fontSize: "0.85rem", fontWeight: 500,
+                  display: "flex", alignItems: "center", gap: "8px", color: T.textPrimary
+                }}>
+                  <IconComponent size={16} color={T.accent} />
+                  {activity.activity_description}
+                </div>
+              );
+            })}
           </div>
-          <div style={{
-            background: T.accent, color: "#fff", padding: "10px 16px",
-            borderRadius: "8px", fontSize: "0.85rem", fontWeight: 500,
-            display: "flex", alignItems: "center", gap: "8px"
-          }}>
-            <MailOpen size={16} /> New message from Sarah Williams.
-          </div>
-        </div>
+        )}
       </div>
 
       {/* Property Listings */}

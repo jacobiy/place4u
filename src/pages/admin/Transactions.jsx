@@ -1,68 +1,7 @@
 import React, { useMemo, useState } from 'react'
 import { Download, Flag } from 'lucide-react'
 
-const mockTransactions = [
-  {
-    id: '#TXN-9041',
-    payer: { name: 'Sarah Boateng', initials: 'SB', role: 'Tenant', color: 'bg-amber-100 text-amber-800' },
-    payee: { name: 'Michael Nkosi', initials: 'MN', role: 'Landlord', color: 'bg-blue-100 text-blue-800' },
-    type: 'Rent',
-    property: '12 Oak Ave, 3B',
-    amount: 1850,
-    date: '13 May 2026',
-    time: '09:14 AM',
-    method: 'Card',
-    status: 'Completed'
-  },
-  {
-    id: '#TXN-9040',
-    payer: { name: 'David Mensah', initials: 'DM', role: 'Agent', color: 'bg-indigo-100 text-indigo-800' },
-    payee: { name: 'James Osei', initials: 'JO', role: 'Landlord', color: 'bg-emerald-100 text-emerald-800' },
-    type: 'Commission',
-    property: '45 Palm Grove',
-    amount: 4200,
-    date: '12 May 2026',
-    time: '03:42 PM',
-    method: 'Bank',
-    status: 'Completed'
-  },
-  {
-    id: '#TXN-9039',
-    payer: { name: 'Amara Kamara', initials: 'AK', role: 'Tenant', color: 'bg-pink-100 text-pink-800' },
-    payee: { name: 'Michael Nkosi', initials: 'MN', role: 'Landlord', color: 'bg-blue-100 text-blue-800' },
-    type: 'Rent',
-    property: '8 Riverside Close',
-    amount: 2100,
-    date: '12 May 2026',
-    time: '11:05 AM',
-    method: 'Card',
-    status: 'Pending'
-  },
-  {
-    id: '#TXN-9038',
-    payer: { name: 'James Osei', initials: 'JO', role: 'Landlord', color: 'bg-emerald-100 text-emerald-800' },
-    payee: { name: 'ServicePro Ltd', initials: 'SV', role: 'Contractor', color: 'bg-slate-100 text-slate-600' },
-    type: 'Maintenance',
-    property: '5 Highland Blvd',
-    amount: 620,
-    date: '11 May 2026',
-    time: '02:30 PM',
-    method: 'Bank',
-    status: 'Failed'
-  },
-  {
-    id: '#TXN-9037',
-    payer: { name: 'Kwame Asante', initials: 'KA', role: 'Tenant', color: 'bg-purple-100 text-purple-800' },
-    payee: { name: 'Fatima Toure', initials: 'FT', role: 'Agent', color: 'bg-indigo-100 text-indigo-800' },
-    type: 'Rent',
-    property: '22 Sunrise Park',
-    amount: 14500,
-    date: '10 May 2026',
-    time: '11:58 PM',
-    method: 'Card',
-    status: 'Flagged'
-  }
-]
+const mockTransactions = [];
 
 const money = (value) =>
   `R${Number(value ?? 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
@@ -100,29 +39,24 @@ const TransactionsPage = () => {
     <div className="space-y-5">
       <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
         <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-5">
-          <p className="text-slate-500 text-xs font-semibold uppercase tracking-wide mb-2">Total Volume (May)</p>
-          <p className="text-[#0F1E35] text-2xl font-bold">R847,230</p>
-          <p className="text-slate-400 text-[11px] mt-1.5">+14.2% vs Apr</p>
+          <p className="text-slate-500 text-xs font-semibold uppercase tracking-wide mb-2">Total Volume</p>
+          <p className="text-[#0F1E35] text-2xl font-bold">R0</p>
         </div>
         <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-5">
           <p className="text-slate-500 text-xs font-semibold uppercase tracking-wide mb-2">Completed</p>
-          <p className="text-emerald-600 text-2xl font-bold">3,842</p>
-          <p className="text-slate-400 text-[11px] mt-1.5">94.1% success rate</p>
+          <p className="text-emerald-600 text-2xl font-bold">0</p>
         </div>
         <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-5">
           <p className="text-slate-500 text-xs font-semibold uppercase tracking-wide mb-2">Pending</p>
-          <p className="text-amber-500 text-2xl font-bold">148</p>
-          <p className="text-slate-400 text-[11px] mt-1.5">Awaiting confirmation</p>
+          <p className="text-amber-500 text-2xl font-bold">0</p>
         </div>
         <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-5">
           <p className="text-slate-500 text-xs font-semibold uppercase tracking-wide mb-2">Failed / Refunded</p>
-          <p className="text-red-500 text-2xl font-bold">93</p>
-          <p className="text-slate-400 text-[11px] mt-1.5">+3 vs yesterday</p>
+          <p className="text-red-500 text-2xl font-bold">0</p>
         </div>
         <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-5">
           <p className="text-slate-500 text-xs font-semibold uppercase tracking-wide mb-2">Flagged</p>
-          <p className="text-red-500 text-2xl font-bold">3</p>
-          <p className="text-slate-400 text-[11px] mt-1.5">Requires review</p>
+          <p className="text-red-500 text-2xl font-bold">0</p>
         </div>
       </section>
 

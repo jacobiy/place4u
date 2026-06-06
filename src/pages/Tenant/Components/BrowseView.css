@@ -1,0 +1,5 @@
+.custom-scrollbar::-webkit-scrollbar { width: 4px; }
+.custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+.custom-scrollbar::-webkit-scrollbar-thumb { background: #32353d; border-radius: 10px; }
+.glass-tag { background: rgba(16, 19, 27, 0.6); backdrop-filter: blur(8px); }
+.btn-glow:hover { box-shadow: 0 0 15px rgba(85, 141, 255, 0.4); }

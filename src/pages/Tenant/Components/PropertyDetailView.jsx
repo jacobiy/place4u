@@ -20,8 +20,14 @@ import {
 export default function PropertyDetailView({ property, onBack, onApplyClick }) {
   const [activeImage, setActiveImage] = useState(0)
 
-  const nextImage = () => setActiveImage((prev) => (prev + 1) % property.images.length)
-  const prevImage = () => setActiveImage((prev) => (prev - 1 + property.images.length) % property.images.length)
+  const images = (property.image_urls && property.image_urls.length > 0) 
+    ? property.image_urls 
+    : (property.images && property.images.length > 0) 
+      ? property.images 
+      : ["https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=800&auto=format&fit=crop&q=60"];
+
+  const nextImage = () => setActiveImage((prev) => (prev + 1) % images.length)
+  const prevImage = () => setActiveImage((prev) => (prev - 1 + images.length) % images.length)
 
   const amenityIcons = {
     'Fitness Center': Dumbbell,
@@ -66,7 +72,7 @@ export default function PropertyDetailView({ property, onBack, onApplyClick }) {
       <div className="max-w-7xl mx-auto px-8 pt-8 grid grid-cols-1 lg:grid-cols-12 gap-8">
         <div className="lg:col-span-8 space-y-12">
           <div className="relative rounded-3xl overflow-hidden aspect-video group">
-            <img src={property.images[activeImage]} alt={property.title} className="w-full h-full object-cover" />
+            <img src={images[activeImage]} alt={property.title || "Property"} className="w-full h-full object-cover" />
 
             <div className="absolute inset-0 flex items-center justify-between px-4 opacity-0 group-hover:opacity-100 transition-opacity">
               <button
@@ -86,7 +92,7 @@ export default function PropertyDetailView({ property, onBack, onApplyClick }) {
             </div>
 
             <div className="absolute bottom-6 left-1/2 -translate-x-1/2 bg-black/40 backdrop-blur-xl p-2 rounded-2xl border border-white/10 flex gap-2 w-[90%] overflow-x-auto">
-              {property.images.map((img, idx) => (
+              {images.map((img, idx) => (
                 <button
                   key={img}
                   onClick={() => setActiveImage(idx)}
@@ -107,7 +113,7 @@ export default function PropertyDetailView({ property, onBack, onApplyClick }) {
                 <FileText size={14} />
                 <span>Description</span>
               </div>
-              <p className="text-white/70 leading-relaxed">{property.description}</p>
+              <p className="text-white/70 leading-relaxed">{property.description || "No description provided for this property."}</p>
             </div>
 
             <div className="space-y-4">
@@ -133,7 +139,7 @@ export default function PropertyDetailView({ property, onBack, onApplyClick }) {
               <span>Amenities</span>
             </div>
             <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
-              {property.amenities.map((amenity) => {
+              {(property.amenities || []).map((amenity) => {
                 const Icon = amenityIcons[amenity] || Grid
                 return (
                   <div key={amenity} className="flex items-center gap-3 text-white/70">
@@ -153,7 +159,7 @@ export default function PropertyDetailView({ property, onBack, onApplyClick }) {
             <div className="absolute -top-24 -right-24 w-48 h-48 bg-blue-600/20 rounded-full blur-3xl group-hover:bg-blue-600/30 transition-all duration-700" />
 
             <div className="relative">
-              <div className="text-4xl font-bold mb-1">{property.price}</div>
+              <div className="text-4xl font-bold mb-1">R{property.price || 0}</div>
               <div className="text-white/40 text-sm">Utilities Included</div>
             </div>
 
@@ -178,10 +184,10 @@ export default function PropertyDetailView({ property, onBack, onApplyClick }) {
             </div>
             <div className="glass rounded-3xl p-6 space-y-6">
               <div className="flex items-center gap-4">
-                <img src={property.agent.imageUrl} alt="" className="w-14 h-14 rounded-2xl object-cover" />
+                <img src={property.landlord?.profile_image_url || property.agent?.imageUrl || "https://images.unsplash.com/photo-1560250097-0b93528c311a?w=400&auto=format&fit=crop&q=60"} alt="" className="w-14 h-14 rounded-2xl object-cover" />
                 <div>
-                  <div className="font-bold text-lg leading-tight">{property.agent.name}</div>
-                  <div className="text-white/40 text-xs font-medium uppercase tracking-wider">{property.agent.role}</div>
+                  <div className="font-bold text-lg leading-tight">{property.landlord?.full_name || property.agent?.name || "Place4U Agent"}</div>
+                  <div className="text-white/40 text-xs font-medium uppercase tracking-wider">{property.agent?.role || "Listing Agent"}</div>
                 </div>
               </div>
 
@@ -190,13 +196,13 @@ export default function PropertyDetailView({ property, onBack, onApplyClick }) {
                   <div className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center group-hover:bg-blue-500/20 group-hover:text-blue-400 transition-all">
                     <Phone size={16} />
                   </div>
-                  <span className="text-sm font-medium">{property.agent.phone}</span>
+                  <span className="text-sm font-medium">{property.landlord?.phone || property.agent?.phone || "(555) 123-4567"}</span>
                 </div>
                 <div className="flex items-center gap-3 text-white/60 hover:text-white transition-colors cursor-pointer group">
                   <div className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center group-hover:bg-blue-500/20 group-hover:text-blue-400 transition-all">
                     <Mail size={16} />
                   </div>
-                  <span className="text-sm font-medium">{property.agent.email}</span>
+                  <span className="text-sm font-medium">{property.landlord?.email || property.agent?.email || "contact@place4u.com"}</span>
                 </div>
               </div>
 

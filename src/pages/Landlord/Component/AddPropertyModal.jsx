@@ -16,7 +16,7 @@ const defaultForm = {
   pet_friendly: false,
   available_from: "",
   is_active: true,
-  imageFile: null
+  imageFiles: []
 };
 
 export const AddPropertyModal = ({ isOpen, onClose, onCreate, isCreating }) => {
@@ -78,7 +78,7 @@ export const AddPropertyModal = ({ isOpen, onClose, onCreate, isCreating }) => {
       pet_friendly: !!formData.pet_friendly,
       available_from: formData.available_from || null,
       is_active: !!formData.is_active,
-      imageFile: formData.imageFile || null
+      imageFiles: formData.imageFiles || []
     };
 
     await onCreate?.(payload);
@@ -177,8 +177,13 @@ export const AddPropertyModal = ({ isOpen, onClose, onCreate, isCreating }) => {
             />
           </div>
           <div>
-            <label style={labelStyle}>Photo (optional)</label>
-            <input type="file" accept="image/*" onChange={(e) => setFormData({ ...formData, imageFile: e.target.files?.[0] || null })} style={inputStyle} />
+            <label style={labelStyle}>Photos (optional)</label>
+            <input type="file" accept="image/*" multiple onChange={(e) => setFormData({ ...formData, imageFiles: Array.from(e.target.files || []) })} style={inputStyle} />
+            {formData.imageFiles?.length > 0 && (
+              <div style={{ fontSize: "0.75rem", color: T.textSecondary, marginTop: "4px" }}>
+                {formData.imageFiles.length} file(s) selected
+              </div>
+            )}
           </div>
         </div>
 
