@@ -3,6 +3,7 @@ import { Search, Send, Phone, Video, Info, Shield, History, Layers, PlusCircle, 
 import { T } from "../Styles/designTokens";
 import { TenantQueries } from "../db/queries";
 import { useAuth } from "../../../hooks/useAuth";
+import { supabase } from "../../../utils/Supabase";
 
 const initials = (nameOrEmail) => {
   const raw = (nameOrEmail || "").trim();
@@ -18,7 +19,7 @@ export default function MessagesView({ profile }) {
   const [contacts, setContacts] = useState([]);
   const [contactQuery, setContactQuery] = useState("");
   const [selectedContact, setSelectedContact] = useState(null);
-  const [messages, setMessages] = useState([]);
+  const [allMessages, setAllMessages] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [composer, setComposer] = useState("");
   const [activeTab, setActiveTab] = useState("all"); // all, tenant, landlord, agent
@@ -44,33 +45,73 @@ export default function MessagesView({ profile }) {
   }, []);
 
   useEffect(() => {
+    if (!user?.id) {
+      setAllMessages([]);
+      return;
+    }
+
     let cancelled = false;
-    const loadThread = async () => {
-      if (!user?.id || !selectedContact?.id) {
-        setMessages([]);
-        return;
-      }
-      setError("");
-      const res = await TenantQueries.getDirectMessages(
-        user.id,
-        selectedContact.id,
-        200
-      );
+    const fetchAllMessages = async () => {
+      const res = await TenantQueries.getUserMessages(user.id);
       if (cancelled) return;
-      if (!res.success) setError(res.error || "Failed to load messages.");
-      setMessages(res.success ? res.data : []);
-      requestAnimationFrame(() => {
-        if (listRef.current) {
-          listRef.current.scrollTop = listRef.current.scrollHeight;
-        }
-      });
+      if (res.success) {
+        setAllMessages(res.data);
+      } else {
+        setError(res.error || "Failed to load messages.");
+      }
     };
 
-    loadThread();
+    fetchAllMessages();
+
+    const channel = supabase
+      .channel(`public:messages:user:${user.id}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "INSERT",
+          schema: "public",
+          table: "messages"
+        },
+        (payload) => {
+          const newMsg = payload.new;
+          if (newMsg.sender_id === user.id || newMsg.receiver_id === user.id) {
+            fetchAllMessages();
+          }
+        }
+      )
+      .subscribe();
+
     return () => {
       cancelled = true;
+      channel.unsubscribe();
     };
-  }, [user?.id, selectedContact?.id]);
+  }, [user?.id]);
+
+  const messages = useMemo(() => {
+    if (!user?.id || !selectedContact?.id) return [];
+    return allMessages.filter(
+      (m) =>
+        (m.sender_id === user.id && m.receiver_id === selectedContact.id) ||
+        (m.sender_id === selectedContact.id && m.receiver_id === user.id)
+    );
+  }, [allMessages, user?.id, selectedContact?.id]);
+
+  useEffect(() => {
+    requestAnimationFrame(() => {
+      if (listRef.current) {
+        listRef.current.scrollTop = listRef.current.scrollHeight;
+      }
+    });
+  }, [selectedContact?.id, messages.length]);
+
+  const contactLastMessages = useMemo(() => {
+    const map = {};
+    allMessages.forEach((m) => {
+      const otherUserId = m.sender_id === user?.id ? m.receiver_id : m.sender_id;
+      map[otherUserId] = m;
+    });
+    return map;
+  }, [allMessages, user?.id]);
 
   const filteredContacts = useMemo(() => {
     let result = contacts;
@@ -104,12 +145,7 @@ export default function MessagesView({ profile }) {
       content,
       created_at: new Date().toISOString()
     };
-    setMessages((prev) => [...prev, optimistic]);
-    requestAnimationFrame(() => {
-      if (listRef.current) {
-        listRef.current.scrollTop = listRef.current.scrollHeight;
-      }
-    });
+    setAllMessages((prev) => [...prev, optimistic]);
 
     const res = await TenantQueries.sendDirectMessage(
       user.id,
@@ -118,10 +154,11 @@ export default function MessagesView({ profile }) {
     );
     if (!res.success) {
       setError(res.error || "Failed to send message.");
+      setAllMessages((prev) => prev.filter((m) => m.id !== optimistic.id));
       return;
     }
 
-    setMessages((prev) =>
+    setAllMessages((prev) =>
       prev.map((m) => (m.id === optimistic.id ? res.data : m))
     );
   };
@@ -233,7 +270,11 @@ export default function MessagesView({ profile }) {
                       <h4 className="font-label-md text-label-md truncate" style={{ color: T.textPrimary }}>
                         {c.full_name || c.email}
                       </h4>
-                      <span className="font-label-xs text-label-xs" style={{ color: T.textMuted }}>Active</span>
+                      <span className="font-label-xs text-label-xs" style={{ color: T.textMuted }}>
+                        {contactLastMessages[c.id]
+                          ? new Date(contactLastMessages[c.id].created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+                          : "Active"}
+                      </span>
                     </div>
                     <div className="flex items-center gap-xs mb-1">
                       <span 
@@ -255,7 +296,7 @@ export default function MessagesView({ profile }) {
                       </span>
                     </div>
                     <p className="font-body-sm text-body-sm truncate" style={{ color: T.textSecondary }}>
-                      {c.email}
+                      {contactLastMessages[c.id] ? contactLastMessages[c.id].content : c.email}
                     </p>
                   </div>
                 </div>

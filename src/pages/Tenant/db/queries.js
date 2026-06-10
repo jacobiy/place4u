@@ -279,7 +279,7 @@ export const TenantQueries = {
   async getDirectMessages(userId, contactId, limit = 100) {
     try {
       const { data, error } = await supabase
-        .from('direct_messages')
+        .from('messages')
         .select('*')
         .or(`and(sender_id.eq.${userId},receiver_id.eq.${contactId}),and(sender_id.eq.${contactId},receiver_id.eq.${userId})`)
         .order('created_at', { ascending: true })
@@ -295,14 +295,29 @@ export const TenantQueries = {
   async sendDirectMessage(senderId, receiverId, content) {
     try {
       const { data, error } = await supabase
-        .from('direct_messages')
-        .insert([{ sender_id: senderId, receiver_id: receiverId, content }])
+        .from('messages')
+        .insert([{ sender_id: senderId, receiver_id: receiverId, content, created_at: new Date().toISOString() }])
         .select()
         .single();
       if (error) throw error;
       return { success: true, data };
     } catch (error) {
       console.error('Error sending message:', error);
+      return { success: false, error: error.message };
+    }
+  },
+
+  async getUserMessages(userId) {
+    try {
+      const { data, error } = await supabase
+        .from('messages')
+        .select('*')
+        .or(`sender_id.eq.${userId},receiver_id.eq.${userId}`)
+        .order('created_at', { ascending: true });
+      if (error) throw error;
+      return { success: true, data: data || [] };
+    } catch (error) {
+      console.error('Error fetching user messages:', error);
       return { success: false, error: error.message };
     }
   }
