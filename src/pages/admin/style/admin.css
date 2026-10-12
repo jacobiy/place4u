@@ -1,18 +1,74 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap');
 
 .admin-root {
-  font-family: 'Inter', system-ui, sans-serif;
+  font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+  font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
+}
+
+.admin-root .font-mono {
+  font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, monospace;
 }
 
 .sidebar-link {
-  transition: background 0.15s ease;
+  transition: all 0.15s ease-in-out;
 }
 
 .sidebar-link:hover {
-  background: rgba(255, 255, 255, 0.07);
+  background: rgba(255, 255, 255, 0.08);
 }
 
 .row-hover:hover {
   background: #f8fafc;
+}
+
+/* Custom crisp scrollbar for dense tables and sidebar */
+.admin-root ::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.admin-root ::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.admin-root ::-webkit-scrollbar-thumb {
+  background: rgba(100, 116, 139, 0.2);
+  border-radius: 9999px;
+}
+
+.admin-root ::-webkit-scrollbar-thumb:hover {
+  background: rgba(100, 116, 139, 0.4);
+}
+
+/* ==========================================================================
+   ADMIN DROPDOWN & SELECT OVERRIDES (Light Theme)
+   ========================================================================== */
+.admin-root select {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2364748b' stroke-width='2.2'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E") !important;
+  background-repeat: no-repeat !important;
+  background-position: right 0.65rem center !important;
+  background-size: 0.95rem 0.95rem !important;
+  padding-right: 2rem !important;
+  background-color: #f8fafc;
+  color: #1e293b;
+  border-color: #e2e8f0;
+  transition: all 0.15s ease-in-out;
+}
+
+.admin-root select:hover {
+  border-color: #94a3b8;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%232563eb' stroke-width='2.2'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E") !important;
+}
+
+.admin-root select:focus {
+  border-color: #2563eb !important;
+  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.15) !important;
+  background-color: #ffffff;
+}
+
+.admin-root select option {
+  background-color: #ffffff !important;
+  color: #0f172a !important;
+  padding: 8px 12px;
 }
 

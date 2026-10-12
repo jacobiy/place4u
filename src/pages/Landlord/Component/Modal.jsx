@@ -20,7 +20,13 @@ export const Modal = ({ isOpen, onClose, title, children, size = "md" }) => {
 
   if (!isOpen) return null;
 
-  const maxW = { sm: "28rem", md: "32rem", lg: "48rem", xl: "64rem", full: "80rem" }[size];
+  const maxW = {
+    sm: "28rem",
+    md: "32rem",
+    lg: "48rem",
+    xl: "68rem",
+    full: "min(96vw, 92rem)"
+  }[size] || "32rem";
 
   return (
     <div style={{ position: "fixed", inset: 0, zIndex: 50 }}>
@@ -40,7 +46,7 @@ export const Modal = ({ isOpen, onClose, title, children, size = "md" }) => {
             minHeight: "100%",
             alignItems: "center",
             justifyContent: "center",
-            padding: "1rem"
+            padding: "clamp(0.5rem, 2vw, 1rem)"
           }}
         >
           <div
@@ -52,21 +58,27 @@ export const Modal = ({ isOpen, onClose, title, children, size = "md" }) => {
               background: T.navyMid,
               borderRadius: "1rem",
               border: `1px solid ${T.border}`,
-              boxShadow: "0 25px 60px rgba(0,0,0,0.6)"
+              boxShadow: "0 25px 60px rgba(0,0,0,0.6)",
+              display: "flex",
+              flexDirection: "column",
+              height: size === "full" ? "calc(100dvh - clamp(0.75rem, 2vw, 1.5rem))" : "auto",
+              maxHeight: "calc(100dvh - clamp(1rem, 4vw, 2.5rem))",
+              overflow: "hidden"
             }}
           >
             <div
               style={{
-                padding: "1.25rem 1.5rem",
+                padding: "clamp(0.85rem, 3vw, 1.25rem) clamp(1rem, 3.5vw, 1.5rem)",
                 borderBottom: `1px solid ${T.border}`,
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "space-between",
                 borderRadius: "1rem 1rem 0 0",
-                background: "rgba(79,126,248,0.06)"
+                background: "rgba(79,126,248,0.06)",
+                flexShrink: 0
               }}
             >
-              <h3 style={{ fontSize: "1.1rem", fontWeight: 600, color: T.textPrimary }}>{title}</h3>
+              <h3 style={{ fontSize: "clamp(1rem, 3vw, 1.15rem)", fontWeight: 600, color: T.textPrimary }}>{title}</h3>
               <button
                 onClick={onClose}
                 style={{
@@ -86,7 +98,7 @@ export const Modal = ({ isOpen, onClose, title, children, size = "md" }) => {
                 <X size={16} color={T.textSecondary} />
               </button>
             </div>
-            <div style={{ padding: "1.5rem", maxHeight: "72vh", overflowY: "auto" }}>{children}</div>
+            <div style={{ padding: "clamp(1rem, 3vw, 1.5rem)", overflowY: "auto", flex: 1, WebkitOverflowScrolling: "touch" }}>{children}</div>
           </div>
         </div>
       </div>

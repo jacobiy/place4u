@@ -6,9 +6,13 @@
   "scripts": {
     "dev": "vite --host --port 1337",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "test": "node test-agent-dashboard.js",
+    "test:agent": "node test-agent-dashboard.js",
+    "test:properties": "node test-admin-property-management.js"
   },
   "dependencies": {
+    "@paypal/react-paypal-js": "^10.6.0",
     "@supabase/supabase-js": "^2.97.0",
     "@tailwindcss/vite": "^4.2.0",
     "framer-motion": "^12.34.2",

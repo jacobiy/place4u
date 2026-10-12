@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { Search, RefreshCw } from "lucide-react";
 import { SecondaryBtn } from "./Component/Buttons";
 import PropertyDetailView from "./PropertyDetailView";
+import Loading from "../../component/loading";
 import "./Properties.css";
 
 export const Properties = ({ properties, onRefresh, loading }) => {
@@ -56,7 +57,7 @@ export const Properties = ({ properties, onRefresh, loading }) => {
       </div>
 
       {loading ? (
-        <p className="properties-loading">Loading properties…</p>
+        <Loading message="Loading properties…" />
       ) : filtered.length === 0 ? (
         <div className="properties-empty-container">
           <p className="properties-empty-title">No properties found</p>

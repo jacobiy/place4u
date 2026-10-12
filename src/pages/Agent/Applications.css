@@ -60,14 +60,21 @@
     cursor: not-allowed;
   }
   
-  /* Search Styles */
-  .search-wrapper {
+  /* Search & Filter Row */
+  .search-filter-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
     margin-bottom: 2rem;
+    flex-wrap: wrap;
   }
   
   .search-container {
     position: relative;
-    max-width: 28rem;
+    flex: 1;
+    min-width: 280px;
+    max-width: 32rem;
   }
   
   .search-icon {
@@ -98,6 +105,36 @@
   
   .search-input::placeholder {
     color: #64748b;
+  }
+
+  .category-filter-buttons {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+  }
+
+  .cat-btn {
+    padding: 0.55rem 1rem;
+    border-radius: 0.6rem;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: #94a3b8;
+    font-size: 0.82rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+
+  .cat-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: #fff;
+  }
+
+  .cat-btn.active {
+    background: rgba(79, 126, 248, 0.2);
+    border-color: rgba(79, 126, 248, 0.5);
+    color: #7c9ffc;
   }
   
   /* Loading State */
@@ -201,20 +238,232 @@
     color: white;
   }
   
-  .tenant-icon {
-    color: #94a3b8;
+  .tenant-avatar-badge {
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #4f7ef8 0%, #7c5ef8 100%);
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 0.95rem;
+    flex-shrink: 0;
+    box-shadow: 0 4px 10px rgba(79, 126, 248, 0.3);
   }
-  
-  .tenant-email {
+
+  .applied-property-banner {
     display: flex;
     align-items: center;
     gap: 0.5rem;
+    padding: 0.5rem 0.75rem;
+    border-radius: 0.5rem;
+    background: rgba(79, 126, 248, 0.1);
+    border: 1px solid rgba(79, 126, 248, 0.2);
+    margin-bottom: 0.85rem;
+  }
+
+  .applied-property-banner .banner-icon {
+    color: #7c9ffc;
+    flex-shrink: 0;
+  }
+
+  .applied-property-banner .banner-text {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
     font-size: 0.75rem;
+    overflow: hidden;
+  }
+
+  .applied-property-banner .banner-label {
     color: #94a3b8;
+  }
+
+  .applied-property-banner .banner-title {
+    color: #ffffff;
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  /* Job Profile Snippet */
+  .job-profile-snippet {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 0.65rem;
+    padding: 0.65rem 0.85rem;
+    margin-bottom: 0.85rem;
+  }
+
+  .job-snippet-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    margin-bottom: 0.25rem;
+  }
+
+  .job-snippet-title {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: #ffffff;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .job-income-badge {
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: #10b981;
+    background: rgba(16, 185, 129, 0.12);
+    padding: 0.15rem 0.45rem;
+    border-radius: 0.35rem;
+    flex-shrink: 0;
+  }
+
+  .job-employer-line {
+    font-size: 0.72rem;
+    color: #94a3b8;
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+  }
+
+  .job-employer-line .bullet {
+    color: #64748b;
+  }
+
+  .job-employer-line .status-tag {
+    color: #cbd5e1;
+  }
+
+  /* Job Match Badge Container */
+  .job-match-badge-container {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.65rem 0.85rem;
+    border-radius: 0.65rem;
+    background: rgba(79, 126, 248, 0.06);
+    border: 1px dashed rgba(79, 126, 248, 0.3);
+    margin-bottom: 1rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+
+  .job-match-badge-container:hover {
+    background: rgba(79, 126, 248, 0.14);
+    border-color: #4f7ef8;
+    transform: translateY(-1px);
+  }
+
+  .match-score-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.3rem 0.6rem;
+    border-radius: 9999px;
+    border: 1px solid;
+    font-size: 0.76rem;
+    flex-shrink: 0;
+  }
+
+  .match-pill-details {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+  }
+
+  .match-ratio {
+    font-size: 0.72rem;
+    color: #94a3b8;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .match-verdict {
+    font-size: 0.74rem;
+    font-weight: 700;
+  }
+
+  /* App Card Actions */
+  .app-card-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.65rem;
+    margin-top: 1rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .action-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4rem;
+    padding: 0.55rem 0.75rem;
+    border-radius: 0.6rem;
+    font-size: 0.78rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border: none;
+    text-align: center;
+  }
+
+  .action-btn-docs {
+    background: rgba(16, 185, 129, 0.14);
+    border: 1px solid rgba(16, 185, 129, 0.35);
+    color: #10b981;
+  }
+
+  .action-btn-docs:hover {
+    background: rgba(16, 185, 129, 0.25);
+    color: #ffffff;
+  }
+
+  .action-btn-job {
+    background: rgba(79, 126, 248, 0.15);
+    border: 1px solid rgba(79, 126, 248, 0.35);
+    color: #7c9ffc;
+  }
+
+  .action-btn-job:hover {
+    background: rgba(79, 126, 248, 0.25);
+    color: #ffffff;
+  }
+
+  .status-label-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 0.5rem;
   }
   
   .application-meta {
     text-align: right;
+  }
+
+  .assigned-to-you-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    padding: 0.2rem 0.55rem;
+    border-radius: 9999px;
+    background: rgba(16, 185, 129, 0.15);
+    border: 1px solid rgba(16, 185, 129, 0.35);
+    color: #10b981;
+    font-size: 0.68rem;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    margin-bottom: 0.35rem;
   }
   
   .app-id {

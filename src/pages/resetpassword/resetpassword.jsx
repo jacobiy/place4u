@@ -1,8 +1,8 @@
-// ResetPassword.jsx
+// ResetPassword.jsx - Lead UI Designer Overhaul for Place4U
 import React, { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
-import { HiLockClosed, HiEye, HiEyeOff } from 'react-icons/hi'
-import { useNavigate } from 'react-router-dom'
+import { HiLockClosed, HiEye, HiEyeOff, HiCheckCircle } from 'react-icons/hi'
+import { Link, useNavigate } from 'react-router-dom'
 import { supabase } from '../../utils/Supabase'
 
 const ResetPassword = () => {
@@ -18,7 +18,6 @@ const ResetPassword = () => {
 	const navigate = useNavigate()
 
 	useEffect(() => {
-		// Check if we have a session (user came from reset email)
 		const checkSession = async () => {
 			const {
 				data: { session }
@@ -46,11 +45,11 @@ const ResetPassword = () => {
 
 		try {
 			if (formData.password.length < 8) {
-				throw new Error('Password must be at least 8 characters')
+				throw new Error('Password must be at least 8 characters long.')
 			}
 
 			if (formData.password !== formData.confirmPassword) {
-				throw new Error('Passwords do not match')
+				throw new Error('Passwords do not match.')
 			}
 
 			const { error } = await supabase.auth.updateUser({
@@ -59,99 +58,93 @@ const ResetPassword = () => {
 
 			if (error) throw error
 
-			setSuccess('Password updated successfully!')
+			setSuccess('Password updated successfully! Redirecting you to login...')
 			setTimeout(() => {
 				navigate('/login')
-			}, 2000)
+			}, 1800)
 		} catch (err) {
-			setError(err.message)
+			setError(err.message || 'Failed to update password. Please try again.')
 		} finally {
 			setLoading(false)
 		}
 	}
 
 	return (
-		<div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 flex items-center justify-center py-12 px-4">
-			<motion.div
-				initial={{ opacity: 0, y: 20 }}
-				animate={{ opacity: 1, y: 0 }}
-				className="max-w-md w-full bg-gray-800/50 backdrop-blur-xl p-8 rounded-2xl border border-gray-700"
-			>
-				<h2 className="text-2xl font-bold text-white mb-6">
-					Reset Your Password
-				</h2>
+		<div className="min-h-screen bg-slate-950 text-slate-100 flex items-center justify-center p-4 sm:p-6 bg-grid-subtle relative selection:bg-blue-600 selection:text-white">
+			<div className="max-w-md w-full bg-slate-900/90 backdrop-blur-2xl p-8 rounded-3xl border border-white/[0.1] shadow-2xl shadow-black/80">
+				<div className="text-center mb-6">
+					<Link to="/" className="inline-flex items-center gap-2 mb-4 group">
+						<img src="/logo.png" alt="Place4U" className="w-8 h-8 filter brightness-0 invert" />
+						<span className="font-bold text-white text-lg">Place4U</span>
+					</Link>
+					<h2 className="font-serif-display text-2xl font-normal text-white">
+						Set New Password
+					</h2>
+					<p className="text-slate-400 text-xs mt-1">
+						Create a secure password with at least 8 characters.
+					</p>
+				</div>
 
 				{error && (
-					<div className="bg-red-500/10 border border-red-500/30 text-red-400 px-4 py-3 rounded-lg text-sm mb-4">
+					<div className="mb-4 p-3 rounded-xl bg-red-950/40 border border-red-500/30 text-red-300 text-xs">
 						{error}
 					</div>
 				)}
 
 				{success && (
-					<div className="bg-green-500/10 border border-green-500/30 text-green-400 px-4 py-3 rounded-lg text-sm mb-4">
-						{success}
+					<div className="mb-4 p-3 rounded-xl bg-emerald-950/40 border border-emerald-500/30 text-emerald-300 text-xs flex items-center gap-2">
+						<HiCheckCircle className="w-4 h-4 text-emerald-400 flex-shrink-0" />
+						<span>{success}</span>
 					</div>
 				)}
 
 				<form onSubmit={handleSubmit} className="space-y-4">
-					{/* New Password */}
 					<div>
-						<label className="block text-sm font-medium text-gray-300 mb-2">
+						<label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1.5">
 							New Password
 						</label>
 						<div className="relative">
+							<HiLockClosed className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500 w-4 h-4" />
 							<input
 								name="password"
 								type={showPassword ? 'text' : 'password'}
 								required
 								value={formData.password}
 								onChange={handleChange}
-								className="w-full pl-4 pr-10 py-3 bg-gray-700/50 border border-gray-600 rounded-lg 
-                         text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-								placeholder="••••••••"
+								placeholder="••••••••••••"
+								className="w-full pl-10 pr-10 py-2.5 bg-slate-950/80 border border-white/10 rounded-xl text-sm text-white placeholder-slate-600 focus:outline-none focus:border-blue-500"
 							/>
 							<button
 								type="button"
 								onClick={() => setShowPassword(!showPassword)}
-								className="absolute inset-y-0 right-0 pr-3 flex items-center"
+								className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300"
 							>
-								{showPassword ? (
-									<HiEyeOff className="text-gray-400" />
-								) : (
-									<HiEye className="text-gray-400" />
-								)}
+								{showPassword ? <HiEyeOff className="w-4 h-4" /> : <HiEye className="w-4 h-4" />}
 							</button>
 						</div>
 					</div>
 
-					{/* Confirm Password */}
 					<div>
-						<label className="block text-sm font-medium text-gray-300 mb-2">
-							Confirm Password
+						<label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1.5">
+							Confirm New Password
 						</label>
 						<div className="relative">
+							<HiLockClosed className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500 w-4 h-4" />
 							<input
 								name="confirmPassword"
 								type={showConfirmPassword ? 'text' : 'password'}
 								required
 								value={formData.confirmPassword}
 								onChange={handleChange}
-								className="w-full pl-4 pr-10 py-3 bg-gray-700/50 border border-gray-600 rounded-lg 
-                         text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-								placeholder="••••••••"
+								placeholder="••••••••••••"
+								className="w-full pl-10 pr-10 py-2.5 bg-slate-950/80 border border-white/10 rounded-xl text-sm text-white placeholder-slate-600 focus:outline-none focus:border-blue-500"
 							/>
 							<button
 								type="button"
-								onClick={() =>
-									setShowConfirmPassword(!showConfirmPassword)
-								}
-								className="absolute inset-y-0 right-0 pr-3 flex items-center"
+								onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+								className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300"
 							>
-								{showConfirmPassword ? (
-									<HiEyeOff className="text-gray-400" />
-								) : (
-									<HiEye className="text-gray-400" />
-								)}
+								{showConfirmPassword ? <HiEyeOff className="w-4 h-4" /> : <HiEye className="w-4 h-4" />}
 							</button>
 						</div>
 					</div>
@@ -159,14 +152,18 @@ const ResetPassword = () => {
 					<button
 						type="submit"
 						disabled={loading}
-						className="w-full py-3 px-4 bg-gradient-to-r from-blue-600 to-blue-700 
-                     text-white rounded-lg font-medium hover:from-blue-700 hover:to-blue-800 
-                     transition-all duration-300 disabled:opacity-50"
+						className="btn-tactile w-full py-3 px-4 bg-blue-600 hover:bg-blue-500 active:bg-blue-700 text-white rounded-xl font-semibold text-sm shadow-lg shadow-blue-600/30 transition-all disabled:opacity-50 mt-2"
 					>
-						{loading ? 'Updating...' : 'Update Password'}
+						{loading ? 'Updating Password...' : 'Save New Password'}
 					</button>
+
+					<div className="text-center pt-2">
+						<Link to="/login" className="text-xs text-slate-400 hover:text-white transition-colors">
+							Cancel and return to sign in
+						</Link>
+					</div>
 				</form>
-			</motion.div>
+			</div>
 		</div>
 	)
 }

@@ -1,8 +1,9 @@
-import React, { useMemo, useState } from 'react'
-import { Bed, Bath, Grid, List as ListIcon, MapPin, Heart, SlidersHorizontal, Search, ChevronDown } from 'lucide-react'
+import React, { useMemo, useState, useRef, useEffect } from 'react'
+import { Bed, Bath, Grid, List as ListIcon, MapPin, Heart, SlidersHorizontal, Search, ChevronDown, Check } from 'lucide-react'
 import './BrowseView.css'
+import { AlertToast } from '../../../component/AlertModal'
 
-export default function BrowseView({ properties = [], onPropertyClick, onApplyClick }) {
+export default function BrowseView({ properties = [], savedPropertyIds = [], onToggleSaveProperty, onPropertyClick, onApplyClick }) {
   const [view, setView] = useState('grid')
   const [query, setQuery] = useState('')
   const [priceMin, setPriceMin] = useState(0)
@@ -10,8 +11,24 @@ export default function BrowseView({ properties = [], onPropertyClick, onApplyCl
   const [selectedType, setSelectedType] = useState('All Types')
   const [bedsMin, setBedsMin] = useState(0)
   const [bathsMin, setBathsMin] = useState(0)
+  const [toast, setToast] = useState(null)
   
   const [typeDropdownOpen, setTypeDropdownOpen] = useState(false)
+  const typeDropdownRef = useRef(null)
+
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (typeDropdownRef.current && !typeDropdownRef.current.contains(e.target)) {
+        setTypeDropdownOpen(false)
+      }
+    }
+    if (typeDropdownOpen) {
+      document.addEventListener('mousedown', handleClickOutside)
+    }
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside)
+    }
+  }, [typeDropdownOpen])
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase()
@@ -46,6 +63,19 @@ export default function BrowseView({ properties = [], onPropertyClick, onApplyCl
     setBathsMin(0)
   }
 
+  const handleToggleSave = (p, e) => {
+    if (e) e.stopPropagation();
+    const wasSaved = savedPropertyIds.includes(p.id);
+    if (onToggleSaveProperty) onToggleSaveProperty(p.id);
+    setToast({
+      type: 'success',
+      title: wasSaved ? 'Removed from Wishlist' : 'Saved to Wishlist',
+      message: wasSaved
+        ? `Removed "${p.title || 'Property'}" from your saved shortlist.`
+        : `Added "${p.title || 'Property'}" to your saved shortlist.`
+    });
+  };
+
   const getImageUrl = (p) => {
     if (p?.image_urls?.length > 0) return p.image_urls[0];
     if (p?.images?.length > 0) return p.images[0];
@@ -54,6 +84,8 @@ export default function BrowseView({ properties = [], onPropertyClick, onApplyCl
 
   return (
     <div className="flex-1 flex flex-col h-full bg-[#10131b] text-[#e1e2ed] font-['Inter'] overflow-hidden shadow-2xl relative z-10">
+      {/* Toast Notification Container */}
+      <AlertToast toast={toast} onClose={() => setToast(null)} />
       
       <div className="flex-1 overflow-y-auto custom-scrollbar p-6 pt-6 mx-auto w-full">
         <div className="flex flex-col gap-8 max-w-[1400px] mx-auto">
@@ -118,25 +150,42 @@ export default function BrowseView({ properties = [], onPropertyClick, onApplyCl
             {/* Property Type Filter */}
             <div className="flex items-center gap-3 pr-4 border-r border-[#424654] relative group">
               <span className="text-xs font-semibold text-[#8c90a0] uppercase tracking-wider whitespace-nowrap">Type</span>
-              <div className="relative">
+              <div className="relative" ref={typeDropdownRef}>
                 <button 
                   onClick={() => setTypeDropdownOpen(!typeDropdownOpen)}
-                  className="flex items-center gap-2 bg-[#32353d] px-4 py-1.5 rounded-lg text-sm text-[#c2c6d7] hover:text-[#e1e2ed] transition-colors"
+                  className={`flex items-center gap-2.5 px-3.5 py-1.5 rounded-xl text-sm font-medium transition-all border outline-none ${
+                    typeDropdownOpen
+                      ? 'bg-slate-800 text-white border-blue-500/60 shadow-lg shadow-blue-500/10'
+                      : 'bg-[#32353d] text-[#c2c6d7] hover:text-[#e1e2ed] hover:bg-[#3a3e47] border-white/5'
+                  }`}
                 >
                   <span>{selectedType}</span>
-                  <ChevronDown size={16} />
+                  <ChevronDown
+                    size={15}
+                    className={`transition-transform duration-200 ${
+                      typeDropdownOpen ? 'rotate-180 text-blue-400' : 'text-slate-400'
+                    }`}
+                  />
                 </button>
                 {typeDropdownOpen && (
-                  <div className="absolute top-full left-0 mt-2 w-40 bg-[#272a32] border border-[#424654] rounded-lg shadow-xl overflow-hidden z-50">
-                    {['All Types', 'Apartment', 'House', 'Condo', 'Townhouse'].map(t => (
-                      <button 
-                        key={t}
-                        onClick={() => { setSelectedType(t); setTypeDropdownOpen(false); }}
-                        className="w-full text-left px-4 py-2 text-sm text-[#c2c6d7] hover:bg-[#32353d] hover:text-[#e1e2ed]"
-                      >
-                        {t}
-                      </button>
-                    ))}
+                  <div className="dropdown-menu-popover absolute top-full left-0 mt-2 w-48 bg-slate-900/95 backdrop-blur-xl border border-white/10 rounded-xl shadow-2xl p-1.5 z-50">
+                    {['All Types', 'Apartment', 'House', 'Condo', 'Townhouse'].map((t) => {
+                      const isSelected = selectedType === t
+                      return (
+                        <button 
+                          key={t}
+                          onClick={() => { setSelectedType(t); setTypeDropdownOpen(false); }}
+                          className={`w-full flex items-center justify-between px-3 py-2 text-sm rounded-lg transition-all ${
+                            isSelected
+                              ? 'bg-blue-600/20 text-blue-400 font-medium'
+                              : 'text-slate-300 hover:bg-white/[0.06] hover:text-white'
+                          }`}
+                        >
+                          <span>{t}</span>
+                          {isSelected && <Check size={14} className="text-blue-400" />}
+                        </button>
+                      )
+                    })}
                   </div>
                 )}
               </div>
@@ -210,8 +259,17 @@ export default function BrowseView({ properties = [], onPropertyClick, onApplyCl
                       <p className="text-lg text-[#c2c6d7]">{featured.bedrooms} Bed {featured.property_type} • {featured.city}</p>
                     </div>
                     <div className="flex gap-4">
-                      <button className="w-12 h-12 glass-tag flex items-center justify-center rounded-full text-white hover:bg-white hover:text-[#10131b] transition-all">
-                        <Heart size={20} />
+                      <button 
+                        type="button"
+                        onClick={(e) => handleToggleSave(featured, e)}
+                        className="w-12 h-12 glass-tag flex items-center justify-center rounded-full text-white hover:bg-white hover:text-[#10131b] transition-all"
+                        style={{
+                          background: savedPropertyIds.includes(featured.id) ? 'rgba(244,63,94,0.25)' : undefined,
+                          borderColor: savedPropertyIds.includes(featured.id) ? '#f43f5e' : undefined,
+                          color: savedPropertyIds.includes(featured.id) ? '#f43f5e' : '#fff'
+                        }}
+                      >
+                        <Heart size={20} fill={savedPropertyIds.includes(featured.id) ? '#f43f5e' : 'none'} />
                       </button>
                       <button 
                         onClick={(e) => { e.stopPropagation(); onApplyClick && onApplyClick(featured); }}
@@ -232,11 +290,13 @@ export default function BrowseView({ properties = [], onPropertyClick, onApplyCl
             </div>
             
             <div className={view === 'grid' ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" : "flex flex-col gap-6"}>
-              {listings.map((p) => (
+              {listings.map((p) => {
+                const isSaved = savedPropertyIds.includes(p.id);
+                return (
                 <div 
                   key={p.id}
                   onClick={() => onPropertyClick && onPropertyClick(p)}
-                  className={`bg-[#191b23] rounded-xl border border-[#424654] flex ${view === 'grid' ? 'flex-col' : 'flex-row h-48'} overflow-hidden group hover:border-[#b0c6ff]/50 transition-all cursor-pointer`}
+                  className={`bg-[#191b23] rounded-xl border border-[#424654] flex ${view === 'grid' ? 'flex-col' : 'flex-row h-48'} overflow-hidden group hover:border-[#b0c6ff]/50 transition-all cursor-pointer relative`}
                 >
                   <div className={`relative overflow-hidden shrink-0 ${view === 'grid' ? 'w-full h-48' : 'w-64 h-full'}`}>
                     <img 
@@ -247,6 +307,18 @@ export default function BrowseView({ properties = [], onPropertyClick, onApplyCl
                     <div className="absolute top-4 left-4 glass-tag px-3 py-1 rounded text-[10px] font-bold uppercase tracking-wider text-white">
                       {p.property_type || 'Listing'}
                     </div>
+                    <button
+                      type="button"
+                      onClick={(e) => handleToggleSave(p, e)}
+                      className="absolute top-4 right-4 w-8 h-8 glass-tag flex items-center justify-center rounded-full text-white hover:bg-white hover:text-[#10131b] transition-all z-10"
+                      style={{
+                        background: isSaved ? 'rgba(244,63,94,0.3)' : undefined,
+                        borderColor: isSaved ? '#f43f5e' : undefined,
+                        color: isSaved ? '#f43f5e' : '#fff'
+                      }}
+                    >
+                      <Heart size={15} fill={isSaved ? '#f43f5e' : 'none'} />
+                    </button>
                   </div>
                   <div className="p-4 flex flex-col flex-1">
                     <div className="mb-4">
@@ -268,7 +340,8 @@ export default function BrowseView({ properties = [], onPropertyClick, onApplyCl
                     </div>
                   </div>
                 </div>
-              ))}
+              );
+            })}
             </div>
 
             {!filtered.length && (

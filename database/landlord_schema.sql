@@ -119,13 +119,63 @@ BEGIN
   NEW.updated_at = now();
   RETURN NEW;
 END;
-$$ language 'plpgsql';
+$$ LANGUAGE plpgsql;
 
 DROP TRIGGER IF EXISTS update_landlord_profiles_updated_at ON public.landlord_profiles;
 CREATE TRIGGER update_landlord_profiles_updated_at
   BEFORE UPDATE ON public.landlord_profiles
   FOR EACH ROW
   EXECUTE FUNCTION public.update_updated_at_column();
+
+-- Row Level Security (RLS) for landlord_profiles
+ALTER TABLE public.landlord_profiles ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "landlord_profiles_select_policy" ON public.landlord_profiles;
+CREATE POLICY "landlord_profiles_select_policy"
+  ON public.landlord_profiles
+  FOR SELECT
+  TO authenticated
+  USING (
+    auth.uid() = user_id
+    OR auth.role() = 'service_role'
+  );
+
+DROP POLICY IF EXISTS "landlord_profiles_insert_policy" ON public.landlord_profiles;
+CREATE POLICY "landlord_profiles_insert_policy"
+  ON public.landlord_profiles
+  FOR INSERT
+  TO authenticated
+  WITH CHECK (
+    auth.uid() = user_id
+    OR auth.role() = 'service_role'
+  );
+
+DROP POLICY IF EXISTS "landlord_profiles_update_policy" ON public.landlord_profiles;
+CREATE POLICY "landlord_profiles_update_policy"
+  ON public.landlord_profiles
+  FOR UPDATE
+  TO authenticated
+  USING (
+    auth.uid() = user_id
+    OR auth.role() = 'service_role'
+  )
+  WITH CHECK (
+    auth.uid() = user_id
+    OR auth.role() = 'service_role'
+  );
+
+DROP POLICY IF EXISTS "landlord_profiles_delete_policy" ON public.landlord_profiles;
+CREATE POLICY "landlord_profiles_delete_policy"
+  ON public.landlord_profiles
+  FOR DELETE
+  TO authenticated
+  USING (
+    auth.uid() = user_id
+    OR auth.role() = 'service_role'
+  );
+
+GRANT ALL ON public.landlord_profiles TO authenticated;
+GRANT ALL ON public.landlord_profiles TO service_role;
 
 -- 3) Optional: direct messages table used by the landlord Messages UI
 -- If you already have messaging tables, adjust the frontend queries accordingly.

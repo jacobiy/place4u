@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { Home, FileText, Building, MessageSquare, User, Settings, LogOut, ChevronDown } from "lucide-react";
+import { Home, FileText, Building, Wallet, User, Settings, LogOut, ChevronDown, Lock } from "lucide-react";
 import { T } from "./Styles/designTokens";
 
 const initials = (nameOrEmail) => {
@@ -11,23 +11,24 @@ const initials = (nameOrEmail) => {
   return `${parts[0][0]}${parts[parts.length - 1][0]}`.toUpperCase();
 };
 
-export const Sidebar = ({ activeView, setActiveView, onLogout, profile, user }) => {
+export const Sidebar = ({ activeView, setActiveView, onLogout, profile, agentProfile, user }) => {
   const [isProfileOpen, setIsProfileOpen] = useState(false);
-  const displayName = profile?.full_name || user?.user_metadata?.full_name || user?.email || "Agent";
+  const displayName = profile?.full_name || agentProfile?.full_name || user?.user_metadata?.full_name || user?.email || "Agent";
+  const isAgentVerified = Boolean(agentProfile?.is_verified === true);
 
   const navItems = useMemo(
     () => [
       { id: "dashboard", icon: Home, label: "Dashboard" },
-      { id: "applications", icon: FileText, label: "Applications" },
-      { id: "properties", icon: Building, label: "Properties" },
-      { id: "messages", icon: MessageSquare, label: "Messages" },
+      { id: "applications", icon: FileText, label: "Applications", locked: !isAgentVerified },
+      { id: "properties", icon: Building, label: "Properties", locked: !isAgentVerified },
+      { id: "wallet", icon: Wallet, label: "Wallet & Earnings", locked: !isAgentVerified },
       { id: "profile", icon: User, label: "Profile" },
       { id: "settings", icon: Settings, label: "Settings" }
     ],
-    []
+    [isAgentVerified]
   );
 
-  const NavItem = ({ id, icon: Icon, label }) => {
+  const NavItem = ({ id, icon: Icon, label, locked }) => {
     const active = activeView === id;
     return (
       <button
@@ -41,13 +42,14 @@ export const Sidebar = ({ activeView, setActiveView, onLogout, profile, user }) 
           width: "100%",
           border: "none",
           background: active ? "rgba(79,126,248,0.15)" : "transparent",
-          color: active ? T.accent : T.textSecondary,
+          color: active ? T.accent : locked ? T.textMuted : T.textSecondary,
           fontSize: "0.85rem",
           fontWeight: active ? 600 : 400,
           cursor: "pointer",
           fontFamily: "inherit",
           transition: "all 0.15s",
-          marginBottom: "4px"
+          marginBottom: "4px",
+          opacity: locked && !active ? 0.75 : 1
         }}
         onMouseEnter={(e) => {
           if (!active) {
@@ -58,12 +60,17 @@ export const Sidebar = ({ activeView, setActiveView, onLogout, profile, user }) 
         onMouseLeave={(e) => {
           if (!active) {
             e.currentTarget.style.background = "transparent";
-            e.currentTarget.style.color = T.textSecondary;
+            e.currentTarget.style.color = locked ? T.textMuted : T.textSecondary;
           }
         }}
       >
         <Icon size={18} />
         <span style={{ flex: 1, textAlign: "left" }}>{label}</span>
+        {locked && (
+          <span style={{ display: "inline-flex", alignItems: "center", gap: "2px", fontSize: "0.65rem", padding: "1px 6px", borderRadius: "999px", background: "rgba(245,158,11,0.12)", color: "#f59e0b", border: "1px solid rgba(245,158,11,0.25)" }}>
+            <Lock size={9} /> Inactive
+          </span>
+        )}
       </button>
     );
   };
@@ -138,7 +145,11 @@ export const Sidebar = ({ activeView, setActiveView, onLogout, profile, user }) 
             </div>
             <div style={{ flex: 1, textAlign: "left" }}>
               <p style={{ fontSize: "0.85rem", fontWeight: 600, color: T.textPrimary, lineHeight: 1.2 }}>{displayName}</p>
-              <p style={{ fontSize: "0.7rem", color: T.textMuted }}>Place4U Agent</p>
+              {isAgentVerified ? (
+                <p style={{ fontSize: "0.7rem", color: "#10b981", fontWeight: 600 }}>● Verified Agent</p>
+              ) : (
+                <p style={{ fontSize: "0.7rem", color: "#f59e0b", fontWeight: 500 }}>○ Inactive • Unverified</p>
+              )}
             </div>
             <ChevronDown size={14} color={T.textMuted} style={{ transform: isProfileOpen ? "rotate(180deg)" : "rotate(0deg)", transition: "transform 0.2s" }} />
           </button>
@@ -175,6 +186,37 @@ export const Sidebar = ({ activeView, setActiveView, onLogout, profile, user }) 
                 }}
               >
                 <User size={14} /> View Profile
+              </button>
+              <button
+                onClick={() => {
+                  setActiveView("settings");
+                  setIsProfileOpen(false);
+                }}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "10px",
+                  padding: "8px 12px",
+                  width: "100%",
+                  background: "transparent",
+                  border: "none",
+                  borderRadius: "8px",
+                  cursor: "pointer",
+                  color: T.textSecondary,
+                  fontSize: "0.8rem",
+                  transition: "all 0.15s",
+                  fontFamily: "inherit"
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = T.surface;
+                  e.currentTarget.style.color = T.textPrimary;
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = "transparent";
+                  e.currentTarget.style.color = T.textSecondary;
+                }}
+              >
+                <Settings size={14} /> Account Settings
               </button>
               <div style={{ height: "1px", background: T.border, margin: "0.5rem 0" }} />
               <button

@@ -1,11 +1,11 @@
 import { useMemo, useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Menu } from "lucide-react";
+import { Menu, Lock, ArrowRight, ShieldCheck } from "lucide-react";
 import { globalStyle, T } from './Styles/designTokens';
 import { Sidebar } from './SideBar';
 import { Dashboard } from './Dashboard';
 import { MyProperties } from './MyProperties';
-import { Messages } from './Messages';
+import { Documents } from './Documents';
 import { Profile } from './Profile';
 import { Settings } from './Settings';
 import { Tenants } from './Tenants';
@@ -13,6 +13,7 @@ import { AddPropertyModal } from './Component/AddPropertyModal';
 import { LandlordQueries } from './db/queries';
 import { useAuth } from '../../hooks/useAuth';
 import { supabase } from '../../utils/Supabase';
+import Loading from '../../component/loading';
 
 const placeholderImage =
   "https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=800&auto=format&fit=crop&q=60";
@@ -274,7 +275,7 @@ export default function MainLandlord() {
     if (loading || authLoading) {
       return (
         <div style={{ textAlign: "center", padding: "4rem" }}>
-          <p style={{ color: T.textSecondary }}>Loading landlord portal…</p>
+          <Loading message="Loading landlord portal…" />
         </div>
       );
     }
@@ -288,14 +289,87 @@ export default function MainLandlord() {
       );
     }
 
+    const isLandlordApproved = String(profile?.application_status || "").toLowerCase() === "approved" && profile?.account_status !== "suspended";
+    const isRejected = String(profile?.application_status || "").toLowerCase() === "rejected" || profile?.account_status === "suspended";
+
+    if (!isLandlordApproved && ["properties", "tenants"].includes(activeView)) {
+      return (
+        <div style={{
+          textAlign: "center",
+          padding: "5rem 1.5rem",
+          maxWidth: "560px",
+          margin: "0 auto",
+          animation: "fadeIn 0.25s ease-in-out"
+        }}>
+          <div style={{
+            width: 56,
+            height: 56,
+            borderRadius: "50%",
+            background: isRejected ? "rgba(239, 68, 68, 0.15)" : "rgba(245, 158, 11, 0.15)",
+            border: `1px solid ${isRejected ? "rgba(239, 68, 68, 0.3)" : "rgba(245, 158, 11, 0.3)"}`,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            margin: "0 auto 1.25rem",
+            color: isRejected ? "#ef4444" : "#f59e0b"
+          }}>
+            <Lock size={26} />
+          </div>
+          <h2 style={{ color: T.textPrimary, fontSize: "1.3rem", fontWeight: 700, marginBottom: "0.5rem" }}>
+            {isRejected ? "Accreditation Suspended — Revision Required" : "Landlord Accreditation Required"}
+          </h2>
+          <p style={{ color: T.textMuted, fontSize: "0.85rem", lineHeight: 1.6, marginBottom: "1.5rem" }}>
+            {isRejected
+              ? `Your landlord application requires revision (${profile?.rejection_reason || "submitted documents could not be validated"}). Access to ${activeView === "properties" ? "property listings" : "tenant management"} is locked until your revised documents are approved.`
+              : `Your landlord profile is currently unverified. Submit your proof of property ownership and identification dossier on the dashboard to unlock ${activeView === "properties" ? "property uploading and listing management" : "tenant applications and lease management"}.`}
+          </p>
+          <button
+            onClick={() => setActiveView("dashboard")}
+            style={{
+              padding: "0.65rem 1.75rem",
+              background: `linear-gradient(135deg, ${T.accent} 0%, #7c5ef8 100%)`,
+              color: "#fff",
+              fontWeight: 700,
+              fontSize: "0.85rem",
+              borderRadius: "0.65rem",
+              border: "none",
+              cursor: "pointer",
+              boxShadow: "0 4px 15px rgba(79, 126, 248, 0.4)",
+              display: "inline-flex",
+              alignItems: "center",
+              gap: "8px"
+            }}
+          >
+            <span>{isRejected ? "Return to Dashboard to Resubmit" : "Return to Dashboard to Apply"}</span>
+            <ArrowRight size={15} />
+          </button>
+        </div>
+      );
+    }
+
     switch(activeView) {
       case "dashboard":
         return (
           <Dashboard 
-            profile={profile} 
+            profile={profile}
+            user={user}
+            onRefresh={async (updatedProfile) => {
+              if (updatedProfile) {
+                setProfile(prev => ({ ...(prev || {}), ...updatedProfile }));
+              }
+              if (user?.id) {
+                const res = await LandlordQueries.getLandlordProfile(user.id);
+                if (res.success && res.data) setProfile(res.data);
+              }
+            }}
             stats={portfolioStats} 
             activities={activities} 
             propertyDistribution={propertyDistribution} 
+            properties={properties}
+            onAddProperty={handleAddProperty}
+            onEditProperty={handleEditProperty}
+            onViewDetails={handleViewDetails}
+            onNavigate={setActiveView}
           />
         );
       case "profile":
@@ -303,7 +377,16 @@ export default function MainLandlord() {
       case "settings":
         return <Settings />;
       case "tenants":
-        return <Tenants profile={profile} />;
+        return <Tenants profile={profile} properties={properties} user={user} onNavigate={setActiveView} />;
+      case "documents":
+        return (
+          <Documents 
+            profile={profile} 
+            properties={properties} 
+            user={user}
+            onProfileUpdate={(updated) => setProfile(updated)} 
+          />
+        );
       case "properties":
         return (
           <MyProperties 
@@ -313,10 +396,9 @@ export default function MainLandlord() {
             onAddProperty={handleAddProperty}
             onEditProperty={handleEditProperty}
             onViewDetails={handleViewDetails}
+            onNavigate={setActiveView}
           />
         );
-      case "messages":
-        return <Messages landlordProfile={profile} />;
       default:
         return (
           <div style={{ textAlign: "center", padding: "4rem" }}>
@@ -338,7 +420,7 @@ export default function MainLandlord() {
         isCreating={isCreatingProperty}
       />
       
-      <div style={{ display: "flex", minHeight: "100vh" }}>
+      <div style={{ display: "flex", minHeight: "100vh", width: "100%", maxWidth: "100vw", overflowX: "hidden" }}>
         {/* Sidebar - Fixed on desktop, modal on mobile */}
         {!isMobile && (
           <Sidebar 
@@ -390,12 +472,15 @@ export default function MainLandlord() {
         {/* Main Content - With left margin on desktop to account for fixed sidebar */}
         <main style={{
           flex: 1,
-          marginLeft: isMobile ? 0 : "260px",
-          padding: activeView === "messages" ? "0" : "2rem 1.5rem",
+          minWidth: 0,
+          maxWidth: isMobile ? "100%" : `calc(100% - 260px)`,
           width: isMobile ? "100%" : `calc(100% - 260px)`,
+          marginLeft: isMobile ? 0 : "260px",
+          padding: isMobile ? "1rem 0.75rem" : "2rem 1.5rem",
           minHeight: "100vh",
           display: "flex",
-          flexDirection: "column"
+          flexDirection: "column",
+          overflowX: "hidden"
         }}>
           {/* Mobile Top Bar */}
           {isMobile && (
@@ -404,8 +489,8 @@ export default function MainLandlord() {
               justifyContent: "space-between",
               alignItems: "center",
               marginBottom: "1.5rem",
-              padding: activeView === "messages" ? "1rem 1rem 0" : "0 0 1rem",
-              borderBottom: activeView === "messages" ? "none" : `1px solid ${T.border}`
+              padding: "0 0 1rem",
+              borderBottom: `1px solid ${T.border}`
             }}>
               <button
                 onClick={() => setIsMobileMenuOpen(true)}

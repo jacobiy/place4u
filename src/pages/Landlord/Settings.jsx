@@ -6,6 +6,7 @@ import { Modal } from './Component/Modal';
 import { LandlordQueries } from './db/queries';
 import { useAuth } from '../../hooks/useAuth';
 import { supabase } from '../../utils/Supabase';
+import Loading from '../../component/loading';
 
 const SettingsSection = ({ title, icon: Icon, children }) => (
   <div style={{
@@ -135,14 +136,7 @@ export const Settings = () => {
   };
 
   if (isLoading) {
-    return (
-      <div style={{
-        display: "flex", justifyContent: "center", alignItems: "center",
-        height: "100vh", color: T.textPrimary
-      }}>
-        <div>Loading settings...</div>
-      </div>
-    );
+    return <Loading fullScreen message="Loading settings..." />;
   }
 
   return (
@@ -245,15 +239,6 @@ export const Settings = () => {
                   style={{ accentColor: T.accent }} 
                 />
                 <span style={{ color: T.textSecondary }}>Payment Notifications</span>
-              </label>
-              <label style={{ display: "flex", alignItems: "center", gap: "0.75rem", cursor: "pointer" }}>
-                <input 
-                  type="checkbox" 
-                  checked={profile?.notification_preferences?.messages || false} 
-                  onChange={(e) => handleNotificationChange('messages', e.target.checked)}
-                  style={{ accentColor: T.accent }} 
-                />
-                <span style={{ color: T.textSecondary }}>New Messages</span>
               </label>
             </div>
           </div>

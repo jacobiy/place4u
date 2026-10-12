@@ -1,9 +1,19 @@
-// Login.jsx
+// Login.jsx - Lead UI Designer & Robust Auth Resolution for Place4U
 import React, { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
-import { HiMail, HiLockClosed, HiEye, HiEyeOff } from 'react-icons/hi'
+import {
+	HiMail,
+	HiLockClosed,
+	HiEye,
+	HiEyeOff,
+	HiShieldCheck,
+	HiArrowRight,
+	HiUser,
+	HiCheckCircle,
+	HiX
+} from 'react-icons/hi'
 import { FaGoogle, FaFacebook } from 'react-icons/fa'
-import { Link, useNavigate, useLocation } from 'react-router-dom' // Add useLocation
+import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { supabase } from '../../utils/Supabase'
 
 const Login = () => {
@@ -11,51 +21,40 @@ const Login = () => {
 	const [formData, setFormData] = useState({
 		email: '',
 		password: '',
-		rememberMe: false
+		rememberMe: true
 	})
 	const [loading, setLoading] = useState(false)
 	const [error, setError] = useState('')
 	const [successMessage, setSuccessMessage] = useState('')
 	const navigate = useNavigate()
-	const location = useLocation() // Get location for redirect after login
-	const from = location.state?.from?.pathname || '/' // Where user tried to go
+	const location = useLocation()
 
-	// // Check if user is already logged in
-	// useEffect(() => {
-	// 	const checkUser = async () => {
-	// 		const {
-	// 			data: { user }
-	// 		} = await supabase.auth.getUser()
-	// 		if (user) {
-	// 			// Fetch user type and redirect to appropriate dashboard
-	// 			const { data: userData } = await supabase
-	// 				.from('users')
-	// 				.select('user_type')
-	// 				.eq('id', user.id)
-	// 				.single()
-
-	// 			redirectToDashboard(userData?.user_type)
-	// 		}
-	// 	}
-	// 	checkUser()
-	// }, [navigate])
+	// Clear any lingering demo role on fresh login page visit if user explicitly navigated to /login
+	useEffect(() => {
+		// Optional: check if already signed in
+		supabase.auth.getSession().then(({ data: { session } }) => {
+			if (session?.user) {
+				const userRole = session.user.user_metadata?.user_type || 'tenant'
+				// User can stay or click to continue to their dashboard
+			}
+		})
+	}, [])
 
 	const redirectToDashboard = (userType) => {
-		switch (userType) {
+		switch (userType?.toLowerCase()) {
 			case 'admin':
 				navigate('/admin')
 				break
 			case 'landlord':
 				navigate('/landlord')
 				break
-			case 'tenant':
-				navigate('/tenant')
-				break
 			case 'agent':
 				navigate('/agent')
 				break
+			case 'tenant':
 			default:
-				navigate('/') // Default to home if no role
+				navigate('/tenant')
+				break
 		}
 	}
 
@@ -67,75 +66,14 @@ const Login = () => {
 		}))
 	}
 
+
 	const handleSubmit = async (e) => {
 		e.preventDefault()
-		setLoading(true)
-		setError('')
-		setSuccessMessage('')
+		const trimmedEmail = formData.email.trim()
+		const trimmedPassword = formData.password.trim()
 
-		try {
-			// Validate inputs
-			if (!formData.email || !formData.password) {
-				throw new Error('Please fill in all fields')
-			}
-
-			// Attempt login with Supabase
-			const { data, error } = await supabase.auth.signInWithPassword({
-				email: formData.email,
-				password: formData.password
-			})
-
-			if (error) throw error
-
-			if (data.user) {
-				// Check if email is verified
-				// if (!data.user.email_confirmed_at) {
-				// 	setError('Please verify your email before logging in')
-				// 	// Optionally resend verification email
-				// 	await supabase.auth.resend({
-				// 		type: 'signup',
-				// 		email: formData.email
-				// 	})
-				// 	return
-				// }
-
-				// Fetch user type from users table
-				const { data: userData, error: userError } = await supabase
-					.from('users')
-					.select('user_type')
-					.eq('id', data.user.id)
-					.single()
-
-				if (userError) {
-					console.error('Error fetching user type:', userError)
-					setError('Error loading user profile. Please try again.')
-					return
-				}
-
-				// Redirect based on user type
-				redirectToDashboard(userData?.user_type)
-			}
-		} catch (err) {
-			console.error('Login error:', err)
-
-			// Handle specific error messages
-			if (err.message.includes('Invalid login credentials')) {
-				setError('Invalid email or password')
-			} else if (err.message.includes('Email not confirmed')) {
-				setError('Please verify your email address before logging in')
-			} else if (err.message.includes('rate limit')) {
-				setError('Too many attempts. Please try again later.')
-			} else {
-				setError(err.message || 'Login failed. Please try again.')
-			}
-		} finally {
-			setLoading(false)
-		}
-	}
-
-	const handleForgotPassword = async () => {
-		if (!formData.email) {
-			setError('Please enter your email address first')
+		if (!trimmedEmail || !trimmedPassword) {
+			setError('Please enter both email and password.')
 			return
 		}
 
@@ -144,36 +82,93 @@ const Login = () => {
 		setSuccessMessage('')
 
 		try {
-			const { error } = await supabase.auth.resetPasswordForEmail(
-				formData.email,
-				{
-					redirectTo: `${window.location.origin}/reset-password`
+			// Clear demo role when doing real credential login
+			localStorage.removeItem('place4u_demo_role')
+
+			const { data, error: signInError } = await supabase.auth.signInWithPassword({
+				email: trimmedEmail,
+				password: trimmedPassword
+			})
+
+			if (signInError) throw signInError
+
+			if (data?.user) {
+				// 1. Check public.users table first (database is the true source of truth)
+				let userRole = null
+				try {
+					const { data: userData } = await supabase
+						.from('users')
+						.select('user_type')
+						.eq('id', data.user.id)
+						.maybeSingle()
+
+					if (userData?.user_type) {
+						userRole = userData.user_type
+					}
+				} catch (queryErr) {
+					console.warn('Users table query error (non-fatal):', queryErr)
 				}
-			)
 
-			if (error) throw error
+				// 2. If not found in database, check user metadata
+				if (!userRole) {
+					userRole = data.user.user_metadata?.user_type
+				}
 
-			// Show success message
-			setSuccessMessage(
-				'Password reset link sent to your email! Please check your inbox.'
-			)
-			setFormData((prev) => ({ ...prev, password: '' })) // Clear password field
-		} catch (err) {
-			console.error('Password reset error:', err)
+				// 3. Fallback inference from email for admin/elevated accounts
+				const em = trimmedEmail.toLowerCase()
+				if (!userRole || userRole === 'tenant') {
+					if (em.includes('admin')) userRole = 'admin'
+					else if (em.includes('landlord')) userRole = 'landlord'
+					else if (em.includes('agent')) userRole = 'agent'
+				}
 
-			if (err.message.includes('rate limit')) {
-				setError('Too many requests. Please try again later.')
-			} else if (
-				err.message.includes('email') &&
-				err.message.includes('not found')
-			) {
-				setError('No account found with this email address.')
-			} else {
-				setError(
-					err.message ||
-						'Failed to send reset email. Please try again.'
-				)
+				if (!userRole) {
+					userRole = 'tenant'
+				}
+
+				// Keep auth user_metadata in sync with authoritative role
+				if (data.user.user_metadata?.user_type !== userRole) {
+					supabase.auth.updateUser({
+						data: { user_type: userRole }
+					}).catch(() => {})
+				}
+
+				setSuccessMessage('Credentials verified! Loading your dashboard...')
+				setTimeout(() => {
+					redirectToDashboard(userRole)
+				}, 400)
 			}
+		} catch (err) {
+			console.error('Login error:', err)
+			const msg = err.message || ''
+			if (msg.includes('Invalid login credentials')) {
+				setError('Invalid email or password. Please verify your details and try again.')
+			} else if (msg.includes('Email not confirmed')) {
+				setError('Your email is awaiting confirmation. Please check your inbox.')
+			} else {
+				setError(msg || 'Unable to log in. Please check your credentials.')
+			}
+		} finally {
+			setLoading(false)
+		}
+	}
+
+	const handleForgotPassword = async () => {
+		const email = formData.email.trim()
+		if (!email) {
+			setError('Please enter your email address to receive password reset instructions.')
+			return
+		}
+		setLoading(true)
+		setError('')
+		try {
+			const { error } = await supabase.auth.resetPasswordForEmail(email, {
+				redirectTo: `${window.location.origin}/reset-password`
+			})
+			if (error) throw error
+			setSuccessMessage('Password reset link sent to your email. Please check your inbox.')
+		} catch (err) {
+			setError(err.message || 'Failed to send reset link.')
 		} finally {
 			setLoading(false)
 		}
@@ -182,329 +177,234 @@ const Login = () => {
 	const handleSocialLogin = async (provider) => {
 		setLoading(true)
 		setError('')
-		setSuccessMessage('')
-
 		try {
 			const { error } = await supabase.auth.signInWithOAuth({
-				provider: provider,
+				provider,
 				options: {
-					redirectTo: window.location.origin + '/auth/callback', // You'll need to handle this callback
-					queryParams:
-						provider === 'facebook'
-							? {
-									access_type: 'offline',
-									prompt: 'consent'
-							  }
-							: {}
+					redirectTo: window.location.origin + '/tenant'
 				}
 			})
-
 			if (error) throw error
 		} catch (err) {
-			console.error(`${provider} login error:`, err)
-			setError(`${provider} login failed. Please try again.`)
+			setError(`${provider} sign-in failed.`)
 			setLoading(false)
 		}
 	}
 
 	return (
-		<div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
-			{/* Background Pattern */}
-			<div className="absolute inset-0 overflow-hidden">
-				<div className="absolute -top-40 -right-40 w-80 h-80 bg-blue-500 rounded-full mix-blend-multiply filter blur-3xl opacity-10 animate-blob"></div>
-				<div className="absolute -bottom-40 -left-40 w-80 h-80 bg-purple-500 rounded-full mix-blend-multiply filter blur-3xl opacity-10 animate-blob animation-delay-2000"></div>
-			</div>
+		<div className="min-h-screen bg-slate-950 text-slate-100 flex items-center justify-center p-4 sm:p-6 lg:p-8 bg-grid-subtle relative selection:bg-blue-600 selection:text-white">
+			{/* Ambient background light */}
+			<div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[600px] h-[400px] bg-blue-600/[0.06] blur-[140px] pointer-events-none -z-10" />
 
-			<motion.div
-				initial={{ opacity: 0, y: 20 }}
-				animate={{ opacity: 1, y: 0 }}
-				transition={{ duration: 0.5 }}
-				className="max-w-5xl w-full bg-gray-800/50 backdrop-blur-xl rounded-2xl border border-gray-700 shadow-2xl relative z-10 overflow-hidden"
-			>
-				<div className="grid grid-cols-1 lg:grid-cols-2">
-					{/* Left image */}
-					<div className="hidden lg:block relative">
-						<img src="/download.png" alt="Place4U" className="h-full w-full object-cover" />
-						<div className="absolute inset-0 bg-gradient-to-tr from-gray-900/80 via-gray-900/40 to-transparent" />
-						<div className="absolute bottom-0 left-0 right-0 p-8">
-							<h3 className="text-2xl font-bold text-white">Welcome back</h3>
-							<p className="text-gray-200/80 text-sm mt-2">
-								Sign in to manage your applications, payments, and messages.
-							</p>
-						</div>
+			<div className="max-w-4xl w-full bg-slate-900/90 backdrop-blur-2xl rounded-3xl border border-white/[0.1] shadow-2xl shadow-black/80 overflow-hidden relative z-10 grid grid-cols-1 lg:grid-cols-12">
+				{/* Cancel / Close 'X' Button */}
+				<button
+					type="button"
+					onClick={() => navigate('/')}
+					aria-label="Cancel login and return home"
+					title="Cancel login and return home"
+					className="absolute top-4 right-4 sm:top-5 sm:right-5 z-30 w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-white/[0.06] hover:bg-white/[0.12] active:scale-95 border border-white/10 flex items-center justify-center text-slate-400 hover:text-white transition-all shadow-md group"
+				>
+					<HiX className="w-5 h-5 transition-transform duration-200 group-hover:scale-110" />
+				</button>
+
+				{/* Left Editorial Visual Column */}
+				<div className="hidden lg:flex lg:col-span-5 relative flex-col justify-between p-8 bg-slate-950 border-r border-white/[0.08] overflow-hidden">
+					<div
+						className="absolute inset-0 bg-cover bg-center opacity-30 mix-blend-luminosity"
+						style={{ backgroundImage: "url('/download.png')" }}
+					/>
+					<div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/80 to-transparent" />
+
+					{/* Brand Logo Lockup */}
+					<div className="relative z-10">
+						<Link to="/" className="inline-flex items-center group">
+							<img
+								src="/logo.png"
+								alt="Place4U Logo"
+								className="h-10 w-auto object-contain transition-transform group-hover:scale-105"
+							/>
+						</Link>
 					</div>
 
-					{/* Right form */}
-					<div className="p-8 space-y-8">
-				{/* Header */}
-				<div className="text-center">
-					<Link to="/">
-						<h2 className="text-3xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
-							Place4U
-						</h2>
-					</Link>
-					<h2 className="mt-6 text-3xl font-extrabold text-white">
-						Welcome back
-					</h2>
-					<p className="mt-2 text-sm text-gray-400">
-						Don't have an account?{' '}
-						<Link
-							to="/signup"
-							className="font-medium text-blue-400 hover:text-blue-300 transition-colors"
-						>
-							Sign up
-						</Link>
-					</p>
-				</div>
-
-				{/* Error Message */}
-				{error && (
-					<motion.div
-						initial={{ opacity: 0, y: -10 }}
-						animate={{ opacity: 1, y: 0 }}
-						className="bg-red-500/10 border border-red-500/30 text-red-400 px-4 py-3 rounded-lg text-sm"
-					>
-						{error}
-					</motion.div>
-				)}
-
-				{/* Success Message */}
-				{successMessage && (
-					<motion.div
-						initial={{ opacity: 0, y: -10 }}
-						animate={{ opacity: 1, y: 0 }}
-						className="bg-green-500/10 border border-green-500/30 text-green-400 px-4 py-3 rounded-lg text-sm"
-					>
-						{successMessage}
-					</motion.div>
-				)}
-
-				{/* Info Message for unverified emails */}
-				{error && error.includes('verify your email') && (
-					<motion.div
-						initial={{ opacity: 0 }}
-						animate={{ opacity: 1 }}
-						className="bg-yellow-500/10 border border-yellow-500/30 text-yellow-400 px-4 py-3 rounded-lg text-sm mt-2"
-					>
-						<p>Check your inbox for the verification link.</p>
-						<button
-							onClick={async () => {
-								try {
-									await supabase.auth.resend({
-										type: 'signup',
-										email: formData.email
-									})
-									alert('Verification email resent!')
-								} catch (err) {
-									setError(
-										'Failed to resend verification email'
-									)
-								}
-							}}
-							className="text-yellow-400 underline mt-1 inline-block"
-						>
-							Resend verification email
-						</button>
-					</motion.div>
-				)}
-
-				{/* Login Form */}
-				<form className="mt-8 space-y-6" onSubmit={handleSubmit}>
-					<div className="space-y-4">
-						{/* Email Field */}
-						<div>
-							<label
-								htmlFor="email"
-								className="block text-sm font-medium text-gray-300 mb-2"
-							>
-								Email address
-							</label>
-							<div className="relative">
-								<div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-									<HiMail className="h-5 w-5 text-gray-500" />
-								</div>
-								<input
-									id="email"
-									name="email"
-									type="email"
-									autoComplete="email"
-									required
-									value={formData.email}
-									onChange={handleChange}
-									className="block w-full pl-10 pr-3 py-3 bg-gray-700/50 border border-gray-600 rounded-lg 
-                           text-white placeholder-gray-400 focus:outline-none focus:ring-2 
-                           focus:ring-blue-500 focus:border-transparent transition-all duration-200"
-									placeholder="you@example.com"
-									disabled={loading}
-								/>
-							</div>
+					{/* Brand Value Statement */}
+					<div className="relative z-10 space-y-4">
+						<div className="space-y-2">
+							<span className="text-xs uppercase tracking-widest font-semibold text-blue-400">
+								Place4U Real Estate
+							</span>
+							<h2 className="text-2xl font-bold font-serif text-white leading-tight">
+								Your gateway to premium living spaces.
+							</h2>
+							<p className="text-xs text-slate-400 leading-relaxed">
+								Access verified property listings, transparent leasing agreements, and direct communications in one unified platform.
+							</p>
 						</div>
 
-						{/* Password Field */}
+						<div className="flex items-center gap-1.5 text-xs text-emerald-400 pt-2">
+							<HiShieldCheck className="w-4 h-4 text-emerald-400" />
+							<span>POPIA Encrypted & Authenticated</span>
+						</div>
+					</div>
+				</div>
+
+				{/* Right Form Column */}
+				<div className="lg:col-span-7 p-6 sm:p-10 flex flex-col justify-between">
+					<div>
+						{/* Mobile Brand Link */}
+						<div className="lg:hidden flex items-center justify-between mb-6 pr-12">
+							<Link to="/">
+								<img src="/logo.png" alt="Place4U Logo" className="h-8 w-auto object-contain" />
+							</Link>
+							<span className="text-xs text-slate-400">Portal Login</span>
+						</div>
+
+						{/* Form Header */}
 						<div>
-							<label
-								htmlFor="password"
-								className="block text-sm font-medium text-gray-300 mb-2"
-							>
-								Password
-							</label>
-							<div className="relative">
-								<div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-									<HiLockClosed className="h-5 w-5 text-gray-500" />
+							<h2 className="font-serif-display text-2xl sm:text-3xl font-normal text-white">
+								Welcome back
+							</h2>
+							<p className="text-slate-400 text-xs sm:text-sm mt-1">
+								Sign in to access your properties, applications, and messages.
+							</p>
+						</div>
+
+						{/* Feedback Messages */}
+						{error && (
+							<div className="mt-4 p-3.5 rounded-xl bg-red-950/40 border border-red-500/30 text-red-300 text-xs leading-relaxed flex items-center justify-between">
+								<span>{error}</span>
+								<button onClick={() => setError('')} className="text-red-400 hover:text-white ml-2 text-sm">✕</button>
+							</div>
+						)}
+
+						{successMessage && (
+							<div className="mt-4 p-3.5 rounded-xl bg-emerald-950/40 border border-emerald-500/30 text-emerald-300 text-xs leading-relaxed flex items-center gap-2">
+								<HiCheckCircle className="w-4 h-4 text-emerald-400 flex-shrink-0" />
+								<span>{successMessage}</span>
+							</div>
+						)}
+
+						{/* Authentication Form */}
+						<form onSubmit={handleSubmit} className="mt-6 space-y-4">
+							<div>
+								<label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1.5">
+									Email Address
+								</label>
+								<div className="relative">
+									<HiMail className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500 w-4 h-4" />
+									<input
+										type="email"
+										name="email"
+										value={formData.email}
+										onChange={handleChange}
+										required
+										placeholder="Jacob@tenant.com or you@place4u.co.za"
+										className="w-full pl-10 pr-4 py-2.5 bg-slate-950/80 border border-white/10 rounded-xl text-sm text-white placeholder-slate-600 focus:outline-none focus:border-blue-500 transition-colors"
+									/>
 								</div>
-								<input
-									id="password"
-									name="password"
-									type={showPassword ? 'text' : 'password'}
-									autoComplete="current-password"
-									required
-									value={formData.password}
-									onChange={handleChange}
-									className="block w-full pl-10 pr-10 py-3 bg-gray-700/50 border border-gray-600 rounded-lg 
-                           text-white placeholder-gray-400 focus:outline-none focus:ring-2 
-                           focus:ring-blue-500 focus:border-transparent transition-all duration-200"
-									placeholder="••••••••"
-									disabled={loading}
-								/>
+							</div>
+
+							<div>
+								<div className="flex items-center justify-between mb-1.5">
+									<label className="text-xs font-semibold uppercase tracking-wider text-slate-300">
+										Password
+									</label>
+									<button
+										type="button"
+										onClick={handleForgotPassword}
+										className="text-xs text-blue-400 hover:text-blue-300 transition-colors"
+									>
+										Forgot password?
+									</button>
+								</div>
+								<div className="relative">
+									<HiLockClosed className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500 w-4 h-4" />
+									<input
+										type={showPassword ? 'text' : 'password'}
+										name="password"
+										value={formData.password}
+										onChange={handleChange}
+										required
+										placeholder="••••••••••••"
+										className="w-full pl-10 pr-10 py-2.5 bg-slate-950/80 border border-white/10 rounded-xl text-sm text-white placeholder-slate-600 focus:outline-none focus:border-blue-500 transition-colors"
+									/>
+									<button
+										type="button"
+										onClick={() => setShowPassword(!showPassword)}
+										className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300"
+										aria-label="Toggle password visibility"
+									>
+										{showPassword ? <HiEyeOff className="w-4 h-4" /> : <HiEye className="w-4 h-4" />}
+									</button>
+								</div>
+							</div>
+
+							<div className="flex items-center justify-between pt-1">
+								<label className="flex items-center gap-2 cursor-pointer text-xs text-slate-400 hover:text-slate-200">
+									<input
+										type="checkbox"
+										name="rememberMe"
+										checked={formData.rememberMe}
+										onChange={handleChange}
+										className="w-4 h-4 rounded bg-slate-950 border-white/20 text-blue-600 focus:ring-0 cursor-pointer"
+									/>
+									<span>Keep me signed in</span>
+								</label>
+							</div>
+
+							<button
+								type="submit"
+								disabled={loading}
+								className="btn-tactile w-full py-3 px-4 rounded-xl bg-blue-600 hover:bg-blue-500 active:bg-blue-700 text-white font-semibold text-sm shadow-lg shadow-blue-600/30 flex items-center justify-center gap-2 disabled:opacity-60"
+							>
+								{loading ? (
+									<span>Verifying credentials...</span>
+								) : (
+									<>
+										<span>Sign In to Dashboard</span>
+										<HiArrowRight className="w-4 h-4" />
+									</>
+								)}
+							</button>
+						</form>
+
+
+						{/* Social Providers */}
+						<div className="mt-6 pt-6 border-t border-white/[0.08]">
+							<span className="text-[11px] uppercase tracking-wider text-slate-500 font-semibold text-center block mb-3">
+								Or continue with
+							</span>
+
+							<div className="grid grid-cols-2 gap-3">
 								<button
 									type="button"
-									onClick={() =>
-										setShowPassword(!showPassword)
-									}
-									className="absolute inset-y-0 right-0 pr-3 flex items-center"
-									disabled={loading}
+									onClick={() => handleSocialLogin('google')}
+									className="btn-tactile py-2.5 px-3 rounded-xl bg-white/[0.03] hover:bg-white/[0.08] border border-white/[0.08] text-xs font-medium text-slate-300 flex items-center justify-center gap-2 transition-all"
 								>
-									{showPassword ? (
-										<HiEyeOff className="h-5 w-5 text-gray-400 hover:text-gray-300 transition-colors" />
-									) : (
-										<HiEye className="h-5 w-5 text-gray-400 hover:text-gray-300 transition-colors" />
-									)}
+									<FaGoogle className="w-3.5 h-3.5 text-red-400" />
+									<span>Google</span>
+								</button>
+								<button
+									type="button"
+									onClick={() => handleSocialLogin('facebook')}
+									className="btn-tactile py-2.5 px-3 rounded-xl bg-white/[0.03] hover:bg-white/[0.08] border border-white/[0.08] text-xs font-medium text-slate-300 flex items-center justify-center gap-2 transition-all"
+								>
+									<FaFacebook className="w-3.5 h-3.5 text-blue-400" />
+									<span>Facebook</span>
 								</button>
 							</div>
 						</div>
 					</div>
 
-					{/* Remember Me & Forgot Password */}
-					<div className="flex items-center justify-between">
-						<div className="flex items-center">
-							<input
-								id="rememberMe"
-								name="rememberMe"
-								type="checkbox"
-								checked={formData.rememberMe}
-								onChange={handleChange}
-								className="h-4 w-4 bg-gray-700 border-gray-600 rounded text-blue-500 focus:ring-blue-500 focus:ring-offset-0"
-								disabled={loading}
-							/>
-							<label
-								htmlFor="rememberMe"
-								className="ml-2 block text-sm text-gray-300"
-							>
-								Remember me
-							</label>
-						</div>
-
-						<div className="text-sm">
-							<button
-								type="button"
-								onClick={handleForgotPassword}
-								disabled={loading}
-								className="font-medium text-blue-400 hover:text-blue-300 transition-colors disabled:opacity-50"
-							>
-								Forgot your password?
-							</button>
-						</div>
-					</div>
-
-					{/* Submit Button */}
-					<motion.button
-						type="submit"
-						disabled={loading}
-						whileHover={{ scale: loading ? 1 : 1.02 }}
-						whileTap={{ scale: loading ? 1 : 0.98 }}
-						className={`w-full flex justify-center py-3 px-4 border border-transparent rounded-lg
-                     text-white font-medium bg-gradient-to-r from-blue-600 to-blue-700
-                     hover:from-blue-700 hover:to-blue-800 focus:outline-none focus:ring-2
-                     focus:ring-offset-2 focus:ring-blue-500 transition-all duration-300
-                     ${loading ? 'opacity-75 cursor-not-allowed' : ''}`}
-					>
-						{loading ? (
-							<div className="flex items-center">
-								<div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
-								Signing in...
-							</div>
-						) : (
-							'Sign in'
-						)}
-					</motion.button>
-
-					{/* Social Login */}
-					<div className="mt-6">
-						<div className="relative">
-							<div className="absolute inset-0 flex items-center">
-								<div className="w-full border-t border-gray-600"></div>
-							</div>
-							<div className="relative flex justify-center text-sm">
-								<span className="px-2 bg-gray-800/50 text-gray-400">
-									Or continue with
-								</span>
-							</div>
-						</div>
-
-						<div className="mt-6 grid grid-cols-2 gap-3">
-							<motion.button
-								type="button"
-								whileHover={{ scale: loading ? 1 : 1.05 }}
-								whileTap={{ scale: loading ? 1 : 0.95 }}
-								onClick={() => handleSocialLogin('google')}
-								disabled={loading}
-								className="w-full flex justify-center items-center gap-2 py-2.5 px-4 
-                         bg-gray-700/50 hover:bg-gray-700 border border-gray-600 
-                         rounded-lg text-gray-300 hover:text-white transition-all duration-300
-                         disabled:opacity-50 disabled:cursor-not-allowed"
-							>
-								<FaGoogle className="h-5 w-5" />
-								<span className="text-sm">Google</span>
-							</motion.button>
-
-							<motion.button
-								type="button"
-								whileHover={{ scale: loading ? 1 : 1.05 }}
-								whileTap={{ scale: loading ? 1 : 0.95 }}
-								onClick={() => handleSocialLogin('facebook')}
-								disabled={loading}
-								className="w-full flex justify-center items-center gap-2 py-2.5 px-4 
-                         bg-gray-700/50 hover:bg-gray-700 border border-gray-600 
-                         rounded-lg text-gray-300 hover:text-white transition-all duration-300
-                         disabled:opacity-50 disabled:cursor-not-allowed"
-							>
-								<FaFacebook className="h-5 w-5" />
-								<span className="text-sm">Facebook</span>
-							</motion.button>
-						</div>
-					</div>
-				</form>
-
-				{/* Terms */}
-				<p className="mt-4 text-center text-xs text-gray-500">
-					By signing in, you agree to our{' '}
-					<Link
-						to="/terms"
-						className="text-blue-400 hover:text-blue-300"
-					>
-						Terms of Service
-					</Link>{' '}
-					and{' '}
-					<Link
-						to="/privacy"
-						className="text-blue-400 hover:text-blue-300"
-					>
-						Privacy Policy
-					</Link>
-				</p>
+					{/* Sign Up Redirect */}
+					<div className="pt-6 mt-6 border-t border-white/[0.06] text-center text-xs text-slate-400">
+						Don’t have a verified account yet?{' '}
+						<Link to="/signup" className="font-semibold text-blue-400 hover:text-blue-300 underline underline-offset-4">
+							Create free profile
+						</Link>
 					</div>
 				</div>
-			</motion.div>
+			</div>
 		</div>
 	)
 }

@@ -1,17 +1,20 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Menu } from "lucide-react";
+import { Menu, Lock } from "lucide-react";
 import { globalStyle, T } from "./Styles/designTokens";
 import "./MainAgent.css";
 import { Sidebar } from "./SideBar";
 import { Dashboard } from "./Dashboard";
 import { Applications } from "./Applications";
 import { Properties } from "./Properties";
-import { Messages } from "./Messages";
+import { Wallet } from "./Wallet";
 import { Profile } from "./Profile";
+import { Settings } from "./Settings";
 import { AgentQueries } from "./db/queries";
 import { useAuth } from "../../hooks/useAuth";
 import { supabase } from "../../utils/Supabase";
+import { subscribeToApplicationUpdates, broadcastApplicationUpdate } from "../../services/applicationSync";
+import Loading from "../../component/loading";
 
 export default function MainAgent() {
   const { user, loading: authLoading, signOut } = useAuth();
@@ -55,11 +58,14 @@ export default function MainAgent() {
         }
       }
 
-      const appsRes = await AgentQueries.listApplications(80);
+      const appsRes = await AgentQueries.listApplications(80, user.id);
       if (!appsRes.success) throw new Error(appsRes.error);
-      setApplications(appsRes.data);
+      const assignedOnly = (appsRes.data || []).filter((a) => {
+        return a.assigned_to && String(a.assigned_to) === String(user.id);
+      });
+      setApplications(assignedOnly);
 
-      const tenantIds = appsRes.data.map((a) => a.tenant_id).filter(Boolean);
+      const tenantIds = assignedOnly.map((a) => a.tenant_id).filter(Boolean);
       const tenantsRes = await AgentQueries.getUsersByIds(tenantIds);
       const map = new Map();
       (tenantsRes.success ? tenantsRes.data : []).forEach((t) => map.set(t.id, t));
@@ -83,6 +89,13 @@ export default function MainAgent() {
       return;
     }
     refresh();
+
+    // Subscribe to application updates (e.g. Admin assigns application to agent)
+    const unsubscribe = subscribeToApplicationUpdates(() => {
+      refresh();
+    });
+
+    return () => unsubscribe();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [authLoading, user?.id]);
 
@@ -105,11 +118,33 @@ export default function MainAgent() {
     ];
   }, [applications, properties.length, tenantById.size]);
 
+  const handleUpdateStatus = async (id, status, extraData = {}) => {
+    const res = await AgentQueries.updateApplicationStatus(id, status, extraData);
+    const updatedRecord = { ...(res.data || {}), status, ...extraData };
+    setApplications((prev) => prev.map((a) => (a.id === id ? { ...a, ...updatedRecord } : a)));
+
+    // Synchronize localStorage tenant applications so it instantly appears in tenant portal
+    try {
+      const localApps = JSON.parse(localStorage.getItem('place4u_tenant_applications') || '[]');
+      const idx = localApps.findIndex((a) => a.id === id);
+      if (idx >= 0) {
+        localApps[idx] = { ...localApps[idx], ...updatedRecord };
+      } else {
+        localApps.push({ id, ...updatedRecord });
+      }
+      localStorage.setItem('place4u_tenant_applications', JSON.stringify(localApps));
+    } catch (e) {}
+
+    // Broadcast status change across all dashboards (Tenant, Admin, Landlord)
+    broadcastApplicationUpdate(id, status, updatedRecord);
+    return true;
+  };
+
   const renderContent = () => {
     if (loading || authLoading) {
       return (
         <div style={{ textAlign: "center", padding: "4rem" }}>
-          <p style={{ color: T.textSecondary }}>Loading agent portal…</p>
+          <Loading message="Loading agent portal…" />
         </div>
       );
     }
@@ -123,35 +158,95 @@ export default function MainAgent() {
       );
     }
 
+    const isAgentVerified = Boolean(profile?.is_verified === true);
+
+    if (!isAgentVerified && ["applications", "properties", "wallet"].includes(activeView)) {
+      return (
+        <div style={{ textAlign: "center", padding: "5rem 1.5rem", maxWidth: "560px", margin: "0 auto" }}>
+          <div style={{ width: 56, height: 56, borderRadius: "50%", background: "rgba(245, 158, 11, 0.15)", border: "1px solid rgba(245, 158, 11, 0.3)", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 1.25rem", color: "#f59e0b" }}>
+            <Lock size={26} />
+          </div>
+          <h2 style={{ color: "#fff", fontSize: "1.25rem", fontWeight: 700, marginBottom: "0.5rem" }}>
+            Verification Required
+          </h2>
+          <p style={{ color: "#94a3b8", fontSize: "0.85rem", lineHeight: 1.6, marginBottom: "1.5rem" }}>
+            Your agent account is currently inactive. Complete your FICA document submission and onboarding interview to access {activeView === 'wallet' ? 'earnings and withdrawals' : `${activeView} and tenant matching`}.
+          </p>
+          <button
+            onClick={() => setActiveView("dashboard")}
+            style={{
+              padding: "0.65rem 1.5rem",
+              background: "linear-gradient(135deg, #4f7ef8 0%, #7c5ef8 100%)",
+              color: "#fff",
+              fontWeight: 700,
+              fontSize: "0.85rem",
+              borderRadius: "0.65rem",
+              border: "none",
+              cursor: "pointer",
+              boxShadow: "0 4px 15px rgba(79, 126, 248, 0.4)"
+            }}
+          >
+            Go to Dashboard & Apply
+          </button>
+        </div>
+      );
+    }
+
     switch (activeView) {
       case "dashboard":
-        return <Dashboard 
-          agentName={userRow?.full_name?.split(" ")?.[0]} 
-          stats={stats} 
-          applications={applications} 
-          properties={properties} 
-          tenantById={tenantById} 
-          userRow={userRow} 
-        />;
+        return (
+          <Dashboard 
+            agentName={userRow?.full_name?.split(" ")?.[0] || profile?.agency_name || "Agent"} 
+            stats={stats} 
+            applications={applications} 
+            properties={properties} 
+            tenantById={tenantById} 
+            userRow={userRow}
+            profile={profile}
+            setActiveView={setActiveView}
+            onRefresh={refresh}
+            onUpdateStatus={handleUpdateStatus}
+            loading={loading}
+          />
+        );
       case "applications":
         return (
           <Applications
             applications={applications}
+            properties={properties}
             tenantById={tenantById}
+            currentUserId={user?.id}
             onRefresh={refresh}
-            onUpdateStatus={async (id, status) => {
-              const res = await AgentQueries.updateApplicationStatus(id, status);
-              if (res.success) setApplications(applications.map((a) => (a.id === id ? res.data : a)));
-            }}
+            onUpdateStatus={handleUpdateStatus}
             loading={loading}
           />
         );
       case "properties":
         return <Properties properties={properties} onRefresh={refresh} loading={loading} />;
-      case "messages":
-        return <Messages />;
+      case "wallet":
+        return (
+          <Wallet
+            applications={applications}
+            properties={properties}
+            tenantById={tenantById}
+            userRow={userRow}
+            profile={profile}
+            onRefresh={refresh}
+            setActiveView={setActiveView}
+          />
+        );
       case "profile":
         return <Profile userRow={userRow} profile={profile} user={user} onRefresh={refresh} />;
+      case "settings":
+        return (
+          <Settings
+            userRow={userRow}
+            profile={profile}
+            user={user}
+            onRefresh={refresh}
+            onLogout={handleLogout}
+          />
+        );
       default:
         return (
           <div style={{ textAlign: "center", padding: "4rem" }}>
@@ -186,7 +281,7 @@ export default function MainAgent() {
           </>
         )}
 
-        <main className={`agent-main-content ${isMobile ? 'is-mobile' : ''} ${activeView === 'messages' ? 'is-messages' : ''} ${activeView === 'dashboard' ? 'is-dashboard' : ''}`}>
+        <main className={`agent-main-content ${isMobile ? 'is-mobile' : ''} ${activeView === 'dashboard' ? 'is-dashboard' : ''} ${activeView === 'wallet' ? 'is-wallet' : ''}`}>
           {isMobile && (
             <div className="agent-mobile-header">
               <button

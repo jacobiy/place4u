@@ -6,12 +6,12 @@ import './Profile.css';
 export const Profile = ({ userRow, profile, user, onRefresh }) => {
   const [formData, setFormData] = useState({
     agency_name: profile?.agency_name || '',
-    phone: profile?.phone || '',
-    office_address: profile?.office_address || '',
-    license_number: profile?.license_number || '',
-    years_experience: profile?.years_experience || '',
+    phone: profile?.phone || userRow?.phone || '',
+    office_address: profile?.address || profile?.office_address || '',
+    license_number: profile?.tax_number || profile?.license_number || '',
+    years_experience: profile?.experience_years ?? profile?.years_experience ?? '',
     bio: profile?.bio || '',
-    full_name: userRow?.full_name || ''
+    full_name: profile?.full_name || userRow?.full_name || ''
   });
   
   const [isSaving, setIsSaving] = useState(false);
@@ -19,18 +19,19 @@ export const Profile = ({ userRow, profile, user, onRefresh }) => {
 
   // Update form data if profile loads asynchronously
   useEffect(() => {
-    if (profile) {
+    if (profile || userRow) {
       setFormData(prev => ({
         ...prev,
-        agency_name: profile.agency_name || '',
-        phone: profile.phone || '',
-        office_address: profile.office_address || '',
-        license_number: profile.license_number || '',
-        years_experience: profile.years_experience || '',
-        bio: profile.bio || ''
+        agency_name: profile?.agency_name || prev.agency_name || '',
+        phone: profile?.phone || userRow?.phone || prev.phone || '',
+        office_address: profile?.address || profile?.office_address || prev.office_address || '',
+        license_number: profile?.tax_number || profile?.license_number || prev.license_number || '',
+        years_experience: profile?.experience_years ?? profile?.years_experience ?? prev.years_experience ?? '',
+        bio: profile?.bio || prev.bio || '',
+        full_name: profile?.full_name || userRow?.full_name || prev.full_name || ''
       }));
     }
-  }, [profile]);
+  }, [profile, userRow]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -43,18 +44,22 @@ export const Profile = ({ userRow, profile, user, onRefresh }) => {
     setStatus(null);
 
     try {
-      if (!profile?.id) throw new Error("Profile not initialized yet.");
+      const targetId = profile?.id || profile?.user_id || userRow?.id || user?.id;
+      if (!targetId) throw new Error("Agent user ID not found.");
 
       const payload = {
         agency_name: formData.agency_name || null,
         phone: formData.phone || null,
         office_address: formData.office_address || null,
+        address: formData.office_address || null,
         license_number: formData.license_number || null,
+        tax_number: formData.license_number || null,
         years_experience: formData.years_experience ? parseInt(formData.years_experience) : null,
+        experience_years: formData.years_experience ? parseInt(formData.years_experience) : null,
         bio: formData.bio || null
       };
 
-      const result = await AgentQueries.updateAgentProfile(profile.id, payload);
+      const result = await AgentQueries.updateAgentProfile(targetId, payload);
       
       if (result.success) {
         setStatus({ type: 'success', message: 'Profile updated successfully!' });
@@ -70,6 +75,9 @@ export const Profile = ({ userRow, profile, user, onRefresh }) => {
     }
   };
 
+  const isVerified = Boolean(profile?.is_verified === true);
+  const isPending = profile?.verification_status === 'pending_review' || profile?.verification_status === 'interview_scheduled';
+
   return (
     <div className="profile-container">
       <div className="profile-wrapper">
@@ -81,6 +89,61 @@ export const Profile = ({ userRow, profile, user, onRefresh }) => {
           </div>
           <div className="profile-avatar">
             <User size={32} />
+          </div>
+        </div>
+
+        {/* Verification Status Banner */}
+        <div style={{
+          marginBottom: '1.5rem',
+          padding: '1rem 1.25rem',
+          borderRadius: '12px',
+          background: isVerified 
+            ? 'rgba(16, 185, 129, 0.1)' 
+            : isPending 
+            ? 'rgba(59, 130, 246, 0.1)' 
+            : 'rgba(245, 158, 11, 0.1)',
+          border: `1px solid ${
+            isVerified 
+              ? 'rgba(16, 185, 129, 0.3)' 
+              : isPending 
+              ? 'rgba(59, 130, 246, 0.3)' 
+              : 'rgba(245, 158, 11, 0.3)'
+          }`,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          flexWrap: 'wrap',
+          gap: '12px'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <span style={{
+              display: 'inline-block',
+              width: '10px',
+              height: '10px',
+              borderRadius: '50%',
+              background: isVerified ? '#10b981' : isPending ? '#3b82f6' : '#f59e0b'
+            }} />
+            <div>
+              <p style={{
+                margin: 0,
+                fontSize: '0.9rem',
+                fontWeight: 700,
+                color: isVerified ? '#10b981' : isPending ? '#60a5fa' : '#f59e0b'
+              }}>
+                {isVerified 
+                  ? 'Verified Agent (FICA Compliant)' 
+                  : isPending 
+                  ? 'Verification Pending Review' 
+                  : 'Account Inactive • Verification Required'}
+              </p>
+              <p style={{ margin: '2px 0 0', fontSize: '0.78rem', color: '#94a3b8' }}>
+                {isVerified 
+                  ? 'Your profile is approved. You have full access to tenant matching and listings.' 
+                  : isPending 
+                  ? 'Your FICA documents and interview request are under review by Place4U compliance.' 
+                  : 'Please complete your FICA document submission and interview on the dashboard to unlock all agent features.'}
+              </p>
+            </div>
           </div>
         </div>
 

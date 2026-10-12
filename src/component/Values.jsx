@@ -1,185 +1,122 @@
-// Value.jsx
+// Values.jsx - Lead UI Designer Overhaul for Place4U
 import React from 'react'
-import { motion } from 'framer-motion'
 import {
 	HiShieldCheck,
 	HiHeart,
-	HiTrendingUp,
-	HiUserGroup,
-	HiOfficeBuilding,
 	HiBadgeCheck,
-	HiSparkles
+	HiLockClosed
 } from 'react-icons/hi'
-import {
-	FaHandshake,
-	FaBalanceScale,
-	FaAccessibleIcon,
-	FaUsers
-} from 'react-icons/fa'
-import { MdSecurity, MdSpeed, MdSupportAgent } from 'react-icons/md'
+import { FaBalanceScale, FaHandshake } from 'react-icons/fa'
 
-const Value = () => {
+const Values = () => {
 	const values = [
 		{
-			icon: <HiShieldCheck className="w-6 h-6 text-blue-500" />,
-			title: 'Trust & Safety',
+			icon: <HiShieldCheck className="w-6 h-6 text-emerald-400" />,
+			tag: "Security",
+			title: 'Absolute Scam Eradication',
 			description:
-				'We verify both tenants and landlords to create a safe, trustworthy matching environment. Your security is our priority.'
+				'Every listing requires verifiable landlord identification and property deed correlation. We eliminate ghost listings and fake payment requests before you ever view a property.'
 		},
 		{
-			icon: <FaBalanceScale className="w-6 h-6 text-blue-500" />,
-			title: 'Fair Access',
+			icon: <FaBalanceScale className="w-6 h-6 text-blue-400" />,
+			tag: "Inclusion",
+			title: 'Fair Housing Market Dignity',
 			description:
-				'We believe everyone deserves access to suitable housing, whether in formal estates or informal backroom rentals.'
+				'Township backrooms, student digs, and suburban granny flats deserve the same verified digital standards, high-resolution photography, and safety guarantees as luxury high-rise developments.'
 		},
 		{
-			icon: <HiHeart className="w-6 h-6 text-blue-500" />,
-			title: 'Tenant-Centric',
+			icon: <FaHandshake className="w-6 h-6 text-amber-400" />,
+			tag: "Fairness",
+			title: 'Zero Upfront Application Gouging',
 			description:
-				"Your housing journey matters. We're here to reduce stress and simplify your search for the perfect home."
+				'Searching for housing shouldn’t bankrupt you. We reject predatory application fee stacking where renters pay dozens of agents just to get a call back.'
 		},
 		{
-			icon: <HiBadgeCheck className="w-6 h-6 text-blue-500" />,
-			title: 'Pre-Screening',
+			icon: <HiLockClosed className="w-6 h-6 text-purple-400" />,
+			tag: "Privacy",
+			title: 'Strict POPIA Compliance',
 			description:
-				'We do the hard work of verifying tenants so landlords receive only qualified, serious applicants.'
-		},
-		{
-			icon: <FaHandshake className="w-6 h-6 text-blue-500" />,
-			title: 'Integrity',
-			description:
-				"We're transparent about our role: assistance only, no hidden fees, no false promises of guaranteed placement."
-		},
-		{
-			icon: <HiOfficeBuilding className="w-6 h-6 text-blue-500" />,
-			title: 'Market Inclusion',
-			description:
-				'We bridge the gap between formal agency listings and informal rentals, giving you more options.'
+				'Your financial statements, ID copies, and personal data are encrypted and shared strictly with landlords you explicitly authorize. We never sell contact leads.'
 		}
 	]
 
 	return (
-		<section
-			id="value"
-			className="bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 py-20 px-4 sm:px-6 lg:px-8"
-		>
+		<section className="py-24 px-4 sm:px-6 lg:px-8 border-t border-white/[0.06] bg-slate-900/30">
 			<div className="max-w-7xl mx-auto">
 				{/* Section Header */}
-				<motion.div
-					initial={{ opacity: 0, y: -20 }}
-					whileInView={{ opacity: 1, y: 0 }}
-					transition={{ duration: 0.6 }}
-					viewport={{ once: true }}
-					className="text-center mb-16"
-				>
-					<h2 className="text-4xl sm:text-5xl font-bold text-white mb-4">
-						Our{' '}
-						<span className="bg-gradient-to-r from-blue-400 to-blue-600 bg-clip-text text-transparent">
-							Values
-						</span>
+				<div className="max-w-3xl mb-16">
+					<span className="text-xs font-semibold uppercase tracking-wider text-blue-400">
+						Our Guiding Charter
+					</span>
+					<h2 className="font-serif-display text-3xl sm:text-4xl text-white font-normal mt-2">
+						Principles That Protect Every Tenant & Property Owner
 					</h2>
-					<p className="text-gray-400 text-lg max-w-2xl mx-auto">
-						The principles that guide us in helping you find the
-						perfect place to call home
+					<p className="text-slate-400 text-sm sm:text-base mt-2 leading-relaxed font-light">
+						Real estate technology should foster trust, transparency, and accessible shelter,
+						not exploitation. Here is our unwavering operational code.
 					</p>
-					<div className="w-24 h-1 bg-gradient-to-r from-blue-500 to-blue-600 mx-auto mt-6 rounded-full" />
-				</motion.div>
+				</div>
 
-				{/* Values Grid */}
-				<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-					{values.map((value, index) => (
-						<motion.div
+				{/* Values 2x2 Editorial Grid */}
+				<div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+					{values.map((item, index) => (
+						<div
 							key={index}
-							initial={{ opacity: 0, scale: 0.9 }}
-							whileInView={{ opacity: 1, scale: 1 }}
-							transition={{ duration: 0.5, delay: index * 0.1 }}
-							viewport={{ once: true }}
-							whileHover={{ scale: 1.05 }}
-							className="bg-gray-800/30 backdrop-blur-sm rounded-xl p-6
-									 border border-gray-700 hover:border-blue-500/50
-									 transition-all duration-300"
+							className="p-8 rounded-2xl bg-white/[0.02] border border-white/[0.08] hover:border-white/[0.18] hover:bg-white/[0.035] transition-all flex flex-col justify-between group"
 						>
-							<div className="flex items-start gap-4">
-								<div className="bg-gray-700/50 p-3 rounded-lg shrink-0">
-									{value.icon}
+							<div>
+								<div className="flex items-center justify-between mb-5">
+									<div className="w-12 h-12 rounded-xl bg-white/[0.04] border border-white/[0.08] flex items-center justify-center group-hover:scale-105 transition-transform">
+										{item.icon}
+									</div>
+									<span className="text-[11px] font-semibold uppercase tracking-wider text-slate-400 bg-white/[0.04] px-2.5 py-1 rounded-full border border-white/[0.06]">
+										{item.tag}
+									</span>
 								</div>
-								<div>
-									<h3 className="text-lg font-semibold text-white mb-2">
-										{value.title}
-									</h3>
-									<p className="text-gray-400 text-sm leading-relaxed">
-										{value.description}
-									</p>
-								</div>
+
+								<h3 className="text-lg font-semibold text-white mb-2 group-hover:text-blue-300 transition-colors">
+									{item.title}
+								</h3>
+
+								<p className="text-slate-400 text-sm leading-relaxed">
+									{item.description}
+								</p>
 							</div>
-						</motion.div>
+						</div>
 					))}
 				</div>
 
-				{/* Stats Banner */}
-				<motion.div
-					initial={{ opacity: 0, y: 30 }}
-					whileInView={{ opacity: 1, y: 0 }}
-					transition={{ duration: 0.8, delay: 0.3 }}
-					viewport={{ once: true }}
-					className="mt-16 bg-gradient-to-r from-blue-600 to-blue-800 
-							 rounded-2xl p-8 md:p-12 text-white"
-				>
-					<div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
-						<div>
-							<div className="text-3xl md:text-4xl font-bold mb-2">
-								3,500+
-							</div>
-							<div className="text-blue-100 text-sm">
-								Tenants Assisted
-							</div>
+				{/* Architectural Trust Commitments Banner */}
+				<div className="mt-16 rounded-2xl bg-slate-900/90 border border-white/[0.1] p-8 md:p-10">
+					<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 divide-y sm:divide-y-0 sm:divide-x divide-white/[0.08]">
+						<div className="sm:px-4 first:pl-0">
+							<span className="text-2xl font-bold text-white tracking-tight">100%</span>
+							<p className="text-xs text-slate-300 mt-1 font-medium">Deed-Checked Landlords</p>
+							<p className="text-[11px] text-slate-400 mt-0.5">Physical and records verified</p>
 						</div>
-						<div>
-							<div className="text-3xl md:text-4xl font-bold mb-2">
-								2,800+
-							</div>
-							<div className="text-blue-100 text-sm">
-								Properties Accessed
-							</div>
+
+						<div className="pt-6 sm:pt-0 sm:px-4">
+							<span className="text-2xl font-bold text-white tracking-tight">R 0.00</span>
+							<p className="text-xs text-slate-300 mt-1 font-medium">To Build Digital Profile</p>
+							<p className="text-[11px] text-slate-400 mt-0.5">No hidden application charges</p>
 						</div>
-						<div>
-							<div className="text-3xl md:text-4xl font-bold mb-2">
-								85%
-							</div>
-							<div className="text-blue-100 text-sm">
-								Match Satisfaction
-							</div>
+
+						<div className="pt-6 sm:pt-0 sm:px-4">
+							<span className="text-2xl font-bold text-white tracking-tight">WhatsApp</span>
+							<p className="text-xs text-slate-300 mt-1 font-medium">Direct Viewing Desk</p>
+							<p className="text-[11px] text-slate-400 mt-0.5">Instant scheduling & updates</p>
 						</div>
-						<div>
-							<div className="text-3xl md:text-4xl font-bold mb-2">
-								24h
-							</div>
-							<div className="text-blue-100 text-sm">
-								Response Time
-							</div>
+
+						<div className="pt-6 sm:pt-0 sm:px-4">
+							<span className="text-2xl font-bold text-white tracking-tight">POPIA</span>
+							<p className="text-xs text-slate-300 mt-1 font-medium">Encrypted Compliance</p>
+							<p className="text-[11px] text-slate-400 mt-0.5">Your personal data stays secure</p>
 						</div>
 					</div>
-				</motion.div>
-
-				{/* Important Note */}
-				<motion.div
-					initial={{ opacity: 0, y: 20 }}
-					whileInView={{ opacity: 1, y: 0 }}
-					transition={{ duration: 0.6, delay: 0.5 }}
-					viewport={{ once: true }}
-					className="mt-12 text-center"
-				>
-					<p className="text-gray-500 text-sm max-w-2xl mx-auto border-t border-gray-800 pt-8">
-						<span className="text-blue-400 font-medium">Note:</span>{' '}
-						Place4U is a relocation assistance service, not an
-						estate agency. We facilitate introductions and provide
-						pre-screening, but do not handle leases, payments, or
-						guarantee successful placement.
-					</p>
-				</motion.div>
+				</div>
 			</div>
 		</section>
 	)
 }
 
-export default Value
+export default Values

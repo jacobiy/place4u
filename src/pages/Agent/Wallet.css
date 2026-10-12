@@ -1,0 +1,565 @@
+/* Wallet.css - Agent Commission & Earnings Wallet Styles */
+
+:root {
+  --wallet-bg: #090d16;
+  --wallet-card: rgba(18, 24, 39, 0.75);
+  --wallet-card-hover: rgba(28, 36, 58, 0.85);
+  --wallet-border: rgba(255, 255, 255, 0.08);
+  --wallet-primary: #4f7ef8;
+  --wallet-emerald: #10b981;
+  --wallet-amber: #f59e0b;
+  --wallet-purple: #8b5cf6;
+  --wallet-danger: #ef4444;
+  --wallet-text: #f1f5f9;
+  --wallet-text-muted: #94a3b8;
+  --wallet-text-dim: #64748b;
+}
+
+.agent-wallet-container {
+  min-height: 100%;
+  width: 100%;
+  padding: 2rem 2.5rem 4rem 2.5rem;
+  background: radial-gradient(circle at top right, rgba(16, 185, 129, 0.06) 0%, transparent 45%),
+              radial-gradient(circle at bottom left, rgba(79, 126, 248, 0.06) 0%, transparent 45%),
+              #090d16;
+  color: var(--wallet-text);
+  font-family: 'Plus Jakarta Sans', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  overflow-x: hidden;
+}
+
+.agent-wallet-wrapper {
+  max-width: 1400px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 1.75rem;
+}
+
+/* Header */
+.agent-wallet-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  padding-bottom: 1.25rem;
+  border-bottom: 1px solid var(--wallet-border);
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.agent-wallet-title {
+  font-size: 2.2rem;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  background: linear-gradient(135deg, #ffffff 0%, #cbd5e1 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.agent-wallet-subtitle {
+  font-size: 0.9rem;
+  color: var(--wallet-text-muted);
+  margin-top: 0.35rem;
+}
+
+.agent-wallet-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+/* Hero Cards Grid */
+.agent-wallet-hero-grid {
+  display: grid;
+  grid-template-columns: 1.4fr 1fr 1fr 1fr;
+  gap: 1.25rem;
+}
+
+@media (max-width: 1200px) {
+  .agent-wallet-hero-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 640px) {
+  .agent-wallet-hero-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.agent-wallet-card {
+  background: var(--wallet-card);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid var(--wallet-border);
+  border-radius: 1rem;
+  padding: 1.5rem;
+  transition: all 0.2s ease;
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.agent-wallet-card:hover {
+  border-color: rgba(255, 255, 255, 0.14);
+}
+
+.agent-wallet-balance-card {
+  background: linear-gradient(135deg, rgba(79, 126, 248, 0.15) 0%, rgba(16, 185, 129, 0.1) 100%), var(--wallet-card);
+  border: 1px solid rgba(79, 126, 248, 0.3);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+}
+
+.agent-wallet-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.75rem;
+}
+
+.agent-wallet-icon-box {
+  width: 44px;
+  height: 44px;
+  border-radius: 0.75rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.agent-wallet-pill {
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 0.25rem 0.65rem;
+  border-radius: 9999px;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.agent-wallet-card-label {
+  font-size: 0.78rem;
+  color: var(--wallet-text-muted);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin: 0;
+}
+
+.agent-wallet-card-value {
+  font-size: 2.15rem;
+  font-weight: 800;
+  color: #fff;
+  letter-spacing: -0.03em;
+  margin: 0.35rem 0 0.25rem 0;
+}
+
+.agent-wallet-card-sub {
+  font-size: 0.75rem;
+  color: var(--wallet-text-dim);
+  margin: 0;
+}
+
+/* Tier Progress Banner */
+.agent-tier-card {
+  background: linear-gradient(135deg, rgba(139, 92, 246, 0.12) 0%, rgba(79, 126, 248, 0.08) 100%), var(--wallet-card);
+  border: 1px solid rgba(139, 92, 246, 0.25);
+  border-radius: 1rem;
+  padding: 1.25rem 1.75rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+}
+
+.agent-tier-left {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+}
+
+.agent-tier-badge {
+  width: 52px;
+  height: 52px;
+  border-radius: 1rem;
+  background: linear-gradient(135deg, #8b5cf6 0%, #4f7ef8 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  box-shadow: 0 4px 16px rgba(139, 92, 246, 0.4);
+}
+
+.agent-tier-title {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #fff;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.agent-tier-desc {
+  font-size: 0.8rem;
+  color: var(--wallet-text-muted);
+  margin: 0.25rem 0 0;
+}
+
+.agent-tier-progress-box {
+  flex: 1;
+  min-width: 260px;
+  max-width: 420px;
+}
+
+.agent-tier-progress-labels {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.75rem;
+  color: var(--wallet-text-muted);
+  margin-bottom: 0.4rem;
+}
+
+.agent-tier-progress-bar-bg {
+  width: 100%;
+  height: 8px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 9999px;
+  overflow: hidden;
+}
+
+.agent-tier-progress-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #8b5cf6 0%, #4f7ef8 100%);
+  border-radius: 9999px;
+  transition: width 0.4s ease;
+}
+
+/* Charts Grid */
+.agent-wallet-charts-grid {
+  display: grid;
+  grid-template-columns: 8fr 4fr;
+  gap: 1.25rem;
+}
+
+@media (max-width: 1024px) {
+  .agent-wallet-charts-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.agent-section-card {
+  background: var(--wallet-card);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid var(--wallet-border);
+  border-radius: 1rem;
+  overflow: hidden;
+}
+
+.agent-section-header {
+  padding: 1.25rem 1.75rem;
+  border-bottom: 1px solid var(--wallet-border);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: rgba(255, 255, 255, 0.02);
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.agent-section-title {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin: 0;
+}
+
+.agent-section-body {
+  padding: 1.5rem 1.75rem;
+}
+
+/* Tab Controls */
+.agent-wallet-tabs {
+  display: flex;
+  gap: 0.5rem;
+  border-bottom: 1px solid var(--wallet-border);
+  margin-bottom: 1.25rem;
+}
+
+.agent-wallet-tab-btn {
+  background: transparent;
+  border: none;
+  padding: 0.75rem 1.25rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--wallet-text-muted);
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  transition: all 0.15s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.agent-wallet-tab-btn:hover {
+  color: #fff;
+}
+
+.agent-wallet-tab-btn.active {
+  color: var(--wallet-primary);
+  border-bottom-color: var(--wallet-primary);
+}
+
+/* Search and Filters Bar */
+.agent-filter-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1.25rem;
+  flex-wrap: wrap;
+}
+
+.agent-search-input-wrap {
+  position: relative;
+  flex: 1;
+  max-width: 360px;
+  min-width: 220px;
+}
+
+.agent-search-input-wrap svg {
+  position: absolute;
+  left: 0.85rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--wallet-text-dim);
+}
+
+.agent-search-input {
+  width: 100%;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--wallet-border);
+  border-radius: 0.5rem;
+  padding: 0.5rem 1rem 0.5rem 2.4rem;
+  font-size: 0.85rem;
+  color: #fff !important;
+  transition: all 0.2s ease;
+}
+
+.agent-search-input:focus {
+  outline: none;
+  border-color: var(--wallet-primary);
+  background: rgba(255, 255, 255, 0.07);
+}
+
+.agent-status-filters {
+  display: flex;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+}
+
+.agent-status-filter-pill {
+  padding: 0.35rem 0.85rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  border-radius: 9999px;
+  border: 1px solid var(--wallet-border);
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--wallet-text-muted);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.agent-status-filter-pill:hover {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.agent-status-filter-pill.active {
+  background: var(--wallet-primary);
+  border-color: var(--wallet-primary);
+  color: #fff;
+}
+
+/* Placements & Earnings Table */
+.agent-ledger-table-wrap {
+  overflow-x: auto;
+  border-radius: 0.75rem;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.agent-ledger-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+  font-size: 0.85rem;
+}
+
+.agent-ledger-table thead {
+  background: rgba(255, 255, 255, 0.03);
+  border-bottom: 1px solid var(--wallet-border);
+}
+
+.agent-ledger-table th {
+  padding: 0.85rem 1.25rem;
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--wallet-text-dim);
+}
+
+.agent-ledger-table td {
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+  color: var(--wallet-text);
+  vertical-align: middle;
+}
+
+.agent-ledger-table tbody tr:hover {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.agent-prop-cell {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+}
+
+.agent-prop-thumb {
+  width: 44px;
+  height: 44px;
+  border-radius: 0.5rem;
+  object-fit: cover;
+  flex-shrink: 0;
+  background: #1a2236;
+}
+
+.agent-status-badge-settled {
+  background: rgba(16, 185, 129, 0.12);
+  color: #10b981;
+  border: 1px solid rgba(16, 185, 129, 0.25);
+}
+
+.agent-status-badge-escrow {
+  background: rgba(245, 158, 11, 0.12);
+  color: #f59e0b;
+  border: 1px solid rgba(245, 158, 11, 0.25);
+}
+
+.agent-status-badge-processing {
+  background: rgba(79, 126, 248, 0.12);
+  color: #7c9ffc;
+  border: 1px solid rgba(79, 126, 248, 0.25);
+}
+
+/* Banking Details Card */
+.agent-banking-card {
+  padding: 1.25rem;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--wallet-border);
+  border-radius: 0.75rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+}
+
+.agent-bank-info {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.agent-bank-logo-box {
+  width: 48px;
+  height: 48px;
+  border-radius: 0.75rem;
+  background: #1e293b;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-weight: 800;
+  font-size: 1.1rem;
+}
+
+/* Voucher / Slip View Modal */
+.agent-voucher-container {
+  background: #0d121f;
+  border: 1px solid var(--wallet-border);
+  border-radius: 0.75rem;
+  padding: 1.75rem;
+  font-family: inherit;
+}
+
+.agent-voucher-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding-bottom: 1.25rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.agent-voucher-logo {
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: #fff;
+  letter-spacing: -0.02em;
+}
+
+.agent-voucher-breakdown {
+  margin: 1.25rem 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.agent-voucher-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.85rem;
+  color: var(--wallet-text-muted);
+}
+
+.agent-voucher-total {
+  display: flex;
+  justify-content: space-between;
+  padding-top: 0.75rem;
+  border-top: 1px dashed rgba(255, 255, 255, 0.15);
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #10b981;
+}
+
+/* Responsive tweaks */
+@media (max-width: 768px) {
+  .agent-wallet-container {
+    padding: 1.25rem 1rem 3rem 1rem;
+  }
+  .agent-wallet-title {
+    font-size: 1.75rem;
+  }
+  .agent-wallet-card-value {
+    font-size: 1.75rem;
+  }
+  .agent-tier-card {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .agent-tier-progress-box {
+    width: 100%;
+    max-width: 100%;
+  }
+}

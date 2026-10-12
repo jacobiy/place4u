@@ -24,7 +24,8 @@ export const MyProperties = ({
   activities = [],
   onAddProperty,
   onEditProperty,
-  onViewDetails 
+  onViewDetails,
+  onNavigate
 }) => {
   const [searchQuery, setSearchQuery] = useState("");
   const [filterStatus, setFilterStatus] = useState("all");
@@ -59,6 +60,31 @@ export const MyProperties = ({
     setShowEditModal(false);
   };
 
+  const handleExport = () => {
+    const list = properties || [];
+    if (list.length === 0) return;
+    const headers = ["ID", "Name", "Location", "Rent", "Status", "Bedrooms", "Bathrooms", "Size", "Tenants"];
+    const rows = list.map(p => [
+      p.id,
+      `"${p.name || ''}"`,
+      `"${p.location || ''}"`,
+      `"${p.rent || ''}"`,
+      p.occupied ? "Occupied" : "Vacant",
+      p.bedrooms || 0,
+      p.bathrooms || 0,
+      `"${p.size || ''}"`,
+      `"${(p.tenants || []).join('; ')}"`
+    ]);
+    const csvContent = "data:text/csv;charset=utf-8," + [headers.join(","), ...rows.map(e => e.join(","))].join("\n");
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", `Place4U_Properties_${new Date().toISOString().split('T')[0]}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   return (
     <>
       <PropertyDetailsModal 
@@ -66,6 +92,9 @@ export const MyProperties = ({
         onClose={() => setShowDetailsModal(false)} 
         property={selectedProperty} 
         onEdit={handleEdit}
+        onViewDocuments={() => {
+          if (onNavigate) onNavigate("documents");
+        }}
       />
       <EditPropertyModal 
         isOpen={showEditModal} 
@@ -83,7 +112,7 @@ export const MyProperties = ({
           <p style={{ color: T.textMuted, fontSize: "0.9rem" }}>Manage your rental portfolio and track performance</p>
         </div>
         <div style={{ display: "flex", gap: "8px" }}>
-          <SecondaryBtn>
+          <SecondaryBtn onClick={handleExport}>
             <span style={{ display: "flex", alignItems: "center", gap: "6px" }}>
               <Download size={14} /> Export
             </span>
@@ -143,7 +172,7 @@ export const MyProperties = ({
             </div>
             <select
               value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)}
-              style={{ ...inputStyle, paddingRight: "1rem" }}
+              style={{ ...inputStyle, paddingRight: "2.25rem" }}
             >
               <option value="all">All Properties</option>
               <option value="occupied">Occupied</option>
@@ -169,7 +198,7 @@ export const MyProperties = ({
             {(!properties || properties.length === 0) && !searchQuery && filterStatus === "all" ? (
               <>
                 <p style={{ fontSize: "1rem", fontWeight: 500, color: T.textSecondary }}>No properties yet</p>
-                <p style={{ fontSize: "0.85rem", color: T.textMuted, marginTop: "4px" }}>Upload your first property to start receiving applications and messages.</p>
+                <p style={{ fontSize: "0.85rem", color: T.textMuted, marginTop: "4px" }}>Upload your first property to start receiving tenant applications.</p>
                 <div style={{ display: "flex", justifyContent: "center", marginTop: "1.25rem" }}>
                   <PrimaryBtn onClick={onAddProperty}>
                     <span style={{ display: "flex", alignItems: "center", gap: "6px" }}>

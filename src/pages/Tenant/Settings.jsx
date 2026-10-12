@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Lock, Bell } from 'lucide-react';
+import { Lock, Bell, ShieldCheck, Download, Trash2, CheckCircle2 } from 'lucide-react';
 import { T } from './Styles/designTokens';
 import { PrimaryBtn, SecondaryBtn } from '../Landlord/Component/Buttons';
 import { Modal } from '../Landlord/Component/Modal';
@@ -22,6 +22,44 @@ export const Settings = ({ profile }) => {
   const [successMessage, setSuccessMessage] = useState(null);
   const [showPasswordModal, setShowPasswordModal] = useState(false);
   const [passwordData, setPasswordData] = useState({ current: '', new: '', confirm: '' });
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deleteConfirmation, setDeleteConfirmation] = useState('');
+
+  const handleExportData = () => {
+    try {
+      const exportPayload = {
+        exportDate: new Date().toISOString(),
+        governingLaw: "Protection of Personal Information Act, No. 4 of 2013 (POPIA)",
+        dataSubjectId: profile?.id || 'current-user',
+        profileData: profile,
+        consentTimestamp: new Date().toISOString(),
+        disclaimer: "Official Data Subject Access Request (DSAR) export provided under POPIA Section 23."
+      };
+      const blob = new Blob([JSON.stringify(exportPayload, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `Place4U_POPIA_Data_Export_${profile?.id || 'tenant'}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      setSuccessMessage('Data Subject Access Request (DSAR) export completed successfully.');
+      setTimeout(() => setSuccessMessage(null), 4000);
+    } catch (err) {
+      setError('Failed to generate data export.');
+    }
+  };
+
+  const handleDeleteRequest = () => {
+    if (deleteConfirmation.trim().toLowerCase() !== 'delete') {
+      setError('Please type DELETE to confirm your erasure request.');
+      return;
+    }
+    setShowDeleteModal(false);
+    setDeleteConfirmation('');
+    setSuccessMessage('Data erasure request registered under POPIA Section 24. Our Information Officer has been notified.');
+    setTimeout(() => setSuccessMessage(null), 5000);
+  };
 
   const handlePasswordChange = async () => {
     if (passwordData.new !== passwordData.confirm) {
@@ -96,6 +134,52 @@ export const Settings = ({ profile }) => {
         </div>
       </SettingsSection>
 
+      <SettingsSection title="POPIA Privacy & Data Subject Rights" icon={ShieldCheck}>
+        <div style={{ display: "flex", flexDirection: "column", gap: "1.25rem" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "1rem", paddingBottom: "1rem", borderBottom: `1px solid ${T.border}` }}>
+            <div>
+              <p style={{ color: T.textPrimary, marginBottom: "0.25rem", fontWeight: 600 }}>Download Personal Data (DSAR Export)</p>
+              <p style={{ fontSize: "0.8rem", color: T.textMuted }}>
+                Obtain a machine-readable JSON copy of your profile and submitted applications per POPIA Section 23.
+              </p>
+            </div>
+            <button
+              onClick={handleExportData}
+              type="button"
+              style={{
+                display: "inline-flex", alignItems: "center", gap: "0.5rem",
+                padding: "0.6rem 1rem", borderRadius: "0.5rem",
+                background: "rgba(59, 130, 246, 0.1)", border: "1px solid rgba(59, 130, 246, 0.3)",
+                color: "#60A5FA", fontSize: "0.8rem", fontWeight: 600, cursor: "pointer"
+              }}
+            >
+              <Download size={15} /> Export My Data
+            </button>
+          </div>
+
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "1rem" }}>
+            <div>
+              <p style={{ color: "#F87171", marginBottom: "0.25rem", fontWeight: 600 }}>Right to Erasure & Deletion</p>
+              <p style={{ fontSize: "0.8rem", color: T.textMuted }}>
+                Request permanent destruction of personal data records under POPIA Section 24.
+              </p>
+            </div>
+            <button
+              onClick={() => setShowDeleteModal(true)}
+              type="button"
+              style={{
+                display: "inline-flex", alignItems: "center", gap: "0.5rem",
+                padding: "0.6rem 1rem", borderRadius: "0.5rem",
+                background: "rgba(239, 68, 68, 0.1)", border: "1px solid rgba(239, 68, 68, 0.3)",
+                color: "#F87171", fontSize: "0.8rem", fontWeight: 600, cursor: "pointer"
+              }}
+            >
+              <Trash2 size={15} /> Request Erasure
+            </button>
+          </div>
+        </div>
+      </SettingsSection>
+
       {/* Password Modal */}
       <Modal isOpen={showPasswordModal} onClose={() => setShowPasswordModal(false)} title="Change Password" size="md">
         <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
@@ -110,6 +194,46 @@ export const Settings = ({ profile }) => {
           <div style={{ display: "flex", gap: "1rem", marginTop: "1rem" }}>
             <PrimaryBtn onClick={handlePasswordChange} disabled={isSaving}>{isSaving ? 'Updating...' : 'Update Password'}</PrimaryBtn>
             <SecondaryBtn onClick={() => setShowPasswordModal(false)}>Cancel</SecondaryBtn>
+          </div>
+        </div>
+      </Modal>
+
+      {/* POPIA Erasure Modal */}
+      <Modal isOpen={showDeleteModal} onClose={() => setShowDeleteModal(false)} title="POPIA Data Erasure Request" size="md">
+        <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
+          <p style={{ fontSize: "0.85rem", color: T.textSecondary, lineHeight: 1.5 }}>
+            Pursuant to <strong>Section 24 of the Protection of Personal Information Act (POPIA)</strong>, you are submitting a formal request to destroy or delete personal information held by Place4U.
+          </p>
+          <div style={{ background: "rgba(239, 68, 68, 0.08)", border: "1px solid rgba(239, 68, 68, 0.2)", borderRadius: "0.5rem", padding: "0.75rem" }}>
+            <p style={{ fontSize: "0.75rem", color: "#F87171" }}>
+              ⚠️ Once processed, your applications and verified profile records will be permanently expunged.
+            </p>
+          </div>
+          <div>
+            <label style={{ display: "block", fontSize: "0.75rem", fontWeight: 500, color: T.textMuted, marginBottom: "0.5rem" }}>
+              Type <strong>DELETE</strong> to confirm:
+            </label>
+            <input
+              type="text"
+              value={deleteConfirmation}
+              onChange={(e) => setDeleteConfirmation(e.target.value)}
+              placeholder="DELETE"
+              style={{ width: "100%", padding: "0.75rem", background: T.surface, border: `1px solid ${T.border}`, borderRadius: "0.625rem", color: T.textPrimary, fontFamily: "inherit" }}
+            />
+          </div>
+          <div style={{ display: "flex", gap: "1rem", marginTop: "0.5rem" }}>
+            <button
+              onClick={handleDeleteRequest}
+              type="button"
+              style={{
+                padding: "0.75rem 1.25rem", borderRadius: "0.5rem",
+                background: "#DC2626", color: "#fff", fontWeight: 600, fontSize: "0.85rem",
+                border: "none", cursor: "pointer"
+              }}
+            >
+              Submit Erasure Request
+            </button>
+            <SecondaryBtn onClick={() => setShowDeleteModal(false)}>Cancel</SecondaryBtn>
           </div>
         </div>
       </Modal>

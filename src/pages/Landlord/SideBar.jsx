@@ -1,6 +1,6 @@
-import { Building, MessageSquare, Home, Users, Settings, LogOut, ChevronDown, DollarSign, FileText, Calendar, BarChart3, User } from "lucide-react";
+import { Building, Home, Users, Settings, LogOut, ChevronDown, DollarSign, FileText, Calendar, BarChart3, User, Lock } from "lucide-react";
 import { T } from './Styles/designTokens';
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 
 const initials = (nameOrEmail) => {
   const raw = (nameOrEmail || "").trim();
@@ -11,12 +11,29 @@ const initials = (nameOrEmail) => {
   return `${parts[0][0]}${parts[parts.length - 1][0]}`.toUpperCase();
 };
 
-export const Sidebar = ({ activeView, setActiveView, unreadCount, onLogout, profile, user }) => {
+export const Sidebar = ({ activeView, setActiveView, unreadCount = 0, onLogout, profile, user }) => {
   const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const profileMenuRef = useRef(null);
+
+  const isApproved = String(profile?.application_status || "").toLowerCase() === "approved" && profile?.account_status !== "suspended";
+
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (profileMenuRef.current && !profileMenuRef.current.contains(e.target)) {
+        setIsProfileOpen(false);
+      }
+    };
+    if (isProfileOpen) {
+      document.addEventListener("mousedown", handleClickOutside);
+    }
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [isProfileOpen]);
   const displayName = profile?.full_name || user?.user_metadata?.full_name || user?.email || "John Doe";
   const tier = profile?.account_tier ? `${profile.account_tier[0].toUpperCase()}${profile.account_tier.slice(1)} Landlord` : "Landlord";
 
-  const NavItem = ({ id, icon: Icon, label, badge }) => {
+  const NavItem = ({ id, icon: Icon, label, badge, locked = false }) => {
     const active = activeView === id;
     return (
       <button
@@ -27,27 +44,31 @@ export const Sidebar = ({ activeView, setActiveView, unreadCount, onLogout, prof
           width: "100%",
           border: "none",
           background: active ? "rgba(79,126,248,0.15)" : "transparent",
-          color: active ? T.accent : T.textSecondary,
+          color: active ? T.accent : locked ? T.textMuted : T.textSecondary,
           fontSize: "0.85rem", fontWeight: active ? 600 : 400,
           cursor: "pointer", fontFamily: "inherit", transition: "all 0.15s",
-          marginBottom: "4px"
+          marginBottom: "4px",
+          opacity: locked ? 0.75 : 1
         }}
         onMouseEnter={(e) => {
           if (!active) {
             e.currentTarget.style.background = T.surface;
-            e.currentTarget.style.color = T.textPrimary;
+            e.currentTarget.style.color = locked ? T.textSecondary : T.textPrimary;
           }
         }}
         onMouseLeave={(e) => {
           if (!active) {
             e.currentTarget.style.background = "transparent";
-            e.currentTarget.style.color = T.textSecondary;
+            e.currentTarget.style.color = locked ? T.textMuted : T.textSecondary;
           }
         }}
       >
         <Icon size={18} />
         <span style={{ flex: 1, textAlign: "left" }}>{label}</span>
-        {badge > 0 && (
+        {locked && (
+          <Lock size={13} color={T.textMuted} />
+        )}
+        {badge > 0 && !locked && (
           <span style={{ 
             background: T.red, color: "#fff", fontSize: "0.6rem", 
             fontWeight: 700, padding: "2px 8px", borderRadius: "20px",
@@ -62,9 +83,9 @@ export const Sidebar = ({ activeView, setActiveView, unreadCount, onLogout, prof
 
   const navItems = [
     { id: "dashboard", icon: Home, label: "Dashboard" },
-    { id: "properties", icon: Building, label: "Properties" },
-    { id: "messages", icon: MessageSquare, label: "Messages", badge: unreadCount },
-    { id: "tenants", icon: Users, label: "Tenants" },
+    { id: "properties", icon: Building, label: "Properties", locked: !isApproved },
+    { id: "tenants", icon: Users, label: "Tenants", locked: !isApproved },
+    { id: "documents", icon: FileText, label: "Documents" },
     { id: "profile", icon: User, label: "Profile" },
     { id: "settings", icon: Settings, label: "Settings" },
   ];
@@ -181,17 +202,24 @@ export const Sidebar = ({ activeView, setActiveView, unreadCount, onLogout, prof
           
           {/* Profile Dropdown */}
           {isProfileOpen && (
-            <div style={{
-              position: "absolute",
-              bottom: "calc(100% + 8px)",
-              left: 0,
-              right: 0,
-              background: T.navy,
-              border: `1px solid ${T.border}`,
-              borderRadius: "12px",
-              padding: "0.5rem",
-              boxShadow: "0 10px 25px rgba(0,0,0,0.3)"
-            }}>
+            <div 
+              ref={profileMenuRef}
+              className="dropdown-menu-popover"
+              style={{
+                position: "absolute",
+                bottom: "calc(100% + 8px)",
+                left: 0,
+                right: 0,
+                background: "rgba(17, 24, 39, 0.95)",
+                backdropFilter: "blur(16px)",
+                WebkitBackdropFilter: "blur(16px)",
+                border: `1px solid rgba(255, 255, 255, 0.12)`,
+                borderRadius: "14px",
+                padding: "0.5rem",
+                boxShadow: "0 18px 36px -8px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.06)",
+                zIndex: 60
+              }}
+            >
               <button
                 onClick={() => {
                   setActiveView("profile");

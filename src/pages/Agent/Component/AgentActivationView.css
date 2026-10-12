@@ -1,0 +1,449 @@
+/* Place4U Agent Activation - Human-Crafted Regulatory Onboarding Styles */
+
+.dossier-wrapper {
+  width: 100%;
+  max-width: 1140px;
+  margin: 0 auto;
+  padding: 0.5rem 0.5rem 3rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.75rem;
+}
+
+/* Header & Status Ribbon */
+.dossier-header {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding-bottom: 1.5rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+@media (min-width: 768px) {
+  .dossier-header {
+    flex-direction: row;
+    align-items: flex-end;
+    justify-content: space-between;
+  }
+}
+
+.dossier-title-group h1 {
+  font-size: 1.85rem;
+  font-weight: 700;
+  color: #f8fafc;
+  letter-spacing: -0.025em;
+  margin: 0 0 0.4rem;
+  font-family: inherit;
+}
+
+.dossier-title-group p {
+  font-size: 0.92rem;
+  color: #94a3b8;
+  max-width: 620px;
+  line-height: 1.6;
+  margin: 0;
+}
+
+.dossier-status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.4rem 0.85rem;
+  border-radius: 6px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.dossier-status-badge.inactive {
+  background: rgba(245, 158, 11, 0.1);
+  border: 1px solid rgba(245, 158, 11, 0.25);
+  color: #fbbf24;
+}
+
+.dossier-status-badge.pending {
+  background: rgba(59, 130, 246, 0.1);
+  border: 1px solid rgba(59, 130, 246, 0.25);
+  color: #60a5fa;
+}
+
+/* Two-Column Structured Workspace */
+.dossier-workspace {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.75rem;
+}
+
+@media (min-width: 992px) {
+  .dossier-workspace {
+    grid-template-columns: 1.6fr 1fr;
+    align-items: start;
+  }
+}
+
+/* Left Column: The Main Document Checklist Panel */
+.dossier-panel {
+  background: #111827;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  padding: 1.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.dossier-panel-title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #f1f5f9;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.dossier-panel-title span.count {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: #94a3b8;
+}
+
+/* Verification Checklist Items */
+.checklist-list {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.checklist-row {
+  display: grid;
+  grid-template-columns: 44px 1fr auto;
+  gap: 1rem;
+  align-items: center;
+  padding: 1.15rem 1.25rem;
+  background: rgba(17, 24, 39, 0.7);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  transition: background 0.15s ease;
+}
+
+.checklist-row:last-child {
+  border-bottom: none;
+}
+
+.checklist-row:hover {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.checklist-step-indicator {
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #94a3b8;
+}
+
+.checklist-step-indicator.active {
+  background: rgba(59, 130, 246, 0.15);
+  border-color: rgba(59, 130, 246, 0.4);
+  color: #60a5fa;
+}
+
+.checklist-step-indicator.done {
+  background: rgba(16, 185, 129, 0.15);
+  border-color: rgba(16, 185, 129, 0.4);
+  color: #34d399;
+}
+
+.checklist-step-details h4 {
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: #f8fafc;
+  margin: 0 0 0.2rem;
+}
+
+.checklist-step-details p {
+  font-size: 0.78rem;
+  color: #94a3b8;
+  margin: 0;
+  line-height: 1.45;
+}
+
+.checklist-step-tag {
+  font-size: 0.7rem;
+  font-weight: 500;
+  padding: 0.2rem 0.5rem;
+  border-radius: 4px;
+  color: #94a3b8;
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.checklist-step-tag.required {
+  color: #fbbf24;
+  background: rgba(245, 158, 11, 0.08);
+}
+
+/* Checklist Action Area */
+.dossier-action-footer {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+@media (min-width: 640px) {
+  .dossier-action-footer {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+  }
+}
+
+.dossier-primary-btn {
+  padding: 0.8rem 1.6rem;
+  background: #2563eb;
+  color: #ffffff;
+  font-size: 0.88rem;
+  font-weight: 600;
+  border-radius: 6px;
+  border: none;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: background 0.15s ease, transform 0.1s ease;
+}
+
+.dossier-primary-btn:hover {
+  background: #1d4ed8;
+}
+
+.dossier-primary-btn:active {
+  transform: translateY(1px);
+}
+
+.dossier-help-text {
+  font-size: 0.76rem;
+  color: #64748b;
+  margin: 0;
+  line-height: 1.5;
+}
+
+/* Right Column: Entitlement & Policy Card */
+.entitlement-card {
+  background: #111827;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  padding: 1.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.entitlement-card h3 {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #f1f5f9;
+  margin: 0;
+}
+
+.entitlement-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1.15rem;
+}
+
+.entitlement-item {
+  display: flex;
+  gap: 0.85rem;
+  align-items: flex-start;
+}
+
+.entitlement-icon {
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #94a3b8;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.entitlement-content h5 {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #e2e8f0;
+  margin: 0 0 0.15rem;
+}
+
+.entitlement-content p {
+  font-size: 0.76rem;
+  color: #94a3b8;
+  margin: 0;
+  line-height: 1.45;
+}
+
+.entitlement-regulatory-box {
+  padding: 0.9rem 1rem;
+  background: rgba(15, 23, 42, 0.8);
+  border-left: 3px solid #3b82f6;
+  border-radius: 0 6px 6px 0;
+  font-size: 0.74rem;
+  color: #94a3b8;
+  line-height: 1.5;
+}
+
+.entitlement-regulatory-box strong {
+  color: #e2e8f0;
+}
+
+/* Pending Review Tracker Layout */
+.pending-dossier {
+  background: #111827;
+  border: 1px solid rgba(59, 130, 246, 0.25);
+  border-radius: 12px;
+  padding: 2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.75rem;
+}
+
+.pending-banner {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  padding: 1rem 1.25rem;
+  background: rgba(59, 130, 246, 0.08);
+  border: 1px solid rgba(59, 130, 246, 0.2);
+  border-radius: 8px;
+}
+
+.pending-banner-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  background: rgba(59, 130, 246, 0.2);
+  color: #60a5fa;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.pending-banner h4 {
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: #f1f5f9;
+  margin: 0 0 0.25rem;
+}
+
+.pending-banner p {
+  font-size: 0.8rem;
+  color: #cbd5e1;
+  margin: 0;
+  line-height: 1.5;
+}
+
+/* Dossier Summary Table */
+.dossier-spec-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.8rem;
+}
+
+.dossier-spec-table th,
+.dossier-spec-table td {
+  padding: 0.75rem 1rem;
+  text-align: left;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.dossier-spec-table th {
+  color: #64748b;
+  font-weight: 500;
+  width: 35%;
+}
+
+.dossier-spec-table td {
+  color: #f1f5f9;
+  font-weight: 500;
+}
+
+/* Developer Mode Toolbar (Quiet & Subdued) */
+.dev-sim-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 1rem;
+  padding: 0.75rem 1.25rem;
+  background: rgba(17, 24, 39, 0.5);
+  border: 1px dashed rgba(255, 255, 255, 0.12);
+  border-radius: 8px;
+  font-size: 0.75rem;
+  color: #94a3b8;
+}
+
+.dev-sim-label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.dev-sim-label span.mono-badge {
+  font-family: monospace;
+  font-size: 0.68rem;
+  background: rgba(255, 255, 255, 0.08);
+  padding: 1px 6px;
+  border-radius: 3px;
+  color: #cbd5e1;
+}
+
+.dev-sim-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.dev-btn {
+  font-size: 0.74rem;
+  font-weight: 500;
+  padding: 0.35rem 0.75rem;
+  border-radius: 4px;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.dev-btn.approve {
+  background: rgba(16, 185, 129, 0.15);
+  border-color: rgba(16, 185, 129, 0.35);
+  color: #34d399;
+}
+
+.dev-btn.approve:hover {
+  background: rgba(16, 185, 129, 0.25);
+}
+
+.dev-btn.reset {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(255, 255, 255, 0.08);
+  color: #94a3b8;
+}
+
+.dev-btn.reset:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: #f1f5f9;
+}

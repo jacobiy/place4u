@@ -1,16 +1,22 @@
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { 
   User, Mail, Phone, MapPin, Building, Calendar, 
   Edit2, Save, X, Camera, Lock, Bell, Globe, 
   CreditCard, FileText, Shield, CheckCircle, 
-  AlertCircle, ChevronRight, Copy, Check
+  AlertCircle, ChevronRight, Copy, Check,
+  UploadCloud, Trash2, Eye, ExternalLink, FileCheck, Plus, RefreshCw
 } from 'lucide-react';
 import { T } from './Styles/designTokens';
 import { PrimaryBtn, SecondaryBtn } from './Component/Buttons';
 import { Modal } from './Component/Modal';
+import { DocumentUploadModal } from './Component/DocumentUploadModal';
+import { DocumentPreviewModal } from './Component/DocumentPreviewModal';
+import { DocumentReplaceModal } from './Component/DocumentReplaceModal';
 import { LandlordQueries } from './db/queries';
 import { useAuth } from '../../hooks/useAuth';
 import { supabase } from '../../utils/Supabase';
+import { ConfirmModal } from '../../component/AlertModal';
+import Loading from '../../component/loading';
 
 const ProfileSection = ({ title, icon: Icon, children, onEdit, isEditing }) => (
   <div style={{
@@ -172,8 +178,46 @@ export const Profile = ({ onClose, isModal = false }) => {
   });
   const [copiedField, setCopiedField] = useState(null);
   const [uploadingImage, setUploadingImage] = useState(false);
+  const [showUploadDocModal, setShowUploadDocModal] = useState(false);
+  const [selectedPreviewDoc, setSelectedPreviewDoc] = useState(null);
+  const [isPreviewOpen, setIsPreviewOpen] = useState(false);
+  const [docToDelete, setDocToDelete] = useState(null);
+  const [isDeletingDoc, setIsDeletingDoc] = useState(false);
+  const [docToReplace, setDocToReplace] = useState(null);
 
   const { user } = useAuth();
+
+  const handleConfirmDeleteDoc = async () => {
+    if (!docToDelete || !profileId) return;
+    setIsDeletingDoc(true);
+    try {
+      const res = await LandlordQueries.removeVerificationDocument(profileId, docToDelete.id);
+      if (res.success) {
+        setProfile(res.data);
+        setEditedData(res.data);
+        setSuccessMessage(`"${docToDelete.title}" removed.`);
+        setTimeout(() => setSuccessMessage(null), 2500);
+      }
+    } finally {
+      setIsDeletingDoc(false);
+      setDocToDelete(null);
+    }
+  };
+
+  const handleDocumentReplacedInProfile = (updatedProfile, updatedDoc) => {
+    if (updatedProfile) {
+      setProfile(updatedProfile);
+      setEditedData(updatedProfile);
+    } else if (updatedDoc) {
+      setProfile(prev => ({
+        ...prev,
+        verification_documents: (prev.verification_documents || []).map(d => d.id === updatedDoc.id ? updatedDoc : d)
+      }));
+    }
+    setSuccessMessage(`"${updatedDoc?.title || 'Document'}" replaced successfully!`);
+    setTimeout(() => setSuccessMessage(null), 3000);
+    setDocToReplace(null);
+  };
 
   const loadProfile = useCallback(async () => {
     if (!user?.id) return;
@@ -246,19 +290,26 @@ export const Profile = ({ onClose, isModal = false }) => {
     setError(null);
     setSuccessMessage(null);
     
+    const targetId = profileId || profile?.id || user?.id;
+    if (!targetId) {
+      setError("Unable to identify profile record. Please refresh and try again.");
+      setIsSaving(false);
+      return;
+    }
+
     try {
       let result;
       
       switch(section) {
         case 'personal':
-          result = await LandlordQueries.updatePersonalInfo(profileId, {
+          result = await LandlordQueries.updatePersonalInfo(targetId, {
             fullName: editedData.full_name || editedData.name,
             companyName: editedData.company_name || editedData.companyName,
             taxId: editedData.tax_id || editedData.taxId
           });
           break;
         case 'contact':
-          result = await LandlordQueries.updateContactInfo(profileId, {
+          result = await LandlordQueries.updateContactInfo(targetId, {
             email: editedData.email,
             phone: editedData.phone,
             alternativePhone: editedData.alternative_phone || editedData.alternativePhone,
@@ -266,7 +317,7 @@ export const Profile = ({ onClose, isModal = false }) => {
           });
           break;
         case 'address':
-          result = await LandlordQueries.updateAddressInfo(profileId, {
+          result = await LandlordQueries.updateAddressInfo(targetId, {
             address: editedData.address,
             city: editedData.city,
             state: editedData.state,
@@ -275,25 +326,41 @@ export const Profile = ({ onClose, isModal = false }) => {
           });
           break;
         default:
-          result = await LandlordQueries.updateLandlordProfile(profileId, editedData);
+          result = await LandlordQueries.updateLandlordProfile(targetId, editedData);
       }
       
       if (result.success) {
-        setProfile(result.data);
-        setEditedData(result.data);
+        let updatedProfile = result.data;
+        if (!updatedProfile && user?.id) {
+          const fresh = await LandlordQueries.getLandlordProfile(user.id);
+          if (fresh.success && fresh.data) {
+            updatedProfile = fresh.data;
+          } else {
+            updatedProfile = { ...profile, ...editedData };
+          }
+        }
+        if (updatedProfile) {
+          setProfile(updatedProfile);
+          setEditedData(updatedProfile);
+          if (updatedProfile.id && !profileId) setProfileId(updatedProfile.id);
+        }
         setSuccessMessage('Profile updated successfully!');
         setTimeout(() => setSuccessMessage(null), 3000);
         
-        // Log activity
-        await LandlordQueries.logActivity(profileId, 'profile_update', `Updated ${section} information`);
+        // Log activity safely
+        try {
+          await LandlordQueries.logActivity(targetId, 'profile_update', `Updated ${section} information`);
+        } catch {
+          // ignore
+        }
       } else {
-        throw new Error(result.error);
+        throw new Error(result.error || "Failed to update profile details.");
       }
       
       setIsEditing({ ...isEditing, [section]: false });
     } catch (error) {
       console.error("Error saving profile:", error);
-      setError(error.message);
+      setError(error.message || "Failed to save changes.");
     } finally {
       setIsSaving(false);
     }
@@ -425,17 +492,7 @@ export const Profile = ({ onClose, isModal = false }) => {
   };
 
   if (isLoading) {
-    return (
-      <div style={{
-        display: "flex",
-        justifyContent: "center",
-        alignItems: "center",
-        height: "100vh",
-        color: T.textPrimary
-      }}>
-        <div>Loading profile...</div>
-      </div>
-    );
+    return <Loading fullScreen message="Loading profile..." />;
   }
 
   if (error && !profile) {
@@ -557,7 +614,8 @@ export const Profile = ({ onClose, isModal = false }) => {
               <h1 style={{ fontSize: "1.75rem", fontWeight: 700, color: T.textPrimary }}>
                 {profile?.full_name || profile?.name}
               </h1>
-              <div style={{ display: "flex", gap: "0.5rem" }}>
+              <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
+                <VerificationBadge verified={profile?.ownership_proof_verified || false} label="Ownership Verified" />
                 <VerificationBadge verified={profile?.email_verified || false} label="Email Verified" />
                 <VerificationBadge verified={profile?.id_verified || false} label="ID Verified" />
               </div>
@@ -761,6 +819,264 @@ export const Profile = ({ onClose, isModal = false }) => {
         )}
       </ProfileSection>
 
+      {/* Proof of Ownership & Verification Documents Section */}
+      <div style={{
+        background: T.cardBg,
+        border: `1px solid ${T.border}`,
+        borderRadius: "1rem",
+        overflow: "hidden",
+        marginBottom: "1.5rem"
+      }}>
+        <div style={{
+          padding: "1rem 1.5rem",
+          borderBottom: `1px solid ${T.border}`,
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          flexWrap: "wrap",
+          gap: "1rem",
+          background: "rgba(79,126,248,0.04)"
+        }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
+            <Shield size={20} color={T.accent} />
+            <div>
+              <h2 style={{ fontSize: "1.1rem", fontWeight: 600, color: T.textPrimary }}>
+                Proof of Ownership & Verification Documents
+              </h2>
+              <p style={{ fontSize: "0.75rem", color: T.textMuted, marginTop: "2px" }}>
+                Title deeds, municipal rates, ID documents, and compliance certificates
+              </p>
+            </div>
+          </div>
+          <button
+            onClick={() => setShowUploadDocModal(true)}
+            style={{
+              padding: "0.5rem 1rem",
+              background: T.accent,
+              border: "none",
+              borderRadius: "8px",
+              color: "#ffffff",
+              fontSize: "0.8rem",
+              fontWeight: 600,
+              cursor: "pointer",
+              display: "flex",
+              alignItems: "center",
+              gap: "6px"
+            }}
+          >
+            <Plus size={15} /> Upload Document
+          </button>
+        </div>
+
+        <div style={{ padding: "1.5rem" }}>
+          {profile?.verification_documents && profile.verification_documents.length > 0 ? (
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: "1rem" }}>
+              {profile.verification_documents.map((doc, idx) => (
+                <div
+                  key={doc.id || idx}
+                  style={{
+                    background: T.surface,
+                    border: `1px solid ${T.border}`,
+                    borderRadius: "0.75rem",
+                    padding: "1rem",
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: "8px"
+                  }}
+                >
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                      <div style={{
+                        width: "32px",
+                        height: "32px",
+                        borderRadius: "8px",
+                        background: "rgba(79,126,248,0.12)",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center"
+                      }}>
+                        <Shield size={16} color={T.accent} />
+                      </div>
+                      <div>
+                        <span style={{ fontSize: "0.68rem", textTransform: "uppercase", color: T.accent, fontWeight: 600 }}>
+                          {doc.documentType === "ownership" ? "Proof of Ownership" : doc.documentType}
+                        </span>
+                        <h4 style={{ fontSize: "0.85rem", fontWeight: 600, color: T.textPrimary, lineHeight: 1.2 }}>
+                          {doc.title}
+                        </h4>
+                      </div>
+                    </div>
+                    <span style={{
+                      fontSize: "0.65rem",
+                      fontWeight: 700,
+                      padding: "2px 6px",
+                      borderRadius: "10px",
+                      background: "rgba(16,185,129,0.15)",
+                      color: T.emerald
+                    }}>
+                      VERIFIED
+                    </span>
+                  </div>
+
+                  <p style={{ fontSize: "0.75rem", color: T.textMuted }}>
+                    Property: <strong>{doc.propertyName || "Portfolio-wide"}</strong>
+                  </p>
+                  <p style={{ fontSize: "0.7rem", color: T.textMuted }}>
+                    {doc.fileName} • {doc.uploadedAt ? new Date(doc.uploadedAt).toLocaleDateString() : "Active"}
+                  </p>
+
+                  <div style={{ display: "flex", gap: "6px", marginTop: "4px" }}>
+                    <button
+                      onClick={() => {
+                        setSelectedPreviewDoc(doc);
+                        setIsPreviewOpen(true);
+                      }}
+                      style={{
+                        flex: 1,
+                        padding: "6px",
+                        background: "rgba(79,126,248,0.12)",
+                        border: `1px solid rgba(79,126,248,0.25)`,
+                        borderRadius: "6px",
+                        color: T.accent,
+                        fontSize: "0.75rem",
+                        fontWeight: 600,
+                        cursor: "pointer",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        gap: "4px"
+                      }}
+                    >
+                      <Eye size={13} /> Preview
+                    </button>
+                    <button
+                      onClick={() => setDocToReplace(doc)}
+                      title="Replace with new file"
+                      style={{
+                        padding: "6px 10px",
+                        background: "transparent",
+                        border: `1px solid ${T.border}`,
+                        borderRadius: "6px",
+                        color: T.textMuted,
+                        cursor: "pointer",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        gap: "4px",
+                        fontSize: "0.8rem",
+                        transition: "all 0.15s"
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.color = T.accent;
+                        e.currentTarget.style.borderColor = T.accent;
+                        e.currentTarget.style.background = "rgba(79, 126, 248, 0.08)";
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.color = T.textMuted;
+                        e.currentTarget.style.borderColor = T.border;
+                        e.currentTarget.style.background = "transparent";
+                      }}
+                    >
+                      <RefreshCw size={13} /> Replace
+                    </button>
+                    <button
+                      onClick={() => setDocToDelete(doc)}
+                      title="Remove document"
+                      style={{
+                        padding: "6px 10px",
+                        background: "transparent",
+                        border: `1px solid ${T.border}`,
+                        borderRadius: "6px",
+                        color: T.textMuted,
+                        cursor: "pointer"
+                      }}
+                    >
+                      <Trash2 size={13} />
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div style={{
+              textAlign: "center",
+              padding: "2rem",
+              background: T.surface,
+              borderRadius: "0.75rem",
+              border: `1px dashed ${T.border}`
+            }}>
+              <Shield size={36} color={T.textMuted} style={{ margin: "0 auto 8px", opacity: 0.6 }} />
+              <p style={{ color: T.textPrimary, fontWeight: 600, fontSize: "0.95rem" }}>
+                No verification documents uploaded yet
+              </p>
+              <p style={{ color: T.textMuted, fontSize: "0.8rem", maxWidth: "400px", margin: "4px auto 1rem" }}>
+                Upload your Title Deed or municipal rates clearance to get your landlord ownership verified.
+              </p>
+              <PrimaryBtn onClick={() => setShowUploadDocModal(true)}>
+                <span style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                  <Plus size={14} /> Upload Proof of Ownership
+                </span>
+              </PrimaryBtn>
+            </div>
+          )}
+        </div>
+      </div>
+
+      <DocumentUploadModal
+        isOpen={showUploadDocModal}
+        onClose={() => setShowUploadDocModal(false)}
+        profile={profile}
+        user={user}
+        defaultCategory="ownership"
+        onDocumentUploaded={(updatedProfile) => {
+          setProfile(updatedProfile);
+          setEditedData(updatedProfile);
+          setSuccessMessage("Proof of ownership document uploaded successfully!");
+          setTimeout(() => setSuccessMessage(null), 3000);
+        }}
+      />
+
+      <DocumentPreviewModal
+        isOpen={isPreviewOpen}
+        onClose={() => setIsPreviewOpen(false)}
+        document={selectedPreviewDoc}
+        profile={profile}
+        user={user}
+        onReplace={handleDocumentReplacedInProfile}
+        onDelete={async (docId) => {
+          const res = await LandlordQueries.removeVerificationDocument(profileId, docId);
+          if (res.success) {
+            setProfile(res.data);
+            setEditedData(res.data);
+            setSuccessMessage("Document removed.");
+            setTimeout(() => setSuccessMessage(null), 2500);
+          }
+        }}
+      />
+
+      {/* Document Replace Modal */}
+      <DocumentReplaceModal
+        isOpen={!!docToReplace}
+        onClose={() => setDocToReplace(null)}
+        document={docToReplace}
+        profile={profile}
+        user={user}
+        onDocumentReplaced={handleDocumentReplacedInProfile}
+      />
+
+      {/* Styled Document Deletion Confirmation Modal */}
+      <ConfirmModal
+        isOpen={!!docToDelete}
+        title="Remove Verification Document?"
+        itemName={docToDelete?.title}
+        message="Are you sure you want to remove this verification document from your profile? This cannot be undone."
+        confirmText="Yes, Remove Document"
+        cancelText="Cancel"
+        type="danger"
+        isLoading={isDeletingDoc}
+        onConfirm={handleConfirmDeleteDoc}
+        onCancel={() => !isDeletingDoc && setDocToDelete(null)}
+      />
 
     </div>
   );

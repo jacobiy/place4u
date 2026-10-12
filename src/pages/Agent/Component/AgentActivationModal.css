@@ -1,0 +1,302 @@
+/* Agent Activation Modal - Human-Crafted Styles */
+
+.activation-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  background: rgba(4, 7, 15, 0.82);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  overflow-y: auto;
+}
+
+.activation-modal-card {
+  background: #101726;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 14px;
+  width: 100%;
+  max-width: 620px;
+  box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.75);
+  display: flex;
+  flex-direction: column;
+  max-height: 90vh;
+  margin: auto;
+  overflow: hidden;
+}
+
+/* Header */
+.activation-modal-header {
+  padding: 1.5rem 1.75rem 1.25rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  background: rgba(255, 255, 255, 0.015);
+}
+
+.activation-modal-header h3 {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: #f8fafc;
+  margin: 0 0 0.25rem;
+  letter-spacing: -0.015em;
+}
+
+.activation-modal-header p {
+  font-size: 0.82rem;
+  color: #94a3b8;
+  margin: 0;
+  line-height: 1.45;
+}
+
+.activation-modal-close {
+  background: transparent;
+  border: none;
+  color: #64748b;
+  cursor: pointer;
+  padding: 0.35rem;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s ease;
+}
+
+.activation-modal-close:hover {
+  background: rgba(255, 255, 255, 0.06);
+  color: #f1f5f9;
+}
+
+/* Step Bar */
+.activation-modal-progress {
+  padding: 0.75rem 1.75rem;
+  background: #0c121e;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.78rem;
+}
+
+.activation-progress-label {
+  font-weight: 600;
+  color: #cbd5e1;
+}
+
+.activation-progress-track {
+  width: 120px;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 9999px;
+  overflow: hidden;
+}
+
+.activation-progress-fill {
+  height: 100%;
+  background: #3b82f6;
+  border-radius: 9999px;
+  transition: width 0.3s ease;
+}
+
+/* Body / Form */
+.activation-modal-body {
+  padding: 1.5rem 1.75rem;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.activation-notice-box {
+  padding: 0.85rem 1rem;
+  background: rgba(59, 130, 246, 0.08);
+  border-left: 3px solid #3b82f6;
+  border-radius: 0 6px 6px 0;
+  font-size: 0.78rem;
+  color: #cbd5e1;
+  line-height: 1.5;
+}
+
+.activation-grid-2 {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+}
+
+@media (min-width: 600px) {
+  .activation-grid-2 {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.activation-grid-3 {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+}
+
+@media (min-width: 600px) {
+  .activation-grid-3 {
+    grid-template-columns: 1.2fr 1fr 0.8fr;
+  }
+}
+
+.activation-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.activation-field label {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #cbd5e1;
+}
+
+.activation-field label span.req {
+  color: #f87171;
+  margin-left: 2px;
+}
+
+.activation-field input,
+.activation-field select,
+.activation-field textarea {
+  padding: 0.65rem 0.85rem;
+  background: #090e1a;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 6px;
+  color: #f8fafc;
+  font-size: 0.85rem;
+  outline: none;
+  font-family: inherit;
+  transition: border-color 0.15s ease;
+}
+
+.activation-field input:focus,
+.activation-field select:focus,
+.activation-field textarea:focus {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+}
+
+.activation-field input:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  background: rgba(255, 255, 255, 0.02);
+}
+
+/* Upload Dropzone Cards */
+.upload-dropzone-card {
+  padding: 1.15rem;
+  background: #0c121e;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+.upload-dropzone-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.upload-dropzone-title {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #f8fafc;
+}
+
+.upload-dropzone-desc {
+  font-size: 0.75rem;
+  color: #94a3b8;
+  margin: 0;
+}
+
+.upload-dropzone-box {
+  padding: 1.25rem;
+  border: 1px dashed rgba(255, 255, 255, 0.15);
+  border-radius: 6px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  background: rgba(255, 255, 255, 0.015);
+  transition: all 0.15s ease;
+  text-align: center;
+}
+
+.upload-dropzone-box:hover {
+  border-color: #3b82f6;
+  background: rgba(59, 130, 246, 0.04);
+}
+
+.upload-dropzone-preview {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.65rem 0.85rem;
+  background: rgba(16, 185, 129, 0.08);
+  border: 1px solid rgba(16, 185, 129, 0.25);
+  border-radius: 6px;
+  font-size: 0.78rem;
+}
+
+/* Footer Actions */
+.activation-modal-footer {
+  padding: 1.15rem 1.75rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.07);
+  background: #0c121e;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.modal-btn-cancel {
+  padding: 0.65rem 1.15rem;
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: #cbd5e1;
+  font-size: 0.82rem;
+  font-weight: 500;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.modal-btn-cancel:hover {
+  background: rgba(255, 255, 255, 0.05);
+  color: #ffffff;
+}
+
+.modal-btn-primary {
+  padding: 0.65rem 1.45rem;
+  background: #2563eb;
+  color: #ffffff;
+  font-size: 0.82rem;
+  font-weight: 600;
+  border-radius: 6px;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: background 0.15s ease;
+}
+
+.modal-btn-primary:hover {
+  background: #1d4ed8;
+}
+
+.modal-btn-primary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
