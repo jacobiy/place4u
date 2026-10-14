@@ -1,7 +1,28 @@
 import { createClient } from '@supabase/supabase-js'
 
-const FALLBACK_SUPABASE_URL = 'https://rfajxzjrzmckroitcqxz.supabase.co'
-const FALLBACK_SUPABASE_ANON_KEY = 'sb_publishable_mGvaE8MgMQ6PcfPtmSS2Zw_mInWWc_s'
+/**
+ * Required Supabase credentials, resolved once at build time.
+ *
+ * These are deliberately NOT defaulted. Vite inlines every `VITE_*` value at
+ * build time, so a missing value means this bundle was built without its
+ * environment configured. This file used to fall back to a hard-coded live
+ * project — which would silently point a dev / uat build at production data.
+ * Shipping that cross-environment leak is far worse than failing loudly, so a
+ * missing or invalid value throws here, and `vite.config.js` fails the build
+ * even earlier, before anything reaches the browser.
+ */
+const ENV_SETUP_HINT =
+  'Copy .env.example to .env, set the value, then rebuild. Vite inlines VITE_* ' +
+  'variables at build time, so a running dev server needs a restart and a ' +
+  'deployed build needs the value set in the host build environment.'
+
+function requireEnv(value, name) {
+  const raw = String(value ?? '').trim()
+  if (!raw) {
+    throw new Error(`[Supabase] Missing required environment variable ${name}. ${ENV_SETUP_HINT}`)
+  }
+  return raw
+}
 
 /**
  * Normalise and validate the Supabase project URL.
@@ -15,7 +36,7 @@ const FALLBACK_SUPABASE_ANON_KEY = 'sb_publishable_mGvaE8MgMQ6PcfPtmSS2Zw_mInWWc
  * @returns {string} an origin such as `https://<project-ref>.supabase.co`
  */
 function resolveSupabaseUrl(value) {
-  const raw = String(value || FALLBACK_SUPABASE_URL).trim().replace(/\/+$/, '')
+  const raw = requireEnv(value, 'VITE_SUPABASE_URL').replace(/\/+$/, '')
 
   try {
     const parsed = new URL(raw)
@@ -24,20 +45,15 @@ function resolveSupabaseUrl(value) {
     }
     return parsed.origin
   } catch (err) {
-    console.error(
+    throw new Error(
       `[Supabase] VITE_SUPABASE_URL is not a valid http(s) URL (${err?.message || err}). ` +
-        `Received: ${JSON.stringify(value)}. Falling back to the default project URL.`
+        `Received: ${JSON.stringify(value)}.`
     )
-    return FALLBACK_SUPABASE_URL
   }
 }
 
 const supabaseUrl = resolveSupabaseUrl(import.meta.env.VITE_SUPABASE_URL)
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || FALLBACK_SUPABASE_ANON_KEY
-
-if (!supabaseUrl || !supabaseAnonKey) {
-  throw new Error('Missing Supabase environment variables')
-}
+const supabaseAnonKey = requireEnv(import.meta.env.VITE_SUPABASE_ANON_KEY, 'VITE_SUPABASE_ANON_KEY')
 
 // A single stalled request (common right after a backgrounded tab regains focus
 // and Supabase refreshes its token) must never leave a page spinning forever.

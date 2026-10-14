@@ -1,13 +1,16 @@
 /**
  * Place4U PayPal Card Payment Service
- * Configured with live PayPal credentials ported from lendmeadollar.
+ *
+ * Credentials come from build-time `VITE_*` variables (see .env.example). They
+ * are intentionally NOT defaulted to a live account: this service is shared by
+ * the dev, uat and production builds, so silently falling back to live
+ * credentials would let a test build charge real cards.
  */
-
 export const PAYPAL_CONFIG = {
-  clientId:
-    import.meta.env.VITE_PAYPAL_CLIENT_ID ||
-    'BAAoMHFAgElb1A0kmbOtYM-eWIgHyh1k98p8VwcEcPZhbZNWVhfGqnad-xX9b3PI0RmOhWygCJknFi1QEQ',
-  environment: import.meta.env.VITE_PAYPAL_ENVIRONMENT || 'live',
+  clientId: String(import.meta.env.VITE_PAYPAL_CLIENT_ID || '').trim(),
+  // Default to sandbox, never live: a dev / uat build that forgets to set this
+  // must not be able to take real payments.
+  environment: import.meta.env.VITE_PAYPAL_ENVIRONMENT || 'sandbox',
   applicationFeeZar: Number(import.meta.env.VITE_APPLICATION_FEE_ZAR) || 100,
   // ZAR to USD conversion for PayPal international processing (~R100 = $5.50 USD)
   approxUsdAmount: 5.50,
