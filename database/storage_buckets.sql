@@ -101,6 +101,11 @@ USING (
       WHERE public.users.id = auth.uid()
       AND public.users.user_type IN ('landlord', 'agent')
     )
+    OR
+    -- 5. Lease agreements and signed lease documents (shared between landlord and tenant)
+    name LIKE '%/leases/%'
+    OR
+    name LIKE '%/signed_leases/%'
   )
 );
 

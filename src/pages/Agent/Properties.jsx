@@ -5,7 +5,7 @@ import PropertyDetailView from "./PropertyDetailView";
 import Loading from "../../component/loading";
 import "./Properties.css";
 
-export const Properties = ({ properties, onRefresh, loading }) => {
+export const Properties = ({ properties = [], onRefresh, loading }) => {
   const [query, setQuery] = useState("");
   const [selectedProperty, setSelectedProperty] = useState(null);
 
@@ -29,9 +29,10 @@ export const Properties = ({ properties, onRefresh, loading }) => {
   }
 
   return (
-    <div>
+    <div className="properties-page">
       <div className="properties-header">
         <div>
+          <span className="ag-eyebrow">Inventory</span>
           <h1 className="properties-title">
             Properties
           </h1>
@@ -76,7 +77,9 @@ export const Properties = ({ properties, onRefresh, loading }) => {
                 <p className="property-card-address">{p.address}</p>
                 <div className="property-card-tags">
                   <span className="property-card-tag">
-                    R{Number(p.price).toLocaleString()}/mo
+                    {Number.isFinite(Number(p.price)) && Number(p.price) > 0
+                      ? `R${Number(p.price).toLocaleString()}/mo`
+                      : 'Price on request'}
                   </span>
                   {typeof p.bedrooms === "number" && (
                     <span className="property-card-tag">
@@ -98,7 +101,7 @@ export const Properties = ({ properties, onRefresh, loading }) => {
                   onClick={() => setSelectedProperty(p)}
                   className="property-view-details-btn"
                 >
-                  View Details
+                  View details
                 </button>
               </div>
             </div>

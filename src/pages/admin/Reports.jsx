@@ -14,44 +14,7 @@ export default function ReportsPage() {
   const [downloading, setDownloading] = useState(null)
   const [toast, setToast] = useState(null)
 
-  const reports = [
-    {
-      id: 'REP-01',
-      title: 'Monthly Consolidated Escrow Statement',
-      category: 'Financial Audit',
-      format: 'CSV / PDF',
-      generated: '01 Oct 2026',
-      size: '2.4 MB',
-      description: 'Breakdown of security deposits held in audited trust accounts per Property Practitioners Regulatory Authority (PPRA, Act 22 of 2019) guidelines.'
-    },
-    {
-      id: 'REP-02',
-      title: 'FICA Compliance & Identity Verification Audit',
-      category: 'Regulatory',
-      format: 'CSV',
-      generated: '05 Oct 2026',
-      size: '840 KB',
-      description: 'Audit log of verified landlord deeds, tenant IDs, and proof of residence documents.'
-    },
-    {
-      id: 'REP-03',
-      title: 'Landlord Gross Disbursement Ledger',
-      category: 'Disbursements',
-      format: 'CSV',
-      generated: '07 Oct 2026',
-      size: '1.8 MB',
-      description: 'Net rental payouts remitted to landlord banking accounts post-management fee deductions.'
-    },
-    {
-      id: 'REP-04',
-      title: 'SARS Section 13sex Tax Statement Schedule',
-      category: 'Taxation',
-      format: 'PDF',
-      generated: 'Quarterly Q3 2026',
-      size: '3.1 MB',
-      description: 'Commercial and residential building depreciation and rental income certificates.'
-    }
-  ]
+  const reports = []
 
   const handleDownload = (rep) => {
     setDownloading(rep.id)

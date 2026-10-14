@@ -7,6 +7,7 @@ import {
   Users,
   Building2,
   FileCheck2,
+  ClipboardCheck,
   ShieldCheck,
   CreditCard,
   LineChart,
@@ -14,10 +15,11 @@ import {
   LogOut,
   X,
   Mail,
-  ExternalLink
+  GitBranch
 } from 'lucide-react'
-import { openGmail, getAdminAgentApplications, getAdminLandlordApplications } from '../db/queries'
+import { openGmail, getAdminAgentApplications, getAdminLandlordApplications, getPropertySubmissionCount } from '../db/queries'
 import { subscribeToApplicationUpdates } from '../../../services/applicationSync'
+import { listPipelineMatches } from '../../../services/matchWorkflowService'
 
 const navLinkClass =
   'sidebar-link flex items-center gap-3 px-3 py-2 rounded-lg text-xs font-medium text-slate-300 transition-colors'
@@ -35,8 +37,11 @@ export default function AdminSidebar({ isOpen, onClose }) {
   const { user, signOut } = useAuth()
   const [adminName, setAdminName] = useState('Admin')
   const [unassignedCount, setUnassignedCount] = useState(0)
+  const [rejectedCount, setRejectedCount] = useState(0)
   const [pendingAgentCount, setPendingAgentCount] = useState(0)
   const [pendingLandlordCount, setPendingLandlordCount] = useState(0)
+  const [pendingSubmissionCount, setPendingSubmissionCount] = useState(0)
+  const [pendingApprovalCount, setPendingApprovalCount] = useState(0)
 
   useEffect(() => {
     if (user?.id) {
@@ -62,7 +67,19 @@ export default function AdminSidebar({ isOpen, onClose }) {
         })
     }
 
+    // Jobs an agent declined — the admin must reassign them
+    const fetchRejected = () => {
+      supabase
+        .from('applications')
+        .select('id', { count: 'exact', head: true })
+        .eq('assignment_status', 'rejected')
+        .then(({ count, error }) => {
+          if (!error && typeof count === 'number') setRejectedCount(count)
+        })
+    }
+
     fetchUnassigned()
+    fetchRejected()
 
     // Get count of pending agent applications
     getAdminAgentApplications()
@@ -80,8 +97,22 @@ export default function AdminSidebar({ isOpen, onClose }) {
       })
       .catch(() => {})
 
+    // Get count of landlord property listings awaiting approval
+    getPropertySubmissionCount()
+      .then((count) => setPendingSubmissionCount(count || 0))
+      .catch(() => {})
+
+    // Matches awaiting admin sign-off (landlord accepted, not yet approved)
+    listPipelineMatches()
+      .then((res) => {
+        const count = (res?.data || []).filter((m) => m.state === 'landlord_accepted').length
+        setPendingApprovalCount(count)
+      })
+      .catch(() => {})
+
     const unsubscribe = subscribeToApplicationUpdates(() => {
       fetchUnassigned()
+      fetchRejected()
     })
 
     return () => unsubscribe()
@@ -157,8 +188,13 @@ export default function AdminSidebar({ isOpen, onClose }) {
           >
             <FileCheck2 size={15} />
             Tenant Applications
+            {rejectedCount > 0 && (
+              <span className="ml-auto bg-red-500/20 text-red-300 border border-red-500/30 text-[10px] font-bold px-1.5 py-0.2 rounded-full">
+                {rejectedCount}
+              </span>
+            )}
             {unassignedCount > 0 && (
-              <span className="ml-auto bg-amber-500/20 text-amber-300 border border-amber-500/30 text-[10px] font-bold px-1.5 py-0.2 rounded-full">
+              <span className={`${rejectedCount > 0 ? '' : 'ml-auto'} bg-amber-500/20 text-amber-300 border border-amber-500/30 text-[10px] font-bold px-1.5 py-0.2 rounded-full`}>
                 {unassignedCount}
               </span>
             )}
@@ -193,12 +229,40 @@ export default function AdminSidebar({ isOpen, onClose }) {
           </NavLink>
 
           <NavLink
+            to="/admin/property-submissions"
+            onClick={onClose}
+            className={({ isActive }) => `${navLinkClass} ${isActive ? navLinkActiveClass : 'hover:bg-white/5'}`}
+          >
+            <ClipboardCheck size={15} />
+            Property Submissions
+            {pendingSubmissionCount > 0 && (
+              <span className="ml-auto bg-amber-500/20 text-amber-300 border border-amber-500/30 text-[10px] font-bold px-1.5 py-0.2 rounded-full">
+                {pendingSubmissionCount}
+              </span>
+            )}
+          </NavLink>
+
+          <NavLink
             to="/admin/properties"
             onClick={onClose}
             className={({ isActive }) => `${navLinkClass} ${isActive ? navLinkActiveClass : 'hover:bg-white/5'}`}
           >
             <Building2 size={15} />
             Property Management
+          </NavLink>
+
+          <NavLink
+            to="/admin/pipeline"
+            onClick={onClose}
+            className={({ isActive }) => `${navLinkClass} ${isActive ? navLinkActiveClass : 'hover:bg-white/5'}`}
+          >
+            <GitBranch size={15} />
+            Match Pipeline
+            {pendingApprovalCount > 0 && (
+              <span className="ml-auto bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-[10px] font-bold px-1.5 py-0.2 rounded-full">
+                {pendingApprovalCount}
+              </span>
+            )}
           </NavLink>
 
           <NavLink

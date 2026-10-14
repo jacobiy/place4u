@@ -1,7 +1,7 @@
 // Navbar.jsx - Place4U Dark Sleek Navbar
 import React, { useState, useEffect } from 'react'
 import { BiMenuAltRight } from 'react-icons/bi'
-import { HiX, HiShieldCheck, HiArrowRight } from 'react-icons/hi'
+import { HiX, HiArrowRight } from 'react-icons/hi'
 import OutsideClickHandler from 'react-outside-click-handler'
 import { Link, useNavigate } from 'react-router-dom'
 
@@ -21,9 +21,8 @@ const Navbar = () => {
 	const navItems = [
 		{ name: 'Featured Spaces', href: '#residencies' },
 		{ name: 'How It Works', href: '#how-it-works' },
-		{ name: 'Trust Ecosystem', href: '#ecosystem' },
-		{ name: 'WhatsApp Desk', href: '#whatsapp-desk' },
-		{ name: 'Member Stories', href: '#stories' }
+		{ name: 'About Us', href: '#about' },
+		{ name: 'WhatsApp Desk', href: '#whatsapp-desk' }
 	]
 
 	return (
@@ -34,38 +33,27 @@ const Navbar = () => {
 					: 'bg-slate-950/85 backdrop-blur-lg py-4 border-b border-white/[0.06]'
 			}`}
 		>
-			<div className="flex justify-between items-center max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-				{/* Brand Logo & Name */}
+			<div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-10 flex items-center justify-between lg:grid lg:grid-cols-[1fr_auto_1fr]">
+				{/* Brand Logo */}
 				<Link
 					to="/"
-					className="flex items-center gap-3 group focus:outline-none py-1"
+					className="flex items-center gap-3 group focus:outline-none py-1 justify-self-start ml-2 sm:ml-4 lg:ml-10"
 					aria-label="Place4U - Home"
 				>
-					<div className="relative flex items-center gap-2.5">
-						<img
-							src="/logo.png"
-							alt="Place4U Logo"
-							className="h-9 sm:h-10 w-auto object-contain transition-all duration-300 group-hover:scale-105 filter brightness-0 invert drop-shadow-[0_2px_8px_rgba(255,255,255,0.2)]"
-						/>
-						<span className="font-['Space_Grotesk'] font-bold text-xl tracking-tight text-white">
-							Place4U
-						</span>
-					</div>
-
-					{/* Subtle Trust Badge */}
-					<span className="hidden sm:inline-flex items-center gap-1 text-[10px] font-semibold tracking-wider uppercase text-emerald-400 bg-emerald-950/70 border border-emerald-500/30 px-2.5 py-0.5 rounded-full backdrop-blur-sm self-center">
-						<HiShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
-						<span>Verified</span>
-					</span>
+					<img
+						src="/logo.png"
+						alt="Place4U Logo"
+						className="h-9 sm:h-10 lg:h-11 w-auto object-contain transition-all duration-300 group-hover:scale-105 filter brightness-0 invert drop-shadow-[0_2px_8px_rgba(255,255,255,0.2)]"
+					/>
 				</Link>
 
-				{/* Desktop Menu */}
-				<div className="hidden lg:flex items-center gap-7">
+				{/* Desktop Menu — centered */}
+				<div className="hidden lg:flex items-center justify-center gap-7 justify-self-center">
 					{navItems.map((item) => (
 						<a
 							key={item.name}
 							href={item.href}
-							className="text-sm font-medium text-slate-300 hover:text-white transition-colors relative py-1 group"
+							className="text-sm font-medium text-slate-300 hover:text-white transition-colors relative py-1 group whitespace-nowrap"
 						>
 							{item.name}
 							<span className="absolute bottom-0 left-0 w-0 h-[2px] bg-blue-500 transition-all duration-200 group-hover:w-full rounded-full" />
@@ -73,8 +61,8 @@ const Navbar = () => {
 					))}
 				</div>
 
-				{/* Desktop Auth CTAs */}
-				<div className="hidden lg:flex items-center gap-3">
+				{/* Desktop Auth CTAs — right */}
+				<div className="hidden lg:flex items-center justify-end gap-3 justify-self-end">
 					<Link
 						to="/login"
 						className="px-4 py-2 text-sm font-medium text-slate-200 hover:text-white hover:bg-white/[0.06] rounded-xl transition-all border border-transparent hover:border-white/10"
@@ -105,18 +93,11 @@ const Navbar = () => {
 				<OutsideClickHandler onOutsideClick={() => setMenuOpened(false)}>
 					<div className="lg:hidden fixed top-[70px] inset-x-4 max-w-md mx-auto bg-slate-900/95 backdrop-blur-2xl rounded-2xl shadow-2xl p-6 border border-white/10 z-50 animate-in fade-in slide-in-from-top-4 duration-200">
 						<div className="flex items-center justify-between pb-4 mb-4 border-b border-white/[0.08]">
-							<div className="flex items-center gap-2">
-								<img
-									src="/logo.png"
-									alt="Place4U Logo"
-									className="h-8 w-auto object-contain filter brightness-0 invert"
-								/>
-								<span className="font-['Space_Grotesk'] font-bold text-lg text-white">Place4U</span>
-							</div>
-							<span className="text-[10px] font-semibold uppercase tracking-wider text-emerald-400 bg-emerald-950/60 border border-emerald-500/30 px-2 py-0.5 rounded-full flex items-center gap-1">
-								<HiShieldCheck className="w-3 h-3 text-emerald-400" />
-								<span>Verified Network</span>
-							</span>
+							<img
+								src="/logo.png"
+								alt="Place4U Logo"
+								className="h-10 w-auto object-contain filter brightness-0 invert"
+							/>
 						</div>
 
 						<div className="flex flex-col gap-2.5">

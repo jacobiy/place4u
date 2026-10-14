@@ -160,9 +160,9 @@ export const DocumentUploadModal = ({
   const inputStyle = {
     width: "100%",
     padding: "0.7rem 0.9rem",
-    background: T.surface,
-    border: `1px solid ${T.border}`,
-    borderRadius: "0.625rem",
+    background: "#ffffff",
+    border: `1px solid ${T.borderStrong}`,
+    borderRadius: "0.75rem",
     color: T.textPrimary,
     fontSize: "0.88rem",
     outline: "none",
@@ -174,9 +174,9 @@ export const DocumentUploadModal = ({
       <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: "1.2rem" }}>
         {error && (
           <div style={{
-            background: "rgba(239,68,68,0.12)",
-            border: `1px solid ${T.red}`,
-            borderRadius: "0.5rem",
+            background: T.redSoft,
+            border: `1px solid ${T.redBorder}`,
+            borderRadius: "0.75rem",
             padding: "0.75rem 1rem",
             color: T.red,
             fontSize: "0.85rem",
@@ -196,10 +196,10 @@ export const DocumentUploadModal = ({
           onDragOver={handleDrag}
           onDrop={handleDrop}
           style={{
-            border: `2px dashed ${dragActive ? T.accent : selectedFile ? T.emerald : "rgba(255,255,255,0.18)"}`,
+            border: `2px dashed ${dragActive ? T.accent : selectedFile ? T.emerald : T.borderHover}`,
             borderRadius: "1rem",
             padding: "1.8rem 1.5rem",
-            background: dragActive ? "rgba(79,126,248,0.08)" : selectedFile ? "rgba(16,185,129,0.05)" : T.surface,
+            background: dragActive ? T.accentSofter : selectedFile ? T.emeraldSoft : T.surfaceAlt,
             textAlign: "center",
             cursor: "pointer",
             transition: "all 0.2s"
@@ -220,7 +220,7 @@ export const DocumentUploadModal = ({
                 width: "48px",
                 height: "48px",
                 borderRadius: "50%",
-                background: "rgba(16,185,129,0.15)",
+                background: T.emeraldSoft,
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center"
@@ -240,7 +240,7 @@ export const DocumentUploadModal = ({
                 width: "50px",
                 height: "50px",
                 borderRadius: "50%",
-                background: "rgba(79,126,248,0.12)",
+                background: T.accentSoft,
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center"
@@ -341,7 +341,7 @@ export const DocumentUploadModal = ({
 
         {/* Submit Actions */}
         <div style={{ display: "flex", gap: "10px", marginTop: "0.5rem" }}>
-          <PrimaryBtn style={{ flex: 1 }} disabled={isUploading || !selectedFile}>
+          <PrimaryBtn type="submit" style={{ flex: 1 }} disabled={isUploading || !selectedFile}>
             {isUploading ? (
               <span style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "6px" }}>
                 Uploading & Verifying...

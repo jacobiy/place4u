@@ -218,7 +218,7 @@ export const Wallet = ({
       const category = (app.accommodation_category === 'student_room' || app.category === 'Student Housing')
         ? 'Student Housing' : 'Residential Rental';
 
-      let status = 'In Verification';
+      let status = 'In Pipeline';
       if (refunded) status = 'Refunded';
       else if (!feePaid) status = 'Awaiting Tenant Payment';
       else if (isReleased) status = 'Released';
@@ -300,7 +300,13 @@ export const Wallet = ({
   const filteredFiles = useMemo(() => {
     let list = applicationFileItems;
     if (statusFilter !== 'all') {
-      list = list.filter(f => f.status.toLowerCase().replace(/\s+/g, '_') === statusFilter.toLowerCase());
+      list = list.filter(f => {
+        const key = f.status.toLowerCase().replace(/[^a-z0-9]+/g, '_');
+        if (statusFilter === 'in_pipeline' || statusFilter === 'in_verification') {
+          return key.includes('pipeline') || key.includes('verification');
+        }
+        return key === statusFilter.toLowerCase();
+      });
     }
     const q = searchQuery.trim().toLowerCase();
     if (!q) return list;
@@ -675,10 +681,10 @@ export const Wallet = ({
           {/* Card 4: Total Lifetime Accrued */}
           <div className="agent-wallet-card">
             <div className="agent-wallet-card-header">
-              <div className="agent-wallet-icon-box" style={{ background: 'rgba(139, 92, 246, 0.12)' }}>
-                <Award size={22} color="#8b5cf6" />
+              <div className="agent-wallet-icon-box" style={{ background: 'rgba(79, 126, 248, 0.12)' }}>
+                <Award size={22} color="#7da2ff" />
               </div>
-              <span className="agent-wallet-pill" style={{ background: 'rgba(139, 92, 246, 0.12)', color: '#a78bfa' }}>
+              <span className="agent-wallet-pill" style={{ background: 'rgba(79, 126, 248, 0.12)', color: '#7da2ff' }}>
                 {applicationFileItems.length} Files Total
               </span>
             </div>
@@ -847,7 +853,7 @@ export const Wallet = ({
             <div style={{ display: 'flex', gap: '0.65rem', alignItems: 'center', flexWrap: 'wrap' }}>
               {activeTab === 'files' && (
                 <div style={{ display: 'flex', gap: '0.35rem' }}>
-                  {['all', 'released', 'approved_for_release', 'in_verification'].map((st) => (
+                  {['all', 'released', 'approved_for_release', 'in_pipeline'].map((st) => (
                     <button
                       key={st}
                       onClick={() => setStatusFilter(st)}
@@ -863,7 +869,7 @@ export const Wallet = ({
                         cursor: 'pointer'
                       }}
                     >
-                      {st === 'all' ? 'All' : st === 'released' ? 'Released' : st === 'approved_for_release' ? 'Approved' : 'In Review'}
+                      {st === 'all' ? 'All' : st === 'released' ? 'Released' : st === 'approved_for_release' ? 'Approved' : 'In Pipeline'}
                     </button>
                   ))}
                 </div>

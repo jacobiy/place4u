@@ -1,4 +1,5 @@
 import { supabase } from '../utils/Supabase';
+import { normalizeApplicationStatus } from './applicationStatus';
 
 const LOCAL_APPS_KEY = 'place4u_tenant_applications';
 const EVENT_NAME = 'place4u:application-updated';
@@ -9,6 +10,11 @@ const EVENT_NAME = 'place4u:application-updated';
 export function updateLocalApplicationCache(applicationId, updates = {}) {
   if (typeof window === 'undefined' || !window.localStorage) return;
   try {
+    const normalizedUpdates = { ...updates };
+    if (normalizedUpdates.status !== undefined && normalizedUpdates.status !== null) {
+      normalizedUpdates.status = normalizeApplicationStatus(normalizedUpdates.status);
+    }
+
     const raw = localStorage.getItem(LOCAL_APPS_KEY);
     let apps = raw ? JSON.parse(raw) : [];
     let updated = false;
@@ -18,7 +24,7 @@ export function updateLocalApplicationCache(applicationId, updates = {}) {
         updated = true;
         return {
           ...app,
-          ...updates,
+          ...normalizedUpdates,
           updated_at: new Date().toISOString()
         };
       }
@@ -28,7 +34,7 @@ export function updateLocalApplicationCache(applicationId, updates = {}) {
     if (!updated && updates.tenant_id) {
       apps.unshift({
         id: applicationId,
-        ...updates,
+        ...normalizedUpdates,
         created_at: updates.created_at || new Date().toISOString(),
         updated_at: new Date().toISOString()
       });
@@ -46,16 +52,18 @@ export function updateLocalApplicationCache(applicationId, updates = {}) {
 export function broadcastApplicationUpdate(applicationId, newStatus, extraData = {}) {
   if (typeof window === 'undefined') return;
 
+  const status = newStatus ? normalizeApplicationStatus(newStatus) : newStatus;
+
   const payload = {
     applicationId,
-    status: newStatus,
+    status,
     ...extraData,
     timestamp: Date.now()
   };
 
   // 1. Update localStorage cache
   updateLocalApplicationCache(applicationId, {
-    status: newStatus,
+    status,
     ...extraData
   });
 
@@ -71,10 +79,25 @@ export function broadcastApplicationUpdate(applicationId, newStatus, extraData =
     localStorage.setItem('place4u_sync_ping', JSON.stringify({
       type: 'application_updated',
       applicationId,
-      status: newStatus,
+      status,
       t: Date.now()
     }));
   } catch {}
+}
+
+/**
+ * Apply an application change from any dashboard: normalise the status,
+ * mirror it into the local cache and fan the update out to every other
+ * dashboard. This is the one helper all four portals should call after a
+ * successful DB write so no status change is ever local-only.
+ *
+ * @param {string} applicationId
+ * @param {string} status        canonical (or aliased) status
+ * @param {object} [extraData]   any additional row fields that changed
+ */
+export function applyApplicationUpdate(applicationId, status, extraData = {}) {
+  if (!applicationId) return;
+  broadcastApplicationUpdate(applicationId, status, extraData);
 }
 
 /**
@@ -150,9 +173,22 @@ export function subscribeToApplicationUpdates(callback) {
 }
 
 /**
- * Merge local applications with authoritative database records
+ * Merge local applications with authoritative database records.
+ *
+ * `userId` scopes the local cache to the signed-in tenant. `place4u_tenant_applications`
+ * is a single shared localStorage key, so on a shared browser it still holds the
+ * PREVIOUS tenant's rows after they sign out. Without this scope a brand-new
+ * account would inherit those cached applications. When `userId` is known we only
+ * ever surface local rows explicitly owned by that user; DB rows are always the
+ * caller's own (the query filters by tenant_id and RLS enforces it).
  */
-export function mergeLocalAndDbApplications(localList = [], dbList = []) {
+export function mergeLocalAndDbApplications(localList = [], dbList = [], userId = null) {
+  const scopedLocal = (localList || []).filter((item) => {
+    if (!item) return false;
+    if (!userId) return true; // guest / offline mode — no identity to scope against
+    return item.tenant_id != null && String(item.tenant_id) === String(userId);
+  });
+
   const dbMap = new Map();
   (dbList || []).forEach((item) => {
     if (item?.id) dbMap.set(item.id, item);
@@ -160,7 +196,7 @@ export function mergeLocalAndDbApplications(localList = [], dbList = []) {
 
   // DB records take precedence for status, assignment, and agent info, while preserving settled fee_paid
   const merged = (dbList || []).map((dbItem) => {
-    const localItem = (localList || []).find((l) => l && l.id === dbItem.id);
+    const localItem = scopedLocal.find((l) => l && l.id === dbItem.id);
     const feePaidResolved = Boolean(
       dbItem.fee_paid === true ||
       dbItem.fee_paid === 'true' ||
@@ -178,16 +214,19 @@ export function mergeLocalAndDbApplications(localList = [], dbList = []) {
       fee_paid: feePaidResolved,
       fee_receipt: dbItem.fee_receipt || localItem?.fee_receipt || null,
       payment_id: paymentIdResolved,
-      status: dbItem.status || localItem?.status || 'submitted',
+      // The database is the single source of truth for status; the local cache
+      // only fills the gap when the row has not landed in Supabase yet.
+      status: normalizeApplicationStatus(dbItem.status || localItem?.status),
       assigned_to: dbItem.assigned_to !== undefined ? dbItem.assigned_to : localItem?.assigned_to,
       agent: dbItem.agent || localItem?.agent
     };
   });
 
-  // Add any offline/guest local applications not yet in DB
-  (localList || []).forEach((localItem) => {
+  // Add any offline/guest local applications not yet in DB (normalised so a
+  // locally-cached legacy status renders identically to a DB row).
+  scopedLocal.forEach((localItem) => {
     if (localItem?.id && !dbMap.has(localItem.id)) {
-      merged.push(localItem);
+      merged.push({ ...localItem, status: normalizeApplicationStatus(localItem.status) });
     }
   });
 

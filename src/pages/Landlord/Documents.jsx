@@ -4,14 +4,9 @@ import {
   Shield,
   Upload,
   Search,
-  Filter,
   CheckCircle,
-  AlertCircle,
-  Clock,
   Download,
   Trash2,
-  ExternalLink,
-  Plus,
   Building,
   FileCheck,
   Calendar,
@@ -19,15 +14,29 @@ import {
   Eye,
   RefreshCw
 } from "lucide-react";
-import { T } from "./Styles/designTokens";
+import { T, SERIF } from "./Styles/designTokens";
 import { PrimaryBtn, SecondaryBtn } from "./Component/Buttons";
 import { DocumentUploadModal, DOCUMENT_CATEGORIES } from "./Component/DocumentUploadModal";
 import { DocumentPreviewModal } from "./Component/DocumentPreviewModal";
 import { DocumentReplaceModal } from "./Component/DocumentReplaceModal";
+import { PropertyDocumentsModal } from "./Component/PropertyDocumentsModal";
 import { LandlordQueries } from "./db/queries";
 import { ConfirmModal, AlertToast } from "../../component/AlertModal";
 
-export const Documents = ({ profile, properties = [], onProfileUpdate, user }) => {
+const EYEBROW = { fontSize: "0.66rem", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.12em", color: T.textMuted, margin: 0 };
+
+const formatSize = (size) => {
+  if (size === null || size === undefined || size === "") return "—";
+  if (typeof size === "string") return size;
+  const n = Number(size);
+  if (Number.isNaN(n)) return "—";
+  const units = ["B", "KB", "MB", "GB"];
+  let v = n; let i = 0;
+  while (v >= 1024 && i < units.length - 1) { v /= 1024; i += 1; }
+  return `${v.toFixed(v >= 10 || i === 0 ? 0 : 1)} ${units[i]}`;
+};
+
+export const Documents = ({ profile, properties = [], onProfileUpdate, onRefreshProperties, onPropertySubmitted, user }) => {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [selectedPropertyFilter, setSelectedPropertyFilter] = useState("all");
@@ -39,6 +48,7 @@ export const Documents = ({ profile, properties = [], onProfileUpdate, user }) =
   const [deletingId, setDeletingId] = useState(null);
   const [docToDelete, setDocToDelete] = useState(null);
   const [docToReplace, setDocToReplace] = useState(null);
+  const [listingDocsProperty, setListingDocsProperty] = useState(null);
 
   const showToast = (message, title = "Success", type = "success") => {
     setToast({ title, message, type });
@@ -94,71 +104,37 @@ export const Documents = ({ profile, properties = [], onProfileUpdate, user }) =
     }
   };
 
-  // Default baseline documents if none are stored yet
-  const defaultDocs = useMemo(() => [
-    {
-      id: "doc-seed-1",
-      title: "Title Deed - Sunset Apartments Unit 3A",
-      documentType: "ownership",
-      fileName: "Sunset_3A_Deed_Transfer.pdf",
-      fileUrl: "#",
-      fileSize: "2.4 MB",
-      fileType: "application/pdf",
-      propertyName: "Sunset Apartments Unit 3A",
-      uploadedAt: new Date(Date.now() - 30 * 86400000).toISOString(),
-      status: "verified",
-      notes: "Cape Town Deeds Registry #T49281/2023"
-    },
-    {
-      id: "doc-seed-2",
-      title: "South African National ID Card",
-      documentType: "id",
-      fileName: "Landlord_ID_SmartCard.pdf",
-      fileUrl: "#",
-      fileSize: "1.1 MB",
-      fileType: "application/pdf",
-      propertyName: "Portfolio-wide",
-      uploadedAt: new Date(Date.now() - 60 * 86400000).toISOString(),
-      status: "verified",
-      notes: "Identity verified & matched with home affairs"
-    },
-    {
-      id: "doc-seed-3",
-      title: "City of Cape Town Municipal Rates Clearance",
-      documentType: "rates",
-      fileName: "CoCT_Rates_Assessment_2026.pdf",
-      fileUrl: "#",
-      fileSize: "840 KB",
-      fileType: "application/pdf",
-      propertyName: "Harbour View Apartment",
-      uploadedAt: new Date(Date.now() - 14 * 86400000).toISOString(),
-      status: "verified",
-      notes: "Account #93821034 - Zero arrears"
-    },
-    {
-      id: "doc-seed-4",
-      title: "Electrical Certificate of Compliance (ECOC)",
-      documentType: "compliance",
-      fileName: "Rosebank_ECOC_Certified.pdf",
-      fileUrl: "#",
-      fileSize: "1.8 MB",
-      fileType: "application/pdf",
-      propertyName: "Garden Flat Rosebank",
-      uploadedAt: new Date(Date.now() - 45 * 86400000).toISOString(),
-      expiryDate: "2027-10-15",
-      status: "verified",
-      notes: "Master Electrician reg #EC-49102"
-    }
-  ], []);
-
-  // Sync documents from profile or fallback
+  // Sync profile-level verification documents. No seeded placeholders — the vault
+  // must only ever show documents the landlord actually uploaded.
   useEffect(() => {
-    if (profile?.verification_documents && Array.isArray(profile.verification_documents) && profile.verification_documents.length > 0) {
+    if (Array.isArray(profile?.verification_documents)) {
       setDocuments(profile.verification_documents);
     } else {
-      setDocuments(defaultDocs);
+      setDocuments([]);
     }
-  }, [profile?.verification_documents, defaultDocs]);
+  }, [profile?.verification_documents]);
+
+  // Property-scoped documents, gathered from each listing's `documents` array so
+  // the vault shows both profile credentials and per-listing proof of ownership.
+  const propertyDocs = useMemo(() => {
+    const out = [];
+    (properties || []).forEach((p) => {
+      const list = Array.isArray(p.documents) ? p.documents : [];
+      list.forEach((d) => {
+        out.push({
+          ...d,
+          __source: "property",
+          propertyId: p.id,
+          propertyName: p.name || p.address || "Listing",
+          propertyApprovalStatus: p.approval_status || "approved"
+        });
+      });
+    });
+    return out;
+  }, [properties]);
+
+  const profileDocs = useMemo(() => documents.map((d) => ({ ...d, __source: "profile" })), [documents]);
+  const allDocs = useMemo(() => [...propertyDocs, ...profileDocs], [propertyDocs, profileDocs]);
 
   // Handle document uploaded
   const handleDocumentUploaded = (updatedProfile) => {
@@ -186,10 +162,25 @@ export const Documents = ({ profile, properties = [], onProfileUpdate, user }) =
   };
 
   // Handle document deletion execution
-  const performDeleteDocument = async (docId, docTitle) => {
+  const performDeleteDocument = async (docOrId, docTitle) => {
+    const docId = typeof docOrId === "object" && docOrId !== null ? docOrId.id : docOrId;
+    const doc = typeof docOrId === "object" && docOrId !== null
+      ? docOrId
+      : allDocs.find((d) => d.id === docId);
+    const title = docTitle || doc?.title || "Document";
+
     setDeletingId(docId);
 
     try {
+      // Listing-scoped document — remove straight from the property record.
+      if (doc?.__source === "property" && doc.propertyId) {
+        const res = await LandlordQueries.removePropertyDocument(doc.propertyId, docId);
+        if (res.success && onRefreshProperties) await onRefreshProperties();
+        showToast(`"${title}" was removed from the listing.`, "Document Removed", "success");
+        setDocToDelete(null);
+        return;
+      }
+
       if (profile?.id) {
         const res = await LandlordQueries.removeVerificationDocument(profile.id, docId);
         if (res.success && res.data) {
@@ -201,7 +192,7 @@ export const Documents = ({ profile, properties = [], onProfileUpdate, user }) =
       } else {
         setDocuments(prev => prev.filter(d => d.id !== docId));
       }
-      showToast(`"${docTitle || 'Document'}" was removed from your records.`, "Document Removed", "success");
+      showToast(`"${title}" was removed from your records.`, "Document Removed", "success");
     } catch {
       setDocuments(prev => prev.filter(d => d.id !== docId));
       showToast(`Document was removed.`, "Document Removed", "success");
@@ -213,12 +204,12 @@ export const Documents = ({ profile, properties = [], onProfileUpdate, user }) =
 
   const handleConfirmDelete = async () => {
     if (!docToDelete) return;
-    await performDeleteDocument(docToDelete.id, docToDelete.title);
+    await performDeleteDocument(docToDelete);
   };
 
   // Filtered documents
   const filteredDocs = useMemo(() => {
-    return documents.filter(doc => {
+    return allDocs.filter(doc => {
       const matchCat = selectedCategory === "all" || doc.documentType === selectedCategory;
       const matchProp =
         selectedPropertyFilter === "all" ||
@@ -233,7 +224,7 @@ export const Documents = ({ profile, properties = [], onProfileUpdate, user }) =
         (doc.notes && doc.notes.toLowerCase().includes(q));
       return matchCat && matchProp && matchSearch;
     });
-  }, [documents, selectedCategory, selectedPropertyFilter, searchQuery]);
+  }, [allDocs, selectedCategory, selectedPropertyFilter, searchQuery]);
 
   // Category Icon helper
   const getCategoryIcon = (type) => {
@@ -256,12 +247,39 @@ export const Documents = ({ profile, properties = [], onProfileUpdate, user }) =
     return found ? found.label : "Document";
   };
 
+  const verifiedCount = allDocs.filter((d) => d.status === "verified").length;
+  const vaultHealth = allDocs.length ? Math.round((verifiedCount / allDocs.length) * 100) : 0;
+  const listingDocsCount = propertyDocs.length;
+  const hasOwnershipDoc = allDocs.some((d) => d.documentType === "ownership");
+  const hasIdDoc = allDocs.some((d) => d.documentType === "id");
+  const hasComplianceDoc = allDocs.some((d) => ["compliance", "rates"].includes(d.documentType));
+
+  const statusCard = ({ eyebrow, title, caption, icon: Icon, accent, accentSoft, accentBorder, tag }) => (
+    <div className="ll-card-hover" style={{
+      background: "#ffffff", border: `1px solid ${T.border}`, borderRadius: T.radiusLg,
+      padding: "1.25rem 1.4rem", display: "flex", alignItems: "center", gap: "1rem", boxShadow: T.shadowSm
+    }}>
+      <div style={{
+        width: "50px", height: "50px", borderRadius: "0.9rem", background: accentSoft,
+        border: `1px solid ${accentBorder}`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0
+      }}>
+        <Icon size={23} color={accent} />
+      </div>
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8, marginBottom: "3px" }}>
+          <span style={EYEBROW}>{eyebrow}</span>
+          <span style={{ fontSize: "0.68rem", color: accent, fontWeight: 800, letterSpacing: "0.04em" }}>{tag}</span>
+        </div>
+        <p style={{ fontSize: "0.95rem", fontWeight: 700, color: T.textPrimary, fontFamily: SERIF }}>{title}</p>
+        <p style={{ fontSize: "0.75rem", color: T.textMuted, marginTop: "2px" }}>{caption}</p>
+      </div>
+    </div>
+  );
+
   return (
-    <div style={{ maxWidth: "1400px", margin: "0 auto", animation: "fadeIn 0.3s ease-in-out" }}>
-      {/* Styled Toast Notification */}
+    <div className="ll-scope" style={{ maxWidth: "1400px", margin: "0 auto", minWidth: 0 }}>
       <AlertToast toast={toast} onClose={() => setToast(null)} />
 
-      {/* Styled Document Deletion Confirmation Modal */}
       <ConfirmModal
         isOpen={!!docToDelete}
         title="Delete Verification Document?"
@@ -275,7 +293,6 @@ export const Documents = ({ profile, properties = [], onProfileUpdate, user }) =
         onCancel={() => !deletingId && setDocToDelete(null)}
       />
 
-      {/* Upload Document Modal */}
       <DocumentUploadModal
         isOpen={isUploadModalOpen}
         onClose={() => setIsUploadModalOpen(false)}
@@ -285,7 +302,6 @@ export const Documents = ({ profile, properties = [], onProfileUpdate, user }) =
         onDocumentUploaded={handleDocumentUploaded}
       />
 
-      {/* Document Preview Modal */}
       <DocumentPreviewModal
         isOpen={isPreviewOpen}
         onClose={() => setIsPreviewOpen(false)}
@@ -298,7 +314,6 @@ export const Documents = ({ profile, properties = [], onProfileUpdate, user }) =
         onReplace={handleDocumentReplaced}
       />
 
-      {/* Document Replace Modal */}
       <DocumentReplaceModal
         isOpen={!!docToReplace}
         onClose={() => setDocToReplace(null)}
@@ -309,237 +324,103 @@ export const Documents = ({ profile, properties = [], onProfileUpdate, user }) =
         onDocumentReplaced={handleDocumentReplaced}
       />
 
-      {/* 1. HEADER SECTION */}
-      <div style={{
-        display: "flex",
-        justifyContent: "space-between",
-        alignItems: "flex-end",
-        marginBottom: "2rem",
-        flexWrap: "wrap",
-        gap: "1.5rem"
-      }}>
-        <div>
-          <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "6px" }}>
-            <span style={{
-              background: "rgba(16,185,129,0.12)",
-              color: T.emerald,
-              fontSize: "0.72rem",
-              fontWeight: 700,
-              padding: "3px 10px",
-              borderRadius: "20px",
-              display: "inline-flex",
-              alignItems: "center",
-              gap: "4px"
-            }}>
-              <Lock size={12} /> Encrypted & Secure Vault
-            </span>
-          </div>
-          <h1 style={{
-            fontFamily: "'DM Serif Display', Georgia, serif",
-            fontSize: "clamp(1.5rem, 4vw, 2.4rem)",
-            color: T.textPrimary,
-            lineHeight: 1.15,
-            marginBottom: "6px"
-          }}>
-            Documents & Proof of Ownership
-          </h1>
-          <p style={{ color: T.textMuted, fontSize: "0.92rem", maxWidth: "680px" }}>
-            Upload and manage title deeds, municipal rates certificates, identity verification, and electrical compliance documents to maintain high landlord trust rating.
-          </p>
-        </div>
+      <PropertyDocumentsModal
+        isOpen={!!listingDocsProperty}
+        onClose={() => setListingDocsProperty(null)}
+        property={listingDocsProperty}
+        user={user}
+        onChanged={async () => { if (onRefreshProperties) await onRefreshProperties(); }}
+        onSubmitted={(property) => onPropertySubmitted?.(property)}
+      />
 
-        <PrimaryBtn onClick={() => setIsUploadModalOpen(true)}>
-          <span style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-            <Upload size={16} /> Upload New Document
+      {/* HERO */}
+      <div className="ll-anim-up" style={{
+        display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "1.5rem", flexWrap: "wrap",
+        background: "linear-gradient(135deg, #ffffff 0%, #f3f9ff 60%, #eef6ff 100%)",
+        border: `1px solid ${T.border}`, borderRadius: T.radiusXl, padding: "clamp(1.4rem, 3.5vw, 2rem)",
+        marginBottom: "1.75rem", position: "relative", overflow: "hidden", boxShadow: T.shadow
+      }}>
+        <div aria-hidden style={{ position: "absolute", top: -60, right: -50, width: 240, height: 240, borderRadius: "9999px", background: "radial-gradient(circle, rgba(56,189,248,0.16) 0%, transparent 70%)" }} />
+        <div style={{ position: "relative", zIndex: 1, flex: "1 1 340px", minWidth: 0 }}>
+          <span style={{
+            background: T.emeraldSoft, color: T.emerald, fontSize: "0.7rem", fontWeight: 800, letterSpacing: "0.05em",
+            padding: "4px 12px", borderRadius: 9999, display: "inline-flex", alignItems: "center", gap: 5, border: `1px solid ${T.emeraldBorder}`
+          }}>
+            <Lock size={12} /> ENCRYPTED & SECURE VAULT
           </span>
-        </PrimaryBtn>
-      </div>
+          <h1 style={{ fontFamily: SERIF, fontSize: "clamp(1.6rem, 4vw, 2.3rem)", color: T.textPrimary, lineHeight: 1.12, letterSpacing: "-0.02em", margin: "12px 0 6px" }}>
+            Proof of ownership & compliance
+          </h1>
+          <p style={{ color: T.textSecondary, fontSize: "0.9rem", maxWidth: "620px", lineHeight: 1.6 }}>
+            Upload and manage title deeds, municipal rates certificates, identity verification, and electrical compliance
+            documents. Documents attached to a specific listing appear here alongside your profile credentials.
+          </p>
 
-      {/* 2. VERIFICATION STATUS CARDS */}
-      <div style={{
-        display: "grid",
-        gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 250px), 1fr))",
-        gap: "1.25rem",
-        marginBottom: "2rem"
-      }}>
-        {/* Ownership Proof Status */}
-        <div style={{
-          background: T.cardBg,
-          border: `1px solid ${T.border}`,
-          borderRadius: "1rem",
-          padding: "1.25rem 1.5rem",
-          display: "flex",
-          alignItems: "center",
-          gap: "1rem"
-        }}>
-          <div style={{
-            width: "48px",
-            height: "48px",
-            borderRadius: "12px",
-            background: "rgba(16,185,129,0.12)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            flexShrink: 0
-          }}>
-            <Shield size={24} color={T.emerald} />
-          </div>
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "2px" }}>
-              <span style={{ fontSize: "0.7rem", color: T.textMuted, textTransform: "uppercase", fontWeight: 600 }}>
-                Proof of Ownership
-              </span>
-              <span style={{ fontSize: "0.72rem", color: T.emerald, fontWeight: 700 }}>VERIFIED</span>
+          <div style={{ marginTop: "1.25rem", maxWidth: 340 }}>
+            <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 6 }}>
+              <span style={{ fontSize: "0.72rem", color: T.textMuted, fontWeight: 600 }}>Vault verification health</span>
+              <span style={{ fontSize: "0.72rem", color: T.emerald, fontWeight: 800 }}>{vaultHealth}%</span>
             </div>
-            <p style={{ fontSize: "0.95rem", fontWeight: 600, color: T.textPrimary }}>
-              Title Deeds On File
-            </p>
-            <p style={{ fontSize: "0.75rem", color: T.textMuted, marginTop: "2px" }}>
-              Verified with Deeds Registry
+            <div style={{ height: 8, borderRadius: 9999, background: T.surface, overflow: "hidden" }}>
+              <div style={{ width: `${vaultHealth}%`, height: "100%", borderRadius: 9999, background: "linear-gradient(90deg, #34d399, #059669)", transition: "width 0.6s ease" }} />
+            </div>
+            <p style={{ fontSize: "0.72rem", color: T.textMuted, marginTop: 6 }}>
+              {verifiedCount} of {allDocs.length} documents verified
+              {listingDocsCount > 0 ? ` · ${listingDocsCount} attached to listings` : ""}
             </p>
           </div>
         </div>
 
-        {/* Identity Verification Status */}
-        <div style={{
-          background: T.cardBg,
-          border: `1px solid ${T.border}`,
-          borderRadius: "1rem",
-          padding: "1.25rem 1.5rem",
-          display: "flex",
-          alignItems: "center",
-          gap: "1rem"
-        }}>
-          <div style={{
-            width: "48px",
-            height: "48px",
-            borderRadius: "12px",
-            background: "rgba(79,126,248,0.12)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            flexShrink: 0
-          }}>
-            <FileCheck size={24} color={T.accent} />
-          </div>
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "2px" }}>
-              <span style={{ fontSize: "0.7rem", color: T.textMuted, textTransform: "uppercase", fontWeight: 600 }}>
-                Identity Status
-              </span>
-              <span style={{ fontSize: "0.72rem", color: T.emerald, fontWeight: 700 }}>ACTIVE</span>
-            </div>
-            <p style={{ fontSize: "0.95rem", fontWeight: 600, color: T.textPrimary }}>
-              South African ID
-            </p>
-            <p style={{ fontSize: "0.75rem", color: T.textMuted, marginTop: "2px" }}>
-              Valid SmartCard ID attached
-            </p>
-          </div>
-        </div>
-
-        {/* Compliance Certificates */}
-        <div style={{
-          background: T.cardBg,
-          border: `1px solid ${T.border}`,
-          borderRadius: "1rem",
-          padding: "1.25rem 1.5rem",
-          display: "flex",
-          alignItems: "center",
-          gap: "1rem"
-        }}>
-          <div style={{
-            width: "48px",
-            height: "48px",
-            borderRadius: "12px",
-            background: "rgba(139,92,246,0.12)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            flexShrink: 0
-          }}>
-            <FileText size={24} color="#8b5cf6" />
-          </div>
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "2px" }}>
-              <span style={{ fontSize: "0.7rem", color: T.textMuted, textTransform: "uppercase", fontWeight: 600 }}>
-                Compliance & Rates
-              </span>
-              <span style={{ fontSize: "0.72rem", color: T.emerald, fontWeight: 700 }}>COMPLIANT</span>
-            </div>
-            <p style={{ fontSize: "0.95rem", fontWeight: 600, color: T.textPrimary }}>
-              Rates & ECOC Active
-            </p>
-            <p style={{ fontSize: "0.75rem", color: T.textMuted, marginTop: "2px" }}>
-              Electrical certificate valid until 2027
-            </p>
-          </div>
+        <div style={{ position: "relative", zIndex: 1 }}>
+          <PrimaryBtn onClick={() => setIsUploadModalOpen(true)}>
+            <Upload size={16} /> Upload New Document
+          </PrimaryBtn>
         </div>
       </div>
 
-      {/* 3. TOOLBAR & FILTER CONTROLS */}
+      {/* VERIFICATION STATUS CARDS */}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 250px), 1fr))", gap: "1.25rem", marginBottom: "1.75rem" }}>
+        {statusCard({ eyebrow: "Proof of Ownership", title: hasOwnershipDoc ? "Title Deeds On File" : "No ownership document", caption: hasOwnershipDoc ? "Attached to a listing for review" : "Upload a title deed or rates clearance", icon: Shield, accent: hasOwnershipDoc ? T.emerald : T.amber, accentSoft: hasOwnershipDoc ? T.emeraldSoft : T.amberSoft, accentBorder: hasOwnershipDoc ? T.emeraldBorder : T.amberBorder, tag: hasOwnershipDoc ? "ON FILE" : "ACTION" })}
+        {statusCard({ eyebrow: "Identity Status", title: hasIdDoc ? "ID Document On File" : "No ID document", caption: hasIdDoc ? "Identity document attached" : "Upload your national ID or passport", icon: FileCheck, accent: hasIdDoc ? T.accent : T.amber, accentSoft: hasIdDoc ? T.accentSoft : T.amberSoft, accentBorder: hasIdDoc ? T.accentBorder : T.amberBorder, tag: hasIdDoc ? "ON FILE" : "ACTION" })}
+        {statusCard({ eyebrow: "Compliance & Rates", title: hasComplianceDoc ? "Rates / ECOC On File" : "No compliance documents", caption: hasComplianceDoc ? "Municipal / compliance certificates attached" : "Upload rates or a compliance certificate", icon: FileText, accent: hasComplianceDoc ? T.purple : T.amber, accentSoft: hasComplianceDoc ? T.purpleSoft : T.amberSoft, accentBorder: hasComplianceDoc ? T.purpleBorder : T.amberBorder, tag: hasComplianceDoc ? "ON FILE" : "ACTION" })}
+      </div>
+
+      {/* TOOLBAR */}
       <div style={{
-        background: T.cardBg,
-        border: `1px solid ${T.border}`,
-        borderRadius: "1rem",
-        padding: "1.25rem 1.5rem",
-        marginBottom: "1.5rem",
-        display: "flex",
-        justifyContent: "space-between",
-        alignItems: "center",
-        flexWrap: "wrap",
-        gap: "1rem"
+        background: "#ffffff", border: `1px solid ${T.border}`, borderRadius: T.radiusLg, padding: "1.1rem 1.3rem",
+        marginBottom: "1.5rem", display: "flex", justifyContent: "space-between", alignItems: "center",
+        flexWrap: "wrap", gap: "1rem", boxShadow: T.shadowSm
       }}>
-        {/* Search Input */}
-        <div style={{ position: "relative", minWidth: "260px", flex: "1 1 280px" }}>
-          <Search size={16} color={T.textMuted} style={{ position: "absolute", left: "12px", top: "50%", transform: "translateY(-50%)" }} />
+        <div style={{ position: "relative", minWidth: "240px", flex: "1 1 280px" }}>
+          <Search size={15} color={T.textMuted} style={{ position: "absolute", left: "14px", top: "50%", transform: "translateY(-50%)" }} />
           <input
             type="text"
             placeholder="Search documents by title, property, or reference..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             style={{
-              width: "100%",
-              padding: "0.55rem 0.85rem 0.55rem 2.4rem",
-              background: T.surface,
-              border: `1px solid ${T.border}`,
-              borderRadius: "8px",
-              color: T.textPrimary,
-              fontSize: "0.85rem",
-              outline: "none"
+              width: "100%", padding: "0.6rem 0.9rem 0.6rem 2.4rem", background: "#ffffff",
+              border: `1px solid ${T.borderStrong}`, borderRadius: 9999, color: T.textPrimary, fontSize: "0.85rem", outline: "none"
             }}
           />
         </div>
 
-        {/* Category Pills Filter */}
-        <div style={{
-          display: "flex",
-          gap: "6px",
-          overflowX: "auto",
-          maxWidth: "100%",
-          paddingBottom: "2px"
-        }}>
+        <div style={{ display: "flex", gap: "4px", background: T.surfaceAlt, border: `1px solid ${T.border}`, borderRadius: 9999, padding: 4, overflowX: "auto", maxWidth: "100%" }}>
           {[
-            { id: "all", label: "All Documents" },
-            { id: "ownership", label: "Ownership / Title" },
-            { id: "id", label: "ID Documents" },
-            { id: "rates", label: "Rates & Taxes" },
-            { id: "compliance", label: "Compliance (ECOC)" }
+            { id: "all", label: "All" },
+            { id: "ownership", label: "Ownership" },
+            { id: "id", label: "ID" },
+            { id: "rates", label: "Rates" },
+            { id: "compliance", label: "Compliance" }
           ].map(tab => (
             <button
               key={tab.id}
               onClick={() => setSelectedCategory(tab.id)}
               style={{
-                padding: "6px 12px",
-                borderRadius: "8px",
-                border: "none",
-                fontSize: "0.78rem",
-                fontWeight: selectedCategory === tab.id ? 600 : 400,
-                cursor: "pointer",
-                background: selectedCategory === tab.id ? T.accent : T.surface,
-                color: selectedCategory === tab.id ? "#ffffff" : T.textSecondary,
-                whiteSpace: "nowrap",
-                transition: "all 0.15s"
+                padding: "6px 14px", borderRadius: 9999, border: "none", fontSize: "0.77rem",
+                fontWeight: 700, cursor: "pointer", whiteSpace: "nowrap", transition: "all 0.15s",
+                background: selectedCategory === tab.id ? T.accent : "transparent",
+                color: selectedCategory === tab.id ? "#ffffff" : T.textSecondary
               }}
             >
               {tab.label}
@@ -547,22 +428,16 @@ export const Documents = ({ profile, properties = [], onProfileUpdate, user }) =
           ))}
         </div>
 
-        {/* Associated Property Filter */}
         {properties && properties.length > 0 && (
           <select
             value={selectedPropertyFilter}
             onChange={(e) => setSelectedPropertyFilter(e.target.value)}
             style={{
-              padding: "0.55rem 0.85rem",
-              background: T.surface,
-              border: `1px solid ${T.border}`,
-              borderRadius: "8px",
-              color: T.textPrimary,
-              fontSize: "0.82rem",
-              outline: "none"
+              padding: "0.6rem 0.9rem", background: "#ffffff", border: `1px solid ${T.borderStrong}`,
+              borderRadius: 9999, color: T.textPrimary, fontSize: "0.82rem", outline: "none", maxWidth: 220
             }}
           >
-            <option value="all">All Properties</option>
+            <option value="all">All properties</option>
             {properties.map(p => (
               <option key={p.id} value={p.name}>{p.name}</option>
             ))}
@@ -570,152 +445,105 @@ export const Documents = ({ profile, properties = [], onProfileUpdate, user }) =
         )}
       </div>
 
-      {/* 4. DOCUMENT CARDS GRID */}
+      {/* DOCUMENT CARDS GRID */}
       {filteredDocs.length > 0 ? (
-        <div style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(auto-fill, minmax(360px, 1fr))",
-          gap: "1.25rem"
-        }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(min(100%, 330px), 1fr))", gap: "1.25rem" }}>
           {filteredDocs.map((doc, idx) => {
             const IconComponent = getCategoryIcon(doc.documentType);
-            const isDeleting = deletingId === doc.id;
+            const isOwnership = doc.documentType === "ownership";
+            const accent = isOwnership ? T.emerald : T.accent;
+            const accentSoft = isOwnership ? T.emeraldSoft : T.accentSoft;
+            const accentBorder = isOwnership ? T.emeraldBorder : T.accentBorder;
 
             return (
               <div
                 key={doc.id || idx}
+                className="ll-card-hover ll-anim-up"
                 style={{
-                  background: T.cardBg,
-                  border: `1px solid ${T.border}`,
-                  borderRadius: "1rem",
-                  padding: "1.5rem",
-                  display: "flex",
-                  flexDirection: "column",
-                  transition: "all 0.2s"
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.borderColor = T.borderHover;
-                  e.currentTarget.style.transform = "translateY(-2px)";
-                  e.currentTarget.style.boxShadow = "0 10px 30px rgba(0,0,0,0.3)";
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.borderColor = T.border;
-                  e.currentTarget.style.transform = "none";
-                  e.currentTarget.style.boxShadow = "none";
+                  background: "#ffffff", border: `1px solid ${T.border}`, borderRadius: T.radiusLg,
+                  padding: "1.4rem", display: "flex", flexDirection: "column", boxShadow: T.shadowSm
                 }}
               >
                 {/* Header Row */}
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "1rem" }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "1rem", gap: 10 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: "10px", minWidth: 0 }}>
                     <div style={{
-                      width: "40px",
-                      height: "40px",
-                      borderRadius: "10px",
-                      background: doc.documentType === "ownership" ? "rgba(16,185,129,0.12)" : "rgba(79,126,248,0.12)",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      flexShrink: 0
+                      width: "42px", height: "42px", borderRadius: "0.75rem", background: accentSoft,
+                      border: `1px solid ${accentBorder}`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0
                     }}>
-                      <IconComponent
-                        size={20}
-                        color={doc.documentType === "ownership" ? T.emerald : T.accent}
-                      />
+                      <IconComponent size={20} color={accent} />
                     </div>
-                    <div>
-                      <span style={{
-                        fontSize: "0.68rem",
-                        fontWeight: 600,
-                        textTransform: "uppercase",
-                        letterSpacing: "0.05em",
-                        color: doc.documentType === "ownership" ? T.emerald : T.accent
-                      }}>
+                    <div style={{ minWidth: 0 }}>
+                      <span style={{ fontSize: "0.66rem", fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.06em", color: accent }}>
                         {getCategoryLabel(doc.documentType)}
                       </span>
-                      <h3 style={{
-                        fontSize: "0.95rem",
-                        fontWeight: 600,
-                        color: T.textPrimary,
-                        lineHeight: 1.3,
-                        marginTop: "2px"
-                      }}>
+                      <h3 style={{ fontSize: "0.93rem", fontWeight: 700, color: T.textPrimary, lineHeight: 1.3, marginTop: "2px" }}>
                         {doc.title}
                       </h3>
                     </div>
                   </div>
 
-                  {/* Verification Status Badge */}
                   <span style={{
-                    fontSize: "0.68rem",
-                    fontWeight: 700,
-                    padding: "3px 8px",
-                    borderRadius: "12px",
-                    background: doc.status === "verified" ? "rgba(16,185,129,0.12)" : "rgba(245,158,11,0.12)",
+                    fontSize: "0.64rem", fontWeight: 800, letterSpacing: "0.03em", padding: "4px 9px", borderRadius: 9999,
+                    background: doc.status === "verified" ? T.emeraldSoft : T.amberSoft,
                     color: doc.status === "verified" ? T.emerald : T.amber,
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "4px"
+                    display: "flex", alignItems: "center", gap: "4px", whiteSpace: "nowrap", flexShrink: 0
                   }}>
                     <CheckCircle size={10} />
-                    {doc.status === "verified" ? "VERIFIED" : "UNDER REVIEW"}
+                    {doc.status === "verified" ? "VERIFIED" : "REVIEW"}
                   </span>
                 </div>
 
                 {/* Details Section */}
-                <div style={{
-                  background: T.surface,
-                  borderRadius: "8px",
-                  padding: "10px 12px",
-                  marginBottom: "1rem",
-                  fontSize: "0.78rem"
-                }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: "6px", color: T.textSecondary, marginBottom: "4px" }}>
-                    <Building size={13} color={T.accent} />
-                    <span>Property: <strong>{doc.propertyName || "Portfolio-wide"}</strong></span>
+                <div style={{ background: T.surfaceAlt, border: `1px solid ${T.border}`, borderRadius: "0.75rem", padding: "10px 12px", marginBottom: "1rem", fontSize: "0.78rem" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: "6px", color: T.textSecondary, marginBottom: "4px", justifyContent: "space-between" }}>
+                    <span style={{ display: "flex", alignItems: "center", gap: 6, minWidth: 0 }}>
+                      <Building size={13} color={T.accent} />
+                      <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                        Property: <strong style={{ color: T.textPrimary }}>{doc.propertyName || "Portfolio-wide"}</strong>
+                      </span>
+                    </span>
+                    <span style={{
+                      fontSize: "0.6rem", fontWeight: 800, letterSpacing: "0.05em", padding: "2px 7px", borderRadius: 9999, flexShrink: 0,
+                      background: doc.__source === "property" ? T.accentSoft : T.surface,
+                      color: doc.__source === "property" ? T.accent : T.textMuted,
+                      border: `1px solid ${doc.__source === "property" ? T.accentBorder : T.border}`
+                    }}>
+                      {doc.__source === "property" ? "LISTING" : "PROFILE"}
+                    </span>
                   </div>
 
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", color: T.textMuted, fontSize: "0.72rem" }}>
-                    <span>File: {doc.fileName || "document.pdf"} ({doc.fileSize || "1.2 MB"})</span>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", color: T.textMuted, fontSize: "0.71rem", gap: 8, flexWrap: "wrap" }}>
+                    <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>File: {doc.fileName || "document.pdf"} ({formatSize(doc.fileSize)})</span>
                     <span>Uploaded: {doc.uploadedAt ? new Date(doc.uploadedAt).toLocaleDateString() : "Recent"}</span>
                   </div>
 
                   {doc.notes && (
-                    <p style={{ marginTop: "6px", color: T.textMuted, fontSize: "0.72rem", fontStyle: "italic" }}>
+                    <p style={{ marginTop: "6px", color: T.textMuted, fontSize: "0.71rem", fontStyle: "italic" }}>
                       "{doc.notes}"
                     </p>
                   )}
 
                   {doc.expiryDate && (
-                    <div style={{ display: "flex", alignItems: "center", gap: "4px", color: T.amber, marginTop: "6px", fontSize: "0.72rem", fontWeight: 500 }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: "4px", color: T.amber, marginTop: "6px", fontSize: "0.71rem", fontWeight: 600 }}>
                       <Calendar size={12} />
                       <span>Valid until: {new Date(doc.expiryDate).toLocaleDateString()}</span>
                     </div>
                   )}
                 </div>
 
-                {/* Action Buttons: Preview, Download, Replace, Delete */}
+                {/* Actions */}
                 <div style={{ display: "flex", gap: "6px", flexWrap: "wrap", marginTop: "auto" }}>
                   <button
                     onClick={() => handleOpenPreview(doc)}
                     style={{
-                      flex: "1 1 calc(50% - 4px)",
-                      minWidth: "85px",
-                      padding: "7px 10px",
-                      background: "rgba(79,126,248,0.12)",
-                      border: `1px solid rgba(79,126,248,0.25)`,
-                      borderRadius: "8px",
-                      color: T.accent,
-                      fontSize: "0.78rem",
-                      fontWeight: 600,
-                      cursor: "pointer",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      gap: "5px",
-                      transition: "all 0.15s"
+                      flex: "1 1 calc(50% - 4px)", minWidth: "85px", padding: "8px 10px",
+                      background: T.accentSoft, border: `1px solid ${T.accentBorder}`, borderRadius: 9999,
+                      color: T.accent, fontSize: "0.77rem", fontWeight: 700, cursor: "pointer",
+                      display: "flex", alignItems: "center", justifyContent: "center", gap: "5px", transition: "all 0.15s"
                     }}
-                    onMouseEnter={(e) => e.currentTarget.style.background = "rgba(79,126,248,0.22)"}
-                    onMouseLeave={(e) => e.currentTarget.style.background = "rgba(79,126,248,0.12)"}
+                    onMouseEnter={(e) => { e.currentTarget.style.background = T.accent; e.currentTarget.style.color = "#fff"; }}
+                    onMouseLeave={(e) => { e.currentTarget.style.background = T.accentSoft; e.currentTarget.style.color = T.accent; }}
                   >
                     <Eye size={13} /> Preview
                   </button>
@@ -723,88 +551,60 @@ export const Documents = ({ profile, properties = [], onProfileUpdate, user }) =
                   <button
                     onClick={() => handleDownloadDocument(doc)}
                     style={{
-                      flex: "1 1 calc(50% - 4px)",
-                      minWidth: "85px",
-                      padding: "7px 10px",
-                      background: T.surface,
-                      border: `1px solid ${T.border}`,
-                      borderRadius: "8px",
-                      color: T.textPrimary,
-                      fontSize: "0.78rem",
-                      fontWeight: 500,
-                      cursor: "pointer",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      gap: "5px",
-                      transition: "all 0.15s"
+                      flex: "1 1 calc(50% - 4px)", minWidth: "85px", padding: "8px 10px",
+                      background: "#ffffff", border: `1px solid ${T.borderStrong}`, borderRadius: 9999,
+                      color: T.textPrimary, fontSize: "0.77rem", fontWeight: 600, cursor: "pointer",
+                      display: "flex", alignItems: "center", justifyContent: "center", gap: "5px", transition: "all 0.15s"
                     }}
-                    onMouseEnter={(e) => e.currentTarget.style.background = "rgba(255,255,255,0.12)"}
-                    onMouseLeave={(e) => e.currentTarget.style.background = T.surface}
+                    onMouseEnter={(e) => e.currentTarget.style.background = T.surfaceAlt}
+                    onMouseLeave={(e) => e.currentTarget.style.background = "#ffffff"}
                     title="Download document file"
                   >
                     <Download size={13} /> Download
                   </button>
 
-                  <button
-                    onClick={() => setDocToReplace(doc)}
-                    style={{
-                      flex: "1 1 auto",
-                      minWidth: "80px",
-                      padding: "7px 10px",
-                      background: "transparent",
-                      border: `1px solid ${T.border}`,
-                      borderRadius: "8px",
-                      color: T.textMuted,
-                      fontSize: "0.78rem",
-                      fontWeight: 500,
-                      cursor: "pointer",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      gap: "5px",
-                      transition: "all 0.15s"
-                    }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.color = T.accent;
-                      e.currentTarget.style.borderColor = T.accent;
-                      e.currentTarget.style.background = "rgba(79, 126, 248, 0.08)";
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.color = T.textMuted;
-                      e.currentTarget.style.borderColor = T.border;
-                      e.currentTarget.style.background = "transparent";
-                    }}
-                    title="Replace with new file"
-                  >
-                    <RefreshCw size={13} /> Replace
-                  </button>
+                  {doc.__source === "property" ? (
+                    <button
+                      onClick={() => setListingDocsProperty((properties || []).find((p) => p.id === doc.propertyId) || null)}
+                      style={{
+                        flex: "1 1 auto", minWidth: "80px", padding: "8px 10px", background: "#ffffff",
+                        border: `1px solid ${T.borderStrong}`, borderRadius: 9999, color: T.textMuted,
+                        fontSize: "0.77rem", fontWeight: 600, cursor: "pointer",
+                        display: "flex", alignItems: "center", justifyContent: "center", gap: "5px", transition: "all 0.15s"
+                      }}
+                      onMouseEnter={(e) => { e.currentTarget.style.color = T.accent; e.currentTarget.style.borderColor = T.accentBorder; e.currentTarget.style.background = T.accentSofter; }}
+                      onMouseLeave={(e) => { e.currentTarget.style.color = T.textMuted; e.currentTarget.style.borderColor = T.borderStrong; e.currentTarget.style.background = "#ffffff"; }}
+                      title="Add or remove documents on this listing"
+                    >
+                      <Building size={13} /> Manage
+                    </button>
+                  ) : (
+                    <button
+                      onClick={() => setDocToReplace(doc)}
+                      style={{
+                        flex: "1 1 auto", minWidth: "80px", padding: "8px 10px", background: "#ffffff",
+                        border: `1px solid ${T.borderStrong}`, borderRadius: 9999, color: T.textMuted,
+                        fontSize: "0.77rem", fontWeight: 600, cursor: "pointer",
+                        display: "flex", alignItems: "center", justifyContent: "center", gap: "5px", transition: "all 0.15s"
+                      }}
+                      onMouseEnter={(e) => { e.currentTarget.style.color = T.accent; e.currentTarget.style.borderColor = T.accentBorder; e.currentTarget.style.background = T.accentSofter; }}
+                      onMouseLeave={(e) => { e.currentTarget.style.color = T.textMuted; e.currentTarget.style.borderColor = T.borderStrong; e.currentTarget.style.background = "#ffffff"; }}
+                      title="Replace with new file"
+                    >
+                      <RefreshCw size={13} /> Replace
+                    </button>
+                  )}
 
                   <button
                     onClick={() => setDocToDelete(doc)}
                     disabled={deletingId === doc.id}
                     style={{
-                      padding: "7px 11px",
-                      background: "transparent",
-                      border: `1px solid ${T.border}`,
-                      borderRadius: "8px",
-                      color: T.textMuted,
-                      cursor: "pointer",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      transition: "all 0.15s"
+                      padding: "8px 11px", background: "#ffffff", border: `1px solid ${T.borderStrong}`, borderRadius: 9999,
+                      color: T.textMuted, cursor: deletingId === doc.id ? "wait" : "pointer",
+                      display: "flex", alignItems: "center", justifyContent: "center", transition: "all 0.15s"
                     }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.color = T.red;
-                      e.currentTarget.style.borderColor = T.red;
-                      e.currentTarget.style.background = "rgba(239,68,68,0.08)";
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.color = T.textMuted;
-                      e.currentTarget.style.borderColor = T.border;
-                      e.currentTarget.style.background = "transparent";
-                    }}
+                    onMouseEnter={(e) => { e.currentTarget.style.color = T.red; e.currentTarget.style.borderColor = T.redBorder; e.currentTarget.style.background = T.redSoft; }}
+                    onMouseLeave={(e) => { e.currentTarget.style.color = T.textMuted; e.currentTarget.style.borderColor = T.borderStrong; e.currentTarget.style.background = "#ffffff"; }}
                     title="Delete document"
                   >
                     <Trash2 size={13} />
@@ -815,29 +615,21 @@ export const Documents = ({ profile, properties = [], onProfileUpdate, user }) =
           })}
         </div>
       ) : (
-        /* Empty State */
         <div style={{
-          background: T.cardBg,
-          border: `1px dashed ${T.border}`,
-          borderRadius: "1rem",
-          padding: "4rem 2rem",
-          textAlign: "center",
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-          justifyContent: "center"
+          background: "#ffffff", border: `1px dashed ${T.borderHover}`, borderRadius: T.radiusLg, padding: "4rem 2rem",
+          textAlign: "center", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", boxShadow: T.shadowSm
         }}>
-          <Shield size={42} color={T.textMuted} style={{ marginBottom: "1rem", opacity: 0.6 }} />
-          <h3 style={{ fontSize: "1.25rem", fontWeight: 600, color: T.textPrimary, marginBottom: "0.5rem" }}>
+          <div style={{ width: 64, height: 64, borderRadius: 20, background: T.accentSoft, border: `1px solid ${T.accentBorder}`, display: "flex", alignItems: "center", justifyContent: "center", marginBottom: "1rem" }}>
+            <Shield size={28} color={T.accent} />
+          </div>
+          <h3 style={{ fontFamily: SERIF, fontSize: "1.4rem", color: T.textPrimary, marginBottom: "0.5rem" }}>
             No documents matched your criteria
           </h3>
-          <p style={{ color: T.textMuted, fontSize: "0.85rem", maxWidth: "420px", marginBottom: "1.5rem" }}>
+          <p style={{ color: T.textMuted, fontSize: "0.85rem", maxWidth: "440px", marginBottom: "1.5rem", lineHeight: 1.6 }}>
             Upload title deeds, municipal utility accounts, or national ID cards to verify your ownership of properties on Place4U.
           </p>
           <PrimaryBtn onClick={() => setIsUploadModalOpen(true)}>
-            <span style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-              <Upload size={16} /> Upload Verification Document
-            </span>
+            <Upload size={16} /> Upload Verification Document
           </PrimaryBtn>
         </div>
       )}

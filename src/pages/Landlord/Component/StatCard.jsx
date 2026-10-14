@@ -1,79 +1,80 @@
-import { ArrowUpRight } from "lucide-react";
-import { T } from "../Styles/designTokens";
+import { ArrowUpRight, ArrowDownRight } from "lucide-react";
 import * as Icons from "lucide-react";
+import { T, SERIF } from "../Styles/designTokens";
 
-export const StatCard = ({ label, value, change, trend, icon: IconName }) => {
+/* Unified premium stat card (replaces the old shared + local duplicates). */
+export const StatCard = ({ label, value, change, trend = "neutral", icon: IconName = "Activity", accent = T.accent, hint, style = {} }) => {
   const Icon = Icons[IconName] || Icons.Activity;
+  const up = trend === "up";
 
   return (
     <div
+      className="ll-card-hover"
       style={{
-        background: T.cardBg,
+        background: "#ffffff",
         border: `1px solid ${T.border}`,
-        borderRadius: "0.875rem",
-        padding: "1.25rem 1.5rem",
-        transition: "all 0.2s",
-        cursor: "default"
-      }}
-      onMouseEnter={(e) => {
-        e.currentTarget.style.background = T.cardBgHover;
-        e.currentTarget.style.borderColor = T.borderHover;
-      }}
-      onMouseLeave={(e) => {
-        e.currentTarget.style.background = T.cardBg;
-        e.currentTarget.style.borderColor = T.border;
+        borderRadius: T.radiusLg,
+        padding: "1.35rem 1.45rem",
+        boxShadow: T.shadow,
+        position: "relative",
+        overflow: "hidden",
+        ...style,
       }}
     >
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.75rem" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-          <div
-            style={{
-              width: "32px",
-              height: "32px",
-              borderRadius: "8px",
-              background: T.surface,
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center"
-            }}
-          >
-            <Icon size={16} color={T.accent} />
-          </div>
-          <span
-            style={{
-              fontSize: "0.7rem",
-              textTransform: "uppercase",
-              letterSpacing: "0.08em",
-              color: T.textMuted,
-              fontWeight: 500
-            }}
-          >
-            {label}
-          </span>
+      <div
+        style={{
+          position: "absolute",
+          top: -30,
+          right: -30,
+          width: 110,
+          height: 110,
+          borderRadius: "9999px",
+          background: `radial-gradient(circle, ${accent}1f 0%, transparent 70%)`,
+          pointerEvents: "none",
+        }}
+      />
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "0.9rem", position: "relative" }}>
+        <div
+          style={{
+            width: 42,
+            height: 42,
+            borderRadius: "0.85rem",
+            background: `${accent}1a`,
+            border: `1px solid ${accent}33`,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+          }}
+        >
+          <Icon size={19} color={accent} />
         </div>
-        {trend !== "neutral" && (
+        {trend !== "neutral" && change && (
           <span
             style={{
-              fontSize: "0.7rem",
-              fontWeight: 600,
-              color: trend === "up" ? T.emerald : T.red,
-              background: trend === "up" ? "rgba(16,185,129,0.12)" : "rgba(239,68,68,0.12)",
-              padding: "2px 8px",
-              borderRadius: "20px",
-              display: "flex",
+              fontSize: "0.72rem",
+              fontWeight: 700,
+              color: up ? T.emerald : T.red,
+              background: up ? T.emeraldSoft : T.redSoft,
+              border: `1px solid ${up ? T.emeraldBorder : T.redBorder}`,
+              padding: "3px 9px",
+              borderRadius: "9999px",
+              display: "inline-flex",
               alignItems: "center",
-              gap: "2px"
+              gap: 3,
             }}
           >
-            <ArrowUpRight size={10} style={{ transform: trend === "up" ? "none" : "rotate(90deg)" }} />
+            {up ? <ArrowUpRight size={11} /> : <ArrowDownRight size={11} />}
             {change}
           </span>
         )}
       </div>
-      <p style={{ fontSize: "1.75rem", fontWeight: 600, color: T.textPrimary, letterSpacing: "-0.04em", lineHeight: 1 }}>
-        {value}
+      <p style={{ fontSize: "0.7rem", textTransform: "uppercase", letterSpacing: "0.12em", color: T.textMuted, fontWeight: 700, margin: "0 0 0.4rem" }}>
+        {label}
       </p>
+      <p style={{ fontFamily: SERIF, fontSize: "2rem", color: T.textPrimary, letterSpacing: "-0.02em", lineHeight: 1.05, margin: 0 }}>{value}</p>
+      {hint && <p style={{ fontSize: "0.75rem", color: T.textMuted, margin: "0.45rem 0 0" }}>{hint}</p>}
     </div>
   );
 };
 
+export default StatCard;

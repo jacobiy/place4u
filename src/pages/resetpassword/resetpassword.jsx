@@ -58,9 +58,9 @@ const ResetPassword = () => {
 
 			if (error) throw error
 
-			setSuccess('Password updated successfully! Redirecting you to login...')
+			setSuccess('Password updated successfully! Continuing to your account...')
 			setTimeout(() => {
-				navigate('/login')
+				navigate('/change-password', { state: { recovery: true }, replace: true })
 			}, 1800)
 		} catch (err) {
 			setError(err.message || 'Failed to update password. Please try again.')

@@ -6,20 +6,14 @@ import {
   Users,
   Building2,
   Clock,
-  UserCheck,
   AlertCircle,
   CheckCircle2,
   RefreshCw,
   Mail,
   ChevronRight,
-  Filter,
-  ExternalLink,
   ShieldCheck,
-  Search,
-  Calendar,
   MapPin,
-  CreditCard,
-  X
+  CreditCard
 } from 'lucide-react'
 import {
   getAdminDashboardData,
@@ -29,13 +23,22 @@ import {
   formatDate,
   openGmail
 } from './db/queries'
+import {
+  subscribeToApplicationUpdates,
+  broadcastApplicationUpdate
+} from '../../services/applicationSync'
+import {
+  APPLICATION_STATUS,
+  SELECTABLE_APPLICATION_STATUSES,
+  applicationStatusLabel,
+  getApplicationStatusMeta,
+  normalizeApplicationStatus
+} from '../../services/applicationStatus'
 
 export default function Dashboard() {
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
   const [data, setData] = useState(null)
-  const [assignModalApp, setAssignModalApp] = useState(null)
-  const [selectedAgentId, setSelectedAgentId] = useState('')
   const [toast, setToast] = useState(null)
   const [appFilter, setAppFilter] = useState('all') // 'all' | 'unassigned' | 'under_review' | 'completed' | 'expired'
 
@@ -52,6 +55,13 @@ export default function Dashboard() {
 
   useEffect(() => {
     loadData()
+
+    // Stay in lock-step with every other dashboard (agent status changes,
+    // landlord approvals, tenant withdrawals) instead of only loading once.
+    const unsubscribe = subscribeToApplicationUpdates(() => {
+      loadData()
+    })
+    return () => unsubscribe()
   }, [])
 
   const stats = data?.stats ?? {
@@ -66,35 +76,29 @@ export default function Dashboard() {
     assignedApplications: 0,
     underReviewApplications: 0,
     submittedApplications: 0,
+    matchesFoundApplications: 0,
     completedApplications: 0,
     expiredApplications: 0,
+    cancelledApplications: 0,
+    rejectedApplications: 0,
+    rejectedAssignments: 0,
+    acceptedAssignments: 0,
     unverifiedUsersCount: 0
   }
 
   const agents = data?.agents ?? []
-  const applications = data?.recentApplications ?? []
+  // Use the full application list so the desk filters and the per-agent workload
+  // counts reflect every application, not only the 10 most recent.
+  const applications = data?.applications ?? data?.recentApplications ?? []
   const properties = data?.recentProperties ?? []
   const users = data?.recentUsers ?? []
-
-  const handleAssignConfirm = async () => {
-    if (!assignModalApp) return
-    try {
-      await assignAgentToApplication(assignModalApp.id, selectedAgentId || null)
-      const agentName = agents.find((a) => a.id === selectedAgentId)?.full_name || 'Unassigned'
-      setToast(`Application successfully assigned to ${agentName}.`)
-      setAssignModalApp(null)
-      setSelectedAgentId('')
-      loadData()
-    } catch (err) {
-      setToast(`Failed to assign agent: ${err.message}`)
-    }
-    setTimeout(() => setToast(null), 4000)
-  }
 
   const handleStatusChange = async (appId, newStatus) => {
     try {
       await updateApplicationStatus(appId, newStatus)
-      setToast(`Application status updated to ${newStatus.replace('_', ' ')}.`)
+      setToast(`Application status updated to ${applicationStatusLabel(newStatus).toLowerCase()}.`)
+      // Broadcast so the agent, tenant and landlord dashboards update instantly.
+      broadcastApplicationUpdate(appId, newStatus)
       loadData()
     } catch (err) {
       setToast(`Failed to update status: ${err.message}`)
@@ -102,11 +106,36 @@ export default function Dashboard() {
     setTimeout(() => setToast(null), 4000)
   }
 
+  const handleAssignAgent = async (appId, targetAgentId) => {
+    try {
+      await assignAgentToApplication(appId, targetAgentId || null)
+      const name = agents.find((a) => a.id === targetAgentId)?.full_name || 'Unassigned'
+      setToast(`Assigned application to ${name}`)
+      broadcastApplicationUpdate(
+        appId,
+        targetAgentId ? APPLICATION_STATUS.UNDER_REVIEW : APPLICATION_STATUS.SUBMITTED,
+        {
+          assigned_to: targetAgentId || null,
+          assignment_status: targetAgentId ? 'assigned' : 'unassigned',
+          assignment_responded_at: null,
+          assignment_rejection_reason: null
+        }
+      )
+      loadData()
+    } catch (err) {
+      setToast(`Error: ${err.message}`)
+    }
+    setTimeout(() => setToast(null), 4000)
+  }
+
   const filteredApps = applications.filter((app) => {
+    const status = normalizeApplicationStatus(app.status)
     if (appFilter === 'unassigned') return !app.assigned_to
-    if (appFilter === 'under_review') return app.status === 'under_review'
-    if (appFilter === 'completed') return app.status === 'completed'
-    if (appFilter === 'expired') return app.status === 'expired'
+    if (appFilter === 'rejected') return app.assignment_status === 'rejected'
+    if (appFilter === 'under_review') return status === 'under_review'
+    if (appFilter === 'matches_found') return status === 'matches_found'
+    if (appFilter === 'completed') return status === 'completed'
+    if (appFilter === 'expired') return status === 'expired'
     return true
   })
 
@@ -209,17 +238,35 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* Metric 2: Unassigned Applications */}
-        <div className={`rounded-xl border p-4 shadow-xs ${stats.unassignedApplications > 0 ? 'bg-amber-50/50 border-amber-200' : 'bg-white border-slate-200'}`}>
+        {/* Metric 2: Unassigned + Agent-rejected (action required) */}
+        <div className={`rounded-xl border p-4 shadow-xs ${
+          stats.rejectedAssignments > 0
+            ? 'bg-red-50/60 border-red-200'
+            : stats.unassignedApplications > 0
+              ? 'bg-amber-50/50 border-amber-200'
+              : 'bg-white border-slate-200'
+        }`}>
           <div className="flex items-center justify-between mb-2">
-            <span className="text-amber-800 text-[11px] font-semibold uppercase tracking-wider">Needs Agent</span>
-            <div className="w-8 h-8 rounded-lg bg-amber-100 text-amber-700 flex items-center justify-center font-bold">
+            <span className={`text-[11px] font-semibold uppercase tracking-wider ${
+              stats.rejectedAssignments > 0 ? 'text-red-800' : 'text-amber-800'
+            }`}>Needs Agent</span>
+            <div className={`w-8 h-8 rounded-lg flex items-center justify-center font-bold ${
+              stats.rejectedAssignments > 0 ? 'bg-red-100 text-red-700' : 'bg-amber-100 text-amber-700'
+            }`}>
               !
             </div>
           </div>
-          <p className="text-2xl font-bold text-amber-900">{stats.unassignedApplications}</p>
-          <div className="text-[10px] text-amber-700 font-semibold mt-1">
-            {stats.unassignedApplications > 0 ? 'Urgent: Assign to agent' : 'All applications assigned'}
+          <p className={`text-2xl font-bold ${stats.rejectedAssignments > 0 ? 'text-red-700' : 'text-amber-900'}`}>
+            {stats.unassignedApplications}
+          </p>
+          <div className={`text-[10px] mt-1 font-semibold ${
+            stats.rejectedAssignments > 0 ? 'text-red-600' : 'text-amber-700'
+          }`}>
+            {stats.rejectedAssignments > 0
+              ? `${stats.rejectedAssignments} rejected — reassign now`
+              : stats.unassignedApplications > 0
+                ? 'Urgent: Assign to agent'
+                : 'All applications assigned'}
           </div>
         </div>
 
@@ -318,6 +365,16 @@ export default function Dashboard() {
             >
               Unassigned ({stats.unassignedApplications})
             </button>
+            {stats.rejectedAssignments > 0 && (
+              <button
+                onClick={() => setAppFilter('rejected')}
+                className={`px-3 py-1 rounded-md font-semibold transition-all ${
+                  appFilter === 'rejected' ? 'bg-white text-red-700 shadow-xs' : 'text-red-500 hover:text-red-700'
+                }`}
+              >
+                Needs Reassign ({stats.rejectedAssignments})
+              </button>
+            )}
             <button
               onClick={() => setAppFilter('under_review')}
               className={`px-3 py-1 rounded-md font-semibold transition-all ${
@@ -325,6 +382,14 @@ export default function Dashboard() {
               }`}
             >
               Under Review ({stats.underReviewApplications})
+            </button>
+            <button
+              onClick={() => setAppFilter('matches_found')}
+              className={`px-3 py-1 rounded-md font-semibold transition-all ${
+                appFilter === 'matches_found' ? 'bg-white text-indigo-700 shadow-xs' : 'text-slate-500 hover:text-slate-800'
+              }`}
+            >
+              Matches ({stats.matchesFoundApplications})
             </button>
             <button
               onClick={() => setAppFilter('completed')}
@@ -407,19 +472,10 @@ export default function Dashboard() {
                       </td>
 
                       <td className="px-4 py-3.5">
-                        <div className="flex items-center gap-1.5">
+                        <div className="flex flex-col items-start gap-1.5">
                           <select
                             value={app.assigned_to || ''}
-                            onChange={(e) => {
-                              const targetAgentId = e.target.value
-                              assignAgentToApplication(app.id, targetAgentId || null)
-                                .then(() => {
-                                  const name = agents.find((a) => a.id === targetAgentId)?.full_name || 'Unassigned'
-                                  setToast(`Assigned application to ${name}`)
-                                  loadData()
-                                })
-                                .catch((err) => setToast(`Error: ${err.message}`))
-                            }}
+                            onChange={(e) => handleAssignAgent(app.id, e.target.value || null)}
                             className="bg-white border border-slate-200 text-slate-800 text-xs rounded-lg px-2 py-1 focus:outline-none focus:border-blue-600"
                           >
                             <option value="">-- Assign Agent --</option>
@@ -429,6 +485,22 @@ export default function Dashboard() {
                               </option>
                             ))}
                           </select>
+
+                          {app.assigned_to && (
+                            app.assignment_status === 'accepted' ? (
+                              <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-full px-2 py-0.5">
+                                <CheckCircle2 size={10} /> Accepted
+                              </span>
+                            ) : app.assignment_status === 'rejected' ? (
+                              <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-red-700 bg-red-50 border border-red-200 rounded-full px-2 py-0.5">
+                                <AlertCircle size={10} /> Rejected — reassign
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-amber-700 bg-amber-50 border border-amber-200 rounded-full px-2 py-0.5">
+                                <Clock size={10} /> Awaiting response
+                              </span>
+                            )
+                          )}
                         </div>
                       </td>
 
@@ -436,20 +508,11 @@ export default function Dashboard() {
                         <select
                           value={app.status || 'submitted'}
                           onChange={(e) => handleStatusChange(app.id, e.target.value)}
-                          className={`text-[11px] font-semibold rounded-lg px-2 py-1 border transition-colors ${
-                            app.status === 'completed'
-                              ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                              : app.status === 'under_review'
-                                ? 'bg-blue-50 text-blue-700 border-blue-200'
-                                : app.status === 'expired'
-                                  ? 'bg-slate-100 text-slate-700 border-slate-200'
-                                  : 'bg-amber-50 text-amber-700 border-amber-200'
-                          }`}
+                          className={`text-[11px] font-semibold rounded-lg px-2 py-1 border transition-colors ${getApplicationStatusMeta(app.status).tailwind}`}
                         >
-                          <option value="submitted">Submitted</option>
-                          <option value="under_review">Under Review</option>
-                          <option value="completed">Completed</option>
-                          <option value="expired">Expired</option>
+                          {SELECTABLE_APPLICATION_STATUSES.map((s) => (
+                            <option key={s} value={s}>{applicationStatusLabel(s)}</option>
+                          ))}
                         </select>
                       </td>
 

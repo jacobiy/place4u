@@ -6,7 +6,6 @@ import {
 } from 'lucide-react';
 import { TenantQueries } from '../db/queries';
 import CustomApplication from './CustomApplication';
-import { DEMO_APPLICATIONS } from '../Data/constants';
 import { ConfirmModal, AlertToast } from '../../../component/AlertModal';
 import { PdfPreviewModal } from './PdfAttachmentSection';
 import ApplicationFeeCardModal from '../../../component/ApplicationFeeCardModal';
@@ -16,6 +15,18 @@ import {
   mergeLocalAndDbApplications,
   broadcastApplicationUpdate
 } from '../../../services/applicationSync';
+import {
+  resolveApplicationProperty,
+  describePropertyLocation,
+  isGenericPropertyTitle
+} from '../../../utils/propertyLabel';
+import {
+  APPLICATION_STATUS,
+  applicationStatusLabel,
+  normalizeApplicationStatus,
+  isActiveApplication,
+  isClosedApplication
+} from '../../../services/applicationStatus';
 
 /* ------------------------------------------------------------------ */
 /*  Palette: white surfaces, light-blue washes, one confident blue.    */
@@ -30,8 +41,10 @@ const STATUS_STYLES = {
   submitted: { pill: 'bg-emerald-50 text-emerald-700 border-emerald-200', dot: 'bg-emerald-500' },
   under_review: { pill: 'bg-sky-50 text-sky-700 border-sky-200', dot: 'bg-sky-500' },
   matches_found: { pill: 'bg-indigo-50 text-indigo-700 border-indigo-200', dot: 'bg-indigo-500' },
+  completed: { pill: 'bg-emerald-50 text-emerald-700 border-emerald-200', dot: 'bg-emerald-500' },
   expired: { pill: 'bg-rose-50 text-rose-600 border-rose-200', dot: 'bg-rose-500' },
   cancelled: { pill: 'bg-rose-50 text-rose-600 border-rose-200', dot: 'bg-rose-500' },
+  rejected: { pill: 'bg-rose-50 text-rose-600 border-rose-200', dot: 'bg-rose-500' },
   default: { pill: 'bg-slate-50 text-slate-600 border-slate-200', dot: 'bg-slate-400' }
 };
 
@@ -39,8 +52,14 @@ const Eyebrow = ({ children, className = '' }) => (
   <p className={`text-[10px] font-semibold uppercase tracking-[0.22em] text-slate-400 ${className}`}>{children}</p>
 );
 
-export default function ApplicationsView({ user, setApplicationsCount, onOpenCustomApplication }) {
-  const [applications, setApplications] = useState(DEMO_APPLICATIONS);
+export default function ApplicationsView({
+  user,
+  setApplicationsCount,
+  onOpenCustomApplication,
+  properties = [],
+  onViewProperty
+}) {
+  const [applications, setApplications] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [editingApp, setEditingApp] = useState(null);
@@ -74,26 +93,29 @@ export default function ApplicationsView({ user, setApplicationsCount, onOpenCus
     }
 
     if (!user?.id) {
-      apps = mergeLocalAndDbApplications(localApps, DEMO_APPLICATIONS);
+      apps = mergeLocalAndDbApplications(localApps, [], user?.id);
       setApplications(apps);
       setApplicationsCount(apps.length);
+      setError(null);
       setLoading(false);
       return;
     }
 
     try {
       const result = await TenantQueries.getTenantApplications(user.id);
-      if (result.success && Array.isArray(result.data) && result.data.length > 0) {
-        apps = mergeLocalAndDbApplications(localApps, result.data);
+      if (result.success && Array.isArray(result.data)) {
+        apps = mergeLocalAndDbApplications(localApps, result.data, user.id);
+        setError(null);
       } else {
-        apps = mergeLocalAndDbApplications(localApps, DEMO_APPLICATIONS);
+        apps = mergeLocalAndDbApplications(localApps, [], user.id);
       }
     } catch {
-      apps = mergeLocalAndDbApplications(localApps, DEMO_APPLICATIONS);
+      apps = mergeLocalAndDbApplications(localApps, [], user.id);
+      setError("We couldn't reach the server to refresh your applications. Showing your saved copy.");
     }
 
     setApplications(apps);
-    const activeApps = apps.filter((app) => app.status !== 'expired' && app.status !== 'cancelled');
+    const activeApps = apps.filter(isActiveApplication);
     setApplicationsCount(activeApps.length);
     setLoading(false);
   };
@@ -107,7 +129,15 @@ export default function ApplicationsView({ user, setApplicationsCount, onOpenCus
     setIsCancelling(true);
 
     try {
-      await TenantQueries.cancelApplication(cancellingApp.id);
+      const cancelRes = await TenantQueries.cancelApplication(cancellingApp.id);
+
+      // Local/demo applications aren't persisted, so their cancellation is
+      // applied optimistically. For a saved application, a failed write is a
+      // real error and we must not report false success.
+      const isLocalOnly = !user?.id || String(cancellingApp.id).startsWith('app-');
+      if (!cancelRes?.success && !isLocalOnly) {
+        throw new Error(cancelRes?.error || 'Cancellation failed');
+      }
 
       const updated = applications.map((a) =>
         a.id === cancellingApp.id ? { ...a, status: 'cancelled' } : a
@@ -123,11 +153,12 @@ export default function ApplicationsView({ user, setApplicationsCount, onOpenCus
       } catch {}
 
       const activeApps = updated.filter(
-        (a) => a.id !== cancellingApp.id && a.status !== 'expired' && a.status !== 'cancelled'
+        (a) => a.id !== cancellingApp.id && isActiveApplication(a)
       );
       setApplicationsCount(activeApps.length);
 
-      broadcastApplicationUpdate(cancellingApp.id, 'cancelled');
+      // Broadcast the withdrawal so the agent, admin and landlord views update.
+      broadcastApplicationUpdate(cancellingApp.id, APPLICATION_STATUS.CANCELLED);
 
       setToast({
         type: 'success',
@@ -168,7 +199,7 @@ export default function ApplicationsView({ user, setApplicationsCount, onOpenCus
         payment_method: 'card',
         receipt_number: receiptNum,
         card_brand: receipt?.cardBrand || 'Card',
-        card_last4: receipt?.cardLast4 || '4242',
+        card_last4: receipt?.cardLast4 || null,
         status: 'completed',
         payer_name: user?.user_metadata?.full_name || 'Resident Tenant',
         payer_email: user?.email || null,
@@ -241,9 +272,25 @@ export default function ApplicationsView({ user, setApplicationsCount, onOpenCus
       message: `R100.00 Application Fee settled for "${payingApp.property_title || 'Application'}" (Receipt: ${receiptNum}).`
     });
     setPayingApp(null);
+
+    // Let the agent wallet, admin payments desk and landlord view reflect the
+    // settled fee immediately.
+    try {
+      broadcastApplicationUpdate(payingApp.id, payingApp.status || APPLICATION_STATUS.SUBMITTED, {
+        fee_paid: true,
+        fee_amount: 100,
+        fee_currency: 'ZAR',
+        fee_receipt: receiptNum,
+        payment_method: 'Card (PayPal)',
+        payment_id: finalPaymentId
+      });
+    } catch (e) {
+      console.warn('Fee payment broadcast notice:', e);
+    }
   };
 
-  const getStatusStyle = (status) => STATUS_STYLES[status] || STATUS_STYLES.default;
+  const getStatusStyle = (status) =>
+    STATUS_STYLES[normalizeApplicationStatus(status)] || STATUS_STYLES.default;
 
   if (loading) {
     return (
@@ -253,7 +300,7 @@ export default function ApplicationsView({ user, setApplicationsCount, onOpenCus
     );
   }
 
-  const activeCount = applications.filter((a) => a.status !== 'expired' && a.status !== 'cancelled').length;
+  const activeCount = applications.filter(isActiveApplication).length;
 
   return (
     <div className="max-w-6xl mx-auto pb-16 text-slate-900">
@@ -274,7 +321,7 @@ export default function ApplicationsView({ user, setApplicationsCount, onOpenCus
       {previewDoc && <PdfPreviewModal doc={previewDoc} onClose={() => setPreviewDoc(null)} />}
 
       {/* ============================ HEADER ============================ */}
-      <header className="relative overflow-hidden rounded-[32px] border border-sky-100 px-6 py-9 sm:px-10 sm:py-11 mb-10 bg-gradient-to-br from-sky-100 via-sky-50 to-white shadow-[0_24px_60px_-28px_rgba(2,132,199,0.35)]">
+      <header className="relative overflow-hidden rounded-[32px] border border-sky-100 px-6 py-9 sm:px-10 sm:py-11 mb-10 bg-white/80 backdrop-blur-md shadow-[0_24px_60px_-28px_rgba(2,132,199,0.35)]">
         <div aria-hidden className="absolute -top-28 -right-20 w-[380px] h-[380px] rounded-full bg-sky-300/30 blur-3xl" />
         <div className="relative z-10 flex flex-col sm:flex-row sm:items-end sm:justify-between gap-6">
           <div className="max-w-xl">
@@ -334,7 +381,24 @@ export default function ApplicationsView({ user, setApplicationsCount, onOpenCus
               app.fee_paid === true || app.fee_paid === 'true' || Boolean(app.fee_receipt) || Boolean(app.payment_id)
             );
             const statusStyle = getStatusStyle(app.status);
-            const isClosed = app.status === 'expired' || app.status === 'cancelled';
+            const isClosed = isClosedApplication(app);
+
+            // Which property this application is for. Resolved from the
+            // immutable property_id link first, then the stored title snapshot
+            // so older rows that saved a generic placeholder still show up.
+            const resolution = resolveApplicationProperty(app, properties);
+            const resolvedProperty = resolution.property;
+            const propertyLabel =
+              resolution.label ||
+              (isGenericPropertyTitle(app.property_title) ? null : app.property_title);
+            const propertyLocation =
+              describePropertyLocation(resolvedProperty) ||
+              (propertyLabel && !resolvedProperty ? app.preferred_areas?.join(', ') : null);
+            const resolvedPrice = Number(resolvedProperty?.price);
+            const propertyPrice =
+              Number.isFinite(resolvedPrice) && resolvedPrice > 0
+                ? `R${resolvedPrice.toLocaleString('en-ZA')}/mo`
+                : null;
 
             return (
               <article
@@ -355,15 +419,45 @@ export default function ApplicationsView({ user, setApplicationsCount, onOpenCus
                       className={`px-3 py-1.5 rounded-full border text-[10px] font-bold uppercase tracking-wider flex items-center gap-2 ${statusStyle.pill}`}
                     >
                       <span className={`w-1.5 h-1.5 rounded-full ${statusStyle.dot}`} />
-                      {String(app.status || '').replace(/_/g, ' ')}
+                      {applicationStatusLabel(app.status)}
                     </span>
                   </div>
 
-                  {/* Title */}
-                  {app.property_title && (
+                  {/* Which property this application is for */}
+                  {propertyLabel && (
                     <div className="mb-6">
-                      <Eyebrow>Applied property</Eyebrow>
-                      <h3 className="font-serif text-2xl text-slate-900 mt-1.5 leading-tight">{app.property_title}</h3>
+                      <Eyebrow>Applied for</Eyebrow>
+                      <h3 className="font-serif text-2xl text-slate-900 mt-1.5 leading-tight">{propertyLabel}</h3>
+
+                      <div className="mt-2.5 flex flex-wrap items-center gap-x-3 gap-y-1.5 text-[11px] text-slate-500">
+                        {propertyLocation && (
+                          <span className="inline-flex items-center gap-1.5">
+                            <MapPin size={12} className="text-sky-500" />
+                            {propertyLocation}
+                          </span>
+                        )}
+                        {propertyPrice && (
+                          <span className="inline-flex items-center gap-1.5">
+                            <DollarSign size={12} className="text-sky-500" />
+                            {propertyPrice}
+                          </span>
+                        )}
+                        {resolvedProperty?.id && (
+                          <span className="font-mono text-slate-400">
+                            Listing {String(resolvedProperty.id).slice(0, 8)}
+                          </span>
+                        )}
+                        {resolvedProperty && onViewProperty && (
+                          <button
+                            type="button"
+                            onClick={() => onViewProperty(resolvedProperty)}
+                            className="inline-flex items-center gap-1.5 font-semibold text-sky-700 hover:text-sky-900 underline underline-offset-4 cursor-pointer"
+                          >
+                            <Eye size={12} />
+                            View property
+                          </button>
+                        )}
+                      </div>
                     </div>
                   )}
 
@@ -377,7 +471,7 @@ export default function ApplicationsView({ user, setApplicationsCount, onOpenCus
                         <div className="min-w-0">
                           <Eyebrow className="!text-sky-600">Assigned processing agent</Eyebrow>
                           <p className="font-semibold text-slate-900 text-sm truncate mt-0.5">
-                            {app.agent?.full_name || 'Place4U Licensed Agent'}
+                            {app.agent?.full_name || 'Assigned agent'}
                           </p>
                         </div>
                       </div>

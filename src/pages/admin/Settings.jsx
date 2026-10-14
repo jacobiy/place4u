@@ -3,10 +3,7 @@ import {
   Save,
   CheckCircle2,
   Mail,
-  FileCheck2,
-  Sliders,
-  ShieldCheck,
-  ExternalLink
+  FileCheck2
 } from 'lucide-react'
 import { openGmail } from './db/queries'
 

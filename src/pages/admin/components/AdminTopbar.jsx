@@ -1,13 +1,11 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import {
-  Search,
   Bell,
   Menu,
-  X,
   FileCheck2,
   Mail,
   ArrowRight,
-  ExternalLink
+  AlertTriangle
 } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { supabase } from '../../../utils/Supabase'
@@ -22,27 +20,82 @@ export default function AdminTopbar({
 }) {
   const [showNotifications, setShowNotifications] = useState(false)
   const [unassignedApps, setUnassignedApps] = useState([])
+  const [rejectedApps, setRejectedApps] = useState([])
+  const [unassignedCount, setUnassignedCount] = useState(0)
+  const [rejectedCount, setRejectedCount] = useState(0)
+  const notificationsRef = useRef(null)
 
   useEffect(() => {
-    const fetchUnassigned = () => {
+    const fetchActionItems = () => {
+      // Unassigned tenant requests awaiting an agent (preview list, newest first)
       supabase
         .from('applications')
         .select('id, tenant_id, min_budget, max_budget, submitted_at, tenant:users!applications_tenant_id_fkey(full_name, email)')
         .is('assigned_to', null)
+        .order('submitted_at', { ascending: false })
         .limit(5)
         .then(({ data }) => {
           if (data) setUnassignedApps(data)
         })
+
+      // Jobs an agent rejected — the admin needs to reassign them (preview list)
+      supabase
+        .from('applications')
+        .select('id, tenant_id, assigned_to, assignment_status, assignment_rejection_reason, assignment_responded_at, tenant:users!applications_tenant_id_fkey(full_name, email), agent:users!applications_assigned_to_fkey(full_name)')
+        .eq('assignment_status', 'rejected')
+        .order('assignment_responded_at', { ascending: false })
+        .limit(5)
+        .then(({ data, error }) => {
+          // Ignore if the assignment columns have not been migrated yet
+          if (!error && data) setRejectedApps(data)
+        })
+
+      // Exact totals — the preview lists above are capped at 5, so the badges
+      // must be counted separately or they would understate the backlog.
+      supabase
+        .from('applications')
+        .select('id', { count: 'exact', head: true })
+        .is('assigned_to', null)
+        .then(({ count, error }) => {
+          if (!error && typeof count === 'number') setUnassignedCount(count)
+        })
+
+      supabase
+        .from('applications')
+        .select('id', { count: 'exact', head: true })
+        .eq('assignment_status', 'rejected')
+        .then(({ count, error }) => {
+          if (!error && typeof count === 'number') setRejectedCount(count)
+        })
     }
 
-    fetchUnassigned()
+    fetchActionItems()
 
     const unsubscribe = subscribeToApplicationUpdates(() => {
-      fetchUnassigned()
+      fetchActionItems()
     })
 
     return () => unsubscribe()
   }, [])
+
+  // Close the notifications popover on outside click or Escape
+  useEffect(() => {
+    if (!showNotifications) return
+    const handlePointerDown = (event) => {
+      if (notificationsRef.current && !notificationsRef.current.contains(event.target)) {
+        setShowNotifications(false)
+      }
+    }
+    const handleKeyDown = (event) => {
+      if (event.key === 'Escape') setShowNotifications(false)
+    }
+    document.addEventListener('mousedown', handlePointerDown)
+    document.addEventListener('keydown', handleKeyDown)
+    return () => {
+      document.removeEventListener('mousedown', handlePointerDown)
+      document.removeEventListener('keydown', handleKeyDown)
+    }
+  }, [showNotifications])
 
   return (
     <header className="h-16 bg-white/95 backdrop-blur-md border-b border-slate-200/80 flex items-center justify-between px-6 sticky top-0 z-20">
@@ -74,7 +127,7 @@ export default function AdminTopbar({
         </button>
 
         {/* Notifications Popover for Unassigned Applications */}
-        <div className="relative">
+        <div className="relative" ref={notificationsRef}>
           <button
             type="button"
             onClick={() => setShowNotifications(!showNotifications)}
@@ -82,8 +135,14 @@ export default function AdminTopbar({
             aria-label="View notifications"
           >
             <Bell size={16} />
-            {unassignedApps.length > 0 && (
-              <span className="absolute top-1 right-1 w-2.5 h-2.5 bg-amber-500 rounded-full ring-2 ring-white" />
+            {unassignedCount + rejectedCount > 0 && (
+              <span
+                className={`absolute -top-1 -right-1 min-w-[16px] h-4 px-1 rounded-full ring-2 ring-white text-[9px] font-bold text-white flex items-center justify-center ${
+                  rejectedCount > 0 ? 'bg-red-500' : 'bg-amber-500'
+                }`}
+              >
+                {unassignedCount + rejectedCount > 9 ? '9+' : unassignedCount + rejectedCount}
+              </span>
             )}
           </button>
 
@@ -92,9 +151,14 @@ export default function AdminTopbar({
               <div className="flex items-center justify-between pb-3 border-b border-slate-100">
                 <div className="flex items-center gap-2">
                   <h4 className="font-bold text-xs text-slate-900">Application Action Items</h4>
-                  {unassignedApps.length > 0 && (
+                  {rejectedCount > 0 && (
+                    <span className="bg-red-50 text-red-700 text-[10px] font-bold px-1.5 py-0.5 rounded-full">
+                      {rejectedCount} to reassign
+                    </span>
+                  )}
+                  {unassignedCount > 0 && (
                     <span className="bg-amber-50 text-amber-700 text-[10px] font-bold px-1.5 py-0.5 rounded-full">
-                      {unassignedApps.length} pending agent
+                      {unassignedCount} pending agent
                     </span>
                   )}
                 </div>
@@ -107,7 +171,46 @@ export default function AdminTopbar({
                 </button>
               </div>
 
-              <div className="divide-y divide-slate-100 max-h-72 overflow-y-auto my-1">
+              <div className="divide-y divide-slate-100 max-h-80 overflow-y-auto my-1">
+                {rejectedApps.length > 0 && (
+                  <>
+                    {rejectedApps.map((app) => (
+                      <div
+                        key={app.id}
+                        className="p-3 text-xs flex items-start gap-3 hover:bg-red-50 rounded-lg transition-colors bg-red-50/40"
+                      >
+                        <div className="mt-0.5 flex-shrink-0 text-red-600">
+                          <AlertTriangle size={15} />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="font-semibold text-slate-900 leading-tight">
+                            Job rejected — reassignment needed
+                          </p>
+                          <p className="text-slate-500 text-[11px] mt-0.5 leading-snug">
+                            {app.agent?.full_name || 'An agent'} declined{' '}
+                            {app.tenant?.full_name || "a tenant's"}'s application.
+                            {app.assignment_rejection_reason ? ` “${app.assignment_rejection_reason}”` : ''}
+                          </p>
+                          <span className="text-[10px] font-mono text-slate-400 mt-1 block">
+                            ID: {String(app.id).slice(0, 8)}…
+                          </span>
+                        </div>
+                        <Link
+                          to="/admin/applications"
+                          onClick={() => setShowNotifications(false)}
+                          className="flex-shrink-0 inline-flex items-center gap-1 text-[10px] font-semibold text-red-600 hover:text-red-700 whitespace-nowrap"
+                        >
+                          Reassign <ArrowRight size={11} />
+                        </Link>
+                      </div>
+                    ))}
+                    {unassignedApps.length > 0 && (
+                      <div className="px-3 pt-2 pb-1 text-[10px] font-semibold text-slate-400 uppercase tracking-wider">
+                        Unassigned Requests
+                      </div>
+                    )}
+                  </>
+                )}
                 {unassignedApps.length > 0 ? (
                   unassignedApps.map((app) => (
                     <div
@@ -131,9 +234,11 @@ export default function AdminTopbar({
                     </div>
                   ))
                 ) : (
-                  <p className="p-4 text-center text-xs text-slate-400">
-                    No pending unassigned applications at this time.
-                  </p>
+                  rejectedApps.length === 0 && (
+                    <p className="p-4 text-center text-xs text-slate-400">
+                      No pending application action items at this time.
+                    </p>
+                  )
                 )}
               </div>
 

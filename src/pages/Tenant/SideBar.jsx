@@ -1,4 +1,4 @@
-import { LayoutDashboard, Search, User, Settings, LogOut, ChevronDown, FileText, Menu, X, Sparkles } from "lucide-react";
+import { LayoutDashboard, User, Settings, LogOut, ChevronDown, FileText, Menu, X, Sparkles, GitBranch } from "lucide-react";
 import { T } from './Styles/designTokens';
 import { useState, useRef, useEffect } from "react";
 
@@ -11,7 +11,7 @@ const initials = (nameOrEmail) => {
   return `${parts[0][0]}${parts[parts.length - 1][0]}`.toUpperCase();
 };
 
-export const Sidebar = ({ activeView, setActiveView, unreadCount, applicationsCount, matchesCount = 1, onLogout, profile, user }) => {
+export const Sidebar = ({ activeView, setActiveView, applicationsCount, matchesCount = 1, onLogout, profile, user }) => {
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const profileMenuRef = useRef(null);
@@ -36,7 +36,7 @@ export const Sidebar = ({ activeView, setActiveView, unreadCount, applicationsCo
   const navItems = [
     { id: "dashboard", icon: LayoutDashboard, label: "Dashboard" },
     { id: "matches", icon: Sparkles, label: "Matched Properties", badge: matchesCount },
-    { id: "browse", icon: Search, label: "Browse Properties" },
+    { id: "pipeline", icon: GitBranch, label: "Match Pipeline" },
     { id: "applications", icon: FileText, label: "Applications", badge: applicationsCount },
   ];
 
@@ -197,7 +197,7 @@ export const Sidebar = ({ activeView, setActiveView, unreadCount, applicationsCo
           }}>
             {initials(displayName)}
           </div>
-          <div style={{ textAlign: "left", display: "none" }} className="sm:block">
+          <div className="hidden sm:block text-left">
             <p style={{ fontSize: "0.82rem", fontWeight: 600, color: T.textPrimary, lineHeight: 1.2, margin: 0 }}>
               {displayName}
             </p>

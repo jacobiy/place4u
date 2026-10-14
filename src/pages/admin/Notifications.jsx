@@ -15,40 +15,7 @@ export default function NotificationsPage() {
   const [broadcastMessage, setBroadcastMessage] = useState('')
   const [targetAudience, setTargetAudience] = useState('All')
 
-  const [alerts, setAlerts] = useState([
-    {
-      id: 1,
-      title: 'FICA Verification Queue (4 Pending Landlords)',
-      description: 'Ownership title deeds and IDs submitted by Cape Town property managers requiring compliance review.',
-      time: '12 min ago',
-      category: 'Compliance',
-      severity: 'warning'
-    },
-    {
-      id: 2,
-      title: 'Instant EFT Settlement Completed (R28,000)',
-      description: 'Tenant Zanele Ndlovu settled monthly rent for Sandton Suite 5 via PayFast.',
-      time: '45 min ago',
-      category: 'Financial',
-      severity: 'success'
-    },
-    {
-      id: 3,
-      title: 'Lease Expiration in 24 Days (Sea Point Unit 102)',
-      description: 'Automated 30-day notice sent to Atlantic Cape Holdings and tenant Naledi Sithole.',
-      time: '2 hours ago',
-      category: 'Leases',
-      severity: 'info'
-    },
-    {
-      id: 4,
-      title: 'Disputed Maintenance Claim Escalated',
-      description: 'Hatfield student flat plumbing repair quote R2,450 requires landlord sign-off.',
-      time: '5 hours ago',
-      category: 'Maintenance',
-      severity: 'danger'
-    }
-  ])
+  const [alerts, setAlerts] = useState([])
 
   const handleBroadcast = (e) => {
     e.preventDefault()

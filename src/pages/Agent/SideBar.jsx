@@ -1,6 +1,19 @@
 import { useMemo, useState } from "react";
-import { Home, FileText, Building, Wallet, User, Settings, LogOut, ChevronDown, Lock } from "lucide-react";
-import { T } from "./Styles/designTokens";
+import {
+  LayoutDashboard,
+  FileText,
+  Building2,
+  Wallet,
+  User,
+  Settings,
+  LogOut,
+  ChevronsUpDown,
+  Lock,
+  ShieldCheck,
+  Sparkles,
+  GitBranch
+} from "lucide-react";
+import "./SideBar.css";
 
 const initials = (nameOrEmail) => {
   const raw = (nameOrEmail || "").trim();
@@ -11,19 +24,34 @@ const initials = (nameOrEmail) => {
   return `${parts[0][0]}${parts[parts.length - 1][0]}`.toUpperCase();
 };
 
+const PRIMARY = [
+  { id: "dashboard", icon: LayoutDashboard, label: "Dashboard" },
+  { id: "applications", icon: FileText, label: "Applications", locked: true },
+  { id: "pipeline", icon: GitBranch, label: "Match Pipeline", locked: true },
+  { id: "properties", icon: Building2, label: "Properties", locked: true },
+  { id: "wallet", icon: Wallet, label: "Wallet & Earnings", locked: true }
+];
+
+const SECONDARY = [
+  { id: "profile", icon: User, label: "Profile" },
+  { id: "settings", icon: Settings, label: "Settings" }
+];
+
 export const Sidebar = ({ activeView, setActiveView, onLogout, profile, agentProfile, user }) => {
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const displayName = profile?.full_name || agentProfile?.full_name || user?.user_metadata?.full_name || user?.email || "Agent";
   const isAgentVerified = Boolean(agentProfile?.is_verified === true);
 
-  const navItems = useMemo(
+  const groups = useMemo(
     () => [
-      { id: "dashboard", icon: Home, label: "Dashboard" },
-      { id: "applications", icon: FileText, label: "Applications", locked: !isAgentVerified },
-      { id: "properties", icon: Building, label: "Properties", locked: !isAgentVerified },
-      { id: "wallet", icon: Wallet, label: "Wallet & Earnings", locked: !isAgentVerified },
-      { id: "profile", icon: User, label: "Profile" },
-      { id: "settings", icon: Settings, label: "Settings" }
+      {
+        label: "Workspace",
+        items: PRIMARY.map((item) => ({ ...item, locked: Boolean(item.locked) && !isAgentVerified }))
+      },
+      {
+        label: "Account",
+        items: SECONDARY.map((item) => ({ ...item, locked: Boolean(item.locked) && !isAgentVerified }))
+      }
     ],
     [isAgentVerified]
   );
@@ -32,43 +60,17 @@ export const Sidebar = ({ activeView, setActiveView, onLogout, profile, agentPro
     const active = activeView === id;
     return (
       <button
+        type="button"
         onClick={() => setActiveView(id)}
-        style={{
-          display: "flex",
-          alignItems: "center",
-          gap: "12px",
-          padding: "10px 16px",
-          borderRadius: "10px",
-          width: "100%",
-          border: "none",
-          background: active ? "rgba(79,126,248,0.15)" : "transparent",
-          color: active ? T.accent : locked ? T.textMuted : T.textSecondary,
-          fontSize: "0.85rem",
-          fontWeight: active ? 600 : 400,
-          cursor: "pointer",
-          fontFamily: "inherit",
-          transition: "all 0.15s",
-          marginBottom: "4px",
-          opacity: locked && !active ? 0.75 : 1
-        }}
-        onMouseEnter={(e) => {
-          if (!active) {
-            e.currentTarget.style.background = T.surface;
-            e.currentTarget.style.color = T.textPrimary;
-          }
-        }}
-        onMouseLeave={(e) => {
-          if (!active) {
-            e.currentTarget.style.background = "transparent";
-            e.currentTarget.style.color = locked ? T.textMuted : T.textSecondary;
-          }
-        }}
+        className={`sb-nav-item${active ? " is-active" : ""}${locked ? " is-locked" : ""}`}
+        aria-current={active ? "page" : undefined}
       >
-        <Icon size={18} />
-        <span style={{ flex: 1, textAlign: "left" }}>{label}</span>
+        <span className="sb-nav-rail" aria-hidden="true" />
+        <Icon size={17} strokeWidth={2} className="sb-nav-icon" />
+        <span className="sb-nav-label">{label}</span>
         {locked && (
-          <span style={{ display: "inline-flex", alignItems: "center", gap: "2px", fontSize: "0.65rem", padding: "1px 6px", borderRadius: "999px", background: "rgba(245,158,11,0.12)", color: "#f59e0b", border: "1px solid rgba(245,158,11,0.25)" }}>
-            <Lock size={9} /> Inactive
+          <span className="sb-nav-lock" title="Complete verification to unlock">
+            <Lock size={10} />
           </span>
         )}
       </button>
@@ -76,180 +78,107 @@ export const Sidebar = ({ activeView, setActiveView, onLogout, profile, agentPro
   };
 
   return (
-    <aside
-      style={{
-        width: "260px",
-        background: T.navyMid,
-        borderRight: `1px solid ${T.border}`,
-        height: "100vh",
-        position: "fixed",
-        left: 0,
-        top: 0,
-        display: "flex",
-        flexDirection: "column",
-        zIndex: 50
-      }}
-    >
-      <div
-        style={{
-          padding: "1.5rem",
-          borderBottom: `1px solid ${T.border}`,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          gap: "10px",
-          flexShrink: 0
-        }}
-      >
-        <div style={{ width: "42px", height: "48px", display: "flex", alignItems: "center", justifyContent: "center", borderRadius: "10px", overflow: "hidden", background: "transparent" }}>
-          <img
-            src="/logo.png"
-            alt="Place4U Logo"
-            style={{ width: "100%", height: "100%", objectFit: "contain", filter: "brightness(0) invert(1)" }}
-          />
+    <aside className="agent-sidebar">
+      {/* Brand */}
+      <div className="sb-brand">
+        <div className="sb-brand-mark">
+          <img src="/logo-icon.png" alt="Place4U" />
+        </div>
+        <div className="sb-brand-text">
+          <span className="sb-brand-name">Place4U</span>
+          <span className="sb-brand-sub">Agent Console</span>
         </div>
       </div>
 
-      <div style={{ flex: 1, padding: "1.5rem 1rem", overflowY: "auto", overflowX: "hidden" }}>
-        <div style={{ marginBottom: "1.5rem" }}>
-          <p style={{ fontSize: "0.7rem", textTransform: "uppercase", letterSpacing: "0.08em", color: T.textMuted, marginBottom: "1rem", paddingLeft: "12px" }}>
-            Agent Menu
-          </p>
-          {navItems.map((item) => (
-            <NavItem key={item.id} {...item} />
-          ))}
-        </div>
-      </div>
+      {/* Navigation */}
+      <nav className="sb-nav">
+        {groups.map((group) => (
+          <div className="sb-group" key={group.label}>
+            <p className="sb-group-label">{group.label}</p>
+            {group.items.map((item) => (
+              <NavItem key={item.id} {...item} />
+            ))}
+          </div>
+        ))}
+      </nav>
 
-      <div style={{ padding: "1rem", borderTop: `1px solid ${T.border}`, flexShrink: 0, background: T.navyMid }}>
-        <div style={{ position: "relative" }}>
+      {/* Verification prompt */}
+      {!isAgentVerified && (
+        <div className="sb-verify">
+          <div className="sb-verify-icon">
+            <Sparkles size={14} />
+          </div>
+          <div className="sb-verify-copy">
+            <p className="sb-verify-title">Account inactive</p>
+            <p className="sb-verify-text">
+              Submit your FICA documents to unlock listings, matching and earnings.
+            </p>
+          </div>
+          <button type="button" className="sb-verify-btn" onClick={() => setActiveView("dashboard")}>
+            <ShieldCheck size={13} /> Get verified
+          </button>
+        </div>
+      )}
+
+      {/* Identity / account menu */}
+      <div className="sb-footer">
+        <div className="sb-identity-wrap">
           <button
-            onClick={() => setIsProfileOpen(!isProfileOpen)}
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: "12px",
-              padding: "10px",
-              width: "100%",
-              background: T.surface,
-              border: `1px solid ${T.border}`,
-              borderRadius: "12px",
-              cursor: "pointer",
-              transition: "all 0.15s"
-            }}
-            onMouseEnter={(e) => (e.currentTarget.style.borderColor = T.borderHover)}
-            onMouseLeave={(e) => (e.currentTarget.style.borderColor = T.border)}
+            type="button"
+            className={`sb-identity${isProfileOpen ? " is-open" : ""}`}
+            onClick={() => setIsProfileOpen((v) => !v)}
+            aria-expanded={isProfileOpen}
           >
-            <div style={{ width: "40px", height: "40px", borderRadius: "50%", background: `linear-gradient(135deg, ${T.accent} 0%, #7c5ef8 100%)`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: "0.9rem", fontWeight: 700, color: "#fff" }}>
-              {initials(displayName)}
-            </div>
-            <div style={{ flex: 1, textAlign: "left" }}>
-              <p style={{ fontSize: "0.85rem", fontWeight: 600, color: T.textPrimary, lineHeight: 1.2 }}>{displayName}</p>
-              {isAgentVerified ? (
-                <p style={{ fontSize: "0.7rem", color: "#10b981", fontWeight: 600 }}>● Verified Agent</p>
+            <span className="sb-identity-avatar">
+              {agentProfile?.profile_image_url ? (
+                <img src={agentProfile.profile_image_url} alt={displayName} />
               ) : (
-                <p style={{ fontSize: "0.7rem", color: "#f59e0b", fontWeight: 500 }}>○ Inactive • Unverified</p>
+                initials(displayName)
               )}
-            </div>
-            <ChevronDown size={14} color={T.textMuted} style={{ transform: isProfileOpen ? "rotate(180deg)" : "rotate(0deg)", transition: "transform 0.2s" }} />
+              <span className={`sb-presence${isAgentVerified ? " is-on" : " is-off"}`} />
+            </span>
+            <span className="sb-identity-text">
+              <span className="sb-identity-name">{displayName}</span>
+              <span className={`sb-identity-role${isAgentVerified ? " is-verified" : ""}`}>
+                {isAgentVerified ? "Verified agent" : "Unverified"}
+              </span>
+            </span>
+            <ChevronsUpDown size={14} className="sb-identity-chev" />
           </button>
 
           {isProfileOpen && (
-            <div style={{ position: "absolute", bottom: "calc(100% + 8px)", left: 0, right: 0, background: T.navy, border: `1px solid ${T.border}`, borderRadius: "12px", padding: "0.5rem", boxShadow: "0 10px 25px rgba(0,0,0,0.3)" }}>
-              <button
-                onClick={() => {
-                  setActiveView("profile");
-                  setIsProfileOpen(false);
-                }}
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "10px",
-                  padding: "8px 12px",
-                  width: "100%",
-                  background: "transparent",
-                  border: "none",
-                  borderRadius: "8px",
-                  cursor: "pointer",
-                  color: T.textSecondary,
-                  fontSize: "0.8rem",
-                  transition: "all 0.15s",
-                  fontFamily: "inherit"
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.background = T.surface;
-                  e.currentTarget.style.color = T.textPrimary;
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.background = "transparent";
-                  e.currentTarget.style.color = T.textSecondary;
-                }}
-              >
-                <User size={14} /> View Profile
-              </button>
-              <button
-                onClick={() => {
-                  setActiveView("settings");
-                  setIsProfileOpen(false);
-                }}
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "10px",
-                  padding: "8px 12px",
-                  width: "100%",
-                  background: "transparent",
-                  border: "none",
-                  borderRadius: "8px",
-                  cursor: "pointer",
-                  color: T.textSecondary,
-                  fontSize: "0.8rem",
-                  transition: "all 0.15s",
-                  fontFamily: "inherit"
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.background = T.surface;
-                  e.currentTarget.style.color = T.textPrimary;
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.background = "transparent";
-                  e.currentTarget.style.color = T.textSecondary;
-                }}
-              >
-                <Settings size={14} /> Account Settings
-              </button>
-              <div style={{ height: "1px", background: T.border, margin: "0.5rem 0" }} />
-              <button
-                onClick={onLogout}
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "10px",
-                  padding: "8px 12px",
-                  width: "100%",
-                  background: "transparent",
-                  border: "none",
-                  borderRadius: "8px",
-                  cursor: "pointer",
-                  color: T.red,
-                  fontSize: "0.8rem",
-                  transition: "all 0.15s",
-                  fontFamily: "inherit"
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.background = "rgba(239,68,68,0.1)";
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.background = "transparent";
-                }}
-              >
-                <LogOut size={14} /> Logout
-              </button>
-            </div>
+            <>
+              <div className="sb-menu-backdrop" onClick={() => setIsProfileOpen(false)} />
+              <div className="sb-menu">
+                <button
+                  type="button"
+                  className="sb-menu-item"
+                  onClick={() => {
+                    setActiveView("profile");
+                    setIsProfileOpen(false);
+                  }}
+                >
+                  <User size={15} /> View profile
+                </button>
+                <button
+                  type="button"
+                  className="sb-menu-item"
+                  onClick={() => {
+                    setActiveView("settings");
+                    setIsProfileOpen(false);
+                  }}
+                >
+                  <Settings size={15} /> Account settings
+                </button>
+                <div className="sb-menu-sep" />
+                <button type="button" className="sb-menu-item is-danger" onClick={onLogout}>
+                  <LogOut size={15} /> Sign out
+                </button>
+              </div>
+            </>
           )}
         </div>
       </div>
     </aside>
   );
 };
-

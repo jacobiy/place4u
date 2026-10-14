@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   X,
   FileText,
@@ -24,6 +24,9 @@ import { PrimaryBtn, SecondaryBtn } from './Buttons';
 import { DocumentPreviewModal } from './DocumentPreviewModal';
 import { T } from '../Styles/designTokens';
 import { LandlordQueries } from '../db/queries';
+import { broadcastApplicationUpdate } from '../../../services/applicationSync';
+import { APPLICATION_STATUS } from '../../../services/applicationStatus';
+import { resolveApplicationProperty, describeProperty } from '../../../utils/propertyLabel';
 
 export const TenantApplicationReviewModal = ({
   isOpen,
@@ -42,55 +45,37 @@ export const TenantApplicationReviewModal = ({
   const [statusAction, setStatusAction] = useState(null); // 'completed' | 'under_review' | 'rejected'
   const [feedbackMsg, setFeedbackMsg] = useState('');
 
+  // Reset the per-application inputs whenever a different application is opened,
+  // otherwise the modal keeps the first-mount default (often an empty target).
+  useEffect(() => {
+    if (!application) return;
+    setTargetPropertyId(application.property_id || properties[0]?.id || '');
+    setReviewNote('');
+    setLeaseMonths(12);
+    setFeedbackMsg('');
+    setIsAssigning(false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [application?.id]);
+
   if (!isOpen || !application) return null;
 
   const tenantName = application.tenant?.full_name || application.tenant?.email || 'Prospective Tenant';
   const tenantEmail = application.tenant?.email || '—';
   const tenantPhone = application.tenant?.phone || '—';
-  const propertyTitle = application.property_title || application.property?.name || 'Property Unit';
-  const budget = application.max_budget ? `R${Number(application.max_budget).toLocaleString()}/mo` : 'R8,500/mo';
+  // Resolve the listing the tenant applied for from its real fields — the
+  // properties table has no `title`/`name`, so reading those yields the wrong
+  // (or a generic) name. Falls back to the application's stored snapshot.
+  const resolvedProperty = resolveApplicationProperty(application, properties);
+  const propertyTitle = resolvedProperty.label || 'General application (no property linked)';
+  const budget = application.max_budget ? `R${Number(application.max_budget).toLocaleString()}/mo` : '—';
   const currentStatus = application.status || 'submitted';
 
-  // Parse attached documents (could be in application.documents, application.verification_documents, or mock fallback)
+  // Only use documents actually attached to the application. No synthetic fallback.
   let attachedDocs = [];
   if (Array.isArray(application.documents) && application.documents.length > 0) {
     attachedDocs = application.documents;
   } else if (Array.isArray(application.verification_documents) && application.verification_documents.length > 0) {
     attachedDocs = application.verification_documents;
-  } else {
-    // Representative seed verification documents submitted by tenant
-    attachedDocs = [
-      {
-        id: `doc-id-${application.id || 1}`,
-        title: 'Certified Identity Document (SA ID / Passport)',
-        documentType: 'identity_document',
-        fileName: `${tenantName.toLowerCase().replace(/\s+/g, '_')}_sa_id.pdf`,
-        fileUrl: 'https://images.unsplash.com/photo-1544717305-2782549b5136?w=800',
-        uploadedAt: application.submitted_at || new Date().toISOString(),
-        status: 'pending_review',
-        verified: false
-      },
-      {
-        id: `doc-bank-${application.id || 2}`,
-        title: '3-Month Stamped Bank Statement',
-        documentType: 'bank_statement',
-        fileName: 'bank_statement_3_months_fnb.pdf',
-        fileUrl: 'https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?w=800',
-        uploadedAt: application.submitted_at || new Date().toISOString(),
-        status: 'pending_review',
-        verified: false
-      },
-      {
-        id: `doc-payslip-${application.id || 3}`,
-        title: 'Proof of Income / Recent Payslip',
-        documentType: 'payslip_proof',
-        fileName: 'salary_advice_signed.pdf',
-        fileUrl: 'https://images.unsplash.com/photo-1450133064473-71024230f91b?w=800',
-        uploadedAt: application.submitted_at || new Date().toISOString(),
-        status: 'pending_review',
-        verified: false
-      }
-    ];
   }
 
   const handleOpenDoc = (doc) => {
@@ -107,22 +92,35 @@ export const TenantApplicationReviewModal = ({
     try {
       // 1. If approving & completing, assign tenant to selected property unit
       if (newStatus === 'completed' && targetPropertyId) {
+        const leaseStart = new Date();
         const leaseEnd = new Date();
         leaseEnd.setMonth(leaseEnd.getMonth() + parseInt(leaseMonths, 10));
 
         await LandlordQueries.assignTenantToProperty(targetPropertyId, {
-          propertyName: propertyTitle,
           tenantName,
           tenantEmail,
           tenantPhone,
-          rent: budget,
-          leaseEndDate: leaseEnd.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })
+          rent: application.max_budget || null,
+          leaseStartDate: leaseStart.toISOString().split('T')[0],
+          leaseEndDate: leaseEnd.toISOString().split('T')[0],
+          applicationId: application.id,
+          tenantUserId: application.tenant_id || null
         });
       }
 
       // 2. Update status in DB and cache
       const res = await LandlordQueries.updateApplicationStatus(application.id, newStatus, reviewNote);
       if (res.success) {
+        // Fan the decision out to the tenant, agent and admin dashboards. Without
+        // this the landlord's approval/decline was invisible until a manual refresh.
+        broadcastApplicationUpdate(application.id, newStatus, {
+          tenant_id: application.tenant_id,
+          notes: reviewNote || null,
+          reviewed_at: new Date().toISOString(),
+          ...(newStatus === APPLICATION_STATUS.COMPLETED && targetPropertyId
+            ? { property_id: targetPropertyId }
+            : {})
+        });
         if (onStatusUpdated) await onStatusUpdated(application.id, newStatus);
         setFeedbackMsg(`Application successfully updated to ${newStatus.toUpperCase()}`);
         setTimeout(() => {
@@ -161,7 +159,7 @@ export const TenantApplicationReviewModal = ({
           {/* Header Applicant Strip */}
           <div
             style={{
-              background: `linear-gradient(135deg, rgba(26,37,64,0.6) 0%, rgba(15,22,41,0.9) 100%)`,
+              background: `linear-gradient(135deg, #ffffff 0%, #f3f9ff 100%)`,
               border: `1px solid ${T.border}`,
               borderRadius: '12px',
               padding: '1.25rem',
@@ -214,13 +212,14 @@ export const TenantApplicationReviewModal = ({
                   textTransform: 'uppercase',
                   padding: '4px 10px',
                   borderRadius: '20px',
-                  background: currentStatus === 'completed' ? 'rgba(16,185,129,0.15)' : 'rgba(79,126,248,0.15)',
+                  background: currentStatus === 'completed' ? T.emeraldSoft : T.accentSoft,
+                  border: `1px solid ${currentStatus === 'completed' ? T.emeraldBorder : T.accentBorder}`,
                   color: currentStatus === 'completed' ? T.emerald : T.accent
                 }}
               >
                 Status: {currentStatus.replace('_', ' ')}
               </span>
-              <p style={{ fontSize: '1.1rem', fontWeight: 700, color: T.emerald, margin: '6px 0 0' }}>
+              <p style={{ fontFamily: "'DM Serif Display', Georgia, serif", fontSize: '1.25rem', color: T.emerald, margin: '6px 0 0' }}>
                 {budget}
               </p>
             </div>
@@ -239,13 +238,18 @@ export const TenantApplicationReviewModal = ({
             </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              {attachedDocs.length === 0 && (
+                <p style={{ fontSize: '0.8rem', color: T.textMuted, margin: 0 }}>
+                  No verification documents were attached to this application.
+                </p>
+              )}
               {attachedDocs.map((doc, idx) => (
                 <div
                   key={doc.id || idx}
                   style={{
-                    background: T.surface,
+                    background: T.surfaceAlt,
                     border: `1px solid ${T.border}`,
-                    borderRadius: '10px',
+                    borderRadius: '0.75rem',
                     padding: '12px 14px',
                     display: 'flex',
                     alignItems: 'center',
@@ -258,8 +262,9 @@ export const TenantApplicationReviewModal = ({
                       style={{
                         width: '36px',
                         height: '36px',
-                        borderRadius: '8px',
-                        background: 'rgba(79, 126, 248, 0.12)',
+                        borderRadius: '0.6rem',
+                        background: T.accentSoft,
+                        border: `1px solid ${T.accentBorder}`,
                         color: T.accent,
                         display: 'flex',
                         alignItems: 'center',
@@ -283,18 +288,21 @@ export const TenantApplicationReviewModal = ({
                     onClick={() => handleOpenDoc(doc)}
                     style={{
                       padding: '6px 14px',
-                      background: 'rgba(79, 126, 248, 0.15)',
-                      border: `1px solid rgba(79, 126, 248, 0.3)`,
-                      borderRadius: '6px',
+                      background: T.accentSoft,
+                      border: `1px solid ${T.accentBorder}`,
+                      borderRadius: 9999,
                       color: T.accent,
                       fontSize: '0.78rem',
-                      fontWeight: 600,
+                      fontWeight: 700,
                       cursor: 'pointer',
                       display: 'flex',
                       alignItems: 'center',
                       gap: '6px',
-                      flexShrink: 0
+                      flexShrink: 0,
+                      transition: 'all 0.15s'
                     }}
+                    onMouseEnter={(e) => { e.currentTarget.style.background = T.accent; e.currentTarget.style.color = '#fff'; }}
+                    onMouseLeave={(e) => { e.currentTarget.style.background = T.accentSoft; e.currentTarget.style.color = T.accent; }}
                   >
                     <Eye size={13} />
                     Review Document
@@ -307,9 +315,9 @@ export const TenantApplicationReviewModal = ({
           {/* SECTION 2: UNIT ASSIGNMENT & LEASE PARAMETERS */}
           <div
             style={{
-              background: 'rgba(255, 255, 255, 0.02)',
+              background: T.surfaceAlt,
               border: `1px solid ${T.border}`,
-              borderRadius: '10px',
+              borderRadius: '0.875rem',
               padding: '1.25rem',
               display: 'flex',
               flexDirection: 'column',
@@ -332,20 +340,28 @@ export const TenantApplicationReviewModal = ({
                   style={{
                     width: '100%',
                     padding: '8px 12px',
-                    borderRadius: '8px',
-                    background: T.surface,
-                    border: `1px solid ${T.border}`,
+                    borderRadius: '0.75rem',
+                    background: '#ffffff',
+                    border: `1px solid ${T.borderStrong}`,
                     color: T.textPrimary,
-                    fontSize: '0.85rem'
+                    fontSize: '0.85rem',
+                    outline: 'none'
                   }}
                 >
                   {properties.map((p) => (
                     <option key={p.id} value={p.id}>
-                      {p.name || p.location} ({p.rent})
+                      {describeProperty(p) || `Listing ${String(p.id).slice(0, 8)}`}
+                      {Number(p.price || p.rent) > 0 ? ` · R${Number(p.price || p.rent).toLocaleString('en-ZA')}/mo` : ''}
                     </option>
                   ))}
-                  {properties.length === 0 && (
-                    <option value="default">{propertyTitle} (Current listing)</option>
+                  {application.property_id &&
+                    !properties.some((p) => p.id === application.property_id) && (
+                      <option value={application.property_id}>
+                        {propertyTitle} (Linked listing — not in your portfolio)
+                      </option>
+                    )}
+                  {properties.length === 0 && !application.property_id && (
+                    <option value="default">{propertyTitle}</option>
                   )}
                 </select>
               </div>
@@ -360,11 +376,12 @@ export const TenantApplicationReviewModal = ({
                   style={{
                     width: '100%',
                     padding: '8px 12px',
-                    borderRadius: '8px',
-                    background: T.surface,
-                    border: `1px solid ${T.border}`,
+                    borderRadius: '0.75rem',
+                    background: '#ffffff',
+                    border: `1px solid ${T.borderStrong}`,
                     color: T.textPrimary,
-                    fontSize: '0.85rem'
+                    fontSize: '0.85rem',
+                    outline: 'none'
                   }}
                 >
                   <option value={6}>6 Months Lease</option>
@@ -386,11 +403,13 @@ export const TenantApplicationReviewModal = ({
                 style={{
                   width: '100%',
                   padding: '8px 12px',
-                  borderRadius: '8px',
-                  background: T.surface,
-                  border: `1px solid ${T.border}`,
+                  borderRadius: '0.75rem',
+                  background: '#ffffff',
+                  border: `1px solid ${T.borderStrong}`,
                   color: T.textPrimary,
-                  fontSize: '0.82rem'
+                  fontSize: '0.82rem',
+                  outline: 'none',
+                  fontFamily: 'inherit'
                 }}
               />
             </div>
@@ -401,8 +420,9 @@ export const TenantApplicationReviewModal = ({
             <div
               style={{
                 padding: '10px 14px',
-                borderRadius: '8px',
-                background: 'rgba(16,185,129,0.15)',
+                borderRadius: '0.75rem',
+                background: T.emeraldSoft,
+                border: `1px solid ${T.emeraldBorder}`,
                 color: T.emerald,
                 fontSize: '0.82rem',
                 fontWeight: 600,
@@ -435,13 +455,13 @@ export const TenantApplicationReviewModal = ({
                 onClick={() => handleUpdateStatus('rejected')}
                 style={{
                   padding: '8px 16px',
-                  background: 'rgba(239, 68, 68, 0.1)',
-                  border: '1px solid rgba(239, 68, 68, 0.25)',
-                  color: '#f87171',
-                  borderRadius: '8px',
+                  background: T.redSoft,
+                  border: `1px solid ${T.redBorder}`,
+                  color: T.red,
+                  borderRadius: 9999,
                   cursor: isAssigning ? 'not-allowed' : 'pointer',
                   fontSize: '0.82rem',
-                  fontWeight: 600
+                  fontWeight: 700
                 }}
               >
                 Decline Application
@@ -452,13 +472,13 @@ export const TenantApplicationReviewModal = ({
                 onClick={() => handleUpdateStatus('under_review')}
                 style={{
                   padding: '8px 16px',
-                  background: 'transparent',
-                  border: `1px solid ${T.border}`,
+                  background: '#ffffff',
+                  border: `1px solid ${T.borderStrong}`,
                   color: T.textSecondary,
-                  borderRadius: '8px',
+                  borderRadius: 9999,
                   cursor: isAssigning ? 'not-allowed' : 'pointer',
                   fontSize: '0.82rem',
-                  fontWeight: 600
+                  fontWeight: 700
                 }}
               >
                 Mark Under Review
@@ -471,17 +491,17 @@ export const TenantApplicationReviewModal = ({
               onClick={() => handleUpdateStatus('completed')}
               style={{
                 padding: '10px 22px',
-                background: `linear-gradient(135deg, ${T.emerald} 0%, #059669 100%)`,
+                background: `linear-gradient(135deg, #10b981 0%, ${T.emerald} 100%)`,
                 color: '#fff',
                 border: 'none',
-                borderRadius: '8px',
+                borderRadius: 9999,
                 fontWeight: 700,
                 fontSize: '0.85rem',
                 cursor: isAssigning ? 'not-allowed' : 'pointer',
                 display: 'inline-flex',
                 alignItems: 'center',
                 gap: '8px',
-                boxShadow: '0 4px 14px rgba(16, 185, 129, 0.35)'
+                boxShadow: '0 10px 24px -10px rgba(5,150,105,0.8)'
               }}
             >
               <CheckCircle2 size={16} />

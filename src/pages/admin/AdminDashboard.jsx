@@ -6,6 +6,8 @@ import ApplicationsPage from './Applications'
 import AgentApplicationsPage from './AgentApplications'
 import LandlordApplicationsPage from './LandlordApplications'
 import PropertiesPage from './Properties'
+import PropertySubmissionsPage from './PropertySubmissions'
+import PipelinePage from './Pipeline'
 import UsersPage from './Users'
 import PaymentsPage from './Payments'
 import AnalyticsPage from './Analytics'
@@ -20,6 +22,8 @@ export default function AdminDashboard() {
         <Route path="agent-applications" element={<AgentApplicationsPage />} />
         <Route path="landlord-applications" element={<LandlordApplicationsPage />} />
         <Route path="properties" element={<PropertiesPage />} />
+        <Route path="property-submissions" element={<PropertySubmissionsPage />} />
+        <Route path="pipeline" element={<PipelinePage />} />
         <Route path="users" element={<UsersPage />} />
         <Route path="payments" element={<PaymentsPage />} />
         <Route path="analytics" element={<AnalyticsPage />} />

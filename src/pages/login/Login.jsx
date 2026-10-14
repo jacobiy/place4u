@@ -15,6 +15,7 @@ import {
 import { FaGoogle, FaFacebook } from 'react-icons/fa'
 import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { supabase } from '../../utils/Supabase'
+import ResetPasswordModal from '../../component/ResetPasswordModal'
 
 const Login = () => {
 	const [showPassword, setShowPassword] = useState(false)
@@ -26,19 +27,9 @@ const Login = () => {
 	const [loading, setLoading] = useState(false)
 	const [error, setError] = useState('')
 	const [successMessage, setSuccessMessage] = useState('')
+	const [resetModalOpen, setResetModalOpen] = useState(false)
 	const navigate = useNavigate()
 	const location = useLocation()
-
-	// Clear any lingering demo role on fresh login page visit if user explicitly navigated to /login
-	useEffect(() => {
-		// Optional: check if already signed in
-		supabase.auth.getSession().then(({ data: { session } }) => {
-			if (session?.user) {
-				const userRole = session.user.user_metadata?.user_type || 'tenant'
-				// User can stay or click to continue to their dashboard
-			}
-		})
-	}, [])
 
 	const redirectToDashboard = (userType) => {
 		switch (userType?.toLowerCase()) {
@@ -93,44 +84,36 @@ const Login = () => {
 			if (signInError) throw signInError
 
 			if (data?.user) {
-				// 1. Check public.users table first (database is the true source of truth)
+				// The public.users row is the single source of truth for role and
+				// account state. We deliberately do NOT fall back to user_metadata
+				// or the email address — both are client-controlled and spoofable.
 				let userRole = null
+				let userVerified = null
 				try {
 					const { data: userData } = await supabase
 						.from('users')
-						.select('user_type')
+						.select('user_type, is_verified')
 						.eq('id', data.user.id)
 						.maybeSingle()
 
-					if (userData?.user_type) {
-						userRole = userData.user_type
-					}
+					userRole = userData?.user_type || null
+					userVerified = userData?.is_verified
 				} catch (queryErr) {
 					console.warn('Users table query error (non-fatal):', queryErr)
 				}
 
-				// 2. If not found in database, check user metadata
 				if (!userRole) {
-					userRole = data.user.user_metadata?.user_type
+					// Fail closed: without an authoritative profile we cannot know the
+					// role, so we must not route the user into an elevated portal.
+					setError('No profile found for this account. Please contact support.')
+					await supabase.auth.signOut().catch(() => {})
+					return
 				}
 
-				// 3. Fallback inference from email for admin/elevated accounts
-				const em = trimmedEmail.toLowerCase()
-				if (!userRole || userRole === 'tenant') {
-					if (em.includes('admin')) userRole = 'admin'
-					else if (em.includes('landlord')) userRole = 'landlord'
-					else if (em.includes('agent')) userRole = 'agent'
-				}
-
-				if (!userRole) {
-					userRole = 'tenant'
-				}
-
-				// Keep auth user_metadata in sync with authoritative role
-				if (data.user.user_metadata?.user_type !== userRole) {
-					supabase.auth.updateUser({
-						data: { user_type: userRole }
-					}).catch(() => {})
+				if (userRole === 'admin' && userVerified === false) {
+					setError('This administrator account is not active. Please contact the platform owner.')
+					await supabase.auth.signOut().catch(() => {})
+					return
 				}
 
 				setSuccessMessage('Credentials verified! Loading your dashboard...')
@@ -153,25 +136,10 @@ const Login = () => {
 		}
 	}
 
-	const handleForgotPassword = async () => {
-		const email = formData.email.trim()
-		if (!email) {
-			setError('Please enter your email address to receive password reset instructions.')
-			return
-		}
-		setLoading(true)
+	const handleForgotPassword = () => {
 		setError('')
-		try {
-			const { error } = await supabase.auth.resetPasswordForEmail(email, {
-				redirectTo: `${window.location.origin}/reset-password`
-			})
-			if (error) throw error
-			setSuccessMessage('Password reset link sent to your email. Please check your inbox.')
-		} catch (err) {
-			setError(err.message || 'Failed to send reset link.')
-		} finally {
-			setLoading(false)
-		}
+		setSuccessMessage('')
+		setResetModalOpen(true)
 	}
 
 	const handleSocialLogin = async (provider) => {
@@ -298,7 +266,7 @@ const Login = () => {
 										value={formData.email}
 										onChange={handleChange}
 										required
-										placeholder="Jacob@tenant.com or you@place4u.co.za"
+										placeholder="name@email.com"
 										className="w-full pl-10 pr-4 py-2.5 bg-slate-950/80 border border-white/10 rounded-xl text-sm text-white placeholder-slate-600 focus:outline-none focus:border-blue-500 transition-colors"
 									/>
 								</div>
@@ -405,6 +373,12 @@ const Login = () => {
 					</div>
 				</div>
 			</div>
+
+			<ResetPasswordModal
+				isOpen={resetModalOpen}
+				onClose={() => setResetModalOpen(false)}
+				initialEmail={formData.email}
+			/>
 		</div>
 	)
 }

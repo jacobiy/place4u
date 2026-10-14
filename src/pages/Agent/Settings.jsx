@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Lock,
   KeyRound,
@@ -37,6 +37,9 @@ const SA_BANKS = [
 export const Settings = ({ userRow, profile, user, onRefresh, onLogout }) => {
   const navigate = useNavigate();
 
+  // Resolve the owning user id (cache + RLS are keyed by user id)
+  const agentUserId = profile?.user_id || userRow?.id || user?.id;
+
   // Status banners
   const [status, setStatus] = useState(null); // { type: 'success' | 'error', message: '' }
 
@@ -65,6 +68,26 @@ export const Settings = ({ userRow, profile, user, onRefresh, onLogout }) => {
     account_type: profile?.account_type || 'Cheque / Current'
   });
   const [isSavingBanking, setIsSavingBanking] = useState(false);
+
+  // Re-sync preference & banking state whenever the profile loads or refreshes
+  useEffect(() => {
+    if (!profile) return;
+
+    setNotifications({
+      whatsappMatchAlerts: profile.whatsapp_alerts ?? true,
+      emailPlacementDigest: profile.email_digest ?? true,
+      commissionPayoutAlerts: profile.commission_alerts ?? true,
+      viewingRequestAlerts: profile.viewing_alerts ?? true
+    });
+
+    setBanking((prev) => ({
+      bank_name: profile.bank_name || prev.bank_name,
+      account_holder: profile.account_holder || profile.full_name || userRow?.full_name || prev.account_holder,
+      account_number: profile.account_number || prev.account_number,
+      branch_code: profile.branch_code || prev.branch_code,
+      account_type: profile.account_type || prev.account_type
+    }));
+  }, [profile, userRow]);
 
   // Delete Account Modal state
   const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -112,23 +135,28 @@ export const Settings = ({ userRow, profile, user, onRefresh, onLogout }) => {
 
   // 2. Notification Preferences Handler
   const toggleNotification = async (key) => {
+    const previous = notifications;
     const updated = { ...notifications, [key]: !notifications[key] };
     setNotifications(updated);
     setIsSavingNotifications(true);
 
     try {
-      const targetId = profile?.id || profile?.user_id || userRow?.id || user?.id;
-      if (targetId) {
-        await AgentQueries.updateAgentProfile(targetId, {
-          whatsapp_alerts: updated.whatsappMatchAlerts,
-          email_digest: updated.emailPlacementDigest,
-          commission_alerts: updated.commissionPayoutAlerts,
-          viewing_alerts: updated.viewingRequestAlerts
-        });
-      }
+      if (!agentUserId) throw new Error('Agent user ID not found.');
+
+      const result = await AgentQueries.updateAgentProfile(agentUserId, {
+        whatsapp_alerts: updated.whatsappMatchAlerts,
+        email_digest: updated.emailPlacementDigest,
+        commission_alerts: updated.commissionPayoutAlerts,
+        viewing_alerts: updated.viewingRequestAlerts
+      });
+      if (!result.success) throw new Error(result.error);
+
       triggerStatus('success', 'Communication preferences saved.');
+      if (onRefresh) onRefresh();
     } catch (err) {
-      triggerStatus('error', 'Could not save communication preferences.');
+      // Roll back the optimistic toggle if the write failed
+      setNotifications(previous);
+      triggerStatus('error', err?.message || 'Could not save communication preferences.');
     } finally {
       setIsSavingNotifications(false);
     }
@@ -139,10 +167,9 @@ export const Settings = ({ userRow, profile, user, onRefresh, onLogout }) => {
     e.preventDefault();
     setIsSavingBanking(true);
     try {
-      const targetId = profile?.id || profile?.user_id || userRow?.id || user?.id;
-      if (!targetId) throw new Error('Agent profile ID not found.');
+      if (!agentUserId) throw new Error('Agent profile ID not found.');
 
-      const result = await AgentQueries.updateAgentProfile(targetId, {
+      const result = await AgentQueries.updateAgentProfile(agentUserId, {
         bank_name: banking.bank_name,
         account_holder: banking.account_holder,
         account_number: banking.account_number,
@@ -237,7 +264,8 @@ export const Settings = ({ userRow, profile, user, onRefresh, onLogout }) => {
     <div className="agent-settings-container">
       {/* Header */}
       <header className="agent-settings-header">
-        <h1>Account Settings & Preferences</h1>
+        <span className="ag-eyebrow">Account</span>
+        <h1>Settings &amp; preferences</h1>
         <p>Manage your login credentials, commission payout banking details, notification channels, and privacy rights.</p>
       </header>
 
@@ -253,7 +281,7 @@ export const Settings = ({ userRow, profile, user, onRefresh, onLogout }) => {
       <section className="settings-card">
         <div className="settings-card-header">
           <div className="settings-card-title-group">
-            <KeyRound size={20} color="#3b82f6" />
+            <KeyRound size={20} color="#7da2ff" />
             <div>
               <h2>Password & Security</h2>
               <p className="settings-card-desc">Update your login password and manage access security</p>
@@ -399,7 +427,7 @@ export const Settings = ({ userRow, profile, user, onRefresh, onLogout }) => {
       <section className="settings-card">
         <div className="settings-card-header">
           <div className="settings-card-title-group">
-            <Bell size={20} color="#8b5cf6" />
+            <Bell size={20} color="#7da2ff" />
             <div>
               <h2>Placement Notifications & Alerts</h2>
               <p className="settings-card-desc">Configure how and when you receive tenant match alerts and payout releases</p>

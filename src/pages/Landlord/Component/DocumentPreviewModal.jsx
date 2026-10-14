@@ -108,7 +108,7 @@ export const DocumentPreviewModal = ({
         
         {/* Document Header & Metadata Ribbon */}
         <div style={{
-          background: T.surface,
+          background: T.surfaceAlt,
           border: `1px solid ${T.border}`,
           borderRadius: "0.875rem",
           padding: "0.85rem 1.25rem",
@@ -126,7 +126,7 @@ export const DocumentPreviewModal = ({
                 textTransform: "uppercase",
                 letterSpacing: "0.06em",
                 color: doc.documentType === "ownership" ? T.emerald : T.accent,
-                background: doc.documentType === "ownership" ? "rgba(16,185,129,0.12)" : "rgba(79,126,248,0.12)",
+                background: doc.documentType === "ownership" ? T.emeraldSoft : T.accentSoft,
                 padding: "2px 8px",
                 borderRadius: "12px"
               }}>
@@ -137,7 +137,7 @@ export const DocumentPreviewModal = ({
                 fontWeight: 700,
                 padding: "2px 8px",
                 borderRadius: "12px",
-                background: doc.status === "verified" ? "rgba(16,185,129,0.15)" : "rgba(245,158,11,0.15)",
+                background: doc.status === "verified" ? T.emeraldSoft : T.amberSoft,
                 color: doc.status === "verified" ? T.emerald : T.amber
               }}>
                 {doc.status?.toUpperCase() || "VERIFIED"}
@@ -183,9 +183,9 @@ export const DocumentPreviewModal = ({
                 onClick={() => setShowDeleteConfirm(true)}
                 style={{
                   padding: "0.6rem 0.85rem",
-                  background: "rgba(239,68,68,0.1)",
-                  border: `1px solid rgba(239,68,68,0.25)`,
-                  borderRadius: "8px",
+                  background: T.redSoft,
+                  border: `1px solid ${T.redBorder}`,
+                  borderRadius: "9999px",
                   color: T.red,
                   fontSize: "0.82rem",
                   fontWeight: 600,
@@ -195,8 +195,8 @@ export const DocumentPreviewModal = ({
                   gap: "6px",
                   transition: "all 0.15s"
                 }}
-                onMouseEnter={(e) => e.currentTarget.style.background = "rgba(239,68,68,0.2)"}
-                onMouseLeave={(e) => e.currentTarget.style.background = "rgba(239,68,68,0.1)"}
+                onMouseEnter={(e) => e.currentTarget.style.background = "rgba(220,38,38,0.16)"}
+                onMouseLeave={(e) => e.currentTarget.style.background = T.redSoft}
               >
                 <Trash2 size={14} /> Delete
               </button>
@@ -206,7 +206,7 @@ export const DocumentPreviewModal = ({
 
         {/* Document Viewer Frame */}
         <div style={{
-          background: isPdf ? "#ffffff" : "#080c16",
+          background: isPdf ? "#ffffff" : "#f1f5f9",
           border: `1px solid ${T.border}`,
           borderRadius: "0.875rem",
           overflow: "hidden",
@@ -228,13 +228,13 @@ export const DocumentPreviewModal = ({
               alignItems: "center",
               justifyContent: "center",
               textAlign: "center",
-              background: `radial-gradient(circle at center, rgba(16,185,129,0.06) 0%, rgba(15,22,41,0.95) 100%)`
+              background: `radial-gradient(circle at center, rgba(5,150,105,0.07) 0%, #ffffff 100%)`
             }}>
               <div style={{
                 width: "60px",
                 height: "60px",
                 borderRadius: "50%",
-                background: "rgba(16,185,129,0.15)",
+                background: T.emeraldSoft,
                 border: `2px solid ${T.emerald}`,
                 display: "flex",
                 alignItems: "center",
@@ -245,13 +245,13 @@ export const DocumentPreviewModal = ({
               </div>
 
               <div style={{
-                border: "2px solid rgba(255,255,255,0.15)",
+                border: `1px solid ${T.border}`,
                 borderRadius: "12px",
                 padding: "clamp(1rem, 3.5vw, 2rem)",
                 maxWidth: "580px",
                 width: "100%",
-                background: "rgba(255,255,255,0.02)",
-                boxShadow: "0 12px 36px rgba(0,0,0,0.4)"
+                background: "#ffffff",
+                boxShadow: T.shadow
               }}>
                 <p style={{
                   fontSize: "0.72rem",
@@ -298,8 +298,9 @@ export const DocumentPreviewModal = ({
                   <p style={{
                     marginTop: "1.25rem",
                     padding: "10px",
-                    background: T.surface,
-                    borderRadius: "6px",
+                    background: T.surfaceAlt,
+                    border: `1px solid ${T.border}`,
+                    borderRadius: "8px",
                     fontSize: "0.78rem",
                     color: T.textSecondary,
                     textAlign: "left"

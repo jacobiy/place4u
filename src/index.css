@@ -430,3 +430,14 @@ body.dark select option {
   }
 }
 
+/* Landing page typographic polish: balance headline ragging and avoid orphans. */
+#landing h1,
+#landing h2,
+#landing h3 {
+  text-wrap: balance;
+}
+
+#landing p {
+  text-wrap: pretty;
+}
+

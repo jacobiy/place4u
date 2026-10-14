@@ -8,7 +8,8 @@ import {
 } from 'lucide-react';
 import { LandlordApplicationModal } from './LandlordApplicationModal';
 import { LandlordQueries } from '../db/queries';
-import { T } from '../Styles/designTokens';
+import { T, SERIF } from '../Styles/designTokens';
+import { PrimaryBtn, SecondaryBtn } from './Buttons';
 
 export const LandlordActivationView = ({
   profile,
@@ -27,6 +28,12 @@ export const LandlordActivationView = ({
     return null;
   }
 
+  const tone = isRejected
+    ? { accent: T.red, soft: T.redSoft, border: T.redBorder, tag: 'Application Requires Revision' }
+    : isPending
+    ? { accent: T.amber, soft: T.amberSoft, border: T.amberBorder, tag: 'Application Pending Review' }
+    : { accent: T.accent, soft: T.accentSoft, border: T.accentBorder, tag: 'Action Required · Apply to Verify' };
+
   return (
     <div style={{ maxWidth: '1000px', margin: '0 auto', width: '100%' }}>
       {/* Application Modal */}
@@ -42,86 +49,76 @@ export const LandlordActivationView = ({
 
       {/* Main Activation Banner / Card */}
       <div
+        className="ll-anim-up"
         style={{
-          background: `linear-gradient(135deg, ${T.navyMid} 0%, #151d36 100%)`,
+          background: 'linear-gradient(135deg, #ffffff 0%, #f3f9ff 55%, #eef6ff 100%)',
           border: `1px solid ${T.border}`,
-          borderRadius: '16px',
-          padding: '1.75rem',
+          borderRadius: T.radiusXl,
+          padding: 'clamp(1.4rem, 3.5vw, 1.9rem)',
           marginBottom: '1.75rem',
-          boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.4)',
+          boxShadow: T.shadow,
           position: 'relative',
           overflow: 'hidden'
         }}
       >
+        <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 5, background: 'linear-gradient(90deg,#7dd3fc,#0ea5e9,#2563eb)' }} />
+        <div aria-hidden style={{ position: 'absolute', top: -70, right: -60, width: 260, height: 260, borderRadius: '9999px', background: 'radial-gradient(circle, rgba(56,189,248,0.16) 0%, transparent 70%)' }} />
+
         <div
           style={{
             display: 'flex',
             flexWrap: 'wrap',
             alignItems: 'center',
             justifyContent: 'space-between',
-            gap: '1rem',
-            marginBottom: '1.25rem'
+            gap: '1.25rem',
+            position: 'relative',
+            zIndex: 1
           }}
         >
           <div style={{ display: 'flex', alignItems: 'flex-start', gap: '14px', flex: '1 1 500px', minWidth: 0 }}>
             <div
               style={{
-                width: '46px',
-                height: '46px',
-                borderRadius: '12px',
-                background: isApproved
-                  ? 'rgba(16, 185, 129, 0.15)'
-                  : isPending
-                  ? 'rgba(245, 158, 11, 0.15)'
-                  : 'rgba(79, 126, 248, 0.15)',
-                color: isApproved ? T.emerald : isPending ? '#f59e0b' : T.accent,
+                width: '52px',
+                height: '52px',
+                borderRadius: '1rem',
+                background: tone.soft,
+                border: `1px solid ${tone.border}`,
+                color: tone.accent,
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
                 flexShrink: 0
               }}
             >
-              {isApproved ? <CheckCircle2 size={26} /> : isPending ? <Clock size={26} /> : <ShieldCheck size={26} />}
+              {isPending ? <Clock size={26} /> : isRejected ? <ShieldCheck size={26} /> : <Sparkles size={26} />}
             </div>
 
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '10px' }}>
-                <h2 style={{ fontSize: '1.25rem', fontWeight: 700, color: T.textPrimary, margin: 0 }}>
-                  Landlord Accreditation & Portfolio Gateway
+                <h2 style={{ fontFamily: SERIF, fontSize: 'clamp(1.25rem, 3vw, 1.55rem)', color: T.textPrimary, letterSpacing: '-0.01em', margin: 0 }}>
+                  Landlord accreditation & portfolio gateway
                 </h2>
                 <span
                   style={{
-                    fontSize: '0.72rem',
-                    fontWeight: 700,
+                    fontSize: '0.68rem',
+                    fontWeight: 800,
                     textTransform: 'uppercase',
-                    padding: '3px 10px',
-                    borderRadius: '20px',
-                    background: isApproved
-                      ? 'rgba(16, 185, 129, 0.2)'
-                      : isPending
-                      ? 'rgba(245, 158, 11, 0.2)'
-                      : isRejected
-                      ? 'rgba(248, 113, 113, 0.2)'
-                      : 'rgba(255, 255, 255, 0.1)',
-                    color: isApproved ? T.emerald : isPending ? '#f59e0b' : isRejected ? '#f87171' : T.textSecondary
+                    letterSpacing: '0.05em',
+                    padding: '4px 11px',
+                    borderRadius: 9999,
+                    background: tone.soft,
+                    border: `1px solid ${tone.border}`,
+                    color: tone.accent
                   }}
                 >
-                  {isApproved
-                    ? 'Verified Landlord'
-                    : isPending
-                    ? 'Application Pending Review'
-                    : isRejected
-                    ? 'Application Requires Revision'
-                    : 'Action Required: Apply to Verify'}
+                  {tone.tag}
                 </span>
               </div>
-              <p style={{ fontSize: '0.85rem', color: T.textMuted, margin: '6px 0 0', maxWidth: '680px', lineHeight: 1.45 }}>
-                {isApproved
-                  ? 'Your ownership credentials have been verified. You can publish properties and utilize Place4U operational tools.'
-                  : isPending
-                  ? 'Your identity documents and proof of ownership are currently being reviewed by the compliance committee.'
+              <p style={{ fontSize: '0.88rem', color: T.textSecondary, margin: '8px 0 0', maxWidth: '680px', lineHeight: 1.6 }}>
+                {isPending
+                  ? 'Your identity documents and proof of ownership are currently being reviewed by the compliance committee. Your operational tools unlock the moment you are approved.'
                   : isRejected
-                  ? `Application declined: ${profile?.rejection_reason || 'Documents could not be validated.'} Please update your application.`
+                  ? `Application declined: ${profile?.rejection_reason || 'Documents could not be validated.'} Please update your application and resubmit.`
                   : 'Submit your landlord application to obtain verified badge accreditation, list properties with zero restrictions, and manage tenants.'}
               </p>
             </div>
@@ -129,46 +126,18 @@ export const LandlordActivationView = ({
 
           {/* Action button */}
           <div style={{ flexShrink: 0 }}>
-            {!isApproved && !isPending && (
-              <button
-                onClick={() => setIsModalOpen(true)}
-                style={{
-                  padding: '10px 22px',
-                  background: `linear-gradient(135deg, ${T.accent} 0%, #3b82f6 100%)`,
-                  color: '#fff',
-                  border: 'none',
-                  borderRadius: '10px',
-                  fontWeight: 700,
-                  fontSize: '0.88rem',
-                  cursor: 'pointer',
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '8px',
-                  boxShadow: '0 4px 14px rgba(79, 126, 248, 0.35)'
-                }}
-              >
+            {!isPending && (
+              <PrimaryBtn onClick={() => setIsModalOpen(true)}>
                 <Sparkles size={16} />
                 {isRejected ? 'Resubmit Application' : 'Start Landlord Application'}
                 <ArrowRight size={16} />
-              </button>
+              </PrimaryBtn>
             )}
 
             {isPending && (
-              <button
-                onClick={() => setIsModalOpen(true)}
-                style={{
-                  padding: '8px 16px',
-                  background: 'rgba(255, 255, 255, 0.08)',
-                  color: T.textPrimary,
-                  border: `1px solid ${T.border}`,
-                  borderRadius: '8px',
-                  fontWeight: 600,
-                  fontSize: '0.8rem',
-                  cursor: 'pointer'
-                }}
-              >
-                View / Edit Submitted Application
-              </button>
+              <SecondaryBtn onClick={() => setIsModalOpen(true)}>
+                View / edit submitted application
+              </SecondaryBtn>
             )}
           </div>
         </div>

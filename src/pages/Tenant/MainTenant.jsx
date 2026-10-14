@@ -3,19 +3,21 @@ import { useNavigate } from "react-router-dom";
 import { globalStyle, T } from './Styles/designTokens';
 import { Sidebar } from './SideBar';
 import DashboardView from './Components/DashboardView';
-import BrowseView from './Components/BrowseView';
 import PropertyDetailView from './Components/PropertyDetailView';
 import CustomApplication from './Components/CustomApplication';
 import { Profile } from './Profile';
 import { Settings } from './Settings';
 import ApplicationsView from './Components/ApplicationsView';
 import MatchedPropertiesView from './Components/MatchedPropertiesView';
+import MatchPipelineView from '../../component/MatchPipelineView';
 import { TenantQueries } from './db/queries';
-import { PROPERTIES, DEMO_APPLICATIONS } from './Data/constants';
 import { useAuth } from '../../hooks/useAuth';
 import { supabase } from '../../utils/Supabase';
 import Loading from '../../component/loading';
 import { mergeLocalAndDbApplications, subscribeToApplicationUpdates } from '../../services/applicationSync';
+import { listTenantMatches } from '../../services/applicationMatchService';
+import { listPipelineMatches, subscribeToMatchPipeline } from '../../services/matchWorkflowService';
+import { isActiveApplication } from '../../services/applicationStatus';
 
 export default function MainTenant() {
   const [activeView, setActiveView] = useState("dashboard");
@@ -25,28 +27,25 @@ export default function MainTenant() {
   
   // Data States
   const [profile, setProfile] = useState(null);
-  const [properties, setProperties] = useState(PROPERTIES);
-  const [tenantProperties, setTenantProperties] = useState([]);
-  const [applications, setApplications] = useState(DEMO_APPLICATIONS);
-  const [applicationsCount, setApplicationsCount] = useState(DEMO_APPLICATIONS.length);
+  const [properties, setProperties] = useState([]);
+  const [applications, setApplications] = useState([]);
+  const [applicationsCount, setApplicationsCount] = useState(0);
   const [payments, setPayments] = useState([]);
+  const [tenantMatches, setTenantMatches] = useState([]);
+  // Full acceptance pipeline (shipped → ... → move_in_confirmed). Feeds the
+  // dashboard's "Live progress" tracker so the tenant sees their real stage.
+  const [pipelineMatches, setPipelineMatches] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
 
-  const matchesCount = useMemo(() => {
-    const count = applications.filter(
-      (a) => a.status === 'matches_found' || a.status === 'approved' || Boolean(a.matched_property_id)
-    ).length;
-    return Math.max(count, 1);
-  }, [applications]);
+  const matchesCount = useMemo(() => tenantMatches.length, [tenantMatches]);
 
   // Saved / Favorite properties state (persisted in localStorage)
   const [savedPropertyIds, setSavedPropertyIds] = useState(() => {
     try {
       const saved = localStorage.getItem('place4u_saved_properties');
-      return saved ? JSON.parse(saved) : ['p1'];
+      return saved ? JSON.parse(saved) : [];
     } catch {
-      return ['p1'];
+      return [];
     }
   });
 
@@ -70,19 +69,11 @@ export default function MainTenant() {
   useEffect(() => {
     if (authLoading) return;
     if (!user) {
-      // In guest/demo fallback if not authenticated, provide friendly placeholder profile
-      setProfile({
-        full_name: "Jacob Resident",
-        email: "tenant@place4u.co.za",
-        account_tier: "verified",
-        phone: "+27 82 456 7890",
-        id_number: "9201015098087",
-        employment_status: "Permanently Employed",
-        monthly_income: 42000
-      });
-      setProperties(PROPERTIES);
-      setApplications(DEMO_APPLICATIONS);
-      setApplicationsCount(DEMO_APPLICATIONS.length);
+      // Not authenticated: show empty state (no demo data).
+      setProfile(null);
+      setProperties([]);
+      setApplications([]);
+      setApplicationsCount(0);
       setLoading(false);
       return;
     }
@@ -91,14 +82,24 @@ export default function MainTenant() {
     
     const loadTenantData = async () => {
       try {
-        const [profileRes, propertiesRes, applicationsRes, paymentsRes] = await Promise.all([
+        const [profileRes, propertiesRes, applicationsRes, paymentsRes, shippedRes, pipelineRes] = await Promise.all([
           TenantQueries.getTenantProfile(user.id),
           TenantQueries.getProperties(),
           TenantQueries.getTenantApplications(user.id),
-          TenantQueries.getTenantPayments(user.id)
+          TenantQueries.getTenantPayments(user.id),
+          listTenantMatches(),
+          listPipelineMatches()
         ]);
 
         if (!isMounted) return;
+
+        if (shippedRes?.success && Array.isArray(shippedRes.data)) {
+          setTenantMatches(shippedRes.data);
+        }
+
+        if (pipelineRes?.success && Array.isArray(pipelineRes.data)) {
+          setPipelineMatches(pipelineRes.data);
+        }
 
         if (paymentsRes?.success && Array.isArray(paymentsRes.data)) {
           setPayments(paymentsRes.data);
@@ -107,37 +108,46 @@ export default function MainTenant() {
         // Profile handling
         if (profileRes?.success && profileRes?.data) {
           setProfile(profileRes.data);
-          if (profileRes.data?.id) {
-            const tProps = await TenantQueries.getTenantProperties(profileRes.data.id);
-            if (tProps?.success && isMounted) setTenantProperties(tProps.data || []);
-          }
         } else {
-          // If no profile found in DB, use user auth metadata or fallback
+          // If no profile found in DB, build a bare default and persist a row so
+          // we have a real tenant_profiles.id to write future edits against.
+          // Nothing is invented here: the tenant fills in the rest from Profile.
           const defaultProf = {
-            id: user.id,
+            id: null,
             user_id: user.id,
             full_name: user.user_metadata?.full_name || user.email?.split('@')[0] || "Resident Tenant",
             email: user.email,
-            account_tier: "verified",
-            phone: user.user_metadata?.phone || "+27 82 456 7890",
-            employment_status: "Employed",
-            monthly_income: 38000
+            account_tier: "basic",
+            phone: user.user_metadata?.phone || "",
+            employment_status: "",
+            monthly_income: null
           };
-          setProfile(defaultProf);
-          // Try to create profile in background
-          TenantQueries.createTenantProfile({
-            userId: user.id,
-            email: user.email,
-            fullName: defaultProf.full_name,
-            joinDate: new Date().toISOString()
-          }).catch(() => {});
+
+          try {
+            const created = await TenantQueries.createTenantProfile({
+              userId: user.id,
+              email: user.email,
+              fullName: defaultProf.full_name,
+              phone: defaultProf.phone,
+              joinDate: new Date().toISOString()
+            });
+            if (isMounted) {
+              setProfile(
+                created?.success && created.data
+                  ? { ...defaultProf, ...created.data }
+                  : defaultProf
+              );
+            }
+          } catch {
+            if (isMounted) setProfile(defaultProf);
+          }
         }
 
         // Properties handling
-        if (propertiesRes?.success && Array.isArray(propertiesRes?.data) && propertiesRes.data.length > 0) {
+        if (propertiesRes?.success && Array.isArray(propertiesRes?.data)) {
           setProperties(propertiesRes.data);
         } else {
-          setProperties(PROPERTIES);
+          setProperties([]);
         }
 
         // Applications handling with authoritative bidirectional merge
@@ -146,26 +156,26 @@ export default function MainTenant() {
           localApps = JSON.parse(localStorage.getItem('place4u_tenant_applications') || '[]');
         } catch {}
 
-        const sourceApps = (applicationsRes?.success && Array.isArray(applicationsRes?.data) && applicationsRes.data.length > 0)
+        const sourceApps = (applicationsRes?.success && Array.isArray(applicationsRes?.data))
           ? applicationsRes.data
-          : DEMO_APPLICATIONS;
+          : [];
 
-        const mergedApps = mergeLocalAndDbApplications(localApps, sourceApps);
+        const mergedApps = mergeLocalAndDbApplications(localApps, sourceApps, user.id);
         setApplications(mergedApps);
-        const activeApps = mergedApps.filter(app => app.status !== 'expired' && app.status !== 'cancelled');
+        const activeApps = mergedApps.filter(isActiveApplication);
         setApplicationsCount(activeApps.length);
 
       } catch (err) {
         if (isMounted) {
-          // Gracefully fallback to demo data so tenant site always works smoothly
-          setProperties(PROPERTIES);
+          // No demo fallback: surface only locally-cached applications (if any).
+          setProperties([]);
           let fallbackLocal = [];
           try {
             fallbackLocal = JSON.parse(localStorage.getItem('place4u_tenant_applications') || '[]');
           } catch {}
-          const mergedFallback = mergeLocalAndDbApplications(fallbackLocal, DEMO_APPLICATIONS);
+          const mergedFallback = mergeLocalAndDbApplications(fallbackLocal, [], user?.id);
           setApplications(mergedFallback);
-          setApplicationsCount(mergedFallback.filter(app => app.status !== 'expired' && app.status !== 'cancelled').length);
+          setApplicationsCount(mergedFallback.filter(isActiveApplication).length);
         }
       } finally {
         if (isMounted) setLoading(false);
@@ -178,10 +188,20 @@ export default function MainTenant() {
     const unsubscribe = subscribeToApplicationUpdates(async () => {
       if (!isMounted || !user) return;
       try {
-        const [applicationsRes, paymentsRes] = await Promise.all([
+        const [applicationsRes, paymentsRes, shippedRes, pipelineRes] = await Promise.all([
           TenantQueries.getTenantApplications(user.id),
-          TenantQueries.getTenantPayments(user.id)
+          TenantQueries.getTenantPayments(user.id),
+          listTenantMatches(),
+          listPipelineMatches()
         ]);
+
+        if (shippedRes?.success && Array.isArray(shippedRes.data)) {
+          setTenantMatches(shippedRes.data);
+        }
+
+        if (pipelineRes?.success && Array.isArray(pipelineRes.data)) {
+          setPipelineMatches(pipelineRes.data);
+        }
 
         if (paymentsRes?.success && Array.isArray(paymentsRes.data)) {
           setPayments(paymentsRes.data);
@@ -192,13 +212,13 @@ export default function MainTenant() {
           localApps = JSON.parse(localStorage.getItem('place4u_tenant_applications') || '[]');
         } catch {}
 
-        const sourceApps = (applicationsRes?.success && Array.isArray(applicationsRes?.data) && applicationsRes.data.length > 0)
+        const sourceApps = (applicationsRes?.success && Array.isArray(applicationsRes?.data))
           ? applicationsRes.data
-          : DEMO_APPLICATIONS;
+          : [];
 
-        const mergedApps = mergeLocalAndDbApplications(localApps, sourceApps);
+        const mergedApps = mergeLocalAndDbApplications(localApps, sourceApps, user.id);
         setApplications(mergedApps);
-        const activeApps = mergedApps.filter(app => app.status !== 'expired' && app.status !== 'cancelled');
+        const activeApps = mergedApps.filter(isActiveApplication);
         setApplicationsCount(activeApps.length);
       } catch {}
     });
@@ -207,7 +227,25 @@ export default function MainTenant() {
       isMounted = false;
       unsubscribe();
     };
-  }, [user, authLoading, navigate]);
+  }, [user?.id, authLoading, navigate]);
+
+  // Live-refresh the acceptance pipeline so the dashboard tracker advances the
+  // moment any party (tenant / agent / landlord / admin) moves the match.
+  useEffect(() => {
+    if (!user?.id) return;
+    let isMounted = true;
+    const refreshPipeline = async () => {
+      const res = await listPipelineMatches();
+      if (isMounted && res?.success && Array.isArray(res.data)) {
+        setPipelineMatches(res.data);
+      }
+    };
+    const unsubscribePipeline = subscribeToMatchPipeline(refreshPipeline);
+    return () => {
+      isMounted = false;
+      unsubscribePipeline();
+    };
+  }, [user?.id]);
 
   const handleLogout = async () => {
     try {
@@ -244,12 +282,12 @@ export default function MainTenant() {
   // If viewing a single property, take over screen
   if (activeProperty) {
     return (
-      <div style={{ background: T.navy, minHeight: "100vh", color: T.textPrimary }}>
-        <style dangerouslySetInnerHTML={{ __html: globalStyle }} />
+      <div className="w-full min-h-screen bg-[#faf8ff]">
         <PropertyDetailView
           property={activeProperty}
           onBack={() => setActiveProperty(null)}
           onApplyClick={onApplyClick}
+          onSelectProperty={setActiveProperty}
         />
         {showApplication && (
           <CustomApplication
@@ -286,6 +324,7 @@ export default function MainTenant() {
             applications={applications}
             payments={payments}
             savedPropertyIds={savedPropertyIds}
+            pipelineMatches={pipelineMatches}
             onToggleSaveProperty={toggleSaveProperty}
             onPropertyClick={onPropertyClick}
             onApplyClick={onApplyClick}
@@ -293,7 +332,7 @@ export default function MainTenant() {
               setApplicationProperty(null);
               setShowApplication(true);
             }}
-            onNavigateTab={(tab) => setActiveView(tab)}
+            onNavigateTab={(tab) => setActiveView(tab === 'browse' ? 'dashboard' : tab)}
           />
         );
       case "matches":
@@ -303,26 +342,21 @@ export default function MainTenant() {
             profile={profile}
             properties={properties}
             applications={applications}
+            matches={tenantMatches}
             onPropertyClick={onPropertyClick}
             onApplyClick={onApplyClick}
             onNavigateTab={(tab) => setActiveView(tab)}
           />
         );
-      case "browse":
-        return (
-          <BrowseView 
-            properties={properties}
-            savedPropertyIds={savedPropertyIds}
-            onToggleSaveProperty={toggleSaveProperty}
-            onPropertyClick={onPropertyClick} 
-            onApplyClick={onApplyClick} 
-          />
-        );
+      case "pipeline":
+        return <MatchPipelineView role="tenant" currentUserId={user?.id} />;
       case "applications":
         return (
           <ApplicationsView 
             user={user || { id: 'guest-tenant' }} 
             setApplicationsCount={setApplicationsCount} 
+            properties={properties}
+            onViewProperty={onPropertyClick}
             onOpenCustomApplication={() => {
               setApplicationProperty(null);
               setShowApplication(true);
@@ -344,12 +378,11 @@ export default function MainTenant() {
   };
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", minHeight: "100vh", background: activeView === "dashboard" ? "#faf8ff" : T.navy }}>
+    <div style={{ display: "flex", flexDirection: "column", minHeight: "100vh", background: "#faf8ff" }}>
       <style dangerouslySetInnerHTML={{ __html: globalStyle }} />
       <Sidebar 
         activeView={activeView} 
         setActiveView={setActiveView} 
-        unreadCount={0} 
         applicationsCount={applicationsCount}
         matchesCount={matchesCount}
         onLogout={handleLogout}
@@ -359,12 +392,9 @@ export default function MainTenant() {
       <main style={{
         flex: 1,
         marginTop: "70px",
-        padding: activeView === "browse" ? "0" : "1.75rem clamp(1rem, 3.5vw, 2.5rem)",
+        padding: "1.75rem clamp(1rem, 3.5vw, 2.5rem)",
         minHeight: "calc(100vh - 70px)",
-        background: activeView === "dashboard"
-          ? "linear-gradient(180deg, rgba(204,229,255,0.3) 0%, #faf8ff 220px, #faf8ff 100%)"
-          : `radial-gradient(circle at top right, rgba(16,185,129,0.06) 0%, transparent 40%),
-             radial-gradient(circle at bottom left, rgba(79,126,248,0.06) 0%, transparent 40%)`
+        background: "linear-gradient(180deg, rgba(204,229,255,0.3) 0%, #faf8ff 220px, #faf8ff 100%)"
       }}>
         {renderContent()}
 

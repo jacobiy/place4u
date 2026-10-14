@@ -98,7 +98,7 @@
 
 .activation-progress-fill {
   height: 100%;
-  background: #3b82f6;
+  background: #4f7ef8;
   border-radius: 9999px;
   transition: width 0.3s ease;
 }
@@ -115,7 +115,7 @@
 .activation-notice-box {
   padding: 0.85rem 1rem;
   background: rgba(59, 130, 246, 0.08);
-  border-left: 3px solid #3b82f6;
+  border-left: 3px solid #4f7ef8;
   border-radius: 0 6px 6px 0;
   font-size: 0.78rem;
   color: #cbd5e1;
@@ -180,7 +180,7 @@
 .activation-field input:focus,
 .activation-field select:focus,
 .activation-field textarea:focus {
-  border-color: #3b82f6;
+  border-color: #4f7ef8;
   box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
 }
 
@@ -235,7 +235,7 @@
 }
 
 .upload-dropzone-box:hover {
-  border-color: #3b82f6;
+  border-color: #4f7ef8;
   background: rgba(59, 130, 246, 0.04);
 }
 

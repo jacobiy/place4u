@@ -24,7 +24,7 @@ const Footer = ({ theme = 'dark' }) => {
 	const quickLinks = [
 		{ name: 'Featured Spaces', href: '#residencies' },
 		{ name: 'Tenant Passport', href: '#how-it-works' },
-		{ name: 'Scam Shield', href: '#safety' },
+		{ name: 'Scam Shield', href: '#ecosystem' },
 		{ name: 'WhatsApp Desk', href: '#whatsapp-desk' },
 		{ name: 'Tenant Portal', href: '/login' },
 		{ name: 'Landlord Portal', href: '/login' }
@@ -107,7 +107,7 @@ const Footer = ({ theme = 'dark' }) => {
 						</div>
 
 						<p className={`text-xs leading-relaxed font-normal ${isLight ? 'text-[#3f4850]' : 'text-slate-400'}`}>
-							South Africa’s verified rental network. We eliminate marketplace fraud by bridging vetted student accommodation, backyard cottages, and modern urban apartments with pre-screened tenants.
+							South Africa’s rental matching network. We reduce marketplace fraud by connecting reviewed student accommodation, backyard cottages, and modern urban apartments with pre-screened tenants.
 						</p>
 
 						{/* Legal Disclaimer Box */}
@@ -121,7 +121,7 @@ const Footer = ({ theme = 'dark' }) => {
 							<div className="flex items-start gap-2.5">
 								<HiInformationCircle className={`w-4 h-4 mt-0.5 flex-shrink-0 ${isLight ? 'text-[#006194]' : 'text-blue-400'}`} />
 								<p className="text-[11px] leading-relaxed">
-									<strong className={isLight ? 'text-[#131b2e]' : 'text-slate-200'}>Matching & Verification Platform:</strong> Place4U is a technology platform connecting pre-screened parties. We verify landlord identity and premises to eliminate scams.
+									<strong className={isLight ? 'text-[#131b2e]' : 'text-slate-200'}>Matching &amp; Document-Review Platform:</strong> Place4U is a technology platform connecting pre-screened parties. We collect and review landlord identity and ownership documents to reduce scams.
 								</p>
 							</div>
 						</div>

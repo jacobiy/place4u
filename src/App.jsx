@@ -11,6 +11,7 @@ const Landing = lazy(() => import("./pages/landing/Landing"));
 const Login = lazy(() => import("./pages/login/Login"));
 const Signup = lazy(() => import("./pages/Signup/SignUp"));
 const ResetPassword = lazy(() => import("./pages/resetpassword/resetpassword"));
+const ChangePassword = lazy(() => import("./pages/resetpassword/changepassword"));
 const TenantDashboard = lazy(() => import("./pages/Tenant/TenantDashboard"));
 const LandlordDashboard = lazy(() => import("./pages/Landlord/MainLandLord"));
 const AgentDashboard = lazy(() => import("./pages/Agent/MainAgent"));
@@ -35,18 +36,22 @@ function AuthCallback() {
           return;
         }
 
+        // Resolve the role authoritatively from public.users. No email or
+        // metadata inference — both are client-controlled and spoofable.
         const { data: userData } = await supabase
           .from("users")
-          .select("user_type")
+          .select("user_type, is_verified")
           .eq("id", session.user.id)
-          .single();
+          .maybeSingle();
 
-        let role = userData?.user_type || session.user.user_metadata?.user_type;
-        const emailLower = (session.user.email || "").toLowerCase();
-        if ((!role || role === "tenant") && (emailLower === "jason@admin.com" || emailLower.endsWith("@admin.com") || emailLower.startsWith("admin@"))) {
-          role = "admin";
+        const role = userData?.user_type;
+        if (!role || (role === "admin" && userData.is_verified === false)) {
+          // No authoritative profile (or a disabled admin): never guess a portal.
+          await supabase.auth.signOut().catch(() => {});
+          if (isMounted) navigate("/login", { replace: true });
+          return;
         }
-        if (!role) role = "tenant";
+
         if (isMounted) navigate(`/${role}`, { replace: true });
       } catch (err) {
         console.error("Auth callback error:", err);
@@ -183,6 +188,14 @@ class ChunkErrorBoundary extends React.Component {
   }
 }
 
+// Stable role arrays. Passing an inline `["tenant"]` literal creates a new
+// array on every render, which would re-run ProtectedRoute's auth effect (and
+// tear down/re-create its auth subscription) needlessly on each render.
+const TENANT_ROLES = ["tenant"];
+const LANDLORD_ROLES = ["landlord"];
+const AGENT_ROLES = ["agent"];
+const ADMIN_ROLES = ["admin"];
+
 export default function App() {
   return (
     <>
@@ -193,6 +206,7 @@ export default function App() {
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<Signup />} />
           <Route path="/reset-password" element={<ResetPassword />} />
+          <Route path="/change-password" element={<ChangePassword />} />
           <Route path="/auth/callback" element={<AuthCallback />} />
           <Route path="/privacy" element={<PrivacyPolicy />} />
           <Route path="/terms" element={<TermsOfService />} />
@@ -205,7 +219,7 @@ export default function App() {
           <Route
             path="/tenant"
             element={
-              <ProtectedRoute allowedRoles={["tenant"]}>
+              <ProtectedRoute allowedRoles={TENANT_ROLES}>
                 <TenantDashboard />
               </ProtectedRoute>
             }
@@ -213,7 +227,7 @@ export default function App() {
           <Route
             path="/landlord"
             element={
-              <ProtectedRoute allowedRoles={["landlord"]}>
+              <ProtectedRoute allowedRoles={LANDLORD_ROLES}>
                 <LandlordDashboard />
               </ProtectedRoute>
             }
@@ -221,7 +235,7 @@ export default function App() {
           <Route
             path="/agent"
             element={
-              <ProtectedRoute allowedRoles={["agent"]}>
+              <ProtectedRoute allowedRoles={AGENT_ROLES}>
                 <AgentDashboard />
               </ProtectedRoute>
             }
@@ -229,7 +243,7 @@ export default function App() {
           <Route
             path="/admin/*"
             element={
-              <ProtectedRoute allowedRoles={["admin"]}>
+              <ProtectedRoute allowedRoles={ADMIN_ROLES}>
                 <AdminDashboard />
               </ProtectedRoute>
             }

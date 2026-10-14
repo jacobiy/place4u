@@ -1,488 +1,627 @@
-/* PropertyDetailView.css */
+/* PropertyDetailView.css
+   Agent property detail — shared by the inventory page and the
+   Application Manager modal. Layout width is driven by container queries so
+   the same markup reads correctly both full-page and inside a narrow modal. */
 
-.pd-wrapper {
-  padding-bottom: 6rem;
-  color: white;
+/* ------------------------------------------------------------------ Tokens */
+.pd-shell,
+.pd-modal-root {
+  --pd-line: var(--ag-line, rgba(148, 163, 184, 0.14));
+  --pd-line-2: var(--ag-line-2, rgba(148, 163, 184, 0.24));
+  --pd-panel: rgba(255, 255, 255, 0.035);
+  --pd-panel-2: rgba(2, 6, 23, 0.32);
+  --pd-accent: var(--ag-accent, #4f7ef8);
+  --pd-accent-2: var(--ag-accent-2, #7da2ff);
+  --pd-text: var(--ag-text, #eaf0f9);
+  --pd-muted: var(--ag-muted, #94a3b8);
+  --pd-dim: var(--ag-dim, #64748b);
+  --pd-ok: var(--ag-ok, #10b981);
+  color: var(--pd-text);
 }
 
-.pd-header {
-  height: 5rem;
-  padding: 0 2rem;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-  flex-shrink: 0;
+/* ------------------------------------------------------------- Page variant */
+.pd-shell { padding-bottom: 3rem; }
+
+.pd-topbar {
   position: sticky;
   top: 0;
-  z-index: 20;
-}
-
-.pd-header-group {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-}
-
-.pd-icon-btn {
-  padding: 0.5rem;
-  border-radius: 9999px;
-  background: transparent;
-  border: none;
-  color: white;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: background-color 0.2s;
-}
-
-.pd-icon-btn:hover {
-  background: rgba(255, 255, 255, 0.05);
-}
-
-.pd-logo-container {
-  width: 2rem;
-  height: 2rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #3b82f6;
-}
-
-.pd-logo-text {
-  font-weight: bold;
-  font-size: 1.125rem;
-}
-
-.pd-header-title {
-  position: absolute;
-  left: 50%;
-  transform: translateX(-50%);
-  color: rgba(255, 255, 255, 0.4);
-  font-size: 0.875rem;
-  font-weight: 500;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
-}
-
-.pd-content-grid {
-  max-width: 80rem;
-  margin: 0 auto;
-  padding: 2rem;
-  display: grid;
-  grid-template-columns: repeat(1, minmax(0, 1fr));
-  gap: 2rem;
-}
-
-@media (min-width: 1024px) {
-  .pd-content-grid {
-    grid-template-columns: repeat(12, minmax(0, 1fr));
-  }
-}
-
-.pd-main-col {
-  display: flex;
-  flex-direction: column;
-  gap: 3rem;
-}
-
-@media (min-width: 1024px) {
-  .pd-main-col {
-    grid-column: span 8 / span 8;
-  }
-}
-
-.pd-image-gallery {
-  position: relative;
-  border-radius: 1.5rem;
-  overflow: hidden;
-  aspect-ratio: 16 / 9;
-}
-
-.pd-image {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.pd-gallery-nav {
-  position: absolute;
-  inset: 0;
+  z-index: 5;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 1rem;
-  opacity: 0;
-  transition: opacity 0.2s;
+  gap: 1rem;
+  flex-wrap: wrap;
+  margin-bottom: 1.5rem;
+  padding: 0.85rem 1rem;
+  border: 1px solid var(--pd-line);
+  border-radius: 14px;
+  background: rgba(7, 11, 20, 0.86);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
 }
 
-.pd-image-gallery:hover .pd-gallery-nav {
-  opacity: 1;
+.pd-topbar-meta { display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap; }
+
+.pd-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  min-height: 38px;
+  padding: 0.45rem 0.9rem 0.45rem 0.6rem;
+  border-radius: 999px;
+  border: 1px solid var(--pd-line);
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--pd-text);
+  font-family: inherit;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.16s ease, border-color 0.16s ease;
 }
 
-.pd-nav-btn {
-  width: 2.5rem;
-  height: 2.5rem;
-  border-radius: 9999px;
-  background: rgba(0, 0, 0, 0.6);
-  backdrop-filter: blur(12px);
+.pd-back:hover { background: rgba(255, 255, 255, 0.1); border-color: var(--pd-line-2); }
+.pd-back:focus-visible { outline: 2px solid var(--pd-accent); outline-offset: 2px; }
+
+.pd-ref { font-size: 0.78rem; color: var(--pd-dim); }
+.pd-ref strong { color: var(--pd-text); font-weight: 600; }
+
+/* ------------------------------------------------------------ Modal variant */
+.pd-modal-root { position: fixed; inset: 0; z-index: 200; }
+
+.pd-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(2, 6, 23, 0.72);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  animation: pdFade 0.18s ease-out backwards;
+}
+
+.pd-modal-scroll {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: clamp(0.75rem, 3vw, 2rem);
+  pointer-events: none;
+}
+
+.pd-modal {
+  pointer-events: auto;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-width: 1180px;
+  max-height: calc(100dvh - clamp(1.5rem, 6vw, 4rem));
+  border: 1px solid var(--pd-line);
+  border-radius: 18px;
+  background: linear-gradient(180deg, #101827 0%, #0b1120 100%);
+  box-shadow: 0 40px 90px -40px rgba(0, 0, 0, 0.9);
+  overflow: hidden;
+  /* `backwards` (not `both`) so the modal does not keep a lingering transform
+     after the entrance animation, which would promote it to its own
+     composited layer and add repaint churn on hover. */
+  animation: pdPop 0.22s cubic-bezier(0.16, 1, 0.3, 1) backwards;
+}
+
+.pd-modal:focus-visible { outline: 2px solid var(--pd-accent); outline-offset: 2px; }
+
+.pd-modal-head {
+  flex-shrink: 0;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1.1rem 1.25rem;
+  border-bottom: 1px solid var(--pd-line);
+  background: rgba(79, 126, 248, 0.05);
+}
+
+.pd-modal-head-text { min-width: 0; }
+
+.pd-modal-title {
+  margin: 0;
+  font-family: var(--ag-font-display, 'Sora', sans-serif);
+  font-size: clamp(1.1rem, 2.2vw, 1.4rem);
+  font-weight: 700;
+  letter-spacing: -0.015em;
+  color: #ffffff;
+  line-height: 1.2;
+  overflow-wrap: anywhere;
+}
+
+.pd-modal-sub {
   display: flex;
   align-items: center;
+  gap: 0.35rem;
+  margin: 0.35rem 0 0;
+  font-size: 0.78rem;
+  color: var(--pd-muted);
+  min-width: 0;
+}
+.pd-modal-sub svg { flex-shrink: 0; }
+.pd-modal-sub span { overflow-wrap: anywhere; }
+
+.pd-modal-head-actions { display: flex; align-items: center; gap: 0.6rem; flex-shrink: 0; }
+
+.pd-close {
+  display: inline-flex;
+  align-items: center;
   justify-content: center;
-  color: white;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  border: 1px solid var(--pd-line);
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--pd-muted);
   cursor: pointer;
-  transition: all 0.2s;
+  transition: background 0.16s ease, color 0.16s ease, border-color 0.16s ease;
 }
 
-.pd-nav-btn:hover {
-  background: rgba(0, 0, 0, 0.8);
+.pd-close:hover { background: rgba(255, 255, 255, 0.12); color: #ffffff; border-color: var(--pd-line-2); }
+.pd-close:focus-visible { outline: 2px solid var(--pd-accent); outline-offset: 2px; }
+
+/* Reserve the scrollbar gutter so the content width never changes when the
+   scrollbar appears/disappears (which would resize the aspect-ratio gallery
+   and make the centred nav buttons jump). */
+.pd-modal-body { overflow-y: auto; overscroll-behavior: contain; scrollbar-gutter: stable; }
+
+.pd-modal .pd-body { padding: 1.25rem; }
+
+/* ---------------------------------------------------------------- Container */
+/* The layout responds to the space it is actually given, not the viewport, so
+   the modal does not inherit the wide page grid inside a narrow panel. */
+.pd-body { container-type: inline-size; }
+
+.pd-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 1.25rem;
+  align-items: start;
 }
 
-.pd-thumbnail-container {
+@container (min-width: 880px) {
+  .pd-layout { grid-template-columns: minmax(0, 1.9fr) minmax(0, 1fr); gap: 1.5rem; }
+}
+
+.pd-main { display: flex; flex-direction: column; gap: 1.25rem; min-width: 0; }
+.pd-side { display: flex; flex-direction: column; gap: 1.25rem; min-width: 0; }
+
+/* ------------------------------------------------------------------ Gallery */
+.pd-gallery {
+  position: relative;
+  border-radius: 16px;
+  overflow: hidden;
+  border: 1px solid var(--pd-line);
+  background: var(--pd-panel-2);
+  aspect-ratio: 16 / 9;
+  /* Cap the derived height and isolate paint so a repaint triggered by a
+     hovered child can never resize the box the nav buttons are positioned in. */
+  max-height: min(62vh, 560px);
+  contain: paint;
+}
+
+@media (max-width: 520px) {
+  .pd-gallery { aspect-ratio: 4 / 3; }
+}
+
+.pd-gallery-img { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+.pd-nav-btn {
   position: absolute;
-  bottom: 1.5rem;
-  left: 50%;
-  transform: translateX(-50%);
-  background: rgba(0, 0, 0, 0.4);
-  backdrop-filter: blur(24px);
-  padding: 0.5rem;
-  border-radius: 1rem;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  /* Centred with an explicit offset rather than translateY(-50%) so no
+     transform/animation interaction can nudge the button. */
+  top: calc(50% - 20px);
+  width: 40px;
+  height: 40px;
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(2, 6, 23, 0.72);
+  color: #ffffff;
+  cursor: pointer;
+  transition: background-color 0.16s ease, border-color 0.16s ease;
+}
+
+.pd-nav-btn:hover { background: rgba(2, 6, 23, 0.92); border-color: rgba(255, 255, 255, 0.26); }
+.pd-nav-btn:focus-visible { outline: 2px solid var(--pd-accent-2); outline-offset: 2px; }
+.pd-nav-prev { left: 0.75rem; }
+.pd-nav-next { right: 0.75rem; }
+
+.pd-gallery-count {
+  position: absolute;
+  right: 0.75rem;
+  bottom: 0.75rem;
+  padding: 3px 9px;
+  border-radius: 999px;
+  background: rgba(2, 6, 23, 0.68);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: #ffffff;
+  font-size: 0.72rem;
+  font-weight: 600;
+}
+
+/* --------------------------------------------------------------- Thumbnails */
+.pd-thumbs {
   display: flex;
   gap: 0.5rem;
-  width: 90%;
+  padding: 0.5rem;
+  border: 1px solid var(--pd-line);
+  border-radius: 14px;
+  background: var(--pd-panel);
   overflow-x: auto;
+  scrollbar-width: thin;
+  scrollbar-gutter: stable;
+  align-items: center;
 }
 
-.pd-thumbnail-btn {
-  width: 5rem;
-  height: 3.5rem;
-  border-radius: 0.75rem;
-  overflow: hidden;
-  flex-shrink: 0;
-  border: 2px solid transparent;
-  transition: all 0.2s;
-  cursor: pointer;
+.pd-thumb {
+  flex: 0 0 auto;
+  width: 84px;
+  height: 58px;
   padding: 0;
+  border-radius: 10px;
+  border: 2px solid transparent;
+  background: none;
+  overflow: hidden;
+  cursor: pointer;
+  opacity: 0.55;
+  transition: opacity 0.16s ease, border-color 0.16s ease;
 }
 
-.pd-thumbnail-btn.active {
-  border-color: #3b82f6;
-  transform: scale(1.05);
-}
+.pd-thumb:hover { opacity: 0.9; }
+.pd-thumb.is-active { opacity: 1; border-color: var(--pd-accent); }
+.pd-thumb:focus-visible { outline: 2px solid var(--pd-accent-2); outline-offset: 2px; }
+.pd-thumb-img { width: 100%; height: 100%; object-fit: cover; display: block; }
 
-.pd-thumbnail-btn:not(.active) {
-  opacity: 0.6;
-}
-
-.pd-thumbnail-btn:not(.active):hover {
-  opacity: 1;
-}
-
-.pd-info-grid {
+/* ------------------------------------------------------------ Specifications */
+.pd-specs {
   display: grid;
-  grid-template-columns: repeat(1, minmax(0, 1fr));
-  gap: 3rem;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 0.75rem;
 }
 
-@media (min-width: 768px) {
-  .pd-info-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
+.pd-spec {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  min-width: 0;
+  padding: 0.8rem 0.9rem;
+  border-radius: 12px;
+  border: 1px solid var(--pd-line);
+  background: var(--pd-panel);
 }
 
+.pd-spec-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  flex-shrink: 0;
+  border-radius: 9px;
+  background: rgba(79, 126, 248, 0.14);
+  border: 1px solid rgba(79, 126, 248, 0.3);
+  color: var(--pd-accent-2);
+}
+
+.pd-spec:nth-child(2) .pd-spec-icon {
+  background: rgba(16, 185, 129, 0.14);
+  border-color: rgba(16, 185, 129, 0.3);
+  color: #34d399;
+}
+.pd-spec:nth-child(3) .pd-spec-icon {
+  background: rgba(34, 211, 238, 0.14);
+  border-color: rgba(34, 211, 238, 0.3);
+  color: #22d3ee;
+}
+.pd-spec:nth-child(4) .pd-spec-icon {
+  background: rgba(245, 158, 11, 0.14);
+  border-color: rgba(245, 158, 11, 0.3);
+  color: #fbbf24;
+}
+
+.pd-spec-text { display: flex; flex-direction: column; min-width: 0; }
+
+.pd-spec-label {
+  font-size: 0.64rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--pd-dim);
+}
+
+.pd-spec-value {
+  margin-top: 2px;
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: #ffffff;
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+}
+
+/* ------------------------------------------------------------------ Sections */
 .pd-section {
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  gap: 0.7rem;
+  min-width: 0;
+  padding: 1rem 1.1rem;
+  border-radius: 14px;
+  border: 1px solid var(--pd-line);
+  background: var(--pd-panel);
 }
 
 .pd-section-title {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  color: rgba(255, 255, 255, 0.4);
+  gap: 0.45rem;
+  margin: 0;
+  font-size: 0.68rem;
+  font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.1em;
-  font-size: 0.75rem;
-  font-weight: bold;
+  letter-spacing: 0.11em;
+  color: var(--pd-muted);
+}
+.pd-section-title svg { flex-shrink: 0; color: var(--pd-accent-2); }
+.pd-section-title-flush { margin: 0; }
+
+.pd-desc {
+  margin: 0;
+  font-size: 0.87rem;
+  line-height: 1.65;
+  color: rgba(234, 240, 249, 0.78);
+  overflow-wrap: anywhere;
 }
 
-.pd-section-title-px {
-  padding-left: 0.5rem;
-  padding-right: 0.5rem;
+.pd-empty { margin: 0; font-size: 0.83rem; color: var(--pd-dim); }
+
+.pd-info-grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: 1.25rem; }
+
+@container (min-width: 720px) {
+  .pd-info-grid { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
 }
 
-.pd-description {
-  color: rgba(255, 255, 255, 0.7);
-  line-height: 1.625;
-}
-
-.pd-map-container {
-  border-radius: 1rem;
-  overflow: hidden;
-  height: 12rem;
-  position: relative;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  background: rgba(255, 255, 255, 0.05);
-}
-
-.pd-map-bg {
-  position: absolute;
-  inset: 0;
-  background: #1e2329;
-}
-
-.pd-map-marker-container {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-}
-
-.pd-map-marker {
-  width: 1.5rem;
-  height: 1.5rem;
-  background: #3b82f6;
-  border-radius: 9999px;
-  border: 4px solid white;
-  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
-  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-}
-
-@keyframes pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: .5; }
-}
-
-.pd-map-label {
-  position: absolute;
-  top: 0.5rem;
-  left: 0.5rem;
-  background: white;
-  color: black;
-  font-size: 0.625rem;
-  font-weight: bold;
-  padding: 0.25rem 0.5rem;
-  border-radius: 0.25rem;
-  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-}
-
-.pd-amenities-grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 1.5rem;
-}
-
-@media (min-width: 768px) {
-  .pd-amenities-grid {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
-}
-
-.pd-amenity-item {
+/* ------------------------------------------------------------------ Location */
+.pd-location {
   display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  color: rgba(255, 255, 255, 0.7);
-}
-
-.pd-amenity-icon {
-  width: 2.5rem;
-  height: 2.5rem;
-  border-radius: 0.75rem;
-  display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
-  color: rgba(255, 255, 255, 0.4);
+  gap: 0.35rem;
+  min-height: 8rem;
+  padding: 1rem;
+  border-radius: 12px;
+  border: 1px solid var(--pd-line);
+  background: var(--pd-panel-2);
+  text-align: center;
+}
+
+.pd-location-pin {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  margin-bottom: 0.25rem;
+  border-radius: 999px;
+  background: rgba(79, 126, 248, 0.2);
+  color: var(--pd-accent-2);
+}
+
+.pd-location-address {
+  margin: 0;
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: #ffffff;
+  overflow-wrap: anywhere;
+}
+
+.pd-map-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  margin-top: 0.2rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--pd-accent-2);
+  text-decoration: none;
+}
+.pd-map-link:hover { text-decoration: underline; }
+.pd-map-link:focus-visible { outline: 2px solid var(--pd-accent-2); outline-offset: 2px; border-radius: 4px; }
+
+/* ----------------------------------------------------------------- Amenities */
+.pd-amenities {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.6rem 0.9rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+@container (min-width: 560px) {
+  .pd-amenities { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+
+.pd-amenity { display: flex; align-items: center; gap: 0.55rem; min-width: 0; }
+
+.pd-amenity-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  flex-shrink: 0;
+  border-radius: 9px;
   background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--pd-line);
+  color: var(--pd-muted);
 }
 
 .pd-amenity-text {
-  font-size: 0.875rem;
+  font-size: 0.82rem;
   font-weight: 500;
+  color: rgba(234, 240, 249, 0.85);
+  overflow-wrap: anywhere;
 }
 
-.pd-side-col {
-  display: flex;
-  flex-direction: column;
-  gap: 2rem;
-}
-
-@media (min-width: 1024px) {
-  .pd-side-col {
-    grid-column: span 4 / span 4;
-  }
-}
-
+/* --------------------------------------------------------------------- Cards */
 .pd-card {
-  background: rgba(255, 255, 255, 0.05);
-  border-radius: 1.5rem;
-  padding: 2rem;
-  border: 1px solid rgba(255, 255, 255, 0.05);
-  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
-  position: relative;
-  overflow: hidden;
   display: flex;
   flex-direction: column;
-  gap: 1.5rem;
-}
-
-.pd-card-glow {
-  position: absolute;
-  top: -6rem;
-  right: -6rem;
-  width: 12rem;
-  height: 12rem;
-  background: rgba(16, 185, 129, 0.2);
-  border-radius: 9999px;
-  filter: blur(48px);
-  transition: all 0.7s;
-}
-
-.pd-card:hover .pd-card-glow {
-  background: rgba(16, 185, 129, 0.3);
-}
-
-.pd-price-container {
-  position: relative;
-  z-index: 10;
-}
-
-.pd-price {
-  font-size: 2.25rem;
-  font-weight: bold;
-  margin-bottom: 0.25rem;
-}
-
-.pd-price-label {
-  color: rgba(255, 255, 255, 0.4);
-  font-size: 0.875rem;
-}
-
-.pd-action-btns {
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-  position: relative;
-  z-index: 10;
-}
-
-.pd-btn-primary {
-  width: 100%;
-  background: #10b981;
-  color: white;
-  padding: 1rem;
-  border-radius: 1rem;
-  font-weight: bold;
-  font-size: 1.125rem;
-  border: none;
-  cursor: pointer;
-  transition: all 0.2s;
-  box-shadow: 0 20px 25px -5px rgba(16, 185, 129, 0.3), 0 10px 10px -5px rgba(16, 185, 129, 0.1);
-}
-
-.pd-btn-primary:hover {
-  background: #059669;
-}
-
-.pd-btn-primary:active {
-  transform: scale(0.95);
-}
-
-.pd-btn-danger {
-  width: 100%;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  color: #f87171;
-  padding: 1rem;
-  border-radius: 1rem;
-  font-weight: bold;
-  font-size: 1.125rem;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.pd-btn-danger:hover {
-  background: rgba(255, 255, 255, 0.1);
-  color: #fca5a5;
-}
-
-.pd-btn-danger:active {
-  transform: scale(0.95);
-}
-
-.pd-landlord-info {
-  display: flex;
-  align-items: center;
   gap: 1rem;
+  padding: 1.1rem;
+  border-radius: 14px;
+  border: 1px solid var(--pd-line);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.022) 100%);
+  box-shadow: 0 1px 2px rgba(2, 6, 23, 0.4), var(--ag-shadow, 0 24px 48px -34px rgba(2, 6, 23, 0.95));
 }
 
-.pd-landlord-avatar {
-  width: 3.5rem;
-  height: 3.5rem;
-  border-radius: 1rem;
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+.pd-price-value {
+  margin: 0;
+  font-family: var(--ag-font-display, 'Sora', sans-serif);
+  font-size: clamp(1.6rem, 4vw, 2rem);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: #ffffff;
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+}
+
+.pd-price-label { margin: 0.15rem 0 0; font-size: 0.78rem; color: var(--pd-muted); }
+
+.pd-meta-list { display: flex; flex-direction: column; gap: 0.5rem; margin: 0; }
+
+.pd-meta-row {
   display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.55rem 0.7rem;
+  border-radius: 10px;
+  border: 1px solid var(--pd-line);
+  background: var(--pd-panel-2);
+  font-size: 0.78rem;
+}
+
+.pd-meta-row dt { color: var(--pd-muted); }
+.pd-meta-row dd { margin: 0; color: var(--pd-text); font-weight: 600; text-align: right; }
+.pd-meta-strong { color: var(--pd-ok) !important; }
+
+/* ------------------------------------------------------------ Landlord block */
+.pd-landlord { display: flex; align-items: center; gap: 0.7rem; min-width: 0; }
+
+.pd-avatar {
+  display: inline-flex;
   align-items: center;
   justify-content: center;
-  color: rgba(255, 255, 255, 0.6);
+  width: 44px;
+  height: 44px;
+  flex-shrink: 0;
+  border-radius: 12px;
+  background: rgba(79, 126, 248, 0.14);
+  border: 1px solid rgba(79, 126, 248, 0.3);
+  color: var(--pd-accent-2);
 }
 
+.pd-landlord-text { display: flex; flex-direction: column; min-width: 0; }
+
 .pd-landlord-name {
-  font-weight: bold;
-  font-size: 1.125rem;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #ffffff;
   line-height: 1.25;
+  overflow-wrap: anywhere;
 }
 
 .pd-landlord-role {
-  color: rgba(255, 255, 255, 0.4);
-  font-size: 0.75rem;
-  font-weight: 500;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  margin-top: 2px;
+  font-size: 0.68rem;
+  font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.05em;
-  margin-top: 0.25rem;
+  letter-spacing: 0.06em;
+  color: var(--pd-dim);
 }
+.pd-landlord-role svg { flex-shrink: 0; color: var(--pd-ok); }
 
-.pd-contact-list {
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-}
+.pd-contact-list { display: flex; flex-direction: column; gap: 0.5rem; }
 
 .pd-contact-item {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
-  color: rgba(255, 255, 255, 0.6);
-  cursor: pointer;
-  transition: color 0.2s;
+  gap: 0.6rem;
+  padding: 0.55rem 0.65rem;
+  border-radius: 10px;
+  border: 1px solid var(--pd-line);
+  background: var(--pd-panel-2);
+  color: var(--pd-muted);
+  text-decoration: none;
+  transition: border-color 0.16s ease, background 0.16s ease, color 0.16s ease;
 }
 
-.pd-contact-item:hover {
-  color: white;
-}
+.pd-contact-item:hover { border-color: var(--pd-line-2); background: rgba(79, 126, 248, 0.1); color: #ffffff; }
+.pd-contact-item:focus-visible { outline: 2px solid var(--pd-accent); outline-offset: 2px; }
+.pd-contact-item.is-muted { cursor: default; }
+.pd-contact-item.is-muted .pd-contact-text { color: var(--pd-dim); }
 
 .pd-contact-icon {
-  width: 2rem;
-  height: 2rem;
-  border-radius: 0.5rem;
-  background: rgba(255, 255, 255, 0.05);
-  display: flex;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
-  transition: all 0.2s;
-}
-
-.pd-contact-item:hover .pd-contact-icon {
-  background: rgba(59, 130, 246, 0.2);
-  color: #60a5fa;
+  width: 28px;
+  height: 28px;
+  flex-shrink: 0;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--pd-line);
 }
 
 .pd-contact-text {
-  font-size: 0.875rem;
+  font-size: 0.82rem;
   font-weight: 500;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+/* --------------------------------------------------------------- Status chip */
+.pd-status-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(79, 126, 248, 0.32);
+  background: rgba(79, 126, 248, 0.14);
+  color: var(--pd-accent-2);
+  font-size: 0.72rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+/* --------------------------------------------------------------- Animations */
+@keyframes pdFade { from { opacity: 0; } to { opacity: 1; } }
+@keyframes pdPop {
+  from { opacity: 0; transform: translateY(12px) scale(0.985); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pd-modal-backdrop,
+  .pd-modal { animation: none; }
+}
+
+/* ------------------------------------------------------------------ Mobile */
+@media (max-width: 520px) {
+  .pd-topbar { padding: 0.7rem 0.75rem; margin-bottom: 1rem; }
+  .pd-modal-head { padding: 0.9rem 1rem; }
+  .pd-modal .pd-body { padding: 1rem; }
+  .pd-modal-head-actions .pd-status-chip { display: none; }
+  .pd-thumb { width: 68px; height: 48px; }
 }

@@ -1,13 +1,18 @@
-import React, { useState, useEffect } from 'react';
-import { User, Building, MapPin, Briefcase, Phone, FileText, CheckCircle, AlertCircle, Award, Save } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { User, Building, MapPin, Briefcase, Phone, FileText, CheckCircle, AlertCircle, Award, Save, Camera } from 'lucide-react';
 import { AgentQueries } from './db/queries';
 import './Profile.css';
 
 export const Profile = ({ userRow, profile, user, onRefresh }) => {
+  const fileInputRef = useRef(null);
+
   const [formData, setFormData] = useState({
     agency_name: profile?.agency_name || '',
     phone: profile?.phone || userRow?.phone || '',
     office_address: profile?.address || profile?.office_address || '',
+    city: profile?.city || '',
+    province: profile?.province || '',
+    postal_code: profile?.postal_code || '',
     license_number: profile?.tax_number || profile?.license_number || '',
     years_experience: profile?.experience_years ?? profile?.years_experience ?? '',
     bio: profile?.bio || '',
@@ -16,6 +21,11 @@ export const Profile = ({ userRow, profile, user, onRefresh }) => {
   
   const [isSaving, setIsSaving] = useState(false);
   const [status, setStatus] = useState(null);
+  const [avatarUrl, setAvatarUrl] = useState(profile?.profile_image_url || '');
+  const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
+
+  // Resolve the owning user id (cache + RLS are keyed by user id)
+  const agentUserId = profile?.user_id || userRow?.id || user?.id;
 
   // Update form data if profile loads asynchronously
   useEffect(() => {
@@ -25,11 +35,15 @@ export const Profile = ({ userRow, profile, user, onRefresh }) => {
         agency_name: profile?.agency_name || prev.agency_name || '',
         phone: profile?.phone || userRow?.phone || prev.phone || '',
         office_address: profile?.address || profile?.office_address || prev.office_address || '',
+        city: profile?.city || prev.city || '',
+        province: profile?.province || prev.province || '',
+        postal_code: profile?.postal_code || prev.postal_code || '',
         license_number: profile?.tax_number || profile?.license_number || prev.license_number || '',
         years_experience: profile?.experience_years ?? profile?.years_experience ?? prev.years_experience ?? '',
         bio: profile?.bio || prev.bio || '',
         full_name: profile?.full_name || userRow?.full_name || prev.full_name || ''
       }));
+      if (profile?.profile_image_url) setAvatarUrl(profile.profile_image_url);
     }
   }, [profile, userRow]);
 
@@ -38,20 +52,66 @@ export const Profile = ({ userRow, profile, user, onRefresh }) => {
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
+  const handleAvatarUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    // reset input so re-selecting the same file still fires onChange
+    e.target.value = '';
+
+    if (!file.type.startsWith('image/')) {
+      setStatus({ type: 'error', message: 'Please choose an image file (JPG, PNG, WEBP or GIF).' });
+      setTimeout(() => setStatus(null), 4000);
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      setStatus({ type: 'error', message: 'Image must be smaller than 5MB.' });
+      setTimeout(() => setStatus(null), 4000);
+      return;
+    }
+    if (!agentUserId) {
+      setStatus({ type: 'error', message: 'Agent user ID not found.' });
+      setTimeout(() => setStatus(null), 4000);
+      return;
+    }
+
+    setIsUploadingAvatar(true);
+    setStatus(null);
+    try {
+      const upload = await AgentQueries.uploadProfileImage(agentUserId, file);
+      if (!upload.success) throw new Error(upload.error || 'Upload failed.');
+
+      const res = await AgentQueries.updateAgentProfile(agentUserId, {
+        profile_image_url: upload.url
+      });
+      if (!res.success) throw new Error(res.error || 'Could not save your new photo.');
+
+      setAvatarUrl(upload.url);
+      setStatus({ type: 'success', message: 'Profile photo updated successfully!' });
+      if (onRefresh) onRefresh();
+    } catch (err) {
+      setStatus({ type: 'error', message: err.message || 'Could not upload profile photo.' });
+    } finally {
+      setIsUploadingAvatar(false);
+      setTimeout(() => setStatus(null), 3500);
+    }
+  };
+
   const handleSave = async (e) => {
     e.preventDefault();
     setIsSaving(true);
     setStatus(null);
 
     try {
-      const targetId = profile?.id || profile?.user_id || userRow?.id || user?.id;
-      if (!targetId) throw new Error("Agent user ID not found.");
+      if (!agentUserId) throw new Error("Agent user ID not found.");
 
       const payload = {
         agency_name: formData.agency_name || null,
         phone: formData.phone || null,
         office_address: formData.office_address || null,
         address: formData.office_address || null,
+        city: formData.city || null,
+        province: formData.province || null,
+        postal_code: formData.postal_code || null,
         license_number: formData.license_number || null,
         tax_number: formData.license_number || null,
         years_experience: formData.years_experience ? parseInt(formData.years_experience) : null,
@@ -59,7 +119,7 @@ export const Profile = ({ userRow, profile, user, onRefresh }) => {
         bio: formData.bio || null
       };
 
-      const result = await AgentQueries.updateAgentProfile(targetId, payload);
+      const result = await AgentQueries.updateAgentProfile(agentUserId, payload);
       
       if (result.success) {
         setStatus({ type: 'success', message: 'Profile updated successfully!' });
@@ -75,6 +135,7 @@ export const Profile = ({ userRow, profile, user, onRefresh }) => {
     }
   };
 
+
   const isVerified = Boolean(profile?.is_verified === true);
   const isPending = profile?.verification_status === 'pending_review' || profile?.verification_status === 'interview_scheduled';
 
@@ -84,11 +145,37 @@ export const Profile = ({ userRow, profile, user, onRefresh }) => {
         {/* Header */}
         <div className="profile-header">
           <div>
-            <h1 className="profile-title">Agent Profile</h1>
-            <p className="profile-subtitle">Manage your agency details, license information, and professional bio.</p>
+            <span className="ag-eyebrow">Account</span>
+            <h1 className="profile-title">Agent profile</h1>
+            <p className="profile-subtitle">Manage your agency details, licence information, and professional bio.</p>
           </div>
-          <div className="profile-avatar">
-            <User size={32} />
+          <div className="profile-avatar-wrap">
+            <div className="profile-avatar">
+              {avatarUrl ? (
+                <img src={avatarUrl} alt="Agent profile" className="profile-avatar-img" />
+              ) : (
+                <User size={32} />
+              )}
+              {isUploadingAvatar && (
+                <div className="profile-avatar-loading">•••</div>
+              )}
+            </div>
+            <button
+              type="button"
+              className="profile-avatar-upload"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={isUploadingAvatar}
+              title="Upload profile photo"
+            >
+              <Camera size={14} />
+            </button>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/png,image/jpeg,image/jpg,image/webp,image/gif"
+              onChange={handleAvatarUpload}
+              style={{ display: 'none' }}
+            />
           </div>
         </div>
 
@@ -100,13 +187,13 @@ export const Profile = ({ userRow, profile, user, onRefresh }) => {
           background: isVerified 
             ? 'rgba(16, 185, 129, 0.1)' 
             : isPending 
-            ? 'rgba(59, 130, 246, 0.1)' 
+            ? 'rgba(79, 126, 248, 0.1)' 
             : 'rgba(245, 158, 11, 0.1)',
           border: `1px solid ${
             isVerified 
               ? 'rgba(16, 185, 129, 0.3)' 
               : isPending 
-              ? 'rgba(59, 130, 246, 0.3)' 
+              ? 'rgba(79, 126, 248, 0.3)' 
               : 'rgba(245, 158, 11, 0.3)'
           }`,
           display: 'flex',
@@ -121,14 +208,14 @@ export const Profile = ({ userRow, profile, user, onRefresh }) => {
               width: '10px',
               height: '10px',
               borderRadius: '50%',
-              background: isVerified ? '#10b981' : isPending ? '#3b82f6' : '#f59e0b'
+              background: isVerified ? '#10b981' : isPending ? '#4f7ef8' : '#f59e0b'
             }} />
             <div>
               <p style={{
                 margin: 0,
                 fontSize: '0.9rem',
                 fontWeight: 700,
-                color: isVerified ? '#10b981' : isPending ? '#60a5fa' : '#f59e0b'
+                color: isVerified ? '#10b981' : isPending ? '#7da2ff' : '#f59e0b'
               }}>
                 {isVerified 
                   ? 'Verified Agent (FICA Compliant)' 
@@ -238,6 +325,51 @@ export const Profile = ({ userRow, profile, user, onRefresh }) => {
                     onChange={handleChange}
                     className="form-input"
                     placeholder="e.g. 021 555 1234"
+                  />
+                </div>
+              </div>
+
+              <div className="form-group">
+                <label className="form-label">City / Town</label>
+                <div className="input-wrapper">
+                  <MapPin size={18} className="input-icon" />
+                  <input 
+                    type="text" 
+                    name="city" 
+                    value={formData.city} 
+                    onChange={handleChange}
+                    className="form-input"
+                    placeholder="e.g. Johannesburg"
+                  />
+                </div>
+              </div>
+
+              <div className="form-group">
+                <label className="form-label">Province</label>
+                <div className="input-wrapper">
+                  <MapPin size={18} className="input-icon" />
+                  <input 
+                    type="text" 
+                    name="province" 
+                    value={formData.province} 
+                    onChange={handleChange}
+                    className="form-input"
+                    placeholder="e.g. Gauteng"
+                  />
+                </div>
+              </div>
+
+              <div className="form-group">
+                <label className="form-label">Postal Code</label>
+                <div className="input-wrapper">
+                  <MapPin size={18} className="input-icon" />
+                  <input 
+                    type="text" 
+                    name="postal_code" 
+                    value={formData.postal_code} 
+                    onChange={handleChange}
+                    className="form-input"
+                    placeholder="e.g. 2198"
                   />
                 </div>
               </div>

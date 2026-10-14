@@ -1,11 +1,14 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Menu, Lock } from "lucide-react";
 import { globalStyle, T } from "./Styles/designTokens";
+import "./Styles/agent-ui.css";
 import "./MainAgent.css";
 import { Sidebar } from "./SideBar";
 import { Dashboard } from "./Dashboard";
 import { Applications } from "./Applications";
+import ApplicationManager from "./ApplicationManager";
+import MatchPipelineView from "../../component/MatchPipelineView";
 import { Properties } from "./Properties";
 import { Wallet } from "./Wallet";
 import { Profile } from "./Profile";
@@ -29,6 +32,7 @@ export default function MainAgent() {
   const [error, setError] = useState("");
   const [isMobile, setIsMobile] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [managedApp, setManagedApp] = useState(null);
 
   useEffect(() => {
     const checkMobile = () => {
@@ -99,6 +103,14 @@ export default function MainAgent() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [authLoading, user?.id]);
 
+  // Keep the open Application Manager's summary in sync with refreshed data.
+  useEffect(() => {
+    if (!managedApp) return;
+    const fresh = applications.find((a) => a.id === managedApp.id);
+    if (fresh && fresh !== managedApp) setManagedApp(fresh);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [applications]);
+
   const handleLogout = async () => {
     try {
       await signOut();
@@ -108,18 +120,12 @@ export default function MainAgent() {
     }
   };
 
-  const stats = useMemo(() => {
-    const pending = applications.filter((a) => (a.status || "submitted") === "submitted").length;
-    return [
-      { label: "New Applications", value: String(pending), change: "—", trend: "neutral", icon: "FileText" },
-      { label: "Total Applications", value: String(applications.length), change: "—", trend: "neutral", icon: "Inbox" },
-      { label: "Active Listings", value: String(properties.length), change: "—", trend: "neutral", icon: "Building" },
-      { label: "Tenants Reached", value: String(tenantById.size), change: "—", trend: "neutral", icon: "Users" }
-    ];
-  }, [applications, properties.length, tenantById.size]);
-
   const handleUpdateStatus = async (id, status, extraData = {}) => {
     const res = await AgentQueries.updateApplicationStatus(id, status, extraData);
+    // Surface a real failure so callers do not optimistically show success.
+    if (!res || res.success === false) {
+      return false;
+    }
     const updatedRecord = { ...(res.data || {}), status, ...extraData };
     setApplications((prev) => prev.map((a) => (a.id === id ? { ...a, ...updatedRecord } : a)));
 
@@ -140,54 +146,109 @@ export default function MainAgent() {
     return true;
   };
 
+  const handleRequestCompletion = async (id, note = null) => {
+    const res = await AgentQueries.requestCompletionApproval(id, note);
+    if (!res || res.success === false) {
+      return false;
+    }
+    const updatedRecord = {
+      ...(res.data || {}),
+      completion_requested_at: new Date().toISOString(),
+      completion_request_note: note
+    };
+    setApplications((prev) => prev.map((a) => (a.id === id ? { ...a, ...updatedRecord } : a)));
+    return true;
+  };
+
+  // Agent accepts or rejects a job the admin assigned. The response is written
+  // to the applications row and broadcast so the admin portal flags it.
+  const handleRespondToAssignment = async (id, decision, reason = null) => {
+    const res = await AgentQueries.respondToAssignment(id, user?.id, decision, reason);
+    if (!res || res.success === false) {
+      return res || { success: false, error: "Could not update the job assignment." };
+    }
+
+    const updated = res.data || {};
+    const respondedAt = updated.assignment_responded_at || new Date().toISOString();
+    const rejectionReason = decision === "rejected" ? (reason || null) : null;
+
+    setApplications((prev) =>
+      prev.map((a) =>
+        a.id === id
+          ? {
+              ...a,
+              ...updated,
+              assignment_status: decision,
+              assignment_responded_at: respondedAt,
+              assignment_rejection_reason: rejectionReason
+            }
+          : a
+      )
+    );
+
+    const current = applications.find((a) => a.id === id);
+    broadcastApplicationUpdate(id, updated.status || current?.status || "under_review", {
+      assignment_status: decision,
+      assignment_responded_at: respondedAt,
+      assignment_rejection_reason: rejectionReason
+    });
+
+    return { success: true, data: updated };
+  };
+
+  // Open the Application Manager (draft-match workflow) for an assigned job.
+  const handleManageApplication = (app) => {
+    if (!app) return;
+    setManagedApp(app);
+    setActiveView("application-manager");
+  };
+
+  const closeApplicationManager = () => {
+    setManagedApp(null);
+    setActiveView("applications");
+  };
+
   const renderContent = () => {
     if (loading || authLoading) {
       return (
-        <div style={{ textAlign: "center", padding: "4rem" }}>
-          <Loading message="Loading agent portal…" />
+        <div className="ag-page">
+          <div className="ag-empty" style={{ paddingTop: 96 }}>
+            <Loading message="Loading agent portal…" />
+          </div>
         </div>
       );
     }
 
     if (error) {
       return (
-        <div style={{ textAlign: "center", padding: "4rem" }}>
-          <h2 style={{ color: T.textPrimary }}>Something went wrong</h2>
-          <p style={{ color: T.textMuted, marginTop: "0.75rem" }}>{error}</p>
+        <div className="ag-page">
+          <div className="ag-panel ag-panel-body" style={{ maxWidth: 560, margin: "64px auto", textAlign: "center" }}>
+            <h2 style={{ color: "#fff", fontSize: "1.15rem", fontWeight: 700, margin: 0 }}>Something went wrong</h2>
+            <p className="ag-empty-sub" style={{ marginTop: 10 }}>{error}</p>
+          </div>
         </div>
       );
     }
 
     const isAgentVerified = Boolean(profile?.is_verified === true);
 
-    if (!isAgentVerified && ["applications", "properties", "wallet"].includes(activeView)) {
+    if (!isAgentVerified && ["applications", "application-manager", "pipeline", "properties", "wallet"].includes(activeView)) {
       return (
-        <div style={{ textAlign: "center", padding: "5rem 1.5rem", maxWidth: "560px", margin: "0 auto" }}>
-          <div style={{ width: 56, height: 56, borderRadius: "50%", background: "rgba(245, 158, 11, 0.15)", border: "1px solid rgba(245, 158, 11, 0.3)", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 1.25rem", color: "#f59e0b" }}>
-            <Lock size={26} />
+        <div className="ag-page">
+          <div className="ag-panel ag-panel-body" style={{ maxWidth: 560, margin: "56px auto", textAlign: "center" }}>
+            <div style={{ width: 56, height: 56, borderRadius: "50%", background: "rgba(245, 158, 11, 0.15)", border: "1px solid rgba(245, 158, 11, 0.3)", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 1.25rem", color: "#f59e0b" }}>
+              <Lock size={26} />
+            </div>
+            <h2 style={{ color: "#fff", fontSize: "1.25rem", fontWeight: 700, margin: "0 0 0.5rem" }}>
+              Verification required
+            </h2>
+            <p style={{ color: "var(--ag-muted)", fontSize: "0.88rem", lineHeight: 1.6, margin: "0 0 1.5rem" }}>
+              Your agent account is currently inactive. Complete your FICA document submission and onboarding interview to access {activeView === 'wallet' ? 'earnings and withdrawals' : `${activeView} and tenant matching`}.
+            </p>
+            <button type="button" className="agent-btn agent-btn-primary" onClick={() => setActiveView("dashboard")}>
+              Go to dashboard
+            </button>
           </div>
-          <h2 style={{ color: "#fff", fontSize: "1.25rem", fontWeight: 700, marginBottom: "0.5rem" }}>
-            Verification Required
-          </h2>
-          <p style={{ color: "#94a3b8", fontSize: "0.85rem", lineHeight: 1.6, marginBottom: "1.5rem" }}>
-            Your agent account is currently inactive. Complete your FICA document submission and onboarding interview to access {activeView === 'wallet' ? 'earnings and withdrawals' : `${activeView} and tenant matching`}.
-          </p>
-          <button
-            onClick={() => setActiveView("dashboard")}
-            style={{
-              padding: "0.65rem 1.5rem",
-              background: "linear-gradient(135deg, #4f7ef8 0%, #7c5ef8 100%)",
-              color: "#fff",
-              fontWeight: 700,
-              fontSize: "0.85rem",
-              borderRadius: "0.65rem",
-              border: "none",
-              cursor: "pointer",
-              boxShadow: "0 4px 15px rgba(79, 126, 248, 0.4)"
-            }}
-          >
-            Go to Dashboard & Apply
-          </button>
         </div>
       );
     }
@@ -197,7 +258,6 @@ export default function MainAgent() {
         return (
           <Dashboard 
             agentName={userRow?.full_name?.split(" ")?.[0] || profile?.agency_name || "Agent"} 
-            stats={stats} 
             applications={applications} 
             properties={properties} 
             tenantById={tenantById} 
@@ -206,6 +266,7 @@ export default function MainAgent() {
             setActiveView={setActiveView}
             onRefresh={refresh}
             onUpdateStatus={handleUpdateStatus}
+            onRequestCompletion={handleRequestCompletion}
             loading={loading}
           />
         );
@@ -218,9 +279,38 @@ export default function MainAgent() {
             currentUserId={user?.id}
             onRefresh={refresh}
             onUpdateStatus={handleUpdateStatus}
+            onRequestCompletion={handleRequestCompletion}
+            onRespondToAssignment={handleRespondToAssignment}
+            onManageApplication={handleManageApplication}
             loading={loading}
           />
         );
+      case "application-manager":
+        if (!managedApp) {
+          return (
+            <div className="ag-page">
+              <div className="ag-panel ag-panel-body" style={{ maxWidth: 560, margin: "64px auto", textAlign: "center" }}>
+                <h2 style={{ color: "#fff", fontSize: "1.15rem", fontWeight: 700, margin: 0 }}>No application selected</h2>
+                <p className="ag-empty-sub" style={{ marginTop: 10 }}>
+                  Open an assigned application and choose “Manage application”.
+                </p>
+              </div>
+            </div>
+          );
+        }
+        return (
+          <ApplicationManager
+            application={managedApp}
+            tenant={tenantById?.get(managedApp.tenant_id)}
+            properties={properties}
+            currentUserId={user?.id}
+            onBack={closeApplicationManager}
+            onRejectJob={(reason) => handleRespondToAssignment(managedApp.id, "rejected", reason)}
+            onShipped={() => refresh()}
+          />
+        );
+      case "pipeline":
+        return <MatchPipelineView role="agent" currentUserId={user?.id} />;
       case "properties":
         return <Properties properties={properties} onRefresh={refresh} loading={loading} />;
       case "wallet":
@@ -249,8 +339,11 @@ export default function MainAgent() {
         );
       default:
         return (
-          <div style={{ textAlign: "center", padding: "4rem" }}>
-            <h2 style={{ color: T.textPrimary }}>{activeView}</h2>
+          <div className="ag-page">
+            <div className="ag-empty" style={{ paddingTop: 96 }}>
+              <p className="ag-empty-title">This view is not available</p>
+              <p className="ag-empty-sub">Use the navigation to open a section of the console.</p>
+            </div>
           </div>
         );
     }
@@ -259,7 +352,7 @@ export default function MainAgent() {
   return (
     <>
       <style>{globalStyle}</style>
-      <div className="agent-layout-wrapper">
+      <div className="agent-console agent-layout-wrapper">
         {!isMobile && <Sidebar activeView={activeView} setActiveView={setActiveView} onLogout={handleLogout} profile={userRow} agentProfile={profile} user={user} />}
 
         {isMobile && isMobileMenuOpen && (
@@ -281,7 +374,7 @@ export default function MainAgent() {
           </>
         )}
 
-        <main className={`agent-main-content ${isMobile ? 'is-mobile' : ''} ${activeView === 'dashboard' ? 'is-dashboard' : ''} ${activeView === 'wallet' ? 'is-wallet' : ''}`}>
+        <main className={`agent-main-content ${isMobile ? 'is-mobile' : ''} ${activeView === 'dashboard' ? 'is-dashboard' : ''} ${activeView === 'wallet' ? 'is-wallet' : ''} ${activeView === 'application-manager' ? 'is-manager' : ''}`}>
           {isMobile && (
             <div className="agent-mobile-header">
               <button

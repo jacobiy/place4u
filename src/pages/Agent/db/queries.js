@@ -1,4 +1,7 @@
 import { supabase } from "../../../utils/Supabase";
+import { normalizeApplicationStatus } from "../../../services/applicationStatus";
+import { resolveApplicationDocuments } from "../../../utils/documentUrls";
+import { broadcastApplicationUpdate } from "../../../services/applicationSync";
 
 const LOCAL_CACHE_PREFIX = "place4u_agent_profile_";
 
@@ -58,6 +61,12 @@ export const AgentQueries = {
         city: cached?.city || "",
         province: cached?.province || "Gauteng",
         experience_years: cached?.experience_years ?? 1,
+        bio: cached?.bio || "",
+        profile_image_url: cached?.profile_image_url || null,
+        whatsapp_alerts: cached?.whatsapp_alerts ?? true,
+        email_digest: cached?.email_digest ?? true,
+        commission_alerts: cached?.commission_alerts ?? true,
+        viewing_alerts: cached?.viewing_alerts ?? true,
         id_document_url: cached?.id_document_url || null,
         proof_of_residence_url: cached?.proof_of_residence_url || null,
         verification_status: cached?.verification_status || "not_applied",
@@ -153,13 +162,34 @@ export const AgentQueries = {
       if (updates.postal_code !== undefined) dbUpdates.postal_code = updates.postal_code;
       if (updates.id_number !== undefined) dbUpdates.id_number = updates.id_number;
       if (updates.full_name !== undefined) dbUpdates.full_name = updates.full_name;
+      if (updates.bio !== undefined) dbUpdates.bio = updates.bio;
+      if (updates.profile_image_url !== undefined) dbUpdates.profile_image_url = updates.profile_image_url;
+      if (updates.preferred_contact_method !== undefined) dbUpdates.preferred_contact_method = updates.preferred_contact_method;
+      if (updates.fidelity_fund_cert_url !== undefined) dbUpdates.fidelity_fund_cert_url = updates.fidelity_fund_cert_url;
+      if (updates.additional_documents !== undefined) dbUpdates.additional_documents = updates.additional_documents;
+
+      // Notification preferences (Settings page toggles)
+      if (updates.whatsapp_alerts !== undefined) dbUpdates.whatsapp_alerts = updates.whatsapp_alerts;
+      if (updates.email_digest !== undefined) dbUpdates.email_digest = updates.email_digest;
+      if (updates.commission_alerts !== undefined) dbUpdates.commission_alerts = updates.commission_alerts;
+      if (updates.viewing_alerts !== undefined) dbUpdates.viewing_alerts = updates.viewing_alerts;
+
+      // Commission payout banking details (Settings page)
+      if (updates.bank_name !== undefined) dbUpdates.bank_name = updates.bank_name;
+      if (updates.account_holder !== undefined) dbUpdates.account_holder = updates.account_holder;
+      if (updates.account_number !== undefined) dbUpdates.account_number = updates.account_number;
+      if (updates.branch_code !== undefined) dbUpdates.branch_code = updates.branch_code;
+      if (updates.account_type !== undefined) dbUpdates.account_type = updates.account_type;
+
       if (updates.is_verified !== undefined) dbUpdates.is_verified = updates.is_verified;
       if (updates.verification_status !== undefined) dbUpdates.verification_status = updates.verification_status;
       if (updates.submitted_at !== undefined) dbUpdates.submitted_at = updates.submitted_at;
       if (updates.verified_at !== undefined) dbUpdates.verified_at = updates.verified_at;
 
       let updatedData = null;
-      try {
+      let lastError = null;
+
+      if (Object.keys(dbUpdates).length > 0) {
         const { data, error } = await supabase
           .from('agent_profiles')
           .update(dbUpdates)
@@ -170,6 +200,7 @@ export const AgentQueries = {
         if (!error && data) {
           updatedData = data;
         } else {
+          lastError = error || lastError;
           // If no row existed to update, try upserting with user_id
           const upsertPayload = {
             user_id: profileIdOrUserId,
@@ -180,24 +211,47 @@ export const AgentQueries = {
             .upsert(upsertPayload, { onConflict: 'user_id' })
             .select()
             .maybeSingle();
-          if (!upErr && upData) updatedData = upData;
+          if (!upErr && upData) {
+            updatedData = upData;
+            lastError = null;
+          } else {
+            lastError = upErr || lastError;
+          }
         }
-      } catch (err) {
-        console.warn('Could not update agent_profiles in Supabase:', err);
       }
 
-      const cached = this._getCache(profileIdOrUserId) || {};
+      // Cache is always keyed by the owning user id so getAgentProfile() hits it.
+      const cacheKey = updatedData?.user_id || profileIdOrUserId;
+      const cached = this._getCache(cacheKey) || {};
       const merged = { ...cached, ...updates, ...dbUpdates };
-      this._setCache(profileIdOrUserId, merged);
+      this._setCache(cacheKey, merged);
 
       // If is_verified is being updated, sync with users table too
       if (updates.is_verified !== undefined) {
         try {
+          const { data: pRow } = await supabase
+            .from('agent_profiles')
+            .select('user_id')
+            .or(`id.eq.${profileIdOrUserId},user_id.eq.${profileIdOrUserId}`)
+            .maybeSingle();
+          const uid = pRow?.user_id || updatedData?.user_id || profileIdOrUserId;
           await supabase
             .from('users')
             .update({ is_verified: updates.is_verified })
-            .eq('id', profileIdOrUserId);
+            .eq('id', uid);
         } catch {}
+      }
+
+      if (!updatedData && lastError) {
+        const msg = lastError.message || String(lastError);
+        const missingColumn = /column .* does not exist|schema cache|PGRST204|42703/i.test(msg);
+        return {
+          success: false,
+          error: missingColumn
+            ? 'The agent_profiles table is missing required columns. Please run database/agent_profile_settings.sql in your Supabase SQL Editor.'
+            : msg,
+          data: merged
+        };
       }
 
       return { success: true, data: updatedData || merged };
@@ -207,8 +261,108 @@ export const AgentQueries = {
     }
   },
 
+  // Upload an agent avatar to the dedicated 'agent-profiles' bucket.
+  // Object path: <userId>/avatar-<timestamp>.<ext>
+  async uploadProfileImage(userId, file) {
+    try {
+      if (!userId) throw new Error('A signed-in user is required to upload a profile picture.');
+      const rawExt = (file.name.split('.').pop() || 'jpg').toLowerCase();
+      const fileExt = rawExt === 'jpeg' ? 'jpg' : rawExt;
+      const filePath = `${userId}/avatar-${Date.now()}.${fileExt}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('agent-profiles')
+        .upload(filePath, file, {
+          contentType: file.type || 'image/jpeg',
+          cacheControl: '3600',
+          upsert: true
+        });
+
+      if (uploadError) throw uploadError;
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('agent-profiles')
+        .getPublicUrl(filePath);
+
+      return { success: true, url: publicUrl, filePath };
+    } catch (error) {
+      console.error('Error uploading agent profile image:', error);
+      return { success: false, error: error.message };
+    }
+  },
+
+  // Remove the avatar URL from the agent profile record
+  async removeProfileImage(profileIdOrUserId) {
+    return this.updateAgentProfile(profileIdOrUserId, { profile_image_url: null });
+  },
+
+  // Upload a FICA document (ID / proof of residence / Fidelity Fund Certificate)
+  // to the private 'agent-documents' bucket.
+  // Object path: agents/<userId>/<docType>-<ts>-<name>
+  async uploadVerificationDocument(userId, file, docType = 'id_document') {
+    try {
+      if (!userId) throw new Error('A signed-in user is required to upload a document.');
+      if (!file) throw new Error('No document file provided.');
+
+      const sanitizedName = (file.name || docType).replace(/[^a-zA-Z0-9.-]/g, '_');
+      const filePath = `agents/${userId}/${docType}-${Date.now()}-${sanitizedName}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('agent-documents')
+        .upload(filePath, file, {
+          contentType: file.type || 'application/octet-stream',
+          cacheControl: '3600',
+          upsert: false
+        });
+
+      if (uploadError) throw uploadError;
+
+      return { success: true, path: filePath, bucket: 'agent-documents', fileName: file.name };
+    } catch (error) {
+      console.error('Error uploading agent verification document:', error);
+      return { success: false, error: error.message };
+    }
+  },
+
   async submitVerificationApplication(userId, applicationData) {
     try {
+      // 1. Upload any attached FICA files to private storage. We persist the
+      //    storage object path (not a base64 blob) in the *_url columns and
+      //    resolve it to a signed URL at display time.
+      let idDocumentValue = applicationData.id_document_url || null;
+      let proofOfResidenceValue = applicationData.proof_of_residence_url || null;
+      let fidelityFundCertValue = applicationData.fidelity_fund_cert_url || null;
+
+      if (applicationData.id_document_file) {
+        const upId = await this.uploadVerificationDocument(
+          userId,
+          applicationData.id_document_file,
+          'id_document'
+        );
+        if (!upId.success) throw new Error(upId.error || 'Failed to upload your ID document.');
+        idDocumentValue = upId.path;
+      }
+
+      if (applicationData.proof_of_residence_file) {
+        const upPor = await this.uploadVerificationDocument(
+          userId,
+          applicationData.proof_of_residence_file,
+          'proof_of_residence'
+        );
+        if (!upPor.success) throw new Error(upPor.error || 'Failed to upload your proof of residence.');
+        proofOfResidenceValue = upPor.path;
+      }
+
+      if (applicationData.fidelity_fund_cert_file) {
+        const upFfc = await this.uploadVerificationDocument(
+          userId,
+          applicationData.fidelity_fund_cert_file,
+          'fidelity_fund_certificate'
+        );
+        if (!upFfc.success) throw new Error(upFfc.error || 'Failed to upload your Fidelity Fund Certificate.');
+        fidelityFundCertValue = upFfc.path;
+      }
+
       const payload = {
         user_id: userId,
         full_name: applicationData.full_name,
@@ -222,8 +376,9 @@ export const AgentQueries = {
         agency_name: applicationData.agency_name,
         experience_years: Number(applicationData.experience_years) || 0,
         tax_number: applicationData.tax_number || null,
-        id_document_url: applicationData.id_document_url,
-        proof_of_residence_url: applicationData.proof_of_residence_url,
+        id_document_url: idDocumentValue,
+        proof_of_residence_url: proofOfResidenceValue,
+        fidelity_fund_cert_url: fidelityFundCertValue,
         preferred_contact_method: applicationData.preferred_contact_method || 'whatsapp',
         interview_time_slot: applicationData.interview_time_slot || 'anytime',
         verification_status: 'pending_review',
@@ -231,16 +386,18 @@ export const AgentQueries = {
         submitted_at: new Date().toISOString()
       };
 
-      // 1. Attempt upsert into agent_profiles table
+      // 2. Upsert into agent_profiles table
+      let dbError = null;
       try {
-        await supabase
+        const { error } = await supabase
           .from('agent_profiles')
           .upsert([payload], { onConflict: 'user_id' });
+        if (error) dbError = error;
       } catch (err) {
-        console.warn('Could not upsert into agent_profiles table (may need SQL migration):', err);
+        dbError = err;
       }
 
-      // 2. Sync contact and ID info into users table
+      // 3. Sync contact and ID info into users table
       try {
         await supabase
           .from('users')
@@ -254,55 +411,19 @@ export const AgentQueries = {
         console.warn('Could not update users table:', err);
       }
 
-      // 3. Persist in local storage cache
+      // 4. Persist in local storage cache
       this._setCache(userId, payload);
+
+      if (dbError) {
+        return {
+          success: false,
+          error: dbError.message || 'Could not save your verification application.'
+        };
+      }
 
       return { success: true, data: payload };
     } catch (error) {
       console.error('Error submitting verification application:', error);
-      return { success: false, error: error.message };
-    }
-  },
-
-  async simulateAdminVerification(userId, isVerified = true) {
-    try {
-      const status = isVerified ? 'verified' : 'pending_review';
-      const updates = {
-        is_verified: isVerified,
-        verification_status: status,
-        verified_at: isVerified ? new Date().toISOString() : null
-      };
-
-      try {
-        const { data: updated } = await supabase
-          .from('agent_profiles')
-          .update(updates)
-          .eq('user_id', userId)
-          .select()
-          .maybeSingle();
-
-        if (!updated) {
-          await supabase
-            .from('agent_profiles')
-            .upsert({ user_id: userId, ...updates }, { onConflict: 'user_id' });
-        }
-      } catch (err) {
-        console.warn('Could not update agent_profiles in Supabase:', err);
-      }
-
-      try {
-        await supabase
-          .from('users')
-          .update({ is_verified: isVerified })
-          .eq('id', userId);
-      } catch {}
-
-      const cached = this._getCache(userId) || {};
-      const merged = { ...cached, ...updates };
-      this._setCache(userId, merged);
-
-      return { success: true, data: merged };
-    } catch (error) {
       return { success: false, error: error.message };
     }
   },
@@ -348,7 +469,7 @@ export const AgentQueries = {
       const localMap = new Map();
       localApps.forEach(a => { if (a && a.id) localMap.set(a.id, a); });
 
-      const formatted = (data || []).map(row => {
+      const formatted = await Promise.all((data || []).map(async row => {
         let meta = {};
         if (row.special_requirements && (row.special_requirements.includes('[P4U_DATA:') || row.special_requirements.includes('[PLACE4U_APP_DATA:'))) {
           const match = row.special_requirements.match(/\[(?:P4U_DATA|PLACE4U_APP_DATA):([A-Za-z0-9+/=]+)\]/);
@@ -364,14 +485,42 @@ export const AgentQueries = {
           .replace(/\n?\[Attached PDFs:[^\]]*\]/g, '')
           .trim();
 
-        const docs = (Array.isArray(row.documents) && row.documents.length > 0)
-          ? row.documents
-          : (localMatch?.documents || meta.documents || []);
+        // Source priority: database → embedded metadata token → local cache.
+        // Length checks matter — an empty cached array used to clobber a
+        // populated metadata token because JS treats [] as truthy.
+        const dbDocs = Array.isArray(row.documents) && row.documents.length > 0 ? row.documents : [];
+        const metaDocs = Array.isArray(meta.documents) && meta.documents.length > 0 ? meta.documents : [];
+        const localDocs = Array.isArray(localMatch?.documents) && localMatch.documents.length > 0 ? localMatch.documents : [];
+        const rawDocs = dbDocs.length ? dbDocs : (metaDocs.length ? metaDocs : localDocs);
+
+        // Resolve attachments for display: sign durable storage references, and
+        // fall back to the same-browser cached base64 when a file was never
+        // stored (recovers applications submitted before attachments persisted).
+        const docs = await resolveApplicationDocuments(rawDocs, {
+          localDocs: localMatch?.documents || []
+        });
+
+        // DB records are authoritative for payment / status / assignment. The local
+        // cache only fills gaps (documents + locally-known metadata). A settled fee must
+        // never be clobbered by a stale local snapshot, otherwise a paid application
+        // renders as "Awaiting Tenant Payment".
+        const feePaidResolved = Boolean(
+          row.fee_paid === true || row.fee_paid === 'true' ||
+          row.fee_receipt || row.payment_id ||
+          meta.fee_paid === true || meta.fee_paid === 'true' || meta.fee_receipt || meta.payment_id ||
+          localMatch?.fee_paid === true || localMatch?.fee_paid === 'true' || localMatch?.fee_receipt || localMatch?.payment_id
+        );
 
         return {
-          ...row,
+          ...(localMatch || {}),
           ...meta,
-          ...localMatch,
+          ...row,
+          fee_paid: feePaidResolved,
+          fee_receipt: row.fee_receipt || meta.fee_receipt || localMatch?.fee_receipt || null,
+          payment_id: row.payment_id || meta.payment_id || localMatch?.payment_id || null,
+          fee_refunded: row.fee_refunded === true || row.fee_refunded === 'true',
+          status: row.status || localMatch?.status || 'submitted',
+          assigned_to: row.assigned_to !== undefined ? row.assigned_to : localMatch?.assigned_to,
           documents: docs,
           special_requirements: cleanReq || localMatch?.special_requirements || meta.special_requirements || null,
           property_id: row.property_id || localMatch?.property_id || meta.property_id || null,
@@ -383,7 +532,7 @@ export const AgentQueries = {
           job_title: row.job_title || localMatch?.job_title || meta.job_title || null,
           workplace_location: row.workplace_location || localMatch?.workplace_location || meta.workplace_location || null
         };
-      });
+      }));
 
       // Also merge any standalone local applications assigned to this agent
       localApps.forEach(lApp => {
@@ -427,12 +576,33 @@ export const AgentQueries = {
       const uniqueIds = Array.from(new Set((ids || []).filter(Boolean)));
       if (uniqueIds.length === 0) return { success: true, data: [] };
 
-      // 1. Fetch user accounts
-      const { data: usersData, error } = await supabase
-        .from("users")
-        .select("id, full_name, email, phone, user_type")
-        .in("id", uniqueIds);
-      if (error) throw error;
+      // 1. Fetch user accounts. After database/security_hardening.sql Part B,
+      //    public.users is locked to self-or-admin, so an agent can no longer
+      //    read an applicant's own row. Fall back to the curated
+      //    public.user_directory view (id, full_name, user_type), which stays
+      //    readable by authenticated users. `users` wins when both resolve.
+      const identity = new Map();
+      try {
+        const { data: userRows } = await supabase
+          .from("users")
+          .select("id, full_name, email, phone, user_type")
+          .in("id", uniqueIds);
+        (userRows || []).forEach((u) => identity.set(u.id, u));
+      } catch (uErr) {
+        console.warn("users lookup unavailable, falling back to user_directory:", uErr);
+      }
+      try {
+        const { data: dirRows } = await supabase
+          .from("user_directory")
+          .select("id, full_name, user_type")
+          .in("id", uniqueIds);
+        (dirRows || []).forEach((u) => {
+          identity.set(u.id, { ...u, ...(identity.get(u.id) || {}) });
+        });
+      } catch (dErr) {
+        console.warn("user_directory lookup unavailable:", dErr);
+      }
+      const usersData = [...identity.values()];
 
       // 2. Fetch corresponding tenant_profiles for employment and income details
       let tenantProfiles = [];
@@ -454,6 +624,8 @@ export const AgentQueries = {
         const tp = tpMap.get(u.id) || {};
         return {
           ...u,
+          full_name: u.full_name || tp.full_name || (u.email ? String(u.email).split("@")[0] : null),
+          email: u.email || tp.email || null,
           employment_status: tp.employment_status || "Permanently Employed",
           monthly_income: tp.monthly_income ? Number(tp.monthly_income) : 38000,
           occupation: tp.occupation || tp.job_title || "Financial Analyst",
@@ -476,9 +648,16 @@ export const AgentQueries = {
   },
 
   async updateApplicationStatus(applicationId, status, extraFields = {}) {
+    const normalizedStatus = normalizeApplicationStatus(status);
+    if (normalizedStatus === 'completed') {
+      return {
+        success: false,
+        error: "Completion requires Administrator approval. Please submit a Completion Approval Request."
+      };
+    }
     try {
       // First try updating status with known extra fields (property_id, property_title, etc.)
-      const payload = { status };
+      const payload = { status: normalizedStatus };
       if (extraFields.property_id) payload.property_id = extraFields.property_id;
       if (extraFields.property_title) payload.property_title = extraFields.property_title;
 
@@ -488,33 +667,175 @@ export const AgentQueries = {
         .eq("id", applicationId)
         .select()
         .single();
-      if (error) {
-        // Fallback to updating status alone if additional columns do not exist
-        const { data: fallbackData } = await supabase
+
+      if (!error) {
+        return { success: true, data: { ...data, ...extraFields } };
+      }
+
+      // Only retry status-only when the *extra* columns are the problem (older
+      // schemas without property_id / property_title). A status value rejected by
+      // a CHECK constraint must fail loudly rather than leave the UI diverging
+      // from the database.
+      const isUnknownColumn = /column .* does not exist|schema cache|PGRST204|42703/i.test(error.message || "");
+      if (isUnknownColumn) {
+        const { data: fallbackData, error: fallbackError } = await supabase
           .from("applications")
-          .update({ status })
+          .update({ status: normalizedStatus })
           .eq("id", applicationId)
           .select()
           .single();
-        return { success: true, data: { ...fallbackData, ...extraFields } };
+        if (!fallbackError) {
+          return { success: true, data: { ...fallbackData, ...extraFields } };
+        }
+        return { success: false, error: fallbackError.message };
       }
-      return { success: true, data: { ...data, ...extraFields } };
+
+      console.warn("Application status update rejected by database:", error.message);
+      return { success: false, error: error.message };
     } catch (error) {
       console.error("Error updating application status:", error);
       return { success: false, error: error.message };
     }
   },
 
+  // Request admin sign-off for completed placement / job
+  async requestCompletionApproval(applicationId, note = null) {
+    try {
+      if (!applicationId) return { success: false, error: "Application ID required" };
+
+      // 1. Try RPC agent_request_completion
+      try {
+        const { data, error } = await supabase.rpc('agent_request_completion', {
+          p_application_id: applicationId,
+          p_note: note
+        });
+        if (!error && data) {
+          const row = Array.isArray(data) ? data[0] : data;
+          broadcastApplicationUpdate(applicationId, row.status || 'under_review', {
+            completion_requested_at: row.completion_requested_at || new Date().toISOString(),
+            completion_request_note: note
+          });
+          return { success: true, data: row };
+        }
+      } catch {}
+
+      // 2. Fallback to direct table update
+      const nowIso = new Date().toISOString();
+      const { data, error } = await supabase
+        .from('applications')
+        .update({
+          completion_requested_at: nowIso,
+          completion_request_note: note
+        })
+        .eq('id', applicationId)
+        .select()
+        .single();
+
+      if (error) {
+        console.warn("Could not write completion_requested_at column:", error.message);
+        return { success: true, data: { id: applicationId, completion_requested_at: nowIso, completion_request_note: note } };
+      }
+
+      broadcastApplicationUpdate(applicationId, data.status || 'under_review', {
+        completion_requested_at: nowIso,
+        completion_request_note: note
+      });
+
+      return { success: true, data };
+    } catch (err) {
+      console.error("Error requesting completion approval:", err);
+      return { success: false, error: err?.message || "Failed to request completion approval" };
+    }
+  },
+
+  // Accept or reject a job (application) that an administrator assigned to this agent.
+  // decision: 'accepted' | 'rejected'. The update is scoped to this agent's own
+  // assignment so an agent can never respond to somebody else's job.
+  async respondToAssignment(applicationId, agentUserId, decision, reason = null) {
+    try {
+      if (!applicationId) return { success: false, error: "Application ID required" };
+      if (!agentUserId) return { success: false, error: "Signed-in agent user ID required" };
+      if (decision !== "accepted" && decision !== "rejected") {
+        return { success: false, error: 'Decision must be either "accepted" or "rejected".' };
+      }
+
+      const payload = {
+        assignment_status: decision,
+        assignment_responded_at: new Date().toISOString(),
+        assignment_rejection_reason: decision === "rejected" ? (reason || null) : null
+      };
+
+      const { data, error } = await supabase
+        .from("applications")
+        .update(payload)
+        .eq("id", applicationId)
+        .eq("assigned_to", agentUserId)
+        .select()
+        .maybeSingle();
+
+      if (error) {
+        const msg = error.message || String(error);
+        const missingColumn =
+          /assignment_status|assignment_responded_at|assignment_rejection_reason|PGRST204|42703|schema cache/i.test(msg);
+        return {
+          success: false,
+          error: missingColumn
+            ? "The applications table is missing the assignment columns. Please run database/agent_job_acceptance.sql in your Supabase SQL Editor."
+            : msg
+        };
+      }
+
+      if (!data) {
+        return {
+          success: false,
+          error: "This job is no longer assigned to you. Please refresh your application list."
+        };
+      }
+
+      return { success: true, data };
+    } catch (error) {
+      console.error("Error responding to job assignment:", error);
+      return { success: false, error: error.message };
+    }
+  },
+
+  acceptJob(applicationId, agentUserId) {
+    return this.respondToAssignment(applicationId, agentUserId, "accepted");
+  },
+
+  rejectJob(applicationId, agentUserId, reason = null) {
+    return this.respondToAssignment(applicationId, agentUserId, "rejected", reason);
+  },
+
   async listChatContacts(limit = 200) {
     try {
-      const { data, error } = await supabase
-        .from("users")
-        .select("id, full_name, email, user_type, created_at")
-        .in("user_type", ["tenant", "landlord", "admin"])
-        .order("created_at", { ascending: false })
-        .limit(limit);
-      if (error) throw error;
-      return { success: true, data: data || [] };
+      // Cross-user directory read. Falls back to public.user_directory when
+      // security_hardening.sql Part B locks public.users to self-or-admin.
+      let data = [];
+      try {
+        const res = await supabase
+          .from("users")
+          .select("id, full_name, email, user_type, created_at")
+          .in("user_type", ["tenant", "landlord", "admin"])
+          .order("created_at", { ascending: false })
+          .limit(limit);
+        if (!res.error) data = res.data || [];
+      } catch {
+        /* users may be RLS-locked */
+      }
+      if (data.length === 0) {
+        try {
+          const res = await supabase
+            .from("user_directory")
+            .select("id, full_name, user_type")
+            .in("user_type", ["tenant", "landlord", "admin"])
+            .limit(limit);
+          if (!res.error) data = res.data || [];
+        } catch {
+          /* user_directory not installed */
+        }
+      }
+      return { success: true, data };
     } catch (error) {
       console.error("Error listing chat contacts:", error);
       return { success: false, error: error.message };

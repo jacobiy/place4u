@@ -3,7 +3,6 @@ import {
   getAdminAgentApplications,
   updateAgentApplicationStatus,
   scheduleAgentInterview,
-  createSimulatedAgentApplication,
   formatDate,
   openGmail
 } from './db/queries'
@@ -27,12 +26,10 @@ import {
   ExternalLink,
   MessageCircle,
   RefreshCw,
-  Plus,
   AlertTriangle,
-  Award,
-  ChevronRight,
   Maximize2
 } from 'lucide-react'
+import { resolveDocumentUrl, AGENT_DOCUMENTS_BUCKET } from '../../utils/documentUrls'
 
 const PROVINCES = [
   'All Provinces',
@@ -55,6 +52,7 @@ export default function AgentApplicationsPage() {
   const [provinceFilter, setProvinceFilter] = useState('All Provinces')
   const [selectedApp, setSelectedApp] = useState(null)
   const [previewDoc, setPreviewDoc] = useState(null)
+  const [resolvedDocs, setResolvedDocs] = useState({ id: null, por: null, ffc: null })
   const [toast, setToast] = useState(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
 
@@ -94,6 +92,33 @@ export default function AgentApplicationsPage() {
     setInterviewDate(app.interview_date ? app.interview_date.slice(0, 10) : '')
     setInterviewSlot(app.interview_time_slot || 'morning')
     setAdminNotes(app.admin_notes || '')
+  }
+
+  // Resolve private-storage FICA document paths to signed URLs for the open dossier
+  useEffect(() => {
+    let active = true
+    ;(async () => {
+      const [id, por, ffc] = await Promise.all([
+        resolveDocumentUrl(selectedApp?.id_document_url || null, { bucket: AGENT_DOCUMENTS_BUCKET }),
+        resolveDocumentUrl(selectedApp?.proof_of_residence_url || null, { bucket: AGENT_DOCUMENTS_BUCKET }),
+        resolveDocumentUrl(selectedApp?.fidelity_fund_cert_url || null, { bucket: AGENT_DOCUMENTS_BUCKET })
+      ])
+      if (active) setResolvedDocs({ id, por, ffc })
+    })()
+    return () => {
+      active = false
+    }
+  }, [
+    selectedApp?.id_document_url,
+    selectedApp?.proof_of_residence_url,
+    selectedApp?.fidelity_fund_cert_url
+  ])
+
+  // Open the full-size document preview, resolving storage paths first
+  const openPreviewDoc = async (title, value) => {
+    if (!value) return
+    const url = await resolveDocumentUrl(value, { bucket: AGENT_DOCUMENTS_BUCKET })
+    setPreviewDoc({ title, url: url || value })
   }
 
   // Status updates
@@ -231,20 +256,6 @@ export default function AgentApplicationsPage() {
     }
   }
 
-  // Simulate new inbound application
-  const handleSimulateInbound = async () => {
-    setIsSubmitting(true)
-    try {
-      const created = await createSimulatedAgentApplication()
-      setApplications([created, ...applications])
-      showToast(`Simulated inbound application created for "${created.full_name}".`)
-    } catch (err) {
-      showToast(`Simulation failed: ${err.message}`)
-    } finally {
-      setIsSubmitting(false)
-    }
-  }
-
   // Filtered applications
   const filtered = useMemo(() => {
     return applications.filter((app) => {
@@ -333,16 +344,6 @@ export default function AgentApplicationsPage() {
         </div>
 
         <div className="flex items-center gap-2">
-          <button
-            onClick={handleSimulateInbound}
-            disabled={isSubmitting}
-            className="flex items-center gap-1.5 px-3.5 py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 rounded-lg text-xs font-semibold transition cursor-pointer"
-            title="Create a sample candidate to test application review"
-          >
-            <Plus size={14} />
-            Simulate Inbound Application
-          </button>
-
           <button
             onClick={loadApplications}
             disabled={loading}
@@ -509,7 +510,7 @@ export default function AgentApplicationsPage() {
           <div className="py-16 text-center text-slate-400 text-xs space-y-2">
             <ShieldCheck size={32} className="mx-auto text-slate-300" />
             <p className="font-semibold text-slate-700">No agent applications match your filters.</p>
-            <p className="text-[11px] text-slate-400">Try adjusting your search criteria or click "Simulate Inbound Application".</p>
+            <p className="text-[11px] text-slate-400">Try adjusting your search or status filters.</p>
           </div>
         ) : (
           <div className="overflow-x-auto">
@@ -586,7 +587,7 @@ export default function AgentApplicationsPage() {
                             {app.id_document_url ? (
                               <button
                                 type="button"
-                                onClick={() => setPreviewDoc({ title: `Certified ID — ${app.full_name}`, url: app.id_document_url })}
+                                onClick={() => openPreviewDoc(`Certified ID — ${app.full_name}`, app.id_document_url)}
                                 className="inline-flex items-center gap-1 text-[11px] font-semibold text-blue-600 hover:text-blue-800 bg-blue-50 px-2 py-0.5 rounded border border-blue-200 cursor-pointer"
                               >
                                 <Eye size={11} />
@@ -599,7 +600,7 @@ export default function AgentApplicationsPage() {
                             {app.proof_of_residence_url ? (
                               <button
                                 type="button"
-                                onClick={() => setPreviewDoc({ title: `Proof of Residence — ${app.full_name}`, url: app.proof_of_residence_url })}
+                                onClick={() => openPreviewDoc(`Proof of Residence — ${app.full_name}`, app.proof_of_residence_url)}
                                 className="inline-flex items-center gap-1 text-[11px] font-semibold text-indigo-600 hover:text-indigo-800 bg-indigo-50 px-2 py-0.5 rounded border border-indigo-200 cursor-pointer"
                               >
                                 <Eye size={11} />
@@ -850,7 +851,7 @@ export default function AgentApplicationsPage() {
                       <span className="text-[10px] text-slate-400 font-normal">Click thumbnail to enlarge</span>
                     </h4>
 
-                    <div className="grid grid-cols-2 gap-3">
+                    <div className="grid grid-cols-3 gap-3">
                       {/* Certified ID */}
                       <div className="border border-slate-200 rounded-lg p-2.5 bg-white space-y-1.5">
                         <div className="flex items-center justify-between">
@@ -858,7 +859,7 @@ export default function AgentApplicationsPage() {
                           {selectedApp.id_document_url && (
                             <button
                               type="button"
-                              onClick={() => setPreviewDoc({ title: `Certified ID — ${selectedApp.full_name}`, url: selectedApp.id_document_url })}
+                              onClick={() => openPreviewDoc(`Certified ID — ${selectedApp.full_name}`, selectedApp.id_document_url)}
                               className="text-blue-600 hover:text-blue-800"
                               title="Enlarge"
                             >
@@ -868,11 +869,11 @@ export default function AgentApplicationsPage() {
                         </div>
                         {selectedApp.id_document_url ? (
                           <div
-                            onClick={() => setPreviewDoc({ title: `Certified ID — ${selectedApp.full_name}`, url: selectedApp.id_document_url })}
+                            onClick={() => openPreviewDoc(`Certified ID — ${selectedApp.full_name}`, selectedApp.id_document_url)}
                             className="aspect-video bg-slate-100 rounded border border-slate-200 overflow-hidden cursor-pointer group relative"
                           >
                             <img
-                              src={selectedApp.id_document_url}
+                              src={resolvedDocs.id || selectedApp.id_document_url}
                               alt="ID Document"
                               className="w-full h-full object-cover group-hover:scale-105 transition duration-200"
                             />
@@ -894,7 +895,7 @@ export default function AgentApplicationsPage() {
                           {selectedApp.proof_of_residence_url && (
                             <button
                               type="button"
-                              onClick={() => setPreviewDoc({ title: `Proof of Residence — ${selectedApp.full_name}`, url: selectedApp.proof_of_residence_url })}
+                              onClick={() => openPreviewDoc(`Proof of Residence — ${selectedApp.full_name}`, selectedApp.proof_of_residence_url)}
                               className="text-blue-600 hover:text-blue-800"
                               title="Enlarge"
                             >
@@ -904,12 +905,48 @@ export default function AgentApplicationsPage() {
                         </div>
                         {selectedApp.proof_of_residence_url ? (
                           <div
-                            onClick={() => setPreviewDoc({ title: `Proof of Residence — ${selectedApp.full_name}`, url: selectedApp.proof_of_residence_url })}
+                            onClick={() => openPreviewDoc(`Proof of Residence — ${selectedApp.full_name}`, selectedApp.proof_of_residence_url)}
                             className="aspect-video bg-slate-100 rounded border border-slate-200 overflow-hidden cursor-pointer group relative"
                           >
                             <img
-                              src={selectedApp.proof_of_residence_url}
+                              src={resolvedDocs.por || selectedApp.proof_of_residence_url}
                               alt="Proof of Residence"
+                              className="w-full h-full object-cover group-hover:scale-105 transition duration-200"
+                            />
+                            <div className="absolute inset-0 bg-slate-900/30 opacity-0 group-hover:opacity-100 transition flex items-center justify-center text-white font-semibold text-[10px]">
+                              View Document
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="aspect-video bg-slate-50 rounded border border-dashed border-slate-200 flex items-center justify-center text-slate-400 text-[10px]">
+                            Not uploaded
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Fidelity Fund Certificate */}
+                      <div className="border border-slate-200 rounded-lg p-2.5 bg-white space-y-1.5">
+                        <div className="flex items-center justify-between">
+                          <span className="font-semibold text-[11px] text-slate-700">Fidelity Fund Cert.</span>
+                          {selectedApp.fidelity_fund_cert_url && (
+                            <button
+                              type="button"
+                              onClick={() => openPreviewDoc(`Fidelity Fund Certificate — ${selectedApp.full_name}`, selectedApp.fidelity_fund_cert_url)}
+                              className="text-blue-600 hover:text-blue-800"
+                              title="Enlarge"
+                            >
+                              <Maximize2 size={12} />
+                            </button>
+                          )}
+                        </div>
+                        {selectedApp.fidelity_fund_cert_url ? (
+                          <div
+                            onClick={() => openPreviewDoc(`Fidelity Fund Certificate — ${selectedApp.full_name}`, selectedApp.fidelity_fund_cert_url)}
+                            className="aspect-video bg-slate-100 rounded border border-slate-200 overflow-hidden cursor-pointer group relative"
+                          >
+                            <img
+                              src={resolvedDocs.ffc || selectedApp.fidelity_fund_cert_url}
+                              alt="Fidelity Fund Certificate"
                               className="w-full h-full object-cover group-hover:scale-105 transition duration-200"
                             />
                             <div className="absolute inset-0 bg-slate-900/30 opacity-0 group-hover:opacity-100 transition flex items-center justify-center text-white font-semibold text-[10px]">
@@ -1064,11 +1101,20 @@ export default function AgentApplicationsPage() {
             </div>
 
             <div className="bg-slate-100 rounded-xl overflow-hidden max-h-[70vh] flex items-center justify-center border border-slate-200">
-              <img
-                src={previewDoc.url}
-                alt="FICA Document Preview"
-                className="max-h-[70vh] w-auto object-contain"
-              />
+              {/\.pdf($|\?|#)/i.test(previewDoc.url || '') ? (
+                <iframe
+                  src={previewDoc.url}
+                  title="FICA Document Preview"
+                  className="w-full"
+                  style={{ height: '70vh', border: 'none' }}
+                />
+              ) : (
+                <img
+                  src={previewDoc.url}
+                  alt="FICA Document Preview"
+                  className="max-h-[70vh] w-auto object-contain"
+                />
+              )}
             </div>
           </div>
         </div>

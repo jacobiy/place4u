@@ -1,26 +1,14 @@
 import React, { useEffect, useState } from 'react'
 import {
-  FileCheck2,
-  Users,
-  Building2,
-  CheckCircle2,
-  Clock,
-  MapPin,
-  RefreshCw
-} from 'lucide-react'
-import {
   ResponsiveContainer,
   BarChart,
   Bar,
   XAxis,
   YAxis,
   Tooltip,
-  CartesianGrid,
-  PieChart,
-  Pie,
-  Cell
+  CartesianGrid
 } from 'recharts'
-import { getAdminDashboardData, formatCurrency } from './db/queries'
+import { getAdminDashboardData } from './db/queries'
 
 export default function AnalyticsPage() {
   const [data, setData] = useState(null)

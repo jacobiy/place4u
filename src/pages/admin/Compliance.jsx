@@ -15,62 +15,9 @@ import {
 
 export default function CompliancePage() {
   const [toast, setToast] = useState(null)
-  const [agents, setAgents] = useState([
-    {
-      id: 'AGT-001',
-      name: 'Thabo Ndlovu',
-      agency: 'Mokopane Urban Realty',
-      ffcNumber: 'FFC-2026-99412',
-      status: 'Verified',
-      expiry: '31 Dec 2026',
-      notes: 'FFC certified via PPRA database'
-    },
-    {
-      id: 'AGT-002',
-      name: 'Sarah Van Der Merwe',
-      agency: 'Pretoria Metro Properties',
-      ffcNumber: 'FFC-2026-88123',
-      status: 'Verified',
-      expiry: '31 Dec 2026',
-      notes: 'Identity & Fidelity Fund validated'
-    },
-    {
-      id: 'AGT-003',
-      name: 'Kagiso Mokoena',
-      agency: 'Independent Property Partner',
-      ffcNumber: 'FFC-PENDING-440',
-      status: 'Pending Verification',
-      expiry: 'Awaiting Document',
-      notes: 'Requires uploaded certified FFC copy'
-    }
-  ])
+  const [agents, setAgents] = useState([])
 
-  const [dsarRequests, setDsarRequests] = useState([
-    {
-      id: 'DSAR-882',
-      user: 'sipho.m@gmail.com',
-      type: 'Data Export (Section 23)',
-      date: '10 Oct 2026',
-      status: 'Completed',
-      channel: 'Self-Service Download'
-    },
-    {
-      id: 'DSAR-881',
-      user: 'lerato.k@outlook.com',
-      type: 'Consent Recording',
-      date: '09 Oct 2026',
-      status: 'Audited',
-      channel: 'Signup Registration'
-    },
-    {
-      id: 'DSAR-880',
-      user: 'devon.smith@gmail.com',
-      type: 'Data Erasure (Section 24)',
-      date: '08 Oct 2026',
-      status: 'Under Review',
-      channel: 'Tenant Settings'
-    }
-  ])
+  const [dsarRequests, setDsarRequests] = useState([])
 
   const toggleAgentVerification = (agentId) => {
     setAgents(prev =>

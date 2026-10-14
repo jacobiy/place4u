@@ -64,7 +64,7 @@
 .dossier-status-badge.pending {
   background: rgba(59, 130, 246, 0.1);
   border: 1px solid rgba(59, 130, 246, 0.25);
-  color: #60a5fa;
+  color: #7da2ff;
 }
 
 /* Two-Column Structured Workspace */
@@ -153,7 +153,7 @@
 .checklist-step-indicator.active {
   background: rgba(59, 130, 246, 0.15);
   border-color: rgba(59, 130, 246, 0.4);
-  color: #60a5fa;
+  color: #7da2ff;
 }
 
 .checklist-step-indicator.done {
@@ -298,7 +298,7 @@
 .entitlement-regulatory-box {
   padding: 0.9rem 1rem;
   background: rgba(15, 23, 42, 0.8);
-  border-left: 3px solid #3b82f6;
+  border-left: 3px solid #4f7ef8;
   border-radius: 0 6px 6px 0;
   font-size: 0.74rem;
   color: #94a3b8;
@@ -335,7 +335,7 @@
   height: 32px;
   border-radius: 6px;
   background: rgba(59, 130, 246, 0.2);
-  color: #60a5fa;
+  color: #7da2ff;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -381,69 +381,3 @@
   font-weight: 500;
 }
 
-/* Developer Mode Toolbar (Quiet & Subdued) */
-.dev-sim-toolbar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  flex-wrap: wrap;
-  gap: 1rem;
-  padding: 0.75rem 1.25rem;
-  background: rgba(17, 24, 39, 0.5);
-  border: 1px dashed rgba(255, 255, 255, 0.12);
-  border-radius: 8px;
-  font-size: 0.75rem;
-  color: #94a3b8;
-}
-
-.dev-sim-label {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.dev-sim-label span.mono-badge {
-  font-family: monospace;
-  font-size: 0.68rem;
-  background: rgba(255, 255, 255, 0.08);
-  padding: 1px 6px;
-  border-radius: 3px;
-  color: #cbd5e1;
-}
-
-.dev-sim-actions {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.dev-btn {
-  font-size: 0.74rem;
-  font-weight: 500;
-  padding: 0.35rem 0.75rem;
-  border-radius: 4px;
-  border: 1px solid transparent;
-  cursor: pointer;
-  transition: all 0.15s ease;
-}
-
-.dev-btn.approve {
-  background: rgba(16, 185, 129, 0.15);
-  border-color: rgba(16, 185, 129, 0.35);
-  color: #34d399;
-}
-
-.dev-btn.approve:hover {
-  background: rgba(16, 185, 129, 0.25);
-}
-
-.dev-btn.reset {
-  background: rgba(255, 255, 255, 0.04);
-  border-color: rgba(255, 255, 255, 0.08);
-  color: #94a3b8;
-}
-
-.dev-btn.reset:hover {
-  background: rgba(255, 255, 255, 0.08);
-  color: #f1f5f9;
-}

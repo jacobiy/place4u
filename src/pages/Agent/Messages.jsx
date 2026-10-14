@@ -72,56 +72,10 @@ const AGENT_QUICK_ACTIONS = [
 
 const EMOJIS = ["👍", "🔑", "🏠", "📄", "🤝", "⭐", "📅", "✅", "🎉", "💼"];
 
-const FALLBACK_AGENT_CONTACTS = [
-  {
-    id: "demo-tenant-1",
-    full_name: "Lerato Khumalo",
-    email: "lerato.khumalo@place4u.co.za",
-    user_type: "tenant",
-    phone: "+27 83 234 5678",
-    unit: "Prospective Tenant • Sandton",
-    lastMessage: "I would like to arrange a viewing this weekend.",
-    lastTime: "11:02 AM",
-    unread: 1
-  },
-  {
-    id: "demo-landlord-1",
-    full_name: "Arthur Sterling",
-    email: "arthur.sterling@place4u.co.za",
-    user_type: "landlord",
-    phone: "+27 82 998 1122",
-    unit: "Property Owner • 4 Listings",
-    lastMessage: "Please proceed with applicant background vetting.",
-    lastTime: "Yesterday",
-    unread: 0
-  },
-  {
-    id: "demo-tenant-2",
-    full_name: "Donald Masine",
-    email: "donaldmasine07@gmail.com",
-    user_type: "tenant",
-    phone: "+27 79 123 4567",
-    unit: "Applicant • Rosebank",
-    lastMessage: "Attached my latest 3 months payslips.",
-    lastTime: "Yesterday",
-    unread: 0
-  },
-  {
-    id: "demo-admin-1",
-    full_name: "Place4U Agency Compliance",
-    email: "compliance@place4u.co.za",
-    user_type: "admin",
-    phone: "+27 11 000 4444",
-    unit: "Super Admin",
-    lastMessage: "Agent accreditation certificate confirmed.",
-    lastTime: "Monday",
-    unread: 0
-  }
-];
 
 export const Messages = ({ agentProfile }) => {
   const { user } = useAuth();
-  const currentUserId = user?.id || "agent-demo";
+  const currentUserId = user?.id || null;
 
   const [contacts, setContacts] = useState([]);
   const [contactQuery, setContactQuery] = useState("");
@@ -148,29 +102,23 @@ export const Messages = ({ agentProfile }) => {
         const res = await AgentQueries.listChatContacts(100);
         if (cancelled) return;
         if (res.success && Array.isArray(res.data) && res.data.length > 0) {
-          const formatted = res.data.map((item, idx) => ({
+          const formatted = res.data.map((item) => ({
             ...item,
             unit: item.unit || (item.user_type === "landlord" ? "Property Owner" : item.user_type === "admin" ? "Platform Admin" : "Prospective Resident"),
-            lastMessage: item.last_message || (idx === 0 ? "Inquiring about viewing arrangements." : "Active conversation thread."),
-            lastTime: "Active",
-            unread: idx === 0 ? 1 : 0
+            lastMessage: item.last_message || "",
+            lastTime: item.last_time || "",
+            unread: item.unread || 0
           }));
           setContacts(formatted);
           if (!selectedContact && window.innerWidth >= 768) {
             setSelectedContact(formatted[0]);
           }
         } else {
-          setContacts(FALLBACK_AGENT_CONTACTS);
-          if (!selectedContact && window.innerWidth >= 768) {
-            setSelectedContact(FALLBACK_AGENT_CONTACTS[0]);
-          }
+          setContacts([]);
         }
       } catch {
         if (!cancelled) {
-          setContacts(FALLBACK_AGENT_CONTACTS);
-          if (!selectedContact && window.innerWidth >= 768) {
-            setSelectedContact(FALLBACK_AGENT_CONTACTS[0]);
-          }
+          setContacts([]);
         }
       }
       setIsLoading(false);
@@ -202,31 +150,8 @@ export const Messages = ({ agentProfile }) => {
         if (res.success && Array.isArray(res.data) && res.data.length > 0) {
           setMessages(res.data);
         } else {
-          // Provide rich seed thread
-          const seedThread = [
-            {
-              id: `seed-1-${selectedContact.id}`,
-              sender_id: selectedContact.id,
-              receiver_id: currentUserId,
-              content: `Hello! I saw the property listing on Place4U and would love to schedule a private walkthrough.`,
-              created_at: new Date(Date.now() - 3600000 * 2).toISOString()
-            },
-            {
-              id: `seed-2-${selectedContact.id}`,
-              sender_id: currentUserId,
-              receiver_id: selectedContact.id,
-              content: `Hi ${selectedContact.full_name || 'there'}! I'd be happy to arrange that. Are you available this Saturday morning at 11:00 AM?`,
-              created_at: new Date(Date.now() - 3600000).toISOString()
-            },
-            {
-              id: `seed-3-${selectedContact.id}`,
-              sender_id: selectedContact.id,
-              receiver_id: currentUserId,
-              content: `Saturday at 11:00 AM works perfectly for me. What documents should I bring along?`,
-              created_at: new Date(Date.now() - 1800000).toISOString()
-            }
-          ];
-          setMessages(seedThread);
+          // No stored messages yet: show an empty thread.
+          setMessages([]);
         }
         requestAnimationFrame(() => {
           if (listRef.current) {
@@ -333,24 +258,9 @@ export const Messages = ({ agentProfile }) => {
           prev.map((m) => (m.id === optimistic.id ? { ...res.data, status: "sent" } : m))
         );
       } else {
-        // Fallback simulation reply for test mode
-        setTimeout(() => {
-          setMessages((prev) => [
-            ...prev,
-            {
-              id: `reply-${Date.now()}`,
-              sender_id: selectedContact.id,
-              receiver_id: currentUserId,
-              content: `Thank you for confirming! Looking forward to meeting you at the property.`,
-              created_at: new Date().toISOString()
-            }
-          ]);
-          requestAnimationFrame(() => {
-            if (listRef.current) {
-              listRef.current.scrollTop = listRef.current.scrollHeight;
-            }
-          });
-        }, 1200);
+        // Send failed: drop the optimistic bubble and surface an error.
+        setMessages((prev) => prev.filter((m) => m.id !== optimistic.id));
+        setError("Your message could not be sent. Please try again.");
       }
     } catch {
       // Keep optimistic message

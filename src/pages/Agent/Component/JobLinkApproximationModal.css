@@ -133,6 +133,29 @@
   pointer-events: none;
 }
 
+/* Which property the tenant actually applied for */
+.job-link-applied-note {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  padding: 0.6rem 1.75rem;
+  background: rgba(16, 185, 129, 0.08);
+  border-bottom: 1px solid rgba(16, 185, 129, 0.22);
+  color: #a7f3d0;
+  font-size: 0.78rem;
+  line-height: 1.5;
+}
+
+.job-link-applied-note svg { flex-shrink: 0; margin-top: 2px; color: #34d399; }
+.job-link-applied-note strong { color: #ffffff; font-weight: 700; }
+
+.job-link-applied-note.is-unresolved {
+  background: rgba(245, 158, 11, 0.1);
+  border-bottom-color: rgba(245, 158, 11, 0.26);
+  color: #fcd34d;
+}
+.job-link-applied-note.is-unresolved svg { color: #fbbf24; }
+
 /* Body */
 .job-link-modal-body {
   padding: 1.5rem 1.75rem;

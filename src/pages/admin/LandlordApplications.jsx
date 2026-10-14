@@ -2,7 +2,6 @@ import React, { useEffect, useMemo, useState } from 'react'
 import {
   getAdminLandlordApplications,
   updateLandlordApplicationStatus,
-  createSimulatedLandlordApplication,
   formatCurrency,
   formatDate,
   openGmail
@@ -27,12 +26,8 @@ import {
   ExternalLink,
   MessageCircle,
   RefreshCw,
-  Plus,
   AlertTriangle,
-  Award,
-  ChevronRight,
   Maximize2,
-  Home,
   FileCheck2,
   TrendingUp
 } from 'lucide-react'
@@ -192,20 +187,6 @@ export default function LandlordApplicationsPage() {
     }
   }
 
-  // Simulate new inbound landlord
-  const handleSimulateInbound = async () => {
-    setIsSubmitting(true)
-    try {
-      const created = await createSimulatedLandlordApplication()
-      setApplications([created, ...applications])
-      showToast(`Simulated inbound landlord application created for "${created.full_name}".`)
-    } catch (err) {
-      showToast(`Simulation failed: ${err.message}`)
-    } finally {
-      setIsSubmitting(false)
-    }
-  }
-
   // Filtered applications
   const filtered = useMemo(() => {
     return applications.filter((app) => {
@@ -293,16 +274,6 @@ export default function LandlordApplicationsPage() {
         </div>
 
         <div className="flex items-center gap-2">
-          <button
-            onClick={handleSimulateInbound}
-            disabled={isSubmitting}
-            className="flex items-center gap-1.5 px-3.5 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 rounded-lg text-xs font-semibold transition cursor-pointer"
-            title="Create a sample landlord applicant to test verification review"
-          >
-            <Plus size={14} />
-            Simulate Inbound Application
-          </button>
-
           <button
             onClick={loadApplications}
             disabled={loading}
@@ -478,7 +449,7 @@ export default function LandlordApplicationsPage() {
           <div className="py-16 text-center text-slate-400 text-xs space-y-2">
             <Building2 size={32} className="mx-auto text-slate-300" />
             <p className="font-semibold text-slate-700">No landlord applications match your filters.</p>
-            <p className="text-[11px] text-slate-400">Try adjusting your search criteria or click "Simulate Inbound Application".</p>
+            <p className="text-[11px] text-slate-400">Try adjusting your search or status filters.</p>
           </div>
         ) : (
           <div className="overflow-x-auto">

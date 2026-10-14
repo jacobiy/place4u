@@ -17,6 +17,18 @@ const metaForPath = (pathname) => {
       subtitle: 'Process tenant search requests, delegate to licensed agents, and manage placements'
     }
   }
+  if (pathname.startsWith('/admin/property-submissions')) {
+    return {
+      title: 'Property Submission Review',
+      subtitle: 'Inspect landlord-submitted listings and their ownership documents, then approve to publish or reject with feedback'
+    }
+  }
+  if (pathname.startsWith('/admin/pipeline')) {
+    return {
+      title: 'Match Acceptance Pipeline',
+      subtitle: 'Oversee accepted matches from tenant opt-in through landlord review, and sign off to unlock session scheduling'
+    }
+  }
   if (pathname.startsWith('/admin/properties')) {
     return {
       title: 'Property Listings Registry',

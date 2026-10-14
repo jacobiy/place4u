@@ -2,37 +2,28 @@ import React, { useEffect, useMemo, useState } from 'react'
 import {
   Wallet,
   ArrowUpRight,
-  ArrowDownLeft,
   RefreshCw,
   Search,
-  Filter,
   CheckCircle2,
   Clock,
-  AlertCircle,
   Mail,
   Download,
-  DollarSign,
-  User,
-  Building2,
-  ShieldCheck,
-  CreditCard,
   FileCheck2,
   Send,
   X,
-  ExternalLink,
-  ChevronRight,
   Undo2,
   Percent,
-  Plus,
-  Users
+  Plus
 } from 'lucide-react'
 import {
   getAdminApplications,
   getAgentsList,
   formatCurrency,
   formatDate,
-  openGmail
+  openGmail,
+  approveApplicationCompletion
 } from './db/queries'
+import { broadcastApplicationUpdate } from '../../services/applicationSync'
 
 import {
   APPLICATION_FEE,
@@ -208,12 +199,14 @@ export default function PaymentsPage() {
       const feePaid = app.fee_paid === true
       const refunded = app.fee_refunded === true
       const earns = feePaid && !refunded && app.status === 'completed'
+      const isCompletionRequested = Boolean(app.completion_requested_at && app.status !== 'completed')
 
       let status = 'Pending Placement'
       if (refunded) status = 'Refunded'
       else if (!feePaid) status = 'Awaiting Tenant Payment'
       else if (releasedIds.has(app.id)) status = 'Released'
       else if (earns) status = 'Approved for Release'
+      else if (isCompletionRequested) status = 'Completion Review Requested'
 
       return {
         id: app.id,
@@ -229,6 +222,8 @@ export default function PaymentsPage() {
         agentShareAmount: earns ? AGENT_SHARE_AMOUNT : 0,
         status,
         appStatus: app.status,
+        completionRequestedAt: app.completion_requested_at,
+        completionRequestNote: app.completion_request_note,
         submittedAt: app.submitted_at,
         payoutRecord: null
       }
@@ -375,6 +370,30 @@ export default function PaymentsPage() {
       )
     } catch (err) {
       showToast(err?.message || 'Refund failed.')
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  // Handler: Admin approves agent completion request, unlocking agent 50% split (R50.00)
+  const handleApproveCompletion = async (appId) => {
+    if (busy) return
+    setBusy(true)
+    try {
+      await approveApplicationCompletion(appId)
+      const nowIso = new Date().toISOString()
+      setApplications((prev) =>
+        prev.map((app) =>
+          app.id === appId
+            ? { ...app, status: 'completed', completion_approved_at: nowIso }
+            : app
+        )
+      )
+      broadcastApplicationUpdate(appId, 'completed', { completion_approved_at: nowIso })
+      showToast('Application marked Completed! Agent 50% commission (R50.00) is now unlocked.')
+      await fetchData(true)
+    } catch (err) {
+      showToast(`Failed to approve completion: ${err.message}`)
     } finally {
       setBusy(false)
     }
@@ -769,9 +788,23 @@ export default function PaymentsPage() {
                               <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-semibold border ${
                                 isPaid
                                   ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                                  : 'bg-amber-50 text-amber-700 border-amber-200'
+                                  : item.status === 'Approved for Release'
+                                  ? 'bg-blue-50 text-blue-700 border-blue-200'
+                                  : item.status === 'Completion Review Requested'
+                                  ? 'bg-amber-100 text-amber-900 border-amber-300'
+                                  : item.status === 'Pending Placement'
+                                  ? 'bg-amber-50 text-amber-700 border-amber-200'
+                                  : 'bg-slate-100 text-slate-700 border-slate-200'
                               }`}>
-                                {isPaid ? '✓ Disbursed / Paid' : 'Pending Disbursal'}
+                                {isPaid
+                                  ? '✓ Disbursed / Paid'
+                                  : item.status === 'Approved for Release'
+                                  ? 'Ready for Disbursal'
+                                  : item.status === 'Completion Review Requested'
+                                  ? '🕒 Completion Requested'
+                                  : item.status === 'Pending Placement'
+                                  ? 'Active File (In Progress)'
+                                  : item.status}
                               </span>
                             </td>
 
@@ -792,6 +825,26 @@ export default function PaymentsPage() {
                                     <Mail size={12} className="text-red-500" />
                                     Remittance
                                   </button>
+                                ) : item.status === 'Completion Review Requested' ? (
+                                  <div className="flex flex-col items-end gap-1">
+                                    {item.completionRequestNote && (
+                                      <span
+                                        className="text-[10px] text-slate-500 italic max-w-[150px] truncate"
+                                        title={item.completionRequestNote}
+                                      >
+                                        &ldquo;{item.completionRequestNote}&rdquo;
+                                      </span>
+                                    )}
+                                    <button
+                                      type="button"
+                                      disabled={busy}
+                                      onClick={() => handleApproveCompletion(item.id)}
+                                      className="px-2.5 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-[11px] shadow-xs transition-colors cursor-pointer inline-flex items-center gap-1 disabled:opacity-50"
+                                    >
+                                      <CheckCircle2 size={12} />
+                                      Approve Completed
+                                    </button>
+                                  </div>
                                 ) : (
                                   <span className="text-[10px] text-slate-400 italic">
                                     {item.status === 'Refunded'

@@ -24,9 +24,88 @@ import {
   Lock,
   Building2
 } from 'lucide-react';
-import { DEMO_ACTIVE_LEASE } from '../Data/constants';
 import { AlertToast } from '../../../component/AlertModal';
 import DirectContactModal from '../../../component/DirectContactModal';
+import { isActiveApplication, normalizeApplicationStatus, APPLICATION_STATUS } from '../../../services/applicationStatus';
+import {
+  resolveApplicationProperty,
+  describeProperty,
+  describePropertyLocation,
+  isGenericPropertyTitle
+} from '../../../utils/propertyLabel';
+import { PIPELINE_STAGES, stateLabel, stageIndex, isDeclined } from '../../../services/matchWorkflowService';
+
+/* One-line explanation per pipeline stage, shown under each step title in the
+   "Live progress" tracker on the tenant dashboard. */
+const PIPELINE_STAGE_NOTES = {
+  shipped: 'Your agent has shipped a property shortlist — accept the match to proceed.',
+  tenant_accepted: 'You accepted the match; your agent will hand it to the landlord.',
+  agent_forwarded: 'Your profile and application have been forwarded to the landlord.',
+  landlord_accepted: 'The landlord accepted your application; Place4U sign-off is next.',
+  admin_approved: 'Place4U approved the meetup — your agent will schedule a viewing.',
+  scheduled: 'A viewing / meetup is booked. Confirm your attendance to keep it moving.',
+  schedule_accepted: 'Meetup confirmed — the landlord is preparing your lease agreement.',
+  lease_uploaded: 'Your lease is ready. Review it and upload your signed copy.',
+  lease_signed: 'Your signed lease is executed and the tenancy is active.',
+  move_in_confirmed: 'Move-in and key handover are confirmed.'
+};
+
+/* Map of timestamp column → pipeline stage, used to reconstruct how far a match
+   got when it ended in an off-ramp (declined states are not in STAGE_ORDER). */
+const PIPELINE_TIMESTAMP_STAGES = [
+  ['shippedAt', 'shipped'],
+  ['tenantAcceptedAt', 'tenant_accepted'],
+  ['agentForwardedAt', 'agent_forwarded'],
+  ['landlordAcceptedAt', 'landlord_accepted'],
+  ['adminApprovedAt', 'admin_approved'],
+  ['sessionScheduledAt', 'scheduled'],
+  ['tenantScheduleAcceptedAt', 'schedule_accepted'],
+  ['leaseUploadedAt', 'lease_uploaded'],
+  ['leaseSignedAt', 'lease_signed'],
+  ['moveInConfirmedAt', 'move_in_confirmed']
+];
+
+/** How far along the pipeline a match has reached (-1 = not shipped yet). */
+function pipelineProgressIndex(match) {
+  if (!match) return -1;
+  const direct = stageIndex(match.state);
+  if (direct >= 0) return direct;
+  return PIPELINE_TIMESTAMP_STAGES.reduce(
+    (best, [field, key]) => (match[field] ? Math.max(best, stageIndex(key)) : best),
+    -1
+  );
+}
+
+/** Turn a pipeline match into the step objects the tracker renders. */
+function buildPipelineSteps(match) {
+  if (!match) return null;
+  const declined = isDeclined(match.state);
+  const current = pipelineProgressIndex(match);
+
+  const steps = PIPELINE_STAGES.map((stage, i) => {
+    const done = declined ? i <= current : current > i;
+    const isCurrent = !declined && current === i;
+    return {
+      title: stage.label,
+      note: PIPELINE_STAGE_NOTES[stage.key] || '',
+      tag: done ? 'Complete' : isCurrent ? stateLabel(match.state) : 'Upcoming',
+      state: done ? 'done' : isCurrent ? 'active' : 'todo'
+    };
+  });
+
+  if (declined) {
+    steps.push({
+      title: stateLabel(match.state),
+      note: match.declineReason
+        ? `Reason: ${match.declineReason}`
+        : 'This match was closed. Your agent will line up alternatives.',
+      tag: 'Closed',
+      state: 'declined'
+    });
+  }
+
+  return steps;
+}
 
 /* ------------------------------------------------------------------ */
 /*  Palette: white surfaces, light-blue washes, one confident blue.    */
@@ -157,7 +236,9 @@ const ReceiptVoucherModal = ({ receipt, onClose }) => {
     ['Property', receipt.property_title || receipt.propertyTitle || 'Place4U Rental Unit'],
     [
       'Payment method',
-      `${receipt.card_brand || receipt.cardBrand || 'Card'} •••• ${receipt.card_last4 || receipt.cardLast4 || '4242'}`
+      `${receipt.card_brand || receipt.cardBrand || 'Card'}${
+        receipt.card_last4 || receipt.cardLast4 ? ` •••• ${receipt.card_last4 || receipt.cardLast4}` : ''
+      }`
     ],
     ['Date', formattedDate]
   ];
@@ -262,6 +343,7 @@ export default function DashboardView({
   applications = [],
   payments = [],
   savedPropertyIds = [],
+  pipelineMatches = [],
   onToggleSaveProperty,
   onPropertyClick,
   onApplyClick,
@@ -285,6 +367,14 @@ export default function DashboardView({
     defaultSubject: '',
     defaultMessage: ''
   });
+
+  /* Browse + dashboard are now a single view: the "Browse properties" action
+     simply scrolls down to the verified listings section below. */
+  const listingsRef = useRef(null);
+  const scrollToListings = () => {
+    const el = listingsRef.current;
+    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
 
   const displayName =
     profile?.full_name ||
@@ -335,41 +425,165 @@ export default function DashboardView({
   }, [properties, searchQuery, selectedType, selectedBedrooms, selectedPriceTier, showSavedOnly, savedPropertyIds]);
 
   const activeApplications = useMemo(
-    () => applications.filter((app) => app.status !== 'expired' && app.status !== 'cancelled'),
+    () => applications.filter(isActiveApplication),
     [applications]
   );
+
+  /* Distinct locations among the properties currently shown, so the listings
+     heading reflects where the homes actually are rather than a fixed string. */
+  const listingLocations = useMemo(() => {
+    const seen = new Set();
+    filteredProperties.forEach((p) => {
+      const place = (p.city || p.location || '').trim();
+      if (place) seen.add(place);
+    });
+    return Array.from(seen);
+  }, [filteredProperties]);
+
+  const locationLabel = useMemo(() => {
+    if (listingLocations.length === 0) return 'South Africa';
+    if (listingLocations.length === 1) return listingLocations[0];
+    return `${listingLocations.slice(0, -1).join(', ')} & ${listingLocations[listingLocations.length - 1]}`;
+  }, [listingLocations]);
 
   const latestApplication = useMemo(() => {
     if (!applications || applications.length === 0) return null;
     return applications[0];
   }, [applications]);
 
+  /* Which property the latest application is actually for. Resolved from the
+     property_id link, then the stored title snapshot. A general application
+     has no linked unit, so we say that rather than inventing a property name. */
+  const latestTarget = useMemo(() => {
+    if (!latestApplication) {
+      return { kind: 'none', property: null, label: null, location: null };
+    }
+    const resolution = resolveApplicationProperty(latestApplication, properties);
+    const label =
+      resolution.label ||
+      (!isGenericPropertyTitle(latestApplication.property_title)
+        ? latestApplication.property_title
+        : null);
+    const location =
+      describePropertyLocation(resolution.property) ||
+      latestApplication.preferred_areas?.join(', ') ||
+      null;
+
+    const kind = resolution.property
+      ? 'property'
+      : resolution.isLinked || label
+        ? 'linked-unresolved'
+        : 'general';
+
+    return { kind, property: resolution.property, label, location };
+  }, [latestApplication, properties]);
+
+  /* Active tenancy derived from a real matched application + property. There is
+     no demo lease any more: when nothing is matched, the concierge renders an
+     empty state. */
+  const activeLease = useMemo(() => {
+    const app = applications.find((a) => a.matched_property_id);
+    if (!app) return null;
+    const property =
+      properties.find((p) => String(p.id) === String(app.matched_property_id)) || null;
+    return {
+      status: 'Active lease',
+      property_title:
+        describeProperty(property) ||
+        (!isGenericPropertyTitle(app.property_title) ? app.property_title : null) ||
+        'Matched property',
+      address:
+        describePropertyLocation(property) ||
+        [property?.address, property?.city || property?.location].filter(Boolean).join(', ') ||
+        '',
+      monthly_rent: property?.price ?? app.max_budget ?? null,
+      next_due_date: null,
+      landlord_name: property?.landlord?.full_name || property?.agent?.name || null,
+      landlord_email: property?.landlord?.email || property?.agent?.email || null,
+      landlord_phone: property?.landlord?.phone || property?.agent?.phone || null
+    };
+  }, [applications, properties]);
+
+  /* The acceptance-pipeline match that belongs to the tenant's latest
+     application. Falls back to their most recently updated match so the tracker
+     still shows real progress when the latest application isn't the matched one. */
+  const pipelineMatch = useMemo(() => {
+    if (!Array.isArray(pipelineMatches) || pipelineMatches.length === 0) return null;
+    const appIds = new Set(
+      [latestApplication?.id, latestApplication?.application_id, latestApplication?.matched_application_id]
+        .filter(Boolean)
+        .map(String)
+    );
+    const forLatest = appIds.size
+      ? pipelineMatches.find((m) => appIds.has(String(m.applicationId)))
+      : null;
+    return forLatest || pipelineMatches[0] || null;
+  }, [pipelineMatches, latestApplication]);
+
+  /* The match surfaced in the top banner: a freshly shipped match awaiting the
+     tenant's decision, otherwise the most recently updated one. Null when the
+     tenant has nothing in the pipeline, so the banner is hidden entirely. */
+  const newestMatch = useMemo(() => {
+    if (!Array.isArray(pipelineMatches) || pipelineMatches.length === 0) return null;
+    return pipelineMatches.find((m) => m.state === 'shipped') || pipelineMatches[0];
+  }, [pipelineMatches]);
+
+  const matchBanner = useMemo(() => {
+    if (!newestMatch) return null;
+    const property = newestMatch.property || null;
+    const snapshotTitle =
+      newestMatch.application && !isGenericPropertyTitle(newestMatch.application.property_title)
+        ? newestMatch.application.property_title
+        : null;
+    return {
+      shipped: newestMatch.state === 'shipped',
+      stateLabel: stateLabel(newestMatch.state),
+      propertyLabel: describeProperty(property) || snapshotTitle || 'Matched property',
+      location: describePropertyLocation(property),
+      agentName: newestMatch.agent?.full_name || null
+    };
+  }, [newestMatch]);
+
   const totalVerifiedDocs = useMemo(() => {
     let count = 0;
     applications.forEach((app) => {
       if (Array.isArray(app.documents)) count += app.documents.length;
     });
-    return Math.max(count, applications.length > 0 ? 2 : 0);
+    return count;
   }, [applications]);
+
+  /* Whether the tenant has any student-accommodation application — drives which
+     document checklist the "Documents in vault" KPI advertises. */
+  const hasStudentApplication = useMemo(
+    () =>
+      applications.some(
+        (a) => a.accommodation_category === 'student_room' || a.category === 'student_room'
+      ),
+    [applications]
+  );
 
   const latestPayment = useMemo(() => {
     if (payments && payments.length > 0) return payments[0];
     const paidApp = applications.find((a) => a.fee_paid && a.fee_receipt);
     if (paidApp) {
+      const paidProperty = properties.find((p) => String(p.id) === String(paidApp.property_id));
       return {
         receipt_number: paidApp.fee_receipt,
         amount: paidApp.fee_amount || 100,
         currency: paidApp.fee_currency || 'ZAR',
         payer_name: displayName,
-        property_title: paidApp.property_title || 'Rental Application Screening',
+        property_title:
+          describeProperty(paidProperty) ||
+          (!isGenericPropertyTitle(paidApp.property_title) ? paidApp.property_title : null) ||
+          'Rental Application Screening',
         paidAt: paidApp.submitted_at || new Date().toISOString(),
         card_brand: paidApp.payment_method?.includes('PayPal') ? 'PayPal Card' : 'Card',
-        card_last4: '4242',
+        card_last4: null,
         status: 'completed'
       };
     }
     return null;
-  }, [payments, applications, displayName]);
+  }, [payments, applications, properties, displayName]);
 
   const hasActiveFilters =
     searchQuery || selectedType !== 'All' || selectedBedrooms !== 'All' || selectedPriceTier !== 'All' || showSavedOnly;
@@ -425,28 +639,53 @@ export default function DashboardView({
     }
   };
 
-  const steps = [
-    { title: 'Application fee settled', note: 'Cleared via card payment. Receipt issued.', tag: 'Complete', state: 'done' },
+  const feeSettled = Boolean(latestApplication?.fee_paid || latestApplication?.fee_receipt || latestPayment);
+
+  /* Real document/state facts for the fallback tracker. Nothing is assumed:
+     "Documents attached" only reads as complete when files actually exist. */
+  const appDocs = Array.isArray(latestApplication?.documents) ? latestApplication.documents : [];
+  const docsAttached = appDocs.length > 0;
+  const isStudentApp = latestApplication?.accommodation_category === 'student_room';
+  const appStatus = normalizeApplicationStatus(latestApplication?.status);
+  const reviewStarted =
+    appStatus === APPLICATION_STATUS.UNDER_REVIEW ||
+    appStatus === APPLICATION_STATUS.MATCHES_FOUND ||
+    appStatus === APPLICATION_STATUS.COMPLETED;
+
+  const lifecycleSteps = [
+    {
+      title: 'Application fee settled',
+      note: feeSettled
+        ? 'Cleared via card payment. Receipt issued.'
+        : 'Awaiting your R100 vetting fee to begin processing.',
+      tag: feeSettled ? 'Complete' : 'Action needed',
+      state: feeSettled ? 'done' : 'active'
+    },
     {
       title: 'Documents attached',
-      note:
-        latestApplication?.accommodation_category === 'student_room'
+      note: docsAttached
+        ? isStudentApp
           ? 'University acceptance letter and bursary confirmation recorded.'
-          : 'Bank statements and ID documentation on file.',
-      tag:
-        Array.isArray(latestApplication?.documents) && latestApplication.documents.length > 0
-          ? `${latestApplication.documents.length} files`
-          : 'Verified',
-      state: 'done'
+          : 'Bank statements and ID documentation on file.'
+        : isStudentApp
+          ? 'Upload your university acceptance letter, bursary/NSFAS proof and ID.'
+          : 'Upload 3 months bank statements, your ID and latest payslip.',
+      tag: docsAttached ? `${appDocs.length} file${appDocs.length === 1 ? '' : 's'}` : 'Pending',
+      state: docsAttached ? 'done' : feeSettled ? 'active' : 'todo'
     },
     {
       title: 'Landlord & agent review',
       note: 'The property manager is reviewing your criteria and unit availability.',
-      tag: 'In review',
-      state: 'active'
+      tag: reviewStarted ? 'In review' : 'Upcoming',
+      state: reviewStarted ? 'active' : 'todo'
     },
     { title: 'Lease & keys', note: 'Digital lease dispatch upon landlord approval.', tag: 'Upcoming', state: 'todo' }
   ];
+
+  /* Once a match enters the acceptance pipeline, the tracker mirrors that real
+     pipeline (shipped → … → move-in confirmed). Until then it falls back to the
+     generic application lifecycle above. */
+  const steps = buildPipelineSteps(pipelineMatch) || lifecycleSteps;
 
   const kpis = [
     {
@@ -462,7 +701,12 @@ export default function DashboardView({
       icon: ShieldCheck,
       value: totalVerifiedDocs,
       label: 'Documents in vault',
-      note: 'Acceptance, NSFAS & ID documents',
+      note:
+        totalVerifiedDocs > 0
+          ? hasStudentApplication
+            ? 'Acceptance, NSFAS & ID documents'
+            : 'Bank statements, ID & payslips'
+          : 'No documents uploaded yet',
       onClick: go('applications')
     },
     {
@@ -470,7 +714,7 @@ export default function DashboardView({
       icon: Receipt,
       value: latestPayment ? `R ${Number(latestPayment.amount || 100).toLocaleString('en-ZA')}` : 'R 0',
       label: 'Fees settled',
-      note: latestPayment ? latestPayment.receipt_number || 'REC-P4U-VERIFIED' : 'R100 card fee per application',
+      note: latestPayment ? latestPayment.receipt_number || 'Fee settled' : 'R100 card fee per application',
       onClick: openLatestReceipt,
       mono: true
     },
@@ -494,17 +738,24 @@ export default function DashboardView({
       )}
 
       {/* ============================ HERO ============================ */}
-      <section className="relative overflow-hidden rounded-[32px] border border-sky-100 px-6 py-10 sm:px-12 sm:py-14 bg-gradient-to-br from-sky-100 via-sky-50 to-white shadow-[0_24px_60px_-28px_rgba(2,132,199,0.35)]">
+      <section className="relative overflow-hidden rounded-[32px] border border-sky-100 px-6 py-10 sm:px-12 sm:py-14 bg-white/80 backdrop-blur-md shadow-[0_24px_60px_-28px_rgba(2,132,199,0.35)]">
         <div aria-hidden className="absolute -top-32 -right-24 w-[420px] h-[420px] rounded-full bg-sky-300/30 blur-3xl" />
         <div aria-hidden className="absolute -bottom-40 left-1/3 w-[360px] h-[360px] rounded-full bg-blue-200/30 blur-3xl" />
 
         <div className="relative z-10 flex flex-col lg:flex-row lg:items-end lg:justify-between gap-10">
           <div className="max-w-2xl">
             <div className="flex items-center gap-3 mb-6">
-              <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white border border-sky-200 text-[11px] font-semibold tracking-wide text-sky-700 shadow-sm">
-                <ShieldCheck size={13} />
-                Verified resident
-              </span>
+              {profile?.is_verified ? (
+                <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-50 border border-emerald-200 text-[11px] font-semibold tracking-wide text-emerald-700 shadow-sm">
+                  <ShieldCheck size={13} />
+                  Verified resident
+                </span>
+              ) : (
+                <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white border border-sky-200 text-[11px] font-semibold tracking-wide text-sky-700 shadow-sm">
+                  <ShieldCheck size={13} />
+                  Verification pending
+                </span>
+              )}
               <span className="text-[11px] text-slate-500 tracking-wide hidden sm:inline">{todayLabel}</span>
             </div>
 
@@ -532,7 +783,7 @@ export default function DashboardView({
             </button>
             <button
               type="button"
-              onClick={go('browse')}
+              onClick={scrollToListings}
               className={`h-12 px-6 rounded-full font-semibold text-sm flex items-center gap-2 ${BTN_OUTLINE}`}
             >
               <Search size={15} className="text-sky-600" />
@@ -543,29 +794,37 @@ export default function DashboardView({
       </section>
 
       {/* ======================= AGENT MATCH ========================== */}
-      <section
-        onClick={go('matches')}
-        className="group cursor-pointer rounded-[24px] border border-sky-200 hover:border-sky-400 bg-gradient-to-r from-sky-50 to-white px-6 py-5 transition-colors duration-300 shadow-[0_12px_40px_-22px_rgba(2,132,199,0.4)] flex flex-col sm:flex-row sm:items-center justify-between gap-5"
-      >
-        <div className="flex items-center gap-5 min-w-0">
-          <div className="w-12 h-12 rounded-full bg-sky-600 flex items-center justify-center text-white shrink-0 shadow-[0_8px_20px_-8px_rgba(2,132,199,0.7)]">
-            <Sparkles size={20} />
+      {matchBanner && (
+        <section
+          onClick={go('matches')}
+          className="group cursor-pointer rounded-[24px] border border-sky-200 hover:border-sky-400 bg-gradient-to-r from-sky-50 to-white px-6 py-5 transition-colors duration-300 shadow-[0_12px_40px_-22px_rgba(2,132,199,0.4)] flex flex-col sm:flex-row sm:items-center justify-between gap-5"
+        >
+          <div className="flex items-center gap-5 min-w-0">
+            <div className="w-12 h-12 rounded-full bg-sky-600 flex items-center justify-center text-white shrink-0 shadow-[0_8px_20px_-8px_rgba(2,132,199,0.7)]">
+              <Sparkles size={20} />
+            </div>
+            <div className="min-w-0">
+              <Eyebrow className="!text-sky-600">
+                {matchBanner.shipped ? 'New agent match · Verified' : `Agent match · ${matchBanner.stateLabel}`}
+              </Eyebrow>
+              <h4 className="font-serif text-lg sm:text-xl text-slate-900 mt-1">
+                {matchBanner.shipped
+                  ? 'Your agent has matched a property to your application'
+                  : `Match progress: ${matchBanner.stateLabel}`}
+              </h4>
+              <p className="text-xs sm:text-sm text-slate-500 mt-1 truncate">
+                {[matchBanner.propertyLabel, matchBanner.location, matchBanner.agentName ? `handled by ${matchBanner.agentName}` : null]
+                  .filter(Boolean)
+                  .join(' · ')}
+              </p>
+            </div>
           </div>
-          <div className="min-w-0">
-            <Eyebrow className="!text-sky-600">New agent match · Verified</Eyebrow>
-            <h4 className="font-serif text-lg sm:text-xl text-slate-900 mt-1">
-              Your agent has matched a property to your application
-            </h4>
-            <p className="text-xs sm:text-sm text-slate-500 mt-1">
-              Campus Point Residence · Single Ensuite, pre-approved by Agent Thabo Mokoena.
-            </p>
-          </div>
-        </div>
-        <span className="self-start sm:self-auto shrink-0 inline-flex items-center gap-1.5 text-sm font-semibold text-sky-700">
-          View match
-          <ChevronRight size={16} className="transition-transform group-hover:translate-x-1" />
-        </span>
-      </section>
+          <span className="self-start sm:self-auto shrink-0 inline-flex items-center gap-1.5 text-sm font-semibold text-sky-700">
+            View match
+            <ChevronRight size={16} className="transition-transform group-hover:translate-x-1" />
+          </span>
+        </section>
+      )}
 
       {/* =========================== KPIs ============================= */}
       <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -609,27 +868,86 @@ export default function DashboardView({
                 <h3 className="font-serif text-2xl text-slate-900">Application status</h3>
               </div>
               {latestApplication && (
-                <span className="px-3 py-1.5 rounded-full text-[11px] font-semibold bg-sky-50 border border-sky-100 text-sky-700">
-                  {latestApplication.accommodation_category === 'student_room'
-                    ? 'Student accommodation'
-                    : 'Residential lease'}
-                </span>
+                <div className="flex flex-col items-end gap-2">
+                  <span className="px-3 py-1.5 rounded-full text-[11px] font-semibold bg-sky-50 border border-sky-100 text-sky-700">
+                    {latestApplication.accommodation_category === 'student_room'
+                      ? 'Student accommodation'
+                      : 'Residential lease'}
+                  </span>
+                  {pipelineMatch && (
+                    <span
+                      className={`px-3 py-1.5 rounded-full text-[11px] font-semibold border ${
+                        isDeclined(pipelineMatch.state)
+                          ? 'bg-rose-50 border-rose-200 text-rose-600'
+                          : 'bg-white border-sky-200 text-sky-700'
+                      }`}
+                    >
+                      {stateLabel(pipelineMatch.state)}
+                    </span>
+                  )}
+                </div>
               )}
             </div>
 
+            {!latestApplication ? (
+              <div className="py-10 px-6 rounded-2xl bg-sky-50/60 border border-dashed border-sky-200 text-center flex flex-col items-center">
+                <div className="w-14 h-14 rounded-full bg-white border border-sky-100 flex items-center justify-center text-sky-600 mb-4">
+                  <FileText size={24} />
+                </div>
+                <h4 className="font-serif text-xl text-slate-900">No application yet</h4>
+                <p className="text-sm text-slate-500 mt-2 max-w-sm">
+                  Start an application and this tracker will follow it from the vetting fee through to your signed
+                  lease.
+                </p>
+                <button
+                  type="button"
+                  onClick={onOpenCustomApplication}
+                  className={`mt-5 h-11 px-6 rounded-full text-sm font-bold flex items-center gap-2 ${BTN_PRIMARY}`}
+                >
+                  <Sparkles size={15} />
+                  Submit application
+                </button>
+              </div>
+            ) : (
+              <>
             <div className="p-5 rounded-2xl bg-sky-50/70 border border-sky-100 mb-9">
               <div className="flex items-start justify-between gap-4">
                 <div className="min-w-0">
-                  <Eyebrow>Latest target property</Eyebrow>
+                  <Eyebrow>{latestTarget.kind === 'general' ? 'Application scope' : 'Latest target property'}</Eyebrow>
                   <h4 className="font-serif text-xl text-slate-900 mt-1.5 truncate">
-                    {latestApplication?.property_title || 'Braamfontein Student Residence Hub'}
+                    {latestTarget.label ||
+                      (latestTarget.kind === 'linked-unresolved'
+                        ? 'Linked listing'
+                        : latestApplication
+                          ? 'General application'
+                          : 'No application yet')}
                   </h4>
                   <p className="text-xs text-slate-500 mt-1.5 flex items-center gap-1.5">
                     <MapPin size={13} className="text-sky-500 shrink-0" />
                     <span className="truncate">
-                      {latestApplication?.preferred_areas?.join(', ') || 'Metro Campus Corridor'}
+                      {latestTarget.location || 'Preferred areas not specified'}
                     </span>
                   </p>
+                  {latestTarget.kind === 'general' && latestTarget.location && (
+                    <p className="text-[11px] text-slate-400 mt-1.5 leading-relaxed">
+                      No specific unit chosen — your agent will shortlist matching listings from these areas.
+                    </p>
+                  )}
+                  {latestTarget.kind === 'linked-unresolved' && (
+                    <p className="text-[11px] text-slate-400 mt-1.5 leading-relaxed">
+                      This listing is no longer in your feed, but it is still attached to your application.
+                    </p>
+                  )}
+                  {latestTarget.property && onPropertyClick && (
+                    <button
+                      type="button"
+                      onClick={() => onPropertyClick(latestTarget.property)}
+                      className="mt-2 inline-flex items-center gap-1.5 text-[11px] font-semibold text-sky-700 hover:text-sky-900 underline underline-offset-4 cursor-pointer"
+                    >
+                      <Building2 size={12} />
+                      View property
+                    </button>
+                  )}
                 </div>
                 {latestApplication?.fee_receipt && (
                   <button
@@ -639,7 +957,7 @@ export default function DashboardView({
                         receipt_number: latestApplication.fee_receipt,
                         amount: latestApplication.fee_amount || 100,
                         payer_name: displayName,
-                        property_title: latestApplication.property_title,
+                        property_title: latestTarget.label || 'Rental Application Screening',
                         paidAt: latestApplication.submitted_at
                       })
                     }
@@ -655,18 +973,23 @@ export default function DashboardView({
             <ol className="relative">
               {steps.map((s, i) => {
                 const isLast = i === steps.length - 1;
+                const declined = s.state === 'declined';
                 const circle =
                   s.state === 'done'
                     ? 'bg-sky-600 text-white border-sky-600'
                     : s.state === 'active'
                       ? 'border-sky-500 text-sky-600 bg-sky-50'
-                      : 'border-sky-100 text-slate-300 bg-white';
+                      : declined
+                        ? 'border-rose-200 text-rose-600 bg-rose-50'
+                        : 'border-sky-100 text-slate-300 bg-white';
                 return (
                   <li key={s.title} className="relative flex gap-5 pb-8 last:pb-0">
                     {!isLast && (
                       <span
                         aria-hidden
-                        className={`absolute left-[15px] top-9 bottom-0 w-px ${s.state === 'done' ? 'bg-sky-400' : 'bg-sky-100'}`}
+                        className={`absolute left-[15px] top-9 bottom-0 w-px ${
+                          s.state === 'done' ? 'bg-sky-400' : declined ? 'bg-rose-200' : 'bg-sky-100'
+                        }`}
                       />
                     )}
                     <div className={`relative w-8 h-8 rounded-full border flex items-center justify-center shrink-0 ${circle}`}>
@@ -674,6 +997,8 @@ export default function DashboardView({
                         <Check size={15} strokeWidth={3} />
                       ) : s.state === 'active' ? (
                         <Clock size={14} />
+                      ) : declined ? (
+                        <X size={14} />
                       ) : (
                         <Home size={14} />
                       )}
@@ -683,18 +1008,32 @@ export default function DashboardView({
                     </div>
                     <div className="flex-1 min-w-0 pt-0.5">
                       <div className="flex items-center justify-between gap-3">
-                        <p className={`text-sm font-semibold ${s.state === 'todo' ? 'text-slate-400' : 'text-slate-900'}`}>
+                        <p
+                          className={`text-sm font-semibold ${
+                            s.state === 'todo' ? 'text-slate-400' : declined ? 'text-rose-600' : 'text-slate-900'
+                          }`}
+                        >
                           {s.title}
                         </p>
                         <span
                           className={`text-[10px] font-semibold uppercase tracking-wider ${
-                            s.state === 'done' ? 'text-sky-600' : s.state === 'active' ? 'text-amber-500' : 'text-slate-300'
+                            s.state === 'done'
+                              ? 'text-sky-600'
+                              : s.state === 'active'
+                                ? 'text-amber-500'
+                                : declined
+                                  ? 'text-rose-500'
+                                  : 'text-slate-300'
                           }`}
                         >
                           {s.tag}
                         </span>
                       </div>
-                      <p className={`text-xs mt-1 leading-relaxed ${s.state === 'todo' ? 'text-slate-300' : 'text-slate-500'}`}>
+                      <p
+                        className={`text-xs mt-1 leading-relaxed ${
+                          s.state === 'todo' ? 'text-slate-300' : declined ? 'text-rose-500' : 'text-slate-500'
+                        }`}
+                      >
                         {s.note}
                       </p>
                     </div>
@@ -702,16 +1041,24 @@ export default function DashboardView({
                 );
               })}
             </ol>
+              </>
+            )}
           </div>
 
-          <div className="pt-6 mt-9 border-t border-sky-100 flex items-center justify-between">
-            <span className="text-xs text-slate-400">Need to update your application details?</span>
+          <div className="pt-6 mt-9 border-t border-sky-100 flex items-center justify-between gap-3">
+            <span className="text-xs text-slate-400">
+              {pipelineMatch
+                ? 'Follow every hand-off through to your signed lease.'
+                : latestApplication
+                  ? 'Need to update your application details?'
+                  : 'Ready to get started?'}
+            </span>
             <button
               type="button"
-              onClick={go('applications')}
-              className="text-xs font-semibold text-sky-700 hover:text-sky-900 flex items-center gap-1 transition-colors cursor-pointer"
+              onClick={pipelineMatch ? go('pipeline') : latestApplication ? go('applications') : onOpenCustomApplication}
+              className="shrink-0 text-xs font-semibold text-sky-700 hover:text-sky-900 flex items-center gap-1 transition-colors cursor-pointer"
             >
-              Manage applications
+              {pipelineMatch ? 'Track match pipeline' : latestApplication ? 'Manage applications' : 'Submit application'}
               <ArrowUpRight size={14} />
             </button>
           </div>
@@ -721,96 +1068,128 @@ export default function DashboardView({
         <div
           className={`lg:col-span-5 ${CARD} rounded-[28px] p-7 sm:p-9 flex flex-col justify-between bg-gradient-to-b from-white to-sky-50/60`}
         >
-          <div>
-            <div className="flex items-start justify-between mb-8">
+          {activeLease ? (
+            <>
               <div>
-                <Eyebrow className="!text-sky-600 mb-2">Your tenancy</Eyebrow>
-                <h3 className="font-serif text-2xl text-slate-900">Concierge</h3>
-              </div>
-              <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-semibold border border-emerald-200 bg-emerald-50 text-emerald-700">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                {DEMO_ACTIVE_LEASE.status || 'Active lease'}
-              </span>
-            </div>
+                <div className="flex items-start justify-between mb-8">
+                  <div>
+                    <Eyebrow className="!text-sky-600 mb-2">Your tenancy</Eyebrow>
+                    <h3 className="font-serif text-2xl text-slate-900">Concierge</h3>
+                  </div>
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-semibold border border-emerald-200 bg-emerald-50 text-emerald-700">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                    {activeLease.status}
+                  </span>
+                </div>
 
-            <div className="space-y-5 mb-7">
-              <div>
-                <Eyebrow>Allocated unit</Eyebrow>
-                <h4 className="font-serif text-xl text-slate-900 mt-1.5">{DEMO_ACTIVE_LEASE.property_title}</h4>
-                <p className="text-xs text-slate-500 mt-1.5 flex items-center gap-1.5">
-                  <MapPin size={12} className="text-sky-500" />
-                  {DEMO_ACTIVE_LEASE.address}
+                <div className="space-y-5 mb-7">
+                  <div>
+                    <Eyebrow>Allocated unit</Eyebrow>
+                    <h4 className="font-serif text-xl text-slate-900 mt-1.5">{activeLease.property_title}</h4>
+                    <p className="text-xs text-slate-500 mt-1.5 flex items-center gap-1.5">
+                      <MapPin size={12} className="text-sky-500" />
+                      {activeLease.address || 'Address on file'}
+                    </p>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-px rounded-2xl overflow-hidden bg-sky-100 border border-sky-100">
+                    <div className="bg-white p-4">
+                      <Eyebrow>Monthly rent</Eyebrow>
+                      <p className="font-serif text-2xl text-sky-700 mt-1.5">
+                        {activeLease.monthly_rent != null
+                          ? `R ${Number(activeLease.monthly_rent).toLocaleString('en-ZA')}`
+                          : '—'}
+                      </p>
+                    </div>
+                    <div className="bg-white p-4">
+                      <Eyebrow>Next due</Eyebrow>
+                      <p className="text-sm font-semibold text-slate-900 mt-2.5">
+                        {activeLease.next_due_date || '—'}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="text-slate-500 flex items-center gap-1.5">
+                      <Building2 size={13} className="text-sky-500" /> Property manager
+                    </span>
+                    <span className="font-semibold text-slate-900">{activeLease.landlord_name || 'Unassigned'}</span>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setContactModal({
+                        isOpen: true,
+                        contact: {
+                          name: activeLease.landlord_name || 'Property Manager',
+                          role: 'Property Manager',
+                          email: activeLease.landlord_email || 'support@place4u.co.za',
+                          phone: activeLease.landlord_phone || '',
+                          unit: activeLease.property_title || 'Your unit'
+                        },
+                        defaultSubject: `Tenancy Inquiry for ${activeLease.property_title || 'my unit'}`,
+                        defaultMessage: `Hello ${(activeLease.landlord_name || 'there').split(' ')[0]}, this is ${displayName} regarding my tenancy.`
+                      })
+                    }
+                    className={`h-11 rounded-full text-xs font-bold flex items-center justify-center gap-2 ${BTN_PRIMARY}`}
+                  >
+                    <Phone size={14} />
+                    Contact desk
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setShowMaintenanceModal(true)}
+                    className={`h-11 rounded-full text-xs font-semibold flex items-center justify-center gap-2 ${BTN_OUTLINE}`}
+                  >
+                    <Wrench size={14} className="text-sky-600" />
+                    Log repair
+                  </button>
+                </div>
+              </div>
+
+              {activeLease.landlord_phone && (
+                <p className="pt-6 mt-8 border-t border-sky-100 text-center text-xs text-slate-400">
+                  Property manager: <strong className="text-slate-700 font-semibold">{activeLease.landlord_phone}</strong>
                 </p>
-              </div>
-
-              <div className="grid grid-cols-2 gap-px rounded-2xl overflow-hidden bg-sky-100 border border-sky-100">
-                <div className="bg-white p-4">
-                  <Eyebrow>Monthly rent</Eyebrow>
-                  <p className="font-serif text-2xl text-sky-700 mt-1.5">
-                    R {Number(DEMO_ACTIVE_LEASE.monthly_rent || 4500).toLocaleString('en-ZA')}
-                  </p>
-                </div>
-                <div className="bg-white p-4">
-                  <Eyebrow>Next due</Eyebrow>
-                  <p className="text-sm font-semibold text-slate-900 mt-2.5">
-                    {DEMO_ACTIVE_LEASE.next_due_date || '01 November 2026'}
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex items-center justify-between text-xs">
-                <span className="text-slate-500 flex items-center gap-1.5">
-                  <Building2 size={13} className="text-sky-500" /> Property manager
-                </span>
-                <span className="font-semibold text-slate-900">{DEMO_ACTIVE_LEASE.landlord_name || 'Nelson Khumalo'}</span>
+              )}
+            </>
+          ) : (
+            <div className="flex flex-1 flex-col items-center justify-center text-center py-8">
+              <Eyebrow className="!text-sky-600 mb-2">Your tenancy</Eyebrow>
+              <h3 className="font-serif text-2xl text-slate-900">Concierge</h3>
+              <p className="text-sm text-slate-500 mt-3 max-w-xs leading-relaxed">
+                You don't have an active tenancy yet. Once a landlord approves your application and a lease is issued, your unit details, rent schedule, and property manager will appear here.
+              </p>
+              <div className="flex flex-wrap items-center justify-center gap-3 mt-7">
+                <button
+                  type="button"
+                  onClick={go('applications')}
+                  className={`h-11 px-6 rounded-full text-xs font-bold flex items-center justify-center gap-2 ${BTN_PRIMARY}`}
+                >
+                  View applications
+                </button>
+                <button
+                  type="button"
+                  onClick={scrollToListings}
+                  className={`h-11 px-6 rounded-full text-xs font-semibold flex items-center justify-center gap-2 ${BTN_OUTLINE}`}
+                >
+                  Browse properties
+                </button>
               </div>
             </div>
-
-            <div className="grid grid-cols-2 gap-3">
-              <button
-                type="button"
-                onClick={() =>
-                  setContactModal({
-                    isOpen: true,
-                    contact: {
-                      name: DEMO_ACTIVE_LEASE.landlord?.name || 'Nelson Khumalo',
-                      role: 'Property Manager',
-                      email: DEMO_ACTIVE_LEASE.landlord?.email || 'nelson.khumalo@place4u.co.za',
-                      phone: DEMO_ACTIVE_LEASE.landlord?.phone || '+27 82 444 3322',
-                      unit: DEMO_ACTIVE_LEASE.unitNumber || 'Unit 402'
-                    },
-                    defaultSubject: `Tenancy Inquiry for ${DEMO_ACTIVE_LEASE.unitNumber || 'Unit 402'}`,
-                    defaultMessage: `Hello Nelson, this is ${displayName} regarding my tenancy.`
-                  })
-                }
-                className={`h-11 rounded-full text-xs font-bold flex items-center justify-center gap-2 ${BTN_PRIMARY}`}
-              >
-                <Phone size={14} />
-                Contact desk
-              </button>
-              <button
-                type="button"
-                onClick={() => setShowMaintenanceModal(true)}
-                className={`h-11 rounded-full text-xs font-semibold flex items-center justify-center gap-2 ${BTN_OUTLINE}`}
-              >
-                <Wrench size={14} className="text-sky-600" />
-                Log repair
-              </button>
-            </div>
-          </div>
-
-          <p className="pt-6 mt-8 border-t border-sky-100 text-center text-xs text-slate-400">
-            Emergency after-hours dispatch: <strong className="text-slate-700 font-semibold">+27 82 444 3322</strong>
-          </p>
+          )}
         </div>
       </section>
 
       {/* ========================= LISTINGS =========================== */}
-      <section className="space-y-8">
+      <section id="verified-listings" ref={listingsRef} className="space-y-8 scroll-mt-24">
         <SectionTitle
           eyebrow="Curated"
           title={showSavedOnly ? 'Your shortlisted homes' : 'Verified available properties'}
-          subtitle={`${filteredProperties.length} vetted ${filteredProperties.length === 1 ? 'unit' : 'units'} across Pretoria, Johannesburg & the Western Cape`}
+          subtitle={`${filteredProperties.length} vetted ${filteredProperties.length === 1 ? 'unit' : 'units'} across ${locationLabel}`}
         />
 
         <div className="flex flex-wrap items-center gap-2.5">
@@ -910,7 +1289,7 @@ export default function DashboardView({
                   ? p.image_urls[0]
                   : p.images && p.images.length > 0
                     ? p.images[0]
-                    : 'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=800&auto=format&fit=crop&q=60';
+                    : '/property-placeholder.svg';
 
               return (
                 <article
@@ -959,7 +1338,7 @@ export default function DashboardView({
                       <p className="text-xs text-slate-500 mt-1.5 flex items-center gap-1.5 truncate">
                         <MapPin size={13} className="text-sky-500 shrink-0" />
                         <span className="truncate">
-                          {p.address ? `${p.address}, ${p.city || ''}` : p.city || 'Johannesburg'}
+                          {[p.address, p.city].filter(Boolean).join(', ') || 'Location not specified'}
                         </span>
                       </p>
 

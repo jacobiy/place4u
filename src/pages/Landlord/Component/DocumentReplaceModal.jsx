@@ -154,8 +154,8 @@ export const DocumentReplaceModal = ({
         
         {/* Current Document Summary Card */}
         <div style={{
-          background: "rgba(79, 126, 248, 0.08)",
-          border: `1px solid rgba(79, 126, 248, 0.25)`,
+          background: T.accentSofter,
+          border: `1px solid ${T.accentBorder}`,
           borderRadius: "0.875rem",
           padding: "1rem 1.25rem",
           display: "flex",
@@ -166,7 +166,7 @@ export const DocumentReplaceModal = ({
             width: "42px",
             height: "42px",
             borderRadius: "10px",
-            background: "rgba(79, 126, 248, 0.15)",
+            background: T.accentSoft,
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
@@ -183,7 +183,8 @@ export const DocumentReplaceModal = ({
               <span style={{
                 fontSize: "0.68rem",
                 fontWeight: 600,
-                background: "rgba(255, 255, 255, 0.08)",
+                background: T.surfaceAlt,
+                border: `1px solid ${T.border}`,
                 padding: "2px 8px",
                 borderRadius: "12px",
                 color: T.textMuted
@@ -203,8 +204,8 @@ export const DocumentReplaceModal = ({
         {/* Error Notice */}
         {error && (
           <div style={{
-            background: "rgba(239,68,68,0.12)",
-            border: `1px solid rgba(239,68,68,0.3)`,
+            background: T.redSoft,
+            border: `1px solid ${T.redBorder}`,
             borderRadius: "0.75rem",
             padding: "0.75rem 1rem",
             display: "flex",
@@ -229,9 +230,9 @@ export const DocumentReplaceModal = ({
             onDragOver={handleDrag}
             onDrop={handleDrop}
             style={{
-              border: `2px dashed ${dragActive ? T.accent : selectedFile ? T.emerald : T.border}`,
+              border: `2px dashed ${dragActive ? T.accent : selectedFile ? T.emerald : T.borderHover}`,
               borderRadius: "0.875rem",
-              background: dragActive ? "rgba(79,126,248,0.06)" : selectedFile ? "rgba(16,185,129,0.04)" : T.surface,
+              background: dragActive ? T.accentSofter : selectedFile ? T.emeraldSoft : T.surfaceAlt,
               padding: "1.75rem 1.25rem",
               textAlign: "center",
               cursor: "pointer",
@@ -264,8 +265,8 @@ export const DocumentReplaceModal = ({
                   }}
                   style={{
                     marginTop: "8px",
-                    background: "rgba(239,68,68,0.1)",
-                    border: `1px solid rgba(239,68,68,0.25)`,
+                    background: T.redSoft,
+                    border: `1px solid ${T.redBorder}`,
                     color: T.red,
                     padding: "4px 10px",
                     borderRadius: "6px",
@@ -304,9 +305,9 @@ export const DocumentReplaceModal = ({
               style={{
                 width: "100%",
                 padding: "0.65rem 0.85rem",
-                background: T.surface,
-                border: `1px solid ${T.border}`,
-                borderRadius: "8px",
+                background: "#ffffff",
+                border: `1px solid ${T.borderStrong}`,
+                borderRadius: "0.75rem",
                 color: T.textPrimary,
                 fontSize: "0.875rem",
                 outline: "none"
@@ -324,9 +325,9 @@ export const DocumentReplaceModal = ({
               style={{
                 width: "100%",
                 padding: "0.65rem 0.85rem",
-                background: T.surface,
-                border: `1px solid ${T.border}`,
-                borderRadius: "8px",
+                background: "#ffffff",
+                border: `1px solid ${T.borderStrong}`,
+                borderRadius: "0.75rem",
                 color: T.textPrimary,
                 fontSize: "0.875rem",
                 outline: "none",
@@ -334,7 +335,7 @@ export const DocumentReplaceModal = ({
               }}
             >
               {DOCUMENT_CATEGORIES.map(c => (
-                <option key={c.id} value={c.id} style={{ background: "#151e36", color: "#ffffff" }}>
+                <option key={c.id} value={c.id} style={{ background: "#ffffff", color: T.textPrimary }}>
                   {c.label}
                 </option>
               ))}
@@ -359,20 +360,20 @@ export const DocumentReplaceModal = ({
               style={{
                 width: "100%",
                 padding: "0.65rem 0.85rem",
-                background: T.surface,
-                border: `1px solid ${T.border}`,
-                borderRadius: "8px",
+                background: "#ffffff",
+                border: `1px solid ${T.borderStrong}`,
+                borderRadius: "0.75rem",
                 color: T.textPrimary,
                 fontSize: "0.875rem",
                 outline: "none",
                 cursor: "pointer"
               }}
             >
-              <option value="" style={{ background: "#151e36", color: "#ffffff" }}>
+              <option value="" style={{ background: "#ffffff", color: T.textPrimary }}>
                 Portfolio-wide / General Identification
               </option>
               {properties.map(p => (
-                <option key={p.id} value={p.id} style={{ background: "#151e36", color: "#ffffff" }}>
+                <option key={p.id} value={p.id} style={{ background: "#ffffff", color: T.textPrimary }}>
                   {p.name || p.title}
                 </option>
               ))}
@@ -390,9 +391,9 @@ export const DocumentReplaceModal = ({
               style={{
                 width: "100%",
                 padding: "0.65rem 0.85rem",
-                background: T.surface,
-                border: `1px solid ${T.border}`,
-                borderRadius: "8px",
+                background: "#ffffff",
+                border: `1px solid ${T.borderStrong}`,
+                borderRadius: "0.75rem",
                 color: T.textPrimary,
                 fontSize: "0.875rem",
                 outline: "none"
@@ -414,9 +415,9 @@ export const DocumentReplaceModal = ({
             style={{
               width: "100%",
               padding: "0.65rem 0.85rem",
-              background: T.surface,
-              border: `1px solid ${T.border}`,
-              borderRadius: "8px",
+              background: "#ffffff",
+              border: `1px solid ${T.borderStrong}`,
+              borderRadius: "0.75rem",
               color: T.textPrimary,
               fontSize: "0.875rem",
               outline: "none"

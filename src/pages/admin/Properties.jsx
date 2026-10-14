@@ -7,18 +7,16 @@ import {
   updateAdminProperty,
   deleteAdminProperty,
   getLandlordsList,
-  formatCurrency,
-  formatDate,
-  openGmail
+  formatCurrency
 } from './db/queries'
 import PropertyDetailView from './PropertyDetailView'
+import { Link } from 'react-router-dom'
 import {
   Search,
   Filter,
   CheckCircle2,
   Building2,
   MapPin,
-  Mail,
   Eye,
   Bed,
   Bath,
@@ -29,19 +27,20 @@ import {
   X,
   ExternalLink,
   DollarSign,
-  Calendar,
-  Layers,
   Image as ImageIcon,
-  Check,
   RefreshCw,
-  SlidersHorizontal,
   AlertTriangle,
-  Home,
-  Tag,
-  Globe,
-  UploadCloud,
-  FileCode
+  UploadCloud
 } from 'lucide-react'
+
+// Listing approval lifecycle — display metadata (mirrors the landlord portal).
+const APPROVAL_META = {
+  draft: { label: 'Draft', cls: 'bg-slate-100 text-slate-600 border-slate-200' },
+  pending_approval: { label: 'Pending approval', cls: 'bg-amber-50 text-amber-700 border-amber-200' },
+  approved: { label: 'Approved', cls: 'bg-emerald-50 text-emerald-700 border-emerald-200' },
+  rejected: { label: 'Rejected', cls: 'bg-red-50 text-red-700 border-red-200' }
+}
+const approvalMeta = (status) => APPROVAL_META[status] || APPROVAL_META.approved
 
 // Demo photo sets for quick manual property creation
 const DEMO_PHOTO_PRESETS = [
@@ -429,6 +428,10 @@ export default function PropertiesPage() {
     }
   }
 
+  // Approve or reject a landlord-submitted listing
+  // NOTE: listing approvals are handled centrally in the "Property Submissions"
+  // review tab so there is a single, auditable approval workflow.
+
   // Open Add Modal
   const handleOpenAddModal = () => {
     setFormData(defaultFormState)
@@ -663,7 +666,12 @@ export default function PropertiesPage() {
       const matchesQuery = !query.trim() || haystack.includes(query.toLowerCase())
       
       const pStatus = p.is_active ? 'active' : 'inactive'
-      const matchesStatus = statusFilter === 'All Statuses' || pStatus === statusFilter.toLowerCase()
+      const normApproval = p.approval_status || 'approved'
+      const matchesStatus =
+        statusFilter === 'All Statuses' ||
+        (statusFilter === 'Active' || statusFilter === 'Inactive'
+          ? pStatus === statusFilter.toLowerCase()
+          : normApproval === statusFilter.toLowerCase().replace(/\s+/g, '_'))
 
       let matchesSource = true
       if (sourceFilter === 'Place4U Sourced (Scraped)') {
@@ -681,10 +689,21 @@ export default function PropertiesPage() {
   // Summary Metrics
   const activeCount = properties.filter((p) => p.is_active).length
   const sourcedCount = properties.filter((p) => !p.landlord_id).length
+  const pendingApprovals = properties.filter((p) => (p.approval_status || 'approved') === 'pending_approval').length
   const totalRentVolume = properties.reduce((acc, p) => acc + (Number(p.price) || 0), 0)
 
   if (selectedProperty) {
-    return <PropertyDetailView property={selectedProperty} onBack={() => setSelectedProperty(null)} />
+    return (
+      <PropertyDetailView
+        property={selectedProperty}
+        onBack={() => setSelectedProperty(null)}
+        onApprovalChange={(updated) => {
+          if (!updated?.id) return
+          setProperties((prev) => prev.map((p) => (p.id === updated.id ? { ...p, ...updated } : p)))
+          setSelectedProperty((prev) => (prev && prev.id === updated.id ? { ...prev, ...updated } : prev))
+        }}
+      />
+    )
   }
 
   return (
@@ -705,6 +724,15 @@ export default function PropertiesPage() {
             <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-200">
               Admin Direct Control
             </span>
+            {pendingApprovals > 0 && (
+              <button
+                onClick={() => setStatusFilter('Pending approval')}
+                className="inline-flex items-center gap-1.5 text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-200 hover:bg-amber-100 transition-colors cursor-pointer animate-pulse"
+                title="Show landlord listings awaiting approval"
+              >
+                <AlertTriangle size={12} /> {pendingApprovals} pending approval
+              </button>
+            )}
           </div>
           <p className="text-xs text-slate-500 mt-0.5">
             Manually add, scrape, and manage rental properties for Place4U matching without requiring registered landlords.
@@ -740,8 +768,8 @@ export default function PropertiesPage() {
         </div>
       </section>
 
-      {/* Metric Counters Grid (2x2 on mobile, 4 columns on large screens) */}
-      <section className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4">
+      {/* Metric Counters Grid (2x2 on mobile, 5 columns on large screens) */}
+      <section className="grid grid-cols-2 lg:grid-cols-5 gap-2.5 sm:gap-4">
         <div className="bg-white p-3 sm:p-4 rounded-xl border border-slate-200 shadow-xs flex items-center justify-between">
           <div className="min-w-0 pr-2">
             <p className="text-[10px] sm:text-[11px] font-semibold text-slate-400 uppercase tracking-wide truncate">Total Units</p>
@@ -785,6 +813,17 @@ export default function PropertiesPage() {
             <DollarSign className="w-4 h-4 sm:w-5 sm:h-5" />
           </div>
         </div>
+
+        <div className="bg-white p-3 sm:p-4 rounded-xl border border-slate-200 shadow-xs flex items-center justify-between">
+          <div className="min-w-0 pr-2">
+            <p className="text-[10px] sm:text-[11px] font-semibold text-slate-400 uppercase tracking-wide truncate">Awaiting Review</p>
+            <h3 className={`text-lg sm:text-2xl font-black mt-0.5 sm:mt-1 ${pendingApprovals > 0 ? 'text-amber-600' : 'text-slate-900'}`}>{pendingApprovals}</h3>
+            <p className="text-[9px] sm:text-[10px] text-slate-500 mt-0.5 truncate">Landlord submissions</p>
+          </div>
+          <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center shrink-0">
+            <AlertTriangle className="w-4 h-4 sm:w-5 sm:h-5" />
+          </div>
+        </div>
       </section>
 
       {/* Main Table & Listings Section */}
@@ -817,6 +856,9 @@ export default function PropertiesPage() {
                 <option>All Statuses</option>
                 <option>Active</option>
                 <option>Inactive</option>
+                <option>Pending approval</option>
+                <option>Rejected</option>
+                <option>Draft</option>
               </select>
 
               {/* Source Filter */}
@@ -871,6 +913,7 @@ export default function PropertiesPage() {
                     <th className="text-left px-4 py-3">Specs</th>
                     <th className="text-left px-4 py-3">Monthly Rent</th>
                     <th className="text-left px-4 py-3">Listing State</th>
+                    <th className="text-left px-4 py-3">Approval</th>
                     <th className="text-right px-5 py-3">Manage</th>
                   </tr>
                 </thead>
@@ -966,6 +1009,29 @@ export default function PropertiesPage() {
                           </button>
                         </td>
 
+                        {/* Approval */}
+                        <td className="px-4 py-3.5">
+                          <div className="flex flex-col items-start gap-1.5">
+                            <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${approvalMeta(p.approval_status).cls}`}>
+                              {approvalMeta(p.approval_status).label}
+                            </span>
+                            {['pending_approval', 'draft'].includes(p.approval_status || 'approved') && !isPlace4USourced && (
+                              <Link
+                                to="/admin/property-submissions"
+                                className="inline-flex items-center gap-1 px-2 py-0.5 bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 rounded text-[10px] font-bold transition-colors"
+                                title="Review this submission in the Property Submissions queue"
+                              >
+                                Review in queue <ExternalLink size={11} />
+                              </Link>
+                            )}
+                            {Array.isArray(p.documents) && p.documents.length > 0 && (
+                              <span className="text-[9px] text-slate-400 font-medium">
+                                {p.documents.length} doc{p.documents.length === 1 ? '' : 's'}
+                              </span>
+                            )}
+                          </div>
+                        </td>
+
                         {/* Action buttons */}
                         <td className="px-5 py-3.5 text-right">
                           <div className="flex items-center justify-end gap-1.5">
@@ -998,7 +1064,7 @@ export default function PropertiesPage() {
 
                   {!filtered.length && (
                     <tr>
-                      <td colSpan={7} className="px-6 py-16 text-center text-xs text-slate-400">
+                      <td colSpan={8} className="px-6 py-16 text-center text-xs text-slate-400">
                         <div className="flex flex-col items-center justify-center gap-2">
                           <Building2 size={32} className="text-slate-300" />
                           <p className="font-semibold text-slate-700">No properties match your filter</p>
@@ -1094,6 +1160,30 @@ export default function PropertiesPage() {
                         </span>
                       )}
                     </div>
+
+                    {/* Approval state */}
+                    {!isPlace4USourced && (
+                      <div className="flex items-center justify-between gap-2 flex-wrap">
+                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${approvalMeta(p.approval_status).cls}`}>
+                          {approvalMeta(p.approval_status).label}
+                        </span>
+                        <div className="flex items-center gap-2">
+                          {Array.isArray(p.documents) && p.documents.length > 0 && (
+                            <span className="text-[10px] text-slate-400 font-medium">
+                              {p.documents.length} doc{p.documents.length === 1 ? '' : 's'}
+                            </span>
+                          )}
+                          {['pending_approval', 'draft'].includes(p.approval_status || 'approved') && (
+                            <Link
+                              to="/admin/property-submissions"
+                              className="inline-flex items-center gap-1 px-2.5 py-1 bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 rounded-lg text-[11px] font-bold"
+                            >
+                              Review in queue <ExternalLink size={12} />
+                            </Link>
+                          )}
+                        </div>
+                      </div>
+                    )}
 
                     {/* Touch Action Buttons */}
                     <div className="flex items-center gap-2 pt-0.5">

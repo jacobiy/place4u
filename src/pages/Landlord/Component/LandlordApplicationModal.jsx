@@ -148,7 +148,7 @@ export const LandlordApplicationModal = ({
         position: 'fixed',
         inset: 0,
         zIndex: 1000,
-        background: 'rgba(5, 7, 15, 0.85)',
+        background: 'rgba(15, 23, 42, 0.42)',
         backdropFilter: 'blur(8px)',
         display: 'flex',
         alignItems: 'center',
@@ -159,18 +159,19 @@ export const LandlordApplicationModal = ({
     >
       <div
         style={{
-          background: T.navyMid,
+          background: '#ffffff',
           border: `1px solid ${T.border}`,
-          borderRadius: '16px',
+          borderRadius: T.radiusXl,
           width: '100%',
           maxWidth: '720px',
           maxHeight: '90vh',
           display: 'flex',
           flexDirection: 'column',
-          boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.7)',
+          boxShadow: '0 40px 100px -30px rgba(2,132,199,0.45)',
           overflow: 'hidden'
         }}
       >
+        <div style={{ height: 5, background: 'linear-gradient(90deg,#7dd3fc,#0ea5e9,#2563eb)', flexShrink: 0 }} />
         {/* Header */}
         <div
           style={{
@@ -179,7 +180,7 @@ export const LandlordApplicationModal = ({
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
-            background: 'rgba(15, 23, 42, 0.6)'
+            background: '#ffffff'
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
@@ -188,7 +189,7 @@ export const LandlordApplicationModal = ({
                 width: '40px',
                 height: '40px',
                 borderRadius: '10px',
-                background: 'rgba(79, 126, 248, 0.15)',
+                background: T.accentSoft,
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
@@ -198,7 +199,7 @@ export const LandlordApplicationModal = ({
               <ShieldCheck size={22} />
             </div>
             <div>
-              <h2 style={{ fontSize: '1.15rem', fontWeight: 700, color: T.textPrimary, margin: 0 }}>
+              <h2 style={{ fontFamily: "'DM Serif Display', Georgia, serif", fontSize: '1.3rem', color: T.textPrimary, margin: 0, letterSpacing: '-0.01em' }}>
                 Landlord Onboarding & Verification Application
               </h2>
               <p style={{ fontSize: '0.8rem', color: T.textMuted, margin: '2px 0 0' }}>
@@ -214,7 +215,7 @@ export const LandlordApplicationModal = ({
               color: T.textMuted,
               cursor: 'pointer',
               padding: '6px',
-              borderRadius: '8px',
+              borderRadius: 9999,
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center'
@@ -231,7 +232,7 @@ export const LandlordApplicationModal = ({
             alignItems: 'center',
             justifyContent: 'space-between',
             padding: '0.75rem 1.5rem',
-            background: 'rgba(10, 15, 30, 0.5)',
+            background: T.surfaceAlt,
             borderBottom: `1px solid ${T.border}`,
             fontSize: '0.8rem'
           }}
@@ -262,7 +263,7 @@ export const LandlordApplicationModal = ({
                     width: '24px',
                     height: '24px',
                     borderRadius: '50%',
-                    background: isActive ? T.accent : isDone ? T.emerald : 'rgba(255,255,255,0.08)',
+                    background: isActive ? T.accent : isDone ? T.emerald : T.surface,
                     color: isActive || isDone ? '#fff' : T.textMuted,
                     display: 'flex',
                     alignItems: 'center',
@@ -290,10 +291,10 @@ export const LandlordApplicationModal = ({
                 alignItems: 'center',
                 gap: '10px',
                 padding: '0.75rem 1rem',
-                borderRadius: '8px',
-                background: 'rgba(248, 113, 113, 0.1)',
-                border: '1px solid rgba(248, 113, 113, 0.25)',
-                color: '#f87171',
+                borderRadius: 9999,
+                background: T.redSoft,
+                border: `1px solid ${T.redBorder}`,
+                color: T.red,
                 fontSize: '0.85rem',
                 marginBottom: '1.25rem'
               }}
@@ -331,7 +332,7 @@ export const LandlordApplicationModal = ({
                     padding: '1.25rem',
                     borderRadius: '12px',
                     border: `2px solid ${formData.manageWithPlatform ? T.accent : T.border}`,
-                    background: formData.manageWithPlatform ? 'rgba(79, 126, 248, 0.08)' : T.surface,
+                    background: formData.manageWithPlatform ? T.accentSofter : T.surfaceAlt,
                     cursor: 'pointer',
                     transition: 'all 0.2s',
                     position: 'relative'
@@ -358,7 +359,7 @@ export const LandlordApplicationModal = ({
                       width: '42px',
                       height: '42px',
                       borderRadius: '10px',
-                      background: 'rgba(79, 126, 248, 0.2)',
+                      background: T.accentSoft,
                       color: T.accent,
                       display: 'flex',
                       alignItems: 'center',
@@ -375,7 +376,7 @@ export const LandlordApplicationModal = ({
                   <div
                     style={{
                       display: 'inline-block',
-                      background: 'rgba(79, 126, 248, 0.2)',
+                      background: T.accentSoft,
                       color: T.accent,
                       fontSize: '0.7rem',
                       fontWeight: 700,
@@ -414,8 +415,8 @@ export const LandlordApplicationModal = ({
                   style={{
                     padding: '1.25rem',
                     borderRadius: '12px',
-                    border: `2px solid ${!formData.manageWithPlatform ? '#f59e0b' : T.border}`,
-                    background: !formData.manageWithPlatform ? 'rgba(245, 158, 11, 0.08)' : T.surface,
+                    border: `2px solid ${!formData.manageWithPlatform ? T.amber : T.border}`,
+                    background: !formData.manageWithPlatform ? T.amberSoft : T.surfaceAlt,
                     cursor: 'pointer',
                     transition: 'all 0.2s',
                     position: 'relative'
@@ -427,7 +428,7 @@ export const LandlordApplicationModal = ({
                         position: 'absolute',
                         top: '12px',
                         right: '12px',
-                        background: '#f59e0b',
+                        background: T.amber,
                         color: '#fff',
                         borderRadius: '50%',
                         padding: '3px'
@@ -442,8 +443,8 @@ export const LandlordApplicationModal = ({
                       width: '42px',
                       height: '42px',
                       borderRadius: '10px',
-                      background: 'rgba(245, 158, 11, 0.2)',
-                      color: '#f59e0b',
+                      background: T.amberSoft,
+                      color: T.amber,
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
@@ -459,8 +460,8 @@ export const LandlordApplicationModal = ({
                   <div
                     style={{
                       display: 'inline-block',
-                      background: 'rgba(245, 158, 11, 0.2)',
-                      color: '#f59e0b',
+                      background: T.amberSoft,
+                      color: T.amber,
                       fontSize: '0.7rem',
                       fontWeight: 700,
                       padding: '2px 8px',
@@ -495,7 +496,7 @@ export const LandlordApplicationModal = ({
 
               <div
                 style={{
-                  background: 'rgba(15, 23, 42, 0.4)',
+                  background: T.surfaceAlt,
                   padding: '1rem',
                   borderRadius: '10px',
                   border: `1px solid ${T.border}`,
@@ -528,11 +529,12 @@ export const LandlordApplicationModal = ({
                     style={{
                       width: '100%',
                       padding: '10px 12px',
-                      borderRadius: '8px',
-                      background: T.surface,
-                      border: `1px solid ${T.border}`,
+                      borderRadius: 9999,
+                      background: '#ffffff',
+                      border: `1px solid ${T.borderStrong}`,
                       color: T.textPrimary,
-                      fontSize: '0.85rem'
+                      fontSize: '0.85rem',
+                      outline: 'none'
                     }}
                   />
                 </div>
@@ -549,11 +551,12 @@ export const LandlordApplicationModal = ({
                     style={{
                       width: '100%',
                       padding: '10px 12px',
-                      borderRadius: '8px',
-                      background: T.surface,
-                      border: `1px solid ${T.border}`,
+                      borderRadius: 9999,
+                      background: '#ffffff',
+                      border: `1px solid ${T.borderStrong}`,
                       color: T.textPrimary,
-                      fontSize: '0.85rem'
+                      fontSize: '0.85rem',
+                      outline: 'none'
                     }}
                   />
                 </div>
@@ -572,11 +575,12 @@ export const LandlordApplicationModal = ({
                     style={{
                       width: '100%',
                       padding: '10px 12px',
-                      borderRadius: '8px',
-                      background: T.surface,
-                      border: `1px solid ${T.border}`,
+                      borderRadius: 9999,
+                      background: '#ffffff',
+                      border: `1px solid ${T.borderStrong}`,
                       color: T.textPrimary,
-                      fontSize: '0.85rem'
+                      fontSize: '0.85rem',
+                      outline: 'none'
                     }}
                   />
                 </div>
@@ -593,11 +597,12 @@ export const LandlordApplicationModal = ({
                     style={{
                       width: '100%',
                       padding: '10px 12px',
-                      borderRadius: '8px',
-                      background: T.surface,
-                      border: `1px solid ${T.border}`,
+                      borderRadius: 9999,
+                      background: '#ffffff',
+                      border: `1px solid ${T.borderStrong}`,
                       color: T.textPrimary,
-                      fontSize: '0.85rem'
+                      fontSize: '0.85rem',
+                      outline: 'none'
                     }}
                   />
                 </div>
@@ -615,11 +620,12 @@ export const LandlordApplicationModal = ({
                   style={{
                     width: '100%',
                     padding: '10px 12px',
-                    borderRadius: '8px',
-                    background: T.surface,
-                    border: `1px solid ${T.border}`,
+                    borderRadius: 9999,
+                    background: '#ffffff',
+                    border: `1px solid ${T.borderStrong}`,
                     color: T.textPrimary,
-                    fontSize: '0.85rem'
+                    fontSize: '0.85rem',
+                    outline: 'none'
                   }}
                 />
               </div>
@@ -637,11 +643,12 @@ export const LandlordApplicationModal = ({
                     style={{
                       width: '100%',
                       padding: '10px 12px',
-                      borderRadius: '8px',
-                      background: T.surface,
-                      border: `1px solid ${T.border}`,
+                      borderRadius: 9999,
+                      background: '#ffffff',
+                      border: `1px solid ${T.borderStrong}`,
                       color: T.textPrimary,
-                      fontSize: '0.85rem'
+                      fontSize: '0.85rem',
+                      outline: 'none'
                     }}
                   />
                 </div>
@@ -656,11 +663,12 @@ export const LandlordApplicationModal = ({
                     style={{
                       width: '100%',
                       padding: '10px 12px',
-                      borderRadius: '8px',
-                      background: T.surface,
-                      border: `1px solid ${T.border}`,
+                      borderRadius: 9999,
+                      background: '#ffffff',
+                      border: `1px solid ${T.borderStrong}`,
                       color: T.textPrimary,
-                      fontSize: '0.85rem'
+                      fontSize: '0.85rem',
+                      outline: 'none'
                     }}
                   >
                     {PROVINCES.map((p) => (
@@ -683,11 +691,12 @@ export const LandlordApplicationModal = ({
                     style={{
                       width: '100%',
                       padding: '10px 12px',
-                      borderRadius: '8px',
-                      background: T.surface,
-                      border: `1px solid ${T.border}`,
+                      borderRadius: 9999,
+                      background: '#ffffff',
+                      border: `1px solid ${T.borderStrong}`,
                       color: T.textPrimary,
-                      fontSize: '0.85rem'
+                      fontSize: '0.85rem',
+                      outline: 'none'
                     }}
                   />
                 </div>
@@ -710,7 +719,7 @@ export const LandlordApplicationModal = ({
               {/* Doc 1: SA ID or Passport */}
               <div
                 style={{
-                  background: T.surface,
+                  background: T.surfaceAlt,
                   padding: '1rem',
                   borderRadius: '10px',
                   border: `1px solid ${formData.idDocUrl ? T.emerald : T.border}`
@@ -732,9 +741,9 @@ export const LandlordApplicationModal = ({
                   <label
                     style={{
                       padding: '8px 14px',
-                      background: 'rgba(79, 126, 248, 0.15)',
+                      background: T.accentSoft,
                       color: T.accent,
-                      borderRadius: '8px',
+                      borderRadius: 9999,
                       cursor: 'pointer',
                       fontSize: '0.8rem',
                       fontWeight: 600,
@@ -758,9 +767,9 @@ export const LandlordApplicationModal = ({
                     style={{
                       padding: '8px 12px',
                       background: 'transparent',
-                      border: `1px dashed ${T.border}`,
+                      border: `1px dashed ${T.borderStrong}`,
                       color: T.textMuted,
-                      borderRadius: '8px',
+                      borderRadius: 9999,
                       cursor: 'pointer',
                       fontSize: '0.75rem'
                     }}
@@ -773,7 +782,7 @@ export const LandlordApplicationModal = ({
               {/* Doc 2: Proof of Property Ownership (Title Deed / Transfer / Mandate) */}
               <div
                 style={{
-                  background: T.surface,
+                  background: T.surfaceAlt,
                   padding: '1rem',
                   borderRadius: '10px',
                   border: `1px solid ${formData.ownershipDocUrl ? T.emerald : T.border}`
@@ -795,9 +804,9 @@ export const LandlordApplicationModal = ({
                   <label
                     style={{
                       padding: '8px 14px',
-                      background: 'rgba(79, 126, 248, 0.15)',
+                      background: T.accentSoft,
                       color: T.accent,
-                      borderRadius: '8px',
+                      borderRadius: 9999,
                       cursor: 'pointer',
                       fontSize: '0.8rem',
                       fontWeight: 600,
@@ -821,9 +830,9 @@ export const LandlordApplicationModal = ({
                     style={{
                       padding: '8px 12px',
                       background: 'transparent',
-                      border: `1px dashed ${T.border}`,
+                      border: `1px dashed ${T.borderStrong}`,
                       color: T.textMuted,
-                      borderRadius: '8px',
+                      borderRadius: 9999,
                       cursor: 'pointer',
                       fontSize: '0.75rem'
                     }}
@@ -836,7 +845,7 @@ export const LandlordApplicationModal = ({
               {/* Doc 3: Municipal Rates & Taxes (Optional) */}
               <div
                 style={{
-                  background: T.surface,
+                  background: T.surfaceAlt,
                   padding: '1rem',
                   borderRadius: '10px',
                   border: `1px solid ${formData.ratesTaxesDocUrl ? T.emerald : T.border}`
@@ -858,9 +867,9 @@ export const LandlordApplicationModal = ({
                   <label
                     style={{
                       padding: '8px 14px',
-                      background: 'rgba(255, 255, 255, 0.05)',
+                      background: T.surfaceAlt,
                       color: T.textSecondary,
-                      borderRadius: '8px',
+                      borderRadius: 9999,
                       cursor: 'pointer',
                       fontSize: '0.8rem',
                       fontWeight: 600,
@@ -884,9 +893,9 @@ export const LandlordApplicationModal = ({
                     style={{
                       padding: '8px 12px',
                       background: 'transparent',
-                      border: `1px dashed ${T.border}`,
+                      border: `1px dashed ${T.borderStrong}`,
                       color: T.textMuted,
-                      borderRadius: '8px',
+                      borderRadius: 9999,
                       cursor: 'pointer',
                       fontSize: '0.75rem'
                     }}
@@ -907,8 +916,8 @@ export const LandlordApplicationModal = ({
 
               <div
                 style={{
-                  background: T.surface,
-                  borderRadius: '12px',
+                  background: T.surfaceAlt,
+                  borderRadius: '1rem',
                   padding: '1.25rem',
                   border: `1px solid ${T.border}`,
                   display: 'flex',
@@ -922,7 +931,7 @@ export const LandlordApplicationModal = ({
                     style={{
                       fontSize: '0.82rem',
                       fontWeight: 700,
-                      color: formData.manageWithPlatform ? T.accent : '#f59e0b'
+                      color: formData.manageWithPlatform ? T.accent : T.amber
                     }}
                   >
                     {formData.manageWithPlatform ? 'Full Portfolio Management (Rents, Tenants & Analytics)' : 'Listing & Marketing Only'}
@@ -948,14 +957,14 @@ export const LandlordApplicationModal = ({
 
                 <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: `1px solid ${T.border}`, paddingBottom: '8px' }}>
                   <span style={{ fontSize: '0.82rem', color: T.textMuted }}>ID Document:</span>
-                  <span style={{ fontSize: '0.82rem', color: formData.idDocUrl ? T.emerald : '#f87171' }}>
+                  <span style={{ fontSize: '0.82rem', color: formData.idDocUrl ? T.emerald : T.red }}>
                     {formData.idDocUrl ? '✓ Attached' : '✗ Missing'}
                   </span>
                 </div>
 
                 <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                   <span style={{ fontSize: '0.82rem', color: T.textMuted }}>Proof of Ownership:</span>
-                  <span style={{ fontSize: '0.82rem', color: formData.ownershipDocUrl ? T.emerald : '#f87171' }}>
+                  <span style={{ fontSize: '0.82rem', color: formData.ownershipDocUrl ? T.emerald : T.red }}>
                     {formData.ownershipDocUrl ? '✓ Attached' : '✗ Missing'}
                   </span>
                 </div>
@@ -973,21 +982,22 @@ export const LandlordApplicationModal = ({
                   style={{
                     width: '100%',
                     padding: '8px 12px',
-                    borderRadius: '8px',
-                    background: T.surface,
-                    border: `1px solid ${T.border}`,
+                    borderRadius: 9999,
+                    background: '#ffffff',
+                    border: `1px solid ${T.borderStrong}`,
                     color: T.textPrimary,
-                    fontSize: '0.85rem'
+                    fontSize: '0.85rem',
+                    outline: 'none'
                   }}
                 />
               </div>
 
               <div
                 style={{
-                  background: 'rgba(79, 126, 248, 0.08)',
-                  border: '1px solid rgba(79, 126, 248, 0.25)',
+                  background: T.accentSofter,
+                  border: `1px solid ${T.accentBorder}`,
                   padding: '10px 14px',
-                  borderRadius: '8px',
+                  borderRadius: '0.75rem',
                   fontSize: '0.8rem',
                   color: T.textSecondary
                 }}
@@ -1007,7 +1017,7 @@ export const LandlordApplicationModal = ({
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
-            background: 'rgba(15, 23, 42, 0.6)'
+            background: '#ffffff'
           }}
         >
           <div>
@@ -1017,10 +1027,10 @@ export const LandlordApplicationModal = ({
                 onClick={() => setStep(step - 1)}
                 style={{
                   padding: '8px 16px',
-                  background: 'transparent',
-                  border: `1px solid ${T.border}`,
+                  background: '#ffffff',
+                  border: `1px solid ${T.borderStrong}`,
                   color: T.textSecondary,
-                  borderRadius: '8px',
+                  borderRadius: 9999,
                   cursor: 'pointer',
                   fontSize: '0.85rem',
                   fontWeight: 600
@@ -1040,7 +1050,7 @@ export const LandlordApplicationModal = ({
                 background: 'transparent',
                 border: 'none',
                 color: T.textMuted,
-                borderRadius: '8px',
+                borderRadius: 9999,
                 cursor: 'pointer',
                 fontSize: '0.85rem'
               }}
@@ -1054,16 +1064,17 @@ export const LandlordApplicationModal = ({
                 onClick={() => setStep(step + 1)}
                 style={{
                   padding: '8px 20px',
-                  background: T.accent,
+                  background: 'linear-gradient(135deg,#0ea5e9 0%,#0284c7 70%)',
                   color: '#fff',
                   border: 'none',
-                  borderRadius: '8px',
+                  borderRadius: 9999,
                   cursor: 'pointer',
                   fontSize: '0.85rem',
-                  fontWeight: 600,
+                  fontWeight: 700,
                   display: 'inline-flex',
                   alignItems: 'center',
-                  gap: '6px'
+                  gap: '6px',
+                  boxShadow: '0 10px 24px -10px rgba(2,132,199,0.7)'
                 }}
               >
                 Continue
@@ -1079,14 +1090,14 @@ export const LandlordApplicationModal = ({
                   background: `linear-gradient(135deg, ${T.accent} 0%, #3b82f6 100%)`,
                   color: '#fff',
                   border: 'none',
-                  borderRadius: '8px',
+                  borderRadius: 9999,
                   cursor: submitting ? 'not-allowed' : 'pointer',
                   fontSize: '0.85rem',
                   fontWeight: 700,
                   display: 'inline-flex',
                   alignItems: 'center',
                   gap: '8px',
-                  boxShadow: '0 4px 14px rgba(79, 126, 248, 0.4)'
+                  boxShadow: '0 10px 24px -10px rgba(2,132,199,0.8)'
                 }}
               >
                 {submitting ? (

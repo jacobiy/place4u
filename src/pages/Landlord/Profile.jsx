@@ -1,13 +1,14 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { 
-  User, Mail, Phone, MapPin, Building, Calendar, 
-  Edit2, Save, X, Camera, Lock, Bell, Globe, 
-  CreditCard, FileText, Shield, CheckCircle, 
-  AlertCircle, ChevronRight, Copy, Check,
-  UploadCloud, Trash2, Eye, ExternalLink, FileCheck, Plus, RefreshCw
+import {
+  User, Mail, Phone, MapPin, Building, Calendar,
+  Edit2, Save, Camera, Globe,
+  CreditCard, FileText, Shield, CheckCircle,
+  AlertCircle, Copy, Check,
+  Trash2, Eye, Plus, RefreshCw, Lock, KeyRound
 } from 'lucide-react';
-import { T } from './Styles/designTokens';
+import { T, SERIF } from './Styles/designTokens';
 import { PrimaryBtn, SecondaryBtn } from './Component/Buttons';
+import { StatCard } from './Component/StatCard';
 import { Modal } from './Component/Modal';
 import { DocumentUploadModal } from './Component/DocumentUploadModal';
 import { DocumentPreviewModal } from './Component/DocumentPreviewModal';
@@ -16,15 +17,19 @@ import { LandlordQueries } from './db/queries';
 import { useAuth } from '../../hooks/useAuth';
 import { supabase } from '../../utils/Supabase';
 import { ConfirmModal } from '../../component/AlertModal';
+import { initials } from './Styles/helpers';
 import Loading from '../../component/loading';
 
-const ProfileSection = ({ title, icon: Icon, children, onEdit, isEditing }) => (
+const EYEBROW = { fontSize: "0.68rem", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: T.textMuted, margin: 0 };
+
+const ProfileSection = ({ title, subtitle, icon: Icon, children, onEdit, isEditing }) => (
   <div style={{
-    background: T.cardBg,
+    background: "#ffffff",
     border: `1px solid ${T.border}`,
-    borderRadius: "1rem",
+    borderRadius: T.radiusLg,
     overflow: "hidden",
-    marginBottom: "1.5rem"
+    marginBottom: "1.5rem",
+    boxShadow: T.shadowSm
   }}>
     <div style={{
       padding: "1rem 1.5rem",
@@ -32,38 +37,41 @@ const ProfileSection = ({ title, icon: Icon, children, onEdit, isEditing }) => (
       display: "flex",
       justifyContent: "space-between",
       alignItems: "center",
-      background: "rgba(79,126,248,0.04)"
+      gap: "1rem",
+      flexWrap: "wrap",
+      background: "linear-gradient(135deg, #ffffff 0%, #f3f9ff 100%)"
     }}>
       <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
-        <Icon size={20} color={T.accent} />
-        <h2 style={{ fontSize: "1.1rem", fontWeight: 600, color: T.textPrimary }}>{title}</h2>
+        <div style={{ width: 38, height: 38, borderRadius: "0.75rem", background: T.accentSoft, border: `1px solid ${T.accentBorder}`, display: "flex", alignItems: "center", justifyContent: "center" }}>
+          <Icon size={18} color={T.accent} />
+        </div>
+        <div>
+          <h2 style={{ fontFamily: SERIF, fontSize: "1.15rem", color: T.textPrimary, letterSpacing: "-0.01em" }}>{title}</h2>
+          {subtitle && <p style={{ fontSize: "0.75rem", color: T.textMuted, marginTop: 1 }}>{subtitle}</p>}
+        </div>
       </div>
       {onEdit && (
         <button
           onClick={onEdit}
           style={{
-            padding: "0.5rem",
-            background: "transparent",
-            border: `1px solid ${T.border}`,
-            borderRadius: "8px",
+            padding: "0.5rem 0.9rem",
+            background: isEditing ? T.emeraldSoft : "#ffffff",
+            border: `1px solid ${isEditing ? T.emeraldBorder : T.borderHover}`,
+            borderRadius: 9999,
             cursor: "pointer",
             display: "flex",
             alignItems: "center",
-            gap: "0.5rem",
-            color: T.textSecondary,
+            gap: "0.45rem",
+            color: isEditing ? T.emerald : T.textSecondary,
+            fontSize: "0.78rem",
+            fontWeight: 600,
             transition: "all 0.15s"
           }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.background = T.surface;
-            e.currentTarget.style.color = T.textPrimary;
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.background = "transparent";
-            e.currentTarget.style.color = T.textSecondary;
-          }}
+          onMouseEnter={(e) => { if (!isEditing) { e.currentTarget.style.background = "#f0f9ff"; e.currentTarget.style.color = T.accent; } }}
+          onMouseLeave={(e) => { if (!isEditing) { e.currentTarget.style.background = "#ffffff"; e.currentTarget.style.color = T.textSecondary; } }}
         >
-          {isEditing ? <Save size={16} /> : <Edit2 size={16} />}
-          <span style={{ fontSize: "0.8rem" }}>{isEditing ? "Save" : "Edit"}</span>
+          {isEditing ? <Save size={15} /> : <Edit2 size={15} />}
+          <span>{isEditing ? "Save" : "Edit"}</span>
         </button>
       )}
     </div>
@@ -74,27 +82,17 @@ const ProfileSection = ({ title, icon: Icon, children, onEdit, isEditing }) => (
 );
 
 const InfoField = ({ label, value, icon: Icon, isEditing, onChange, fieldName, type = "text" }) => (
-  <div style={{ marginBottom: "1rem" }}>
+  <div>
     <label style={{
-      display: "block",
-      fontSize: "0.75rem",
-      fontWeight: 500,
-      color: T.textMuted,
-      marginBottom: "0.5rem",
-      textTransform: "uppercase",
-      letterSpacing: "0.05em"
+      display: "block", fontSize: "0.68rem", fontWeight: 700, color: T.textMuted,
+      marginBottom: "0.5rem", textTransform: "uppercase", letterSpacing: "0.08em"
     }}>
       {label}
     </label>
     {isEditing ? (
       <div style={{ position: "relative" }}>
         {Icon && (
-          <Icon size={16} color={T.textMuted} style={{
-            position: "absolute",
-            left: "12px",
-            top: "50%",
-            transform: "translateY(-50%)"
-          }} />
+          <Icon size={16} color={T.textMuted} style={{ position: "absolute", left: "13px", top: "50%", transform: "translateY(-50%)" }} />
         )}
         <input
           type={type}
@@ -102,25 +100,21 @@ const InfoField = ({ label, value, icon: Icon, isEditing, onChange, fieldName, t
           onChange={(e) => onChange(fieldName, e.target.value)}
           style={{
             width: "100%",
-            padding: Icon ? "0.75rem 0.75rem 0.75rem 2.5rem" : "0.75rem",
-            background: T.surface,
-            border: `1px solid ${T.border}`,
-            borderRadius: "0.625rem",
+            padding: Icon ? "0.7rem 0.75rem 0.7rem 2.5rem" : "0.7rem 0.85rem",
+            background: "#ffffff",
+            border: `1px solid ${T.borderStrong}`,
+            borderRadius: "0.75rem",
             color: T.textPrimary,
             fontSize: "0.9rem",
-            fontFamily: "inherit"
+            fontFamily: "inherit",
+            outline: "none"
           }}
         />
       </div>
     ) : (
-      <div style={{
-        display: "flex",
-        alignItems: "center",
-        gap: "0.5rem",
-        padding: "0.5rem 0"
-      }}>
-        {Icon && <Icon size={16} color={T.accent} />}
-        <span style={{ color: T.textPrimary, fontSize: "0.9rem" }}>{value || "Not provided"}</span>
+      <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", padding: "0.6rem 0.85rem", background: T.surfaceAlt, border: `1px solid ${T.border}`, borderRadius: "0.75rem", minHeight: 42 }}>
+        {Icon && <Icon size={15} color={T.accent} />}
+        <span style={{ color: value ? T.textPrimary : T.textMuted, fontSize: "0.89rem", fontWeight: 500 }}>{value || "Not provided"}</span>
       </div>
     )}
   </div>
@@ -128,31 +122,15 @@ const InfoField = ({ label, value, icon: Icon, isEditing, onChange, fieldName, t
 
 const VerificationBadge = ({ verified, label }) => (
   <div style={{
-    display: "flex",
-    alignItems: "center",
-    gap: "0.5rem",
-    padding: "0.5rem 0.75rem",
-    background: verified ? "rgba(16,185,129,0.1)" : "rgba(239,68,68,0.1)",
-    borderRadius: "8px",
-    border: `1px solid ${verified ? T.emerald : T.red}`,
-    color: verified ? T.emerald : T.red
+    display: "flex", alignItems: "center", gap: "0.4rem", padding: "0.4rem 0.75rem",
+    background: verified ? T.emeraldSoft : T.redSoft,
+    borderRadius: 9999,
+    border: `1px solid ${verified ? T.emeraldBorder : T.redBorder}`,
+    color: verified ? T.emerald : T.red,
+    fontSize: "0.75rem", fontWeight: 700
   }}>
-    {verified ? <CheckCircle size={14} /> : <AlertCircle size={14} />}
-    <span style={{ fontSize: "0.8rem", fontWeight: 500 }}>{label}</span>
-  </div>
-);
-
-const StatCard = ({ label, value, icon: Icon }) => (
-  <div style={{
-    background: T.surface,
-    border: `1px solid ${T.border}`,
-    borderRadius: "0.75rem",
-    padding: "1rem",
-    textAlign: "center"
-  }}>
-    <Icon size={24} color={T.accent} style={{ marginBottom: "0.5rem" }} />
-    <p style={{ fontSize: "1.25rem", fontWeight: 700, color: T.textPrimary }}>{value}</p>
-    <p style={{ fontSize: "0.7rem", color: T.textMuted }}>{label}</p>
+    {verified ? <CheckCircle size={13} /> : <AlertCircle size={13} />}
+    <span>{label}</span>
   </div>
 );
 
@@ -221,23 +199,23 @@ export const Profile = ({ onClose, isModal = false }) => {
 
   const loadProfile = useCallback(async () => {
     if (!user?.id) return;
-    
+
     setIsLoading(true);
     setError(null);
     try {
       // Try to get existing profile
       let result = await LandlordQueries.getLandlordProfile(user.id);
-      
+
       // If profile exists, use it
       if (result.success && result.data) {
         setProfile(result.data);
         setProfileId(result.data.id);
         setEditedData(result.data);
-        
+
         // Update statistics and last login in background
         LandlordQueries.updateStatistics(result.data.id).catch(console.error);
         LandlordQueries.updateLastLogin(result.data.id).catch(console.error);
-      } 
+      }
       // If no profile found, create one
       else if (result.success && !result.data) {
         const newProfileData = {
@@ -249,19 +227,19 @@ export const Profile = ({ onClose, isModal = false }) => {
           accountStatus: 'active',
           accountTier: 'basic'
         };
-        
+
         const createResult = await LandlordQueries.createLandlordProfile(newProfileData);
         if (createResult.success && createResult.data) {
           setProfile(createResult.data);
           setProfileId(createResult.data.id);
           setEditedData(createResult.data);
-          
+
           // Update last login for new profile
           LandlordQueries.updateLastLogin(createResult.data.id).catch(console.error);
         } else {
           throw new Error(createResult.error || 'Failed to create profile');
         }
-      } 
+      }
       else {
         throw new Error(result.error || 'Failed to load profile');
       }
@@ -289,7 +267,7 @@ export const Profile = ({ onClose, isModal = false }) => {
     setIsSaving(true);
     setError(null);
     setSuccessMessage(null);
-    
+
     const targetId = profileId || profile?.id || user?.id;
     if (!targetId) {
       setError("Unable to identify profile record. Please refresh and try again.");
@@ -299,7 +277,7 @@ export const Profile = ({ onClose, isModal = false }) => {
 
     try {
       let result;
-      
+
       switch(section) {
         case 'personal':
           result = await LandlordQueries.updatePersonalInfo(targetId, {
@@ -328,7 +306,7 @@ export const Profile = ({ onClose, isModal = false }) => {
         default:
           result = await LandlordQueries.updateLandlordProfile(targetId, editedData);
       }
-      
+
       if (result.success) {
         let updatedProfile = result.data;
         if (!updatedProfile && user?.id) {
@@ -346,7 +324,7 @@ export const Profile = ({ onClose, isModal = false }) => {
         }
         setSuccessMessage('Profile updated successfully!');
         setTimeout(() => setSuccessMessage(null), 3000);
-        
+
         // Log activity safely
         try {
           await LandlordQueries.logActivity(targetId, 'profile_update', `Updated ${section} information`);
@@ -356,7 +334,7 @@ export const Profile = ({ onClose, isModal = false }) => {
       } else {
         throw new Error(result.error || "Failed to update profile details.");
       }
-      
+
       setIsEditing({ ...isEditing, [section]: false });
     } catch (error) {
       console.error("Error saving profile:", error);
@@ -380,31 +358,29 @@ export const Profile = ({ onClose, isModal = false }) => {
       setError("Passwords don't match");
       return;
     }
-    
+
     if (passwordData.new.length < 6) {
       setError("Password must be at least 6 characters");
       return;
     }
-    
+
     setIsSaving(true);
     setError(null);
-    
-    try {
-      // Import supabase at the top of the file
 
+    try {
       const { error } = await supabase.auth.updateUser({
         password: passwordData.new
       });
-      
+
       if (error) throw error;
-      
+
       setSuccessMessage('Password changed successfully!');
       setShowPasswordModal(false);
       setPasswordData({ current: '', new: '', confirm: '' });
-      
+
       // Log activity
       await LandlordQueries.logActivity(profileId, 'password_change', 'Changed password');
-      
+
       setTimeout(() => setSuccessMessage(null), 3000);
     } catch (error) {
       console.error("Error changing password:", error);
@@ -423,32 +399,32 @@ export const Profile = ({ onClose, isModal = false }) => {
   const handleImageUpload = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
-    
+
     if (file.size > 5 * 1024 * 1024) {
       setError("Image size must be less than 5MB");
       return;
     }
-    
+
     if (!file.type.startsWith('image/')) {
       setError("Only image files are allowed");
       return;
     }
-    
+
     setUploadingImage(true);
     setError(null);
-    
+
     try {
       const uploadResult = await LandlordQueries.uploadProfileImage(user.id, file);
-      
+
       if (uploadResult.success) {
         const updateResult = await LandlordQueries.updateProfileImage(profileId, uploadResult.url);
-        
+
         if (updateResult.success) {
           setProfile(updateResult.data);
           setEditedData(updateResult.data);
           setSuccessMessage('Profile image updated successfully!');
           setTimeout(() => setSuccessMessage(null), 3000);
-          
+
           await LandlordQueries.logActivity(profileId, 'profile_update', 'Updated profile image');
         } else {
           throw new Error(updateResult.error);
@@ -469,7 +445,7 @@ export const Profile = ({ onClose, isModal = false }) => {
       ...profile.notification_preferences,
       [key]: value
     };
-    
+
     setProfile({
       ...profile,
       notification_preferences: updatedPreferences
@@ -478,7 +454,7 @@ export const Profile = ({ onClose, isModal = false }) => {
       ...editedData,
       notification_preferences: updatedPreferences
     });
-    
+
     try {
       const result = await LandlordQueries.updateNotificationPreferences(profileId, updatedPreferences);
       if (result.success) {
@@ -497,14 +473,7 @@ export const Profile = ({ onClose, isModal = false }) => {
 
   if (error && !profile) {
     return (
-      <div style={{
-        display: "flex",
-        justifyContent: "center",
-        alignItems: "center",
-        height: "100vh",
-        flexDirection: "column",
-        gap: "1rem"
-      }}>
+      <div style={{ display: "flex", justifyContent: "center", alignItems: "center", height: "60vh", flexDirection: "column", gap: "1rem" }}>
         <AlertCircle size={48} color={T.red} />
         <p style={{ color: T.textPrimary }}>Error loading profile: {error}</p>
         <PrimaryBtn onClick={loadProfile}>Retry</PrimaryBtn>
@@ -512,202 +481,188 @@ export const Profile = ({ onClose, isModal = false }) => {
     );
   }
 
+  const displayName = profile?.full_name || profile?.name || "Landlord";
+
   const content = (
-    <div style={{ maxWidth: "1200px", margin: "0 auto", padding: isModal ? "0" : "0 1rem" }}>
+    <div className="ll-scope" style={{ maxWidth: "1200px", margin: "0 auto", minWidth: 0 }}>
       {successMessage && (
         <div style={{
-          background: "rgba(16,185,129,0.1)",
-          border: `1px solid ${T.emerald}`,
-          borderRadius: "0.5rem",
-          padding: "1rem",
-          marginBottom: "1rem",
-          color: T.emerald,
-          display: "flex",
-          alignItems: "center",
-          gap: "0.5rem"
+          background: T.emeraldSoft, border: `1px solid ${T.emeraldBorder}`, borderRadius: "0.875rem",
+          padding: "0.9rem 1.1rem", marginBottom: "1rem", color: T.emerald,
+          display: "flex", alignItems: "center", gap: "0.5rem", fontSize: "0.85rem", fontWeight: 600,
+          animation: "llToast 0.25s ease-out"
         }}>
           <CheckCircle size={16} />
           {successMessage}
         </div>
       )}
-      
+
       {error && (
         <div style={{
-          background: "rgba(239,68,68,0.1)",
-          border: `1px solid ${T.red}`,
-          borderRadius: "0.5rem",
-          padding: "1rem",
-          marginBottom: "1rem",
-          color: T.red,
-          display: "flex",
-          alignItems: "center",
-          gap: "0.5rem"
+          background: T.redSoft, border: `1px solid ${T.redBorder}`, borderRadius: "0.875rem",
+          padding: "0.9rem 1.1rem", marginBottom: "1rem", color: T.red,
+          display: "flex", alignItems: "center", gap: "0.5rem", fontSize: "0.85rem", fontWeight: 600
         }}>
           <AlertCircle size={16} />
           {error}
         </div>
       )}
-      
-      {/* Header Section with Profile Image */}
-      <div style={{
-        background: `linear-gradient(135deg, ${T.navyMid} 0%, ${T.navy} 100%)`,
-        borderRadius: "1rem",
-        padding: "2rem",
-        marginBottom: "2rem",
+
+      {/* HERO */}
+      <div className="ll-anim-up" style={{
+        background: "linear-gradient(135deg, #ffffff 0%, #f3f9ff 55%, #eef6ff 100%)",
+        borderRadius: T.radiusXl,
+        padding: "clamp(1.5rem, 4vw, 2.25rem)",
+        marginBottom: "1.75rem",
         border: `1px solid ${T.border}`,
         position: "relative",
-        overflow: "hidden"
+        overflow: "hidden",
+        boxShadow: T.shadow
       }}>
-        <div style={{
-          position: "absolute",
-          top: "-50%",
-          right: "-10%",
-          width: "300px",
-          height: "300px",
-          borderRadius: "50%",
-          background: `radial-gradient(circle, rgba(79,126,248,0.1) 0%, transparent 70%)`
-        }} />
-        
-        <div style={{ display: "flex", alignItems: "center", gap: "2rem", flexWrap: "wrap" }}>
+        <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 5, background: "linear-gradient(90deg,#7dd3fc,#0ea5e9,#2563eb)" }} />
+        <div style={{ position: "absolute", top: "-40%", right: "-8%", width: "320px", height: "320px", borderRadius: "50%", background: `radial-gradient(circle, rgba(56,189,248,0.16) 0%, transparent 70%)` }} />
+        <div style={{ position: "absolute", bottom: "-50%", left: "30%", width: "260px", height: "260px", borderRadius: "50%", background: `radial-gradient(circle, rgba(129,140,248,0.12) 0%, transparent 70%)` }} />
+
+        <div style={{ display: "flex", alignItems: "center", gap: "2rem", flexWrap: "wrap", position: "relative", zIndex: 1 }}>
           <div style={{ position: "relative" }}>
             <div style={{
-              width: "120px",
-              height: "120px",
-              borderRadius: "50%",
-              background: `linear-gradient(135deg, ${T.accent} 0%, #7c5ef8 100%)`,
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              overflow: "hidden",
-              border: `3px solid ${T.accent}`,
-              boxShadow: "0 8px 20px rgba(0,0,0,0.3)"
+              width: "120px", height: "120px", borderRadius: "50%",
+              background: `linear-gradient(135deg, ${T.accent} 0%, #7c3aed 100%)`,
+              display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden",
+              border: "3px solid #ffffff",
+              boxShadow: "0 14px 34px -12px rgba(2,132,199,0.7)"
             }}>
               {uploadingImage ? (
-                <div style={{ color: "#fff" }}>Uploading...</div>
+                <div style={{ color: "#fff", fontSize: "0.75rem" }}>Uploading…</div>
               ) : profile?.profile_image_url ? (
                 <img src={profile.profile_image_url} alt="Profile" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
               ) : (
-                <User size={48} color="#fff" />
+                <span style={{ fontFamily: SERIF, fontSize: "2.6rem", color: "#fff" }}>{initials(displayName)}</span>
               )}
             </div>
             <label style={{
-              position: "absolute",
-              bottom: "0",
-              right: "0",
-              background: T.accent,
-              padding: "8px",
-              borderRadius: "50%",
-              cursor: "pointer",
-              border: `2px solid ${T.navyMid}`,
-              transition: "transform 0.15s"
+              position: "absolute", bottom: "2px", right: "2px",
+              background: T.accent, padding: "9px", borderRadius: "50%", cursor: "pointer",
+              border: "3px solid #ffffff", transition: "transform 0.15s", boxShadow: T.shadowSm
             }}
-            onMouseEnter={(e) => e.currentTarget.style.transform = "scale(1.1)"}
-            onMouseLeave={(e) => e.currentTarget.style.transform = "scale(1)"}
+              onMouseEnter={(e) => e.currentTarget.style.transform = "scale(1.1)"}
+              onMouseLeave={(e) => e.currentTarget.style.transform = "scale(1)"}
             >
-              <Camera size={16} color="#fff" />
+              <Camera size={15} color="#fff" />
               <input type="file" accept="image/*" onChange={handleImageUpload} style={{ display: "none" }} disabled={uploadingImage} />
             </label>
           </div>
 
-          <div style={{ flex: 1 }}>
-            <div style={{ display: "flex", alignItems: "center", gap: "1rem", flexWrap: "wrap", marginBottom: "0.5rem" }}>
-              <h1 style={{ fontSize: "1.75rem", fontWeight: 700, color: T.textPrimary }}>
-                {profile?.full_name || profile?.name}
+          <div style={{ flex: 1, minWidth: 260 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", flexWrap: "wrap", marginBottom: "0.6rem" }}>
+              <h1 style={{ fontFamily: SERIF, fontSize: "clamp(1.7rem, 4vw, 2.4rem)", color: T.textPrimary, letterSpacing: "-0.02em", lineHeight: 1.05 }}>
+                {displayName}
               </h1>
-              <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
-                <VerificationBadge verified={profile?.ownership_proof_verified || false} label="Ownership Verified" />
-                <VerificationBadge verified={profile?.email_verified || false} label="Email Verified" />
-                <VerificationBadge verified={profile?.id_verified || false} label="ID Verified" />
-              </div>
+              {profile?.landlord_code && (
+                <span style={{
+                  background: T.accentSoft, color: T.accent, fontSize: "0.7rem", fontWeight: 800,
+                  padding: "4px 11px", borderRadius: 9999, border: `1px solid ${T.accentBorder}`, letterSpacing: "0.04em"
+                }}>
+                  {profile.landlord_code}
+                </span>
+              )}
             </div>
-            <div style={{ display: "flex", alignItems: "center", gap: "1rem", color: T.textMuted, marginBottom: "1rem" }}>
-              <span style={{ display: "flex", alignItems: "center", gap: "0.25rem" }}>
-                <Building size={14} /> {profile?.total_properties || 0} Properties
+            <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap", marginBottom: "0.9rem" }}>
+              <VerificationBadge verified={profile?.ownership_proof_verified || false} label="Ownership Verified" />
+              <VerificationBadge verified={profile?.email_verified || false} label="Email Verified" />
+              <VerificationBadge verified={profile?.id_verified || false} label="ID Verified" />
+            </div>
+            <div style={{ display: "flex", alignItems: "center", gap: "1.25rem", color: T.textSecondary, marginBottom: "1rem", flexWrap: "wrap", fontSize: "0.82rem" }}>
+              <span style={{ display: "flex", alignItems: "center", gap: "0.35rem" }}>
+                <Building size={14} color={T.accent} /> {profile?.total_properties || 0} Properties
               </span>
-              <span style={{ display: "flex", alignItems: "center", gap: "0.25rem" }}>
-                <User size={14} /> {profile?.total_tenants || 0} Tenants
+              <span style={{ display: "flex", alignItems: "center", gap: "0.35rem" }}>
+                <User size={14} color={T.accent} /> {profile?.total_tenants || 0} Tenants
               </span>
-              <span style={{ display: "flex", alignItems: "center", gap: "0.25rem" }}>
-                <Calendar size={14} /> Joined {profile?.join_date ? new Date(profile.join_date).toLocaleDateString() : 'N/A'}
+              <span style={{ display: "flex", alignItems: "center", gap: "0.35rem" }}>
+                <Calendar size={14} color={T.accent} /> Joined {profile?.join_date ? new Date(profile.join_date).toLocaleDateString() : 'N/A'}
               </span>
             </div>
-            <div style={{ display: "flex", gap: "2rem", flexWrap: "wrap" }}>
+            <div style={{ display: "flex", gap: "1.5rem", flexWrap: "wrap" }}>
               <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
                 <Mail size={14} color={T.accent} />
-                <span style={{ fontSize: "0.85rem", color: T.textSecondary }}>{profile?.email}</span>
+                <span style={{ fontSize: "0.84rem", color: T.textSecondary }}>{profile?.email}</span>
                 <button
                   onClick={() => copyToClipboard(profile?.email, 'email')}
-                  style={{ background: "transparent", border: "none", cursor: "pointer", padding: "2px" }}
+                  style={{ background: "transparent", border: "none", cursor: "pointer", padding: "2px", display: "flex" }}
                 >
-                  {copiedField === 'email' ? <Check size={12} color={T.emerald} /> : <Copy size={12} color={T.textMuted} />}
+                  {copiedField === 'email' ? <Check size={13} color={T.emerald} /> : <Copy size={13} color={T.textMuted} />}
                 </button>
               </div>
               <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
                 <Phone size={14} color={T.accent} />
-                <span style={{ fontSize: "0.85rem", color: T.textSecondary }}>{profile?.phone || 'Not provided'}</span>
+                <span style={{ fontSize: "0.84rem", color: T.textSecondary }}>{profile?.phone || 'Not provided'}</span>
                 <button
                   onClick={() => copyToClipboard(profile?.phone, 'phone')}
-                  style={{ background: "transparent", border: "none", cursor: "pointer", padding: "2px" }}
+                  style={{ background: "transparent", border: "none", cursor: "pointer", padding: "2px", display: "flex" }}
                 >
-                  {copiedField === 'phone' ? <Check size={12} color={T.emerald} /> : <Copy size={12} color={T.textMuted} />}
+                  {copiedField === 'phone' ? <Check size={13} color={T.emerald} /> : <Copy size={13} color={T.textMuted} />}
                 </button>
               </div>
             </div>
           </div>
+        </div>
 
-          <div style={{ display: "flex", gap: "1rem" }}>
-            <StatCard 
-              label="Total Income" 
-              value={profile?.total_income ? `${profile.currency || 'ZAR'} ${profile.total_income.toLocaleString()}` : 'R0'} 
-              icon={CreditCard} 
-            />
-            <StatCard label="Properties" value={profile?.total_properties || 0} icon={Building} />
-            <StatCard label="Tenants" value={profile?.total_tenants || 0} icon={User} />
-          </div>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: "1rem", marginTop: "1.75rem", position: "relative", zIndex: 1 }}>
+          <StatCard
+            label="Total Income"
+            value={profile?.total_income ? `R ${Number(profile.total_income).toLocaleString()}` : 'R0'}
+            icon="CreditCard"
+            accent={T.emerald}
+          />
+          <StatCard label="Properties" value={String(profile?.total_properties || 0)} icon="Building" accent={T.accent} />
+          <StatCard label="Tenants" value={String(profile?.total_tenants || 0)} icon="Users" accent={T.purple} />
+          <StatCard label="Trust Rating" value={`${profile?.trust_score || 100}%`} icon="Shield" accent={T.amber} />
         </div>
       </div>
 
       {/* Personal Information Section */}
-      <ProfileSection 
-        title="Personal Information" 
+      <ProfileSection
+        title="Personal Information"
+        subtitle="Identity and business registration details"
         icon={User}
         onEdit={() => handleEdit('personal')}
         isEditing={isEditing.personal}
       >
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: "1rem" }}>
-          <InfoField 
-            label="Full Name" 
-            value={editedData.full_name || editedData.name} 
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: "1rem" }}>
+          <InfoField
+            label="Full Name"
+            value={editedData.full_name || editedData.name}
             icon={User}
             isEditing={isEditing.personal}
             onChange={handleFieldChange}
             fieldName="full_name"
           />
-          <InfoField 
-            label="Company Name" 
-            value={editedData.company_name || editedData.companyName} 
+          <InfoField
+            label="Company Name"
+            value={editedData.company_name || editedData.companyName}
             icon={Building}
             isEditing={isEditing.personal}
             onChange={handleFieldChange}
             fieldName="company_name"
           />
-          <InfoField 
-            label="Tax ID / Registration" 
-            value={editedData.tax_id || editedData.taxId} 
+          <InfoField
+            label="Tax ID / Registration"
+            value={editedData.tax_id || editedData.taxId}
             icon={FileText}
             isEditing={isEditing.personal}
             onChange={handleFieldChange}
             fieldName="tax_id"
           />
-          <InfoField 
-            label="Landlord ID" 
-            value={profile?.landlord_code} 
+          <InfoField
+            label="Landlord ID"
+            value={profile?.landlord_code}
             icon={Shield}
             isEditing={false}
           />
         </div>
         {isEditing.personal && (
-          <div style={{ display: "flex", gap: "1rem", marginTop: "1rem" }}>
+          <div style={{ display: "flex", gap: "1rem", marginTop: "1.25rem" }}>
             <PrimaryBtn onClick={() => handleEdit('personal')} disabled={isSaving}>
               {isSaving ? 'Saving...' : 'Save Changes'}
             </PrimaryBtn>
@@ -717,33 +672,34 @@ export const Profile = ({ onClose, isModal = false }) => {
       </ProfileSection>
 
       {/* Contact Information Section */}
-      <ProfileSection 
-        title="Contact Information" 
+      <ProfileSection
+        title="Contact Information"
+        subtitle="How tenants and agents reach you"
         icon={Phone}
         onEdit={() => handleEdit('contact')}
         isEditing={isEditing.contact}
       >
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: "1rem" }}>
-          <InfoField 
-            label="Email Address" 
-            value={editedData.email} 
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: "1rem" }}>
+          <InfoField
+            label="Email Address"
+            value={editedData.email}
             icon={Mail}
             isEditing={isEditing.contact}
             onChange={handleFieldChange}
             fieldName="email"
             type="email"
           />
-          <InfoField 
-            label="Phone Number" 
-            value={editedData.phone} 
+          <InfoField
+            label="Phone Number"
+            value={editedData.phone}
             icon={Phone}
             isEditing={isEditing.contact}
             onChange={handleFieldChange}
             fieldName="phone"
           />
-          <InfoField 
-            label="Alternative Phone" 
-            value={editedData.alternative_phone || editedData.alternativePhone} 
+          <InfoField
+            label="Alternative Phone"
+            value={editedData.alternative_phone || editedData.alternativePhone}
             icon={Phone}
             isEditing={isEditing.contact}
             onChange={handleFieldChange}
@@ -751,7 +707,7 @@ export const Profile = ({ onClose, isModal = false }) => {
           />
         </div>
         {isEditing.contact && (
-          <div style={{ display: "flex", gap: "1rem", marginTop: "1rem" }}>
+          <div style={{ display: "flex", gap: "1rem", marginTop: "1.25rem" }}>
             <PrimaryBtn onClick={() => handleEdit('contact')} disabled={isSaving}>
               {isSaving ? 'Saving...' : 'Save Changes'}
             </PrimaryBtn>
@@ -761,48 +717,49 @@ export const Profile = ({ onClose, isModal = false }) => {
       </ProfileSection>
 
       {/* Address Information Section */}
-      <ProfileSection 
-        title="Address Information" 
+      <ProfileSection
+        title="Address Information"
+        subtitle="Registered place of business"
         icon={MapPin}
         onEdit={() => handleEdit('address')}
         isEditing={isEditing.address}
       >
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: "1rem" }}>
-          <InfoField 
-            label="Street Address" 
-            value={editedData.address} 
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: "1rem" }}>
+          <InfoField
+            label="Street Address"
+            value={editedData.address}
             icon={MapPin}
             isEditing={isEditing.address}
             onChange={handleFieldChange}
             fieldName="address"
           />
-          <InfoField 
-            label="City" 
-            value={editedData.city} 
+          <InfoField
+            label="City"
+            value={editedData.city}
             icon={MapPin}
             isEditing={isEditing.address}
             onChange={handleFieldChange}
             fieldName="city"
           />
-          <InfoField 
-            label="State/Province" 
-            value={editedData.state} 
+          <InfoField
+            label="State/Province"
+            value={editedData.state}
             icon={MapPin}
             isEditing={isEditing.address}
             onChange={handleFieldChange}
             fieldName="state"
           />
-          <InfoField 
-            label="Postal Code" 
-            value={editedData.postal_code || editedData.postalCode} 
+          <InfoField
+            label="Postal Code"
+            value={editedData.postal_code || editedData.postalCode}
             icon={MapPin}
             isEditing={isEditing.address}
             onChange={handleFieldChange}
             fieldName="postal_code"
           />
-          <InfoField 
-            label="Country" 
-            value={editedData.country} 
+          <InfoField
+            label="Country"
+            value={editedData.country}
             icon={Globe}
             isEditing={isEditing.address}
             onChange={handleFieldChange}
@@ -810,7 +767,7 @@ export const Profile = ({ onClose, isModal = false }) => {
           />
         </div>
         {isEditing.address && (
-          <div style={{ display: "flex", gap: "1rem", marginTop: "1rem" }}>
+          <div style={{ display: "flex", gap: "1rem", marginTop: "1.25rem" }}>
             <PrimaryBtn onClick={() => handleEdit('address')} disabled={isSaving}>
               {isSaving ? 'Saving...' : 'Save Changes'}
             </PrimaryBtn>
@@ -821,26 +778,19 @@ export const Profile = ({ onClose, isModal = false }) => {
 
       {/* Proof of Ownership & Verification Documents Section */}
       <div style={{
-        background: T.cardBg,
-        border: `1px solid ${T.border}`,
-        borderRadius: "1rem",
-        overflow: "hidden",
-        marginBottom: "1.5rem"
+        background: "#ffffff", border: `1px solid ${T.border}`, borderRadius: T.radiusLg, overflow: "hidden", marginBottom: "1.5rem", boxShadow: T.shadowSm
       }}>
         <div style={{
-          padding: "1rem 1.5rem",
-          borderBottom: `1px solid ${T.border}`,
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          flexWrap: "wrap",
-          gap: "1rem",
-          background: "rgba(79,126,248,0.04)"
+          padding: "1rem 1.5rem", borderBottom: `1px solid ${T.border}`, display: "flex",
+          justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "1rem",
+          background: "linear-gradient(135deg, #ffffff 0%, #f3f9ff 100%)"
         }}>
           <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
-            <Shield size={20} color={T.accent} />
+            <div style={{ width: 38, height: 38, borderRadius: "0.75rem", background: T.emeraldSoft, border: `1px solid ${T.emeraldBorder}`, display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <Shield size={18} color={T.emerald} />
+            </div>
             <div>
-              <h2 style={{ fontSize: "1.1rem", fontWeight: 600, color: T.textPrimary }}>
+              <h2 style={{ fontFamily: SERIF, fontSize: "1.15rem", color: T.textPrimary, letterSpacing: "-0.01em" }}>
                 Proof of Ownership & Verification Documents
               </h2>
               <p style={{ fontSize: "0.75rem", color: T.textMuted, marginTop: "2px" }}>
@@ -848,24 +798,9 @@ export const Profile = ({ onClose, isModal = false }) => {
               </p>
             </div>
           </div>
-          <button
-            onClick={() => setShowUploadDocModal(true)}
-            style={{
-              padding: "0.5rem 1rem",
-              background: T.accent,
-              border: "none",
-              borderRadius: "8px",
-              color: "#ffffff",
-              fontSize: "0.8rem",
-              fontWeight: 600,
-              cursor: "pointer",
-              display: "flex",
-              alignItems: "center",
-              gap: "6px"
-            }}
-          >
+          <PrimaryBtn onClick={() => setShowUploadDocModal(true)}>
             <Plus size={15} /> Upload Document
-          </button>
+          </PrimaryBtn>
         </div>
 
         <div style={{ padding: "1.5rem" }}>
@@ -874,52 +809,36 @@ export const Profile = ({ onClose, isModal = false }) => {
               {profile.verification_documents.map((doc, idx) => (
                 <div
                   key={doc.id || idx}
+                  className="ll-card-hover"
                   style={{
-                    background: T.surface,
-                    border: `1px solid ${T.border}`,
-                    borderRadius: "0.75rem",
-                    padding: "1rem",
-                    display: "flex",
-                    flexDirection: "column",
-                    gap: "8px"
+                    background: T.surfaceAlt, border: `1px solid ${T.border}`, borderRadius: "1rem",
+                    padding: "1rem", display: "flex", flexDirection: "column", gap: "8px"
                   }}
                 >
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                      <div style={{
-                        width: "32px",
-                        height: "32px",
-                        borderRadius: "8px",
-                        background: "rgba(79,126,248,0.12)",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center"
-                      }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 8 }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: "8px", minWidth: 0 }}>
+                      <div style={{ width: "34px", height: "34px", borderRadius: "0.6rem", background: T.accentSoft, border: `1px solid ${T.accentBorder}`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
                         <Shield size={16} color={T.accent} />
                       </div>
-                      <div>
-                        <span style={{ fontSize: "0.68rem", textTransform: "uppercase", color: T.accent, fontWeight: 600 }}>
+                      <div style={{ minWidth: 0 }}>
+                        <span style={{ fontSize: "0.64rem", textTransform: "uppercase", color: T.accent, fontWeight: 800, letterSpacing: "0.05em" }}>
                           {doc.documentType === "ownership" ? "Proof of Ownership" : doc.documentType}
                         </span>
-                        <h4 style={{ fontSize: "0.85rem", fontWeight: 600, color: T.textPrimary, lineHeight: 1.2 }}>
+                        <h4 style={{ fontSize: "0.85rem", fontWeight: 700, color: T.textPrimary, lineHeight: 1.25 }}>
                           {doc.title}
                         </h4>
                       </div>
                     </div>
                     <span style={{
-                      fontSize: "0.65rem",
-                      fontWeight: 700,
-                      padding: "2px 6px",
-                      borderRadius: "10px",
-                      background: "rgba(16,185,129,0.15)",
-                      color: T.emerald
+                      fontSize: "0.62rem", fontWeight: 800, padding: "3px 8px", borderRadius: 9999,
+                      background: T.emeraldSoft, color: T.emerald, border: `1px solid ${T.emeraldBorder}`, flexShrink: 0
                     }}>
                       VERIFIED
                     </span>
                   </div>
 
                   <p style={{ fontSize: "0.75rem", color: T.textMuted }}>
-                    Property: <strong>{doc.propertyName || "Portfolio-wide"}</strong>
+                    Property: <strong style={{ color: T.textPrimary }}>{doc.propertyName || "Portfolio-wide"}</strong>
                   </p>
                   <p style={{ fontSize: "0.7rem", color: T.textMuted }}>
                     {doc.fileName} • {doc.uploadedAt ? new Date(doc.uploadedAt).toLocaleDateString() : "Active"}
@@ -927,25 +846,14 @@ export const Profile = ({ onClose, isModal = false }) => {
 
                   <div style={{ display: "flex", gap: "6px", marginTop: "4px" }}>
                     <button
-                      onClick={() => {
-                        setSelectedPreviewDoc(doc);
-                        setIsPreviewOpen(true);
-                      }}
+                      onClick={() => { setSelectedPreviewDoc(doc); setIsPreviewOpen(true); }}
                       style={{
-                        flex: 1,
-                        padding: "6px",
-                        background: "rgba(79,126,248,0.12)",
-                        border: `1px solid rgba(79,126,248,0.25)`,
-                        borderRadius: "6px",
-                        color: T.accent,
-                        fontSize: "0.75rem",
-                        fontWeight: 600,
-                        cursor: "pointer",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        gap: "4px"
+                        flex: 1, padding: "7px", background: T.accentSoft, border: `1px solid ${T.accentBorder}`,
+                        borderRadius: 9999, color: T.accent, fontSize: "0.75rem", fontWeight: 700, cursor: "pointer",
+                        display: "flex", alignItems: "center", justifyContent: "center", gap: "4px", transition: "all 0.15s"
                       }}
+                      onMouseEnter={(e) => { e.currentTarget.style.background = T.accent; e.currentTarget.style.color = "#fff"; }}
+                      onMouseLeave={(e) => { e.currentTarget.style.background = T.accentSoft; e.currentTarget.style.color = T.accent; }}
                     >
                       <Eye size={13} /> Preview
                     </button>
@@ -953,29 +861,12 @@ export const Profile = ({ onClose, isModal = false }) => {
                       onClick={() => setDocToReplace(doc)}
                       title="Replace with new file"
                       style={{
-                        padding: "6px 10px",
-                        background: "transparent",
-                        border: `1px solid ${T.border}`,
-                        borderRadius: "6px",
-                        color: T.textMuted,
-                        cursor: "pointer",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        gap: "4px",
-                        fontSize: "0.8rem",
-                        transition: "all 0.15s"
+                        padding: "7px 11px", background: "#ffffff", border: `1px solid ${T.borderStrong}`,
+                        borderRadius: 9999, color: T.textMuted, cursor: "pointer",
+                        display: "flex", alignItems: "center", justifyContent: "center", gap: "4px", fontSize: "0.78rem", fontWeight: 600, transition: "all 0.15s"
                       }}
-                      onMouseEnter={(e) => {
-                        e.currentTarget.style.color = T.accent;
-                        e.currentTarget.style.borderColor = T.accent;
-                        e.currentTarget.style.background = "rgba(79, 126, 248, 0.08)";
-                      }}
-                      onMouseLeave={(e) => {
-                        e.currentTarget.style.color = T.textMuted;
-                        e.currentTarget.style.borderColor = T.border;
-                        e.currentTarget.style.background = "transparent";
-                      }}
+                      onMouseEnter={(e) => { e.currentTarget.style.color = T.accent; e.currentTarget.style.borderColor = T.accentBorder; e.currentTarget.style.background = T.accentSofter; }}
+                      onMouseLeave={(e) => { e.currentTarget.style.color = T.textMuted; e.currentTarget.style.borderColor = T.borderStrong; e.currentTarget.style.background = "#ffffff"; }}
                     >
                       <RefreshCw size={13} /> Replace
                     </button>
@@ -983,13 +874,12 @@ export const Profile = ({ onClose, isModal = false }) => {
                       onClick={() => setDocToDelete(doc)}
                       title="Remove document"
                       style={{
-                        padding: "6px 10px",
-                        background: "transparent",
-                        border: `1px solid ${T.border}`,
-                        borderRadius: "6px",
-                        color: T.textMuted,
-                        cursor: "pointer"
+                        padding: "7px 11px", background: "#ffffff", border: `1px solid ${T.borderStrong}`,
+                        borderRadius: 9999, color: T.textMuted, cursor: "pointer",
+                        display: "flex", alignItems: "center", justifyContent: "center", transition: "all 0.15s"
                       }}
+                      onMouseEnter={(e) => { e.currentTarget.style.color = T.red; e.currentTarget.style.borderColor = T.redBorder; e.currentTarget.style.background = T.redSoft; }}
+                      onMouseLeave={(e) => { e.currentTarget.style.color = T.textMuted; e.currentTarget.style.borderColor = T.borderStrong; e.currentTarget.style.background = "#ffffff"; }}
                     >
                       <Trash2 size={13} />
                     </button>
@@ -999,28 +889,85 @@ export const Profile = ({ onClose, isModal = false }) => {
             </div>
           ) : (
             <div style={{
-              textAlign: "center",
-              padding: "2rem",
-              background: T.surface,
-              borderRadius: "0.75rem",
-              border: `1px dashed ${T.border}`
+              textAlign: "center", padding: "2.5rem 2rem", background: T.surfaceAlt,
+              borderRadius: "1rem", border: `1px dashed ${T.borderHover}`
             }}>
-              <Shield size={36} color={T.textMuted} style={{ margin: "0 auto 8px", opacity: 0.6 }} />
-              <p style={{ color: T.textPrimary, fontWeight: 600, fontSize: "0.95rem" }}>
+              <div style={{ width: 60, height: 60, borderRadius: 18, background: T.accentSoft, border: `1px solid ${T.accentBorder}`, display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 1rem" }}>
+                <Shield size={26} color={T.accent} />
+              </div>
+              <p style={{ color: T.textPrimary, fontWeight: 700, fontSize: "1rem", fontFamily: SERIF }}>
                 No verification documents uploaded yet
               </p>
-              <p style={{ color: T.textMuted, fontSize: "0.8rem", maxWidth: "400px", margin: "4px auto 1rem" }}>
+              <p style={{ color: T.textMuted, fontSize: "0.82rem", maxWidth: "420px", margin: "6px auto 1.25rem", lineHeight: 1.6 }}>
                 Upload your Title Deed or municipal rates clearance to get your landlord ownership verified.
               </p>
-              <PrimaryBtn onClick={() => setShowUploadDocModal(true)}>
-                <span style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+              <div style={{ display: "flex", justifyContent: "center" }}>
+                <PrimaryBtn onClick={() => setShowUploadDocModal(true)}>
                   <Plus size={14} /> Upload Proof of Ownership
-                </span>
-              </PrimaryBtn>
+                </PrimaryBtn>
+              </div>
             </div>
           )}
         </div>
       </div>
+
+      {/* Security Section */}
+      <ProfileSection title="Security" subtitle="Password and account protection" icon={Lock}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "1rem", flexWrap: "wrap", background: T.surfaceAlt, border: `1px solid ${T.border}`, borderRadius: "0.875rem", padding: "1.1rem 1.25rem" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+            <div style={{ width: 40, height: 40, borderRadius: 12, background: T.accentSoft, border: `1px solid ${T.accentBorder}`, display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <KeyRound size={18} color={T.accent} />
+            </div>
+            <div>
+              <p style={{ fontSize: "0.9rem", fontWeight: 700, color: T.textPrimary }}>Account password</p>
+              <p style={{ fontSize: "0.76rem", color: T.textMuted, marginTop: 2 }}>Use a strong password you don't reuse elsewhere.</p>
+            </div>
+          </div>
+          <SecondaryBtn onClick={() => setShowPasswordModal(true)}><Lock size={15} /> Change Password</SecondaryBtn>
+        </div>
+      </ProfileSection>
+
+      {/* Change Password Modal */}
+      <Modal
+        isOpen={showPasswordModal}
+        onClose={() => setShowPasswordModal(false)}
+        title="Change Password"
+        subtitle="Choose a new password for your landlord account"
+        size="sm"
+      >
+        <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
+          <div>
+            <label style={{ display: "block", fontSize: "0.68rem", fontWeight: 700, color: T.textMuted, marginBottom: "0.5rem", textTransform: "uppercase", letterSpacing: "0.08em" }}>
+              New Password
+            </label>
+            <input
+              type="password"
+              value={passwordData.new}
+              onChange={(e) => setPasswordData({ ...passwordData, new: e.target.value })}
+              placeholder="At least 6 characters"
+              style={{ width: "100%", padding: "0.7rem 0.85rem", background: "#ffffff", border: `1px solid ${T.borderStrong}`, borderRadius: "0.75rem", color: T.textPrimary, fontSize: "0.9rem", fontFamily: "inherit", outline: "none" }}
+            />
+          </div>
+          <div>
+            <label style={{ display: "block", fontSize: "0.68rem", fontWeight: 700, color: T.textMuted, marginBottom: "0.5rem", textTransform: "uppercase", letterSpacing: "0.08em" }}>
+              Confirm New Password
+            </label>
+            <input
+              type="password"
+              value={passwordData.confirm}
+              onChange={(e) => setPasswordData({ ...passwordData, confirm: e.target.value })}
+              placeholder="Re-enter new password"
+              style={{ width: "100%", padding: "0.7rem 0.85rem", background: "#ffffff", border: `1px solid ${T.borderStrong}`, borderRadius: "0.75rem", color: T.textPrimary, fontSize: "0.9rem", fontFamily: "inherit", outline: "none" }}
+            />
+          </div>
+          <div style={{ display: "flex", gap: "10px", marginTop: "0.25rem" }}>
+            <PrimaryBtn onClick={handlePasswordChange} disabled={isSaving} style={{ flex: 1 }}>
+              {isSaving ? "Updating..." : "Update Password"}
+            </PrimaryBtn>
+            <SecondaryBtn onClick={() => setShowPasswordModal(false)}>Cancel</SecondaryBtn>
+          </div>
+        </div>
+      </Modal>
 
       <DocumentUploadModal
         isOpen={showUploadDocModal}
@@ -1077,21 +1024,8 @@ export const Profile = ({ onClose, isModal = false }) => {
         onConfirm={handleConfirmDeleteDoc}
         onCancel={() => !isDeletingDoc && setDocToDelete(null)}
       />
-
     </div>
   );
 
-  if (isModal) {
-    return content;
-  }
-
-  return (
-    <div style={{
-      minHeight: "100vh",
-      background: T.navy,
-      padding: "2rem 0"
-    }}>
-      {content}
-    </div>
-  );
+  return content;
 };

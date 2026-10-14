@@ -1,13 +1,18 @@
-/* MainAgent.css */
+/* MainAgent.css — agent console shell */
+
 .agent-layout-wrapper {
+  position: relative;
+  isolation: isolate;
   display: flex;
-  min-height: 100vh;
+  min-height: 100dvh;
+  background: var(--ag-ink, #070b14);
 }
 
 .agent-sidebar-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.5);
+  background: rgba(2, 6, 23, 0.62);
+  backdrop-filter: blur(2px);
   z-index: 98;
 }
 
@@ -21,13 +26,35 @@
 
 .agent-main-content {
   flex: 1;
-  margin-left: 260px;
-  padding: 2rem 3rem;
-  width: calc(100% - 260px);
-  height: 100vh;
+  margin-left: 264px;
+  width: calc(100% - 264px);
+  height: 100dvh;
   overflow-y: auto;
-  background: radial-gradient(circle at top right, rgba(16,185,129,0.05) 0%, transparent 40%),
-              radial-gradient(circle at bottom left, rgba(79,126,248,0.05) 0%, transparent 40%);
+  position: relative;
+  background:
+    radial-gradient(900px 520px at 12% -6%, rgba(79, 126, 248, 0.09) 0%, transparent 62%),
+    radial-gradient(760px 520px at 108% 8%, rgba(16, 185, 129, 0.045) 0%, transparent 60%);
+}
+
+/* Faint engineering grid, kept well below the content contrast floor.
+   Drawn on the shell behind the content column so it does not create a
+   stacking context that would trap modals/overlays under the nav rail. */
+.agent-layout-wrapper::before {
+  content: "";
+  position: fixed;
+  inset: 0 0 0 264px;
+  pointer-events: none;
+  z-index: 0;
+  background-image:
+    linear-gradient(to right, rgba(148, 163, 184, 0.05) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(148, 163, 184, 0.05) 1px, transparent 1px);
+  background-size: 64px 64px;
+  mask-image: radial-gradient(120% 90% at 50% 0%, #000 30%, transparent 100%);
+  -webkit-mask-image: radial-gradient(120% 90% at 50% 0%, #000 30%, transparent 100%);
+}
+
+@media (max-width: 767px) {
+  .agent-layout-wrapper::before { inset: 0; }
 }
 
 .agent-main-content.is-mobile {
@@ -38,43 +65,50 @@
 .agent-main-content.is-dashboard,
 .agent-main-content.is-wallet {
   padding: 0;
-  overflow-y: auto;
   display: flex;
   flex-direction: column;
+}
+
+/* The draft-match manager expects the shell to supply its page padding. */
+.agent-main-content.is-manager {
+  padding: 2rem 3rem;
 }
 
 .agent-main-content.is-dashboard .agent-mobile-header,
 .agent-main-content.is-wallet .agent-mobile-header {
   margin: 0;
   padding: 0.75rem 1.25rem;
-  background: #0b0f19;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  background: var(--ag-ink-2, #0b1120);
+  border-bottom: 1px solid var(--ag-line, rgba(148,163,184,0.14));
 }
 
 .agent-mobile-header {
   display: flex;
-  justify-content: space-between;
   align-items: center;
+  gap: 12px;
   margin-bottom: 1.5rem;
   padding-bottom: 1rem;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+  border-bottom: 1px solid var(--ag-line, rgba(148,163,184,0.14));
 }
 
 .agent-mobile-menu-btn {
-  padding: 8px;
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid rgba(255, 255, 255, 0.07);
-  border-radius: 8px;
+  width: 38px;
+  height: 38px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--ag-line, rgba(148,163,184,0.14));
+  border-radius: 10px;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
+  transition: background 0.15s ease, border-color 0.15s ease;
 }
 
-.glass-card {
-  background: rgba(25, 27, 35, 0.6);
-  backdrop-filter: blur(12px);
-  border: 1px solid #30363D;
+.agent-mobile-menu-btn:hover {
+  background: rgba(255, 255, 255, 0.09);
+  border-color: var(--ag-line-2, rgba(148,163,184,0.24));
 }
-.sidebar-border { border-right: 1px solid #30363D; }
-.bottom-border { border-bottom: 1px solid #30363D; }
+
+/* Shared neutral borders kept for legacy components */
+.sidebar-border { border-right: 1px solid var(--ag-line, rgba(148,163,184,0.14)); }
+.bottom-border { border-bottom: 1px solid var(--ag-line, rgba(148,163,184,0.14)); }

@@ -5,16 +5,9 @@ import {
   Download,
   ExternalLink,
   CheckCircle2,
-  AlertCircle,
   ShieldCheck,
-  Calendar,
   User,
-  Building,
-  FileCheck,
-  Eye,
-  Lock,
-  Stamp,
-  Printer
+  FileCheck
 } from 'lucide-react';
 import { formatFileSize } from '../../Tenant/Components/PdfAttachmentSection';
 import './ApplicationDocumentsModal.css';
@@ -70,89 +63,9 @@ export const ApplicationDocumentsModal = ({
       }));
     }
 
-    // Fallback: If legacy application lacks uploaded files, provide standard compliant South African rental dossier
-    const applicantName = tenant?.full_name || 'Applicant';
-    const submittedDate = application.submitted_at ? new Date(application.submitted_at).toLocaleDateString() : 'Recent';
-
-    if (isStudent) {
-      return [
-        {
-          id: 'doc-student-acceptance',
-          slotKey: 'acceptance_letter',
-          title: 'University Proof of Registration / Acceptance Letter',
-          shortLabel: 'Registration Letter',
-          fileName: `Proof_of_Registration_${applicantName.replace(/\s+/g, '_')}.pdf`,
-          fileSize: '1.2 MB',
-          uploadedAt: application.submitted_at || new Date().toISOString(),
-          verified: true,
-          category: 'Student Compliance',
-          details: 'Official Registrar Office confirmation of active full-time enrollment.'
-        },
-        {
-          id: 'doc-student-nsfas',
-          slotKey: 'bursary_nsfas',
-          title: 'NSFAS Bursary Official Funding Status Letter',
-          shortLabel: 'NSFAS Allocation',
-          fileName: `NSFAS_Funding_Letter_${applicantName.replace(/\s+/g, '_')}.pdf`,
-          fileSize: '950 KB',
-          uploadedAt: application.submitted_at || new Date().toISOString(),
-          verified: true,
-          category: 'Student Compliance',
-          details: 'Verified financial aid status with accredited accommodation allowance.'
-        },
-        {
-          id: 'doc-student-id',
-          slotKey: 'id_document',
-          title: 'Certified South African National ID / Passport',
-          shortLabel: 'Certified ID',
-          fileName: `Certified_ID_${applicantName.replace(/\s+/g, '_')}.pdf`,
-          fileSize: '1.5 MB',
-          uploadedAt: application.submitted_at || new Date().toISOString(),
-          verified: true,
-          category: 'FICA Compliance',
-          details: 'Commissioner of Oaths certified copy of Smart ID Card.'
-        }
-      ];
-    }
-
-    return [
-      {
-        id: 'doc-standard-bank',
-        slotKey: 'bank_statement',
-        title: 'Bank Statement (Latest 3 Months - Official e-Stamp)',
-        shortLabel: '3 Months Bank Statements',
-        fileName: `Bank_Statement_3Months_${applicantName.replace(/\s+/g, '_')}.pdf`,
-        fileSize: '2.4 MB',
-        uploadedAt: application.submitted_at || new Date().toISOString(),
-        verified: true,
-        category: 'Income Vetting',
-        details: 'Reflects consistent salary deposits, positive balance buffer, and e-stamp verification.'
-      },
-      {
-        id: 'doc-standard-income',
-        slotKey: 'proof_of_income',
-        title: 'Latest Employer Payslip / Proof of Income',
-        shortLabel: 'Latest Salary Payslip',
-        fileName: `Payslip_${applicantName.replace(/\s+/g, '_')}.pdf`,
-        fileSize: '1.1 MB',
-        uploadedAt: application.submitted_at || new Date().toISOString(),
-        verified: true,
-        category: 'Income Vetting',
-        details: 'Official company letterhead showing gross earnings and statutory deductions.'
-      },
-      {
-        id: 'doc-standard-id',
-        slotKey: 'id_document',
-        title: 'Certified South African ID Book / Smart Card',
-        shortLabel: 'Certified ID Document',
-        fileName: `Certified_ID_${applicantName.replace(/\s+/g, '_')}.pdf`,
-        fileSize: '1.6 MB',
-        uploadedAt: application.submitted_at || new Date().toISOString(),
-        verified: true,
-        category: 'FICA Compliance',
-        details: 'Commissioner of Oaths certified ID copy with verified RSA ID number.'
-      }
-    ];
+    // No documents were uploaded for this application. Surface that honestly instead of
+    // synthesising a certified dossier the applicant never submitted.
+    return [];
   }, [application, tenant]);
 
   const [activeDocIndex, setActiveDocIndex] = useState(0);
@@ -161,7 +74,17 @@ export const ApplicationDocumentsModal = ({
   if (!isOpen || !application) return null;
 
   const applicantName = tenant?.full_name || 'Applicant';
-  const tenantEmail = tenant?.email || 'tenant@place4u.co.za';
+  const tenantEmail = tenant?.email || 'Not provided';
+
+  // Resolve what the canvas should render: inline data URLs still work, and a
+  // signed storage URL (https) can be embedded in an iframe for PDF review.
+  const previewUrl = activeDoc ? (activeDoc.dataUrl || activeDoc.fileUrl || null) : null;
+  const isImagePreview = previewUrl
+    ? (/^data:image\//i.test(previewUrl) || /\.(jpe?g|png|gif|webp|bmp|avif)(\?|#|$)/i.test(previewUrl))
+    : false;
+  const canEmbedPreview = previewUrl
+    ? (previewUrl.startsWith('data:') || /^https?:\/\//i.test(previewUrl))
+    : false;
 
   const handleDownload = (doc) => {
     if (doc.fileUrl || doc.dataUrl) {
@@ -172,20 +95,21 @@ export const ApplicationDocumentsModal = ({
       link.click();
       document.body.removeChild(link);
     } else {
-      // Create a verifiable audit report for this certified document
-      const auditText = `PLACE4U CERTIFIED APPLICATION DOCUMENT AUDIT REPORT
+      // Produce a plain audit record. The reference is derived from stable ids so the
+      // same document always yields the same reference (no random tokens).
+      const recordRef = `P4U-${String(application?.id || '').slice(0, 4).toUpperCase()}-${String(doc.id || doc.fileName || 'doc').replace(/[^a-z0-9]/gi, '').slice(0, 8).toUpperCase()}`;
+      const auditText = `PLACE4U APPLICATION DOCUMENT — AUDIT RECORD
 =====================================================
 Document Name: ${doc.title}
 File Reference: ${doc.fileName}
 Applicant: ${applicantName} (${tenantEmail})
 Application Ref: #${String(application.id).slice(0, 8)}
 Submitted At: ${doc.uploadedAt}
-Status: VERIFIED & FICA COMPLIANT
-Category: ${doc.category || 'Rental Underwriting'}
-Place4U Digital Hash: P4U-${Math.random().toString(36).substring(2, 10).toUpperCase()}-ZA
+Record Reference: ${recordRef}
+Category: ${doc.category || 'Rental application'}
 
 Notes:
-${doc.details || 'Document verified against South African Rental Housing Act compliance.'}
+${doc.details || 'Record generated from the application intake data. No file content was attached to this document record.'}
 =====================================================`;
       const blob = new Blob([auditText], { type: 'text/plain' });
       const url = URL.createObjectURL(blob);
@@ -208,13 +132,13 @@ ${doc.details || 'Document verified against South African Rental Housing Act com
           <div className="doc-modal-header-info">
             <div className="doc-modal-badge">
               <ShieldCheck size={14} />
-              <span>FICA & Rental Verification Documents</span>
+              <span>Application documents</span>
             </div>
             <h2 className="doc-modal-title">
               Application Documents &middot; {applicantName}
             </h2>
             <p className="doc-modal-subtitle">
-              Application #{String(application.id).slice(0, 8)} &bull; {documentsList.length} verified file{documentsList.length !== 1 ? 's' : ''} attached
+              Application #{String(application.id).slice(0, 8)} &bull; {documentsList.length} file{documentsList.length !== 1 ? 's' : ''} attached
             </p>
           </div>
           <button className="doc-modal-close" onClick={onClose} aria-label="Close modal">
@@ -281,7 +205,7 @@ ${doc.details || 'Document verified against South African Rental Housing Act com
                     <div>
                       <h4 className="doc-toolbar-filename">{activeDoc.fileName}</h4>
                       <span className="doc-toolbar-status">
-                        Verified on {new Date(activeDoc.uploadedAt).toLocaleDateString()} &bull; {formatFileSize(activeDoc.fileSize)}
+                        Uploaded {new Date(activeDoc.uploadedAt).toLocaleDateString()} &bull; {formatFileSize(activeDoc.fileSize)}
                       </span>
                     </div>
                   </div>
@@ -310,82 +234,27 @@ ${doc.details || 'Document verified against South African Rental Housing Act com
 
                 {/* Document Display Canvas */}
                 <div className="doc-canvas-area">
-                  {activeDoc.dataUrl || (activeDoc.fileUrl && activeDoc.fileUrl.startsWith('data:')) ? (
+                  {previewUrl && canEmbedPreview && !isImagePreview ? (
                     <div className="doc-live-preview">
                       <iframe
-                        src={activeDoc.dataUrl || activeDoc.fileUrl}
+                        src={previewUrl}
                         title={activeDoc.title}
                         className="doc-iframe"
                       />
                     </div>
-                  ) : activeDoc.fileUrl && (activeDoc.fileUrl.endsWith('.jpg') || activeDoc.fileUrl.endsWith('.png') || activeDoc.fileUrl.endsWith('.webp')) ? (
+                  ) : previewUrl && isImagePreview ? (
                     <div className="doc-image-preview">
-                      <img src={activeDoc.fileUrl} alt={activeDoc.title} className="doc-image-rendered" />
+                      <img src={previewUrl} alt={activeDoc.title} className="doc-image-rendered" />
                     </div>
                   ) : (
-                    /* Official Certified Document Dossier Preview */
-                    <div className="doc-certificate-sheet">
-                      <div className="doc-certificate-watermark">PLACE4U VERIFIED</div>
-                      
-                      <div className="doc-cert-header">
-                        <div className="doc-cert-seal">
-                          <ShieldCheck size={36} color="#10b981" />
-                        </div>
-                        <div className="doc-cert-header-text">
-                          <span className="doc-cert-jurisdiction">REPUBLIC OF SOUTH AFRICA &bull; FICA COMPLIANCE RECORD</span>
-                          <h3 className="doc-cert-heading">{activeDoc.title}</h3>
-                          <span className="doc-cert-id">Document Ref: #{activeDoc.id.toUpperCase()}</span>
-                        </div>
-                      </div>
-
-                      <div className="doc-cert-divider" />
-
-                      <div className="doc-cert-grid">
-                        <div className="doc-cert-cell">
-                          <label>Primary Applicant</label>
-                          <p>{applicantName}</p>
-                        </div>
-                        <div className="doc-cert-cell">
-                          <label>Contact Email</label>
-                          <p>{tenantEmail}</p>
-                        </div>
-                        <div className="doc-cert-cell">
-                          <label>Application ID</label>
-                          <p>#{String(application.id).slice(0, 8)}</p>
-                        </div>
-                        <div className="doc-cert-cell">
-                          <label>Verification Stamp</label>
-                          <p style={{ color: '#10b981', fontWeight: 600 }}>Official Digital e-Stamp Verified</p>
-                        </div>
-                        <div className="doc-cert-cell">
-                          <label>File Name</label>
-                          <p>{activeDoc.fileName}</p>
-                        </div>
-                        <div className="doc-cert-cell">
-                          <label>Submission Date</label>
-                          <p>{new Date(activeDoc.uploadedAt).toLocaleString()}</p>
-                        </div>
-                      </div>
-
-                      <div className="doc-cert-callout">
-                        <p>
-                          <strong>Underwriting Verification:</strong> {activeDoc.details || 'This document has passed Place4U electronic integrity screening and matches South African leasing requirements for resident verification.'}
-                        </p>
-                      </div>
-
-                      <div className="doc-cert-footer">
-                        <div className="doc-cert-footer-stamp">
-                          <div className="stamp-box">
-                            <span className="stamp-title">PLACE4U DIGITAL NOTARY</span>
-                            <span className="stamp-date">{new Date(activeDoc.uploadedAt).toLocaleDateString()}</span>
-                            <span className="stamp-status">FICA CLEARED</span>
-                          </div>
-                        </div>
-                        <div className="doc-cert-security">
-                          <Lock size={14} />
-                          <span>End-to-end encrypted storage &bull; POPIA Compliant</span>
-                        </div>
-                      </div>
+                    <div className="doc-empty-state">
+                      <FileText size={48} />
+                      <p>No preview available for this file</p>
+                      <p style={{ color: 'var(--ag-dim, #64748b)', fontSize: '0.82rem', marginTop: 6 }}>
+                        {activeDoc.fileUrl
+                          ? 'Use “Open Raw” to review the original file.'
+                          : 'No file content was attached to this record.'}
+                      </p>
                     </div>
                   )}
                 </div>
@@ -394,7 +263,7 @@ ${doc.details || 'Document verified against South African Rental Housing Act com
                 <div className="doc-viewer-footer">
                   <div className="doc-footer-status">
                     <span className="doc-status-dot" />
-                    <span>Document integrity verified &middot; Ready for lease agreement drafting</span>
+                    <span>Document attached &middot; Review before drafting the lease</span>
                   </div>
                   <button
                     type="button"
@@ -408,7 +277,7 @@ ${doc.details || 'Document verified against South African Rental Housing Act com
             ) : (
               <div className="doc-empty-state">
                 <FileText size={48} />
-                <p>No document selected</p>
+                <p>{documentsList.length === 0 ? 'No documents uploaded for this application' : 'No document selected'}</p>
               </div>
             )}
           </div>

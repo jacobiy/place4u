@@ -10,15 +10,27 @@ export const EditPropertyModal = ({ isOpen, onClose, property, onSave }) => {
     if (property) {
       setFormData({
         id: property.id,
-        property_type: property.property_type || "",
+        title: property.title || property.name || "",
+        description: property.description || "",
+        property_type: property.property_type || "apartment",
+        complex_name: property.complex_name || "",
         address: property.address || "",
         area: property.area || "",
         city: property.city || "",
+        postal_code: property.postal_code || "",
         price: property.price || "",
         bedrooms: property.bedrooms ?? 0,
         bathrooms: property.bathrooms ?? 0,
         size: property.size || "",
-        occupied: property.occupied || false
+        parking_bays: property.parking_bays ?? 1,
+        parking_type: property.parking_type || "covered",
+        deposit: property.deposit || "1.5 Months",
+        lease_term: property.lease_term || "12 Months",
+        water_included: !!property.water_included,
+        electricity_type: property.electricity_type || "prepaid",
+        furnished: !!property.furnished,
+        pet_friendly: !!property.pet_friendly,
+        occupied: !!property.occupied
       });
     }
   }, [property]);
@@ -27,9 +39,9 @@ export const EditPropertyModal = ({ isOpen, onClose, property, onSave }) => {
     () => ({
       width: "100%",
       padding: "0.6rem 0.875rem",
-      background: T.surface,
-      border: `1px solid ${T.border}`,
-      borderRadius: "0.625rem",
+      background: "#ffffff",
+      border: `1px solid ${T.borderStrong}`,
+      borderRadius: "0.75rem",
       fontSize: "0.875rem",
       color: T.textPrimary,
       outline: "none",
@@ -41,8 +53,8 @@ export const EditPropertyModal = ({ isOpen, onClose, property, onSave }) => {
   const labelStyle = useMemo(
     () => ({
       display: "block",
-      fontSize: "0.75rem",
-      fontWeight: 500,
+      fontSize: "0.7rem",
+      fontWeight: 600,
       color: T.textSecondary,
       marginBottom: "6px",
       textTransform: "uppercase",
@@ -52,9 +64,32 @@ export const EditPropertyModal = ({ isOpen, onClose, property, onSave }) => {
   );
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="Edit Property" size="lg">
+    <Modal isOpen={isOpen} onClose={onClose} title="Edit Property Specifications" size="lg">
       <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
-        
+        {/* Title & Description */}
+        <div>
+          <label style={labelStyle}>Listing Title / Headline</label>
+          <input
+            type="text"
+            value={formData.title || ""}
+            onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+            style={inputStyle}
+            placeholder="e.g. Modern 2-Bed Luxury Suite"
+          />
+        </div>
+
+        <div>
+          <label style={labelStyle}>Description & Overview</label>
+          <textarea
+            value={formData.description || ""}
+            onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+            rows={3}
+            style={{ ...inputStyle, resize: "vertical" }}
+            placeholder="Detailed description of layout, views, and finishes..."
+          />
+        </div>
+
+        {/* Location & Complex */}
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
           <div>
             <label style={labelStyle}>Property Type</label>
@@ -72,6 +107,29 @@ export const EditPropertyModal = ({ isOpen, onClose, property, onSave }) => {
             </select>
           </div>
           <div>
+            <label style={labelStyle}>Complex / Estate Name</label>
+            <input
+              type="text"
+              value={formData.complex_name || ""}
+              onChange={(e) => setFormData({ ...formData, complex_name: e.target.value })}
+              style={inputStyle}
+              placeholder="e.g. The Apex"
+            />
+          </div>
+        </div>
+
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
+          <div>
+            <label style={labelStyle}>Area / Suburb</label>
+            <input
+              type="text"
+              value={formData.area || ""}
+              onChange={(e) => setFormData({ ...formData, area: e.target.value })}
+              style={inputStyle}
+              placeholder="e.g. Sea Point"
+            />
+          </div>
+          <div>
             <label style={labelStyle}>City</label>
             <input
               type="text"
@@ -83,19 +141,21 @@ export const EditPropertyModal = ({ isOpen, onClose, property, onSave }) => {
           </div>
         </div>
 
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
+        <div>
+          <label style={labelStyle}>Street Address</label>
+          <input
+            type="text"
+            value={formData.address || ""}
+            onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+            style={inputStyle}
+            placeholder="Full street address..."
+          />
+        </div>
+
+        {/* Financials & Layout */}
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "10px" }}>
           <div>
-            <label style={labelStyle}>Area</label>
-            <input
-              type="text"
-              value={formData.area || ""}
-              onChange={(e) => setFormData({ ...formData, area: e.target.value })}
-              style={inputStyle}
-              placeholder="e.g. Sea Point"
-            />
-          </div>
-          <div>
-            <label style={labelStyle}>Monthly Rent</label>
+            <label style={labelStyle}>Monthly Rent (ZAR)</label>
             <input
               type="number"
               value={formData.price || ""}
@@ -104,17 +164,26 @@ export const EditPropertyModal = ({ isOpen, onClose, property, onSave }) => {
               placeholder="8500"
             />
           </div>
-        </div>
-
-        <div>
-          <label style={labelStyle}>Address</label>
-          <input
-            type="text"
-            value={formData.address || ""}
-            onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-            style={inputStyle}
-            placeholder="Full address..."
-          />
+          <div>
+            <label style={labelStyle}>Deposit Terms</label>
+            <input
+              type="text"
+              value={formData.deposit || ""}
+              onChange={(e) => setFormData({ ...formData, deposit: e.target.value })}
+              style={inputStyle}
+              placeholder="1.5 Months"
+            />
+          </div>
+          <div>
+            <label style={labelStyle}>Lease Term</label>
+            <input
+              type="text"
+              value={formData.lease_term || ""}
+              onChange={(e) => setFormData({ ...formData, lease_term: e.target.value })}
+              style={inputStyle}
+              placeholder="12 Months"
+            />
+          </div>
         </div>
 
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "10px" }}>
@@ -125,34 +194,98 @@ export const EditPropertyModal = ({ isOpen, onClose, property, onSave }) => {
               value={formData.bedrooms || ""}
               onChange={(e) => setFormData({ ...formData, bedrooms: e.target.value })}
               style={inputStyle}
-              placeholder="0"
+              placeholder="2"
             />
           </div>
           <div>
             <label style={labelStyle}>Bathrooms</label>
             <input
               type="number"
+              step="0.5"
               value={formData.bathrooms || ""}
               onChange={(e) => setFormData({ ...formData, bathrooms: e.target.value })}
               style={inputStyle}
-              placeholder="0"
+              placeholder="1"
             />
           </div>
           <div>
-            <label style={labelStyle}>Size (sqm)</label>
+            <label style={labelStyle}>Size (m²)</label>
             <input
               type="text"
               value={formData.size || ""}
               onChange={(e) => setFormData({ ...formData, size: e.target.value })}
               style={inputStyle}
-              placeholder="e.g. 50 sqm"
+              placeholder="e.g. 75 m²"
             />
           </div>
         </div>
-        
-        <div style={{ display: "flex", gap: "14px", alignItems: "center" }}>
-          <label style={{ display: "flex", gap: "8px", alignItems: "center", cursor: "pointer", color: T.textSecondary }}>
-            <input type="checkbox" checked={formData.occupied} onChange={(e) => setFormData({ ...formData, occupied: e.target.checked })} style={{ accentColor: T.accent }} />
+
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
+          <div>
+            <label style={labelStyle}>Parking Bays</label>
+            <input
+              type="number"
+              value={formData.parking_bays ?? 1}
+              onChange={(e) => setFormData({ ...formData, parking_bays: Number(e.target.value) })}
+              style={inputStyle}
+            />
+          </div>
+          <div>
+            <label style={labelStyle}>Parking Type</label>
+            <select
+              value={formData.parking_type || "covered"}
+              onChange={(e) => setFormData({ ...formData, parking_type: e.target.value })}
+              style={inputStyle}
+            >
+              <option value="covered">Covered Bay</option>
+              <option value="basement">Secure Basement</option>
+              <option value="garage">Lockup Garage</option>
+              <option value="open">Open Bay</option>
+              <option value="street">Street Parking</option>
+              <option value="none">No Parking</option>
+            </select>
+          </div>
+        </div>
+
+        {/* Toggles */}
+        <div style={{ display: "flex", gap: "18px", flexWrap: "wrap", alignItems: "center", paddingTop: "4px" }}>
+          <label style={{ display: "flex", gap: "8px", alignItems: "center", cursor: "pointer", color: T.textSecondary, fontSize: "0.82rem", fontWeight: 600 }}>
+            <input
+              type="checkbox"
+              checked={formData.water_included || false}
+              onChange={(e) => setFormData({ ...formData, water_included: e.target.checked })}
+              style={{ accentColor: T.accent }}
+            />
+            Water Included
+          </label>
+
+          <label style={{ display: "flex", gap: "8px", alignItems: "center", cursor: "pointer", color: T.textSecondary, fontSize: "0.82rem", fontWeight: 600 }}>
+            <input
+              type="checkbox"
+              checked={formData.furnished || false}
+              onChange={(e) => setFormData({ ...formData, furnished: e.target.checked })}
+              style={{ accentColor: T.accent }}
+            />
+            Furnished
+          </label>
+
+          <label style={{ display: "flex", gap: "8px", alignItems: "center", cursor: "pointer", color: T.textSecondary, fontSize: "0.82rem", fontWeight: 600 }}>
+            <input
+              type="checkbox"
+              checked={formData.pet_friendly || false}
+              onChange={(e) => setFormData({ ...formData, pet_friendly: e.target.checked })}
+              style={{ accentColor: T.accent }}
+            />
+            Pet Friendly
+          </label>
+
+          <label style={{ display: "flex", gap: "8px", alignItems: "center", cursor: "pointer", color: T.textSecondary, fontSize: "0.82rem", fontWeight: 600 }}>
+            <input
+              type="checkbox"
+              checked={formData.occupied || false}
+              onChange={(e) => setFormData({ ...formData, occupied: e.target.checked })}
+              style={{ accentColor: T.accent }}
+            />
             Mark as Occupied
           </label>
         </div>
@@ -169,3 +302,5 @@ export const EditPropertyModal = ({ isOpen, onClose, property, onSave }) => {
     </Modal>
   );
 };
+
+export default EditPropertyModal;

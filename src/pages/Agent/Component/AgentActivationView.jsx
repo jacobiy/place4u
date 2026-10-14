@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   ShieldCheck,
   Clock,
@@ -12,36 +12,84 @@ import {
   Users,
   Wallet,
   ArrowRight,
-  ExternalLink
+  ExternalLink,
+  AlertCircle,
+  Eye,
+  X
 } from 'lucide-react';
 import AgentActivationModal from './AgentActivationModal';
-import { AgentQueries } from '../db/queries';
+import { resolveDocumentUrls, AGENT_DOCUMENTS_BUCKET } from '../../../utils/documentUrls';
 import './AgentActivationView.css';
+
+// Shared style for the clickable document chips shown in the pending-review view.
+const docChipStyle = {
+  display: 'flex',
+  alignItems: 'center',
+  gap: '0.75rem',
+  padding: '0.5rem 0.75rem',
+  background: '#0a0e1a',
+  border: '1px solid rgba(255, 255, 255, 0.08)',
+  borderRadius: '6px',
+  cursor: 'pointer',
+  color: 'inherit',
+  font: 'inherit',
+  textAlign: 'left'
+};
 
 export default function AgentActivationView({
   userRow,
   profile,
-  onRefresh
+  onRefresh,
+  autoOpenModal = false,
+  onAutoOpenHandled = () => {}
 }) {
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [isSimulating, setIsSimulating] = useState(false);
+  const [docUrls, setDocUrls] = useState({ id: null, por: null, ffc: null });
+  const [previewDoc, setPreviewDoc] = useState(null); // { title, url } for the enlarge modal
+
+  // A signed URL ending in .pdf should render in an <iframe>, everything else as an image
+  const isPdfUrl = (url) => typeof url === 'string' && /\.pdf(\?|#|$)/i.test(url);
+
+  const openDocPreview = (title, url) => {
+    if (!url) return;
+    setPreviewDoc({ title, url });
+  };
+
+  // Allow the dashboard header's "Apply for Verification" button to open the form.
+  useEffect(() => {
+    if (autoOpenModal) {
+      setIsModalOpen(true);
+      onAutoOpenHandled();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [autoOpenModal]);
+
+  // Resolve stored FICA document paths into viewable signed URLs
+  useEffect(() => {
+    let active = true;
+    (async () => {
+      const resolved = await resolveDocumentUrls(
+        {
+          id: profile?.id_document_url || null,
+          por: profile?.proof_of_residence_url || null,
+          ffc: profile?.fidelity_fund_cert_url || null
+        },
+        { bucket: AGENT_DOCUMENTS_BUCKET }
+      );
+      if (active) setDocUrls(resolved);
+    })();
+    return () => {
+      active = false;
+    };
+  }, [
+    profile?.id_document_url,
+    profile?.proof_of_residence_url,
+    profile?.fidelity_fund_cert_url
+  ]);
 
   const verificationStatus = profile?.verification_status || (profile?.submitted_at ? 'pending_review' : 'not_applied');
   const isPending = verificationStatus === 'pending_review' || verificationStatus === 'interview_scheduled';
   const isRejected = verificationStatus === 'rejected';
-
-  const handleSimulateToggle = async (targetVerified) => {
-    setIsSimulating(true);
-    try {
-      const userId = userRow?.id || profile?.user_id;
-      await AgentQueries.simulateAdminVerification(userId, targetVerified);
-      if (onRefresh) await onRefresh();
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setIsSimulating(false);
-    }
-  };
 
   const handleApplicationSuccess = async () => {
     if (onRefresh) await onRefresh();
@@ -58,6 +106,85 @@ export default function AgentActivationView({
         onSuccess={handleApplicationSuccess}
       />
 
+      {/* Full-size document preview */}
+      {previewDoc && (
+        <div
+          onClick={() => setPreviewDoc(null)}
+          style={{
+            position: 'fixed',
+            inset: 0,
+            zIndex: 1200,
+            background: 'rgba(2, 6, 23, 0.85)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '2rem'
+          }}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              background: '#0b1120',
+              border: '1px solid rgba(255, 255, 255, 0.12)',
+              borderRadius: '12px',
+              width: 'min(920px, 100%)',
+              maxHeight: '90vh',
+              display: 'flex',
+              flexDirection: 'column',
+              overflow: 'hidden'
+            }}
+          >
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                gap: '1rem',
+                padding: '0.85rem 1.1rem',
+                borderBottom: '1px solid rgba(255, 255, 255, 0.08)'
+              }}
+            >
+              <span style={{ color: '#f1f5f9', fontWeight: 600, fontSize: '0.85rem' }}>
+                {previewDoc.title}
+              </span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem' }}>
+                <a
+                  href={previewDoc.url}
+                  target="_blank"
+                  rel="noreferrer"
+                  style={{ color: '#7da2ff', fontSize: '0.75rem', display: 'inline-flex', alignItems: 'center', gap: '0.3rem' }}
+                >
+                  <ExternalLink size={13} />
+                  <span>Open in new tab</span>
+                </a>
+                <button
+                  onClick={() => setPreviewDoc(null)}
+                  style={{ background: 'none', border: 'none', color: '#94a3b8', cursor: 'pointer', display: 'flex' }}
+                  title="Close preview"
+                >
+                  <X size={16} />
+                </button>
+              </div>
+            </div>
+            <div style={{ padding: '1rem', overflow: 'auto', background: '#05070f' }}>
+              {isPdfUrl(previewDoc.url) ? (
+                <iframe
+                  title={previewDoc.title}
+                  src={previewDoc.url}
+                  style={{ width: '100%', height: '75vh', border: 'none', borderRadius: '8px', background: '#fff' }}
+                />
+              ) : (
+                <img
+                  src={previewDoc.url}
+                  alt={previewDoc.title}
+                  style={{ maxWidth: '100%', maxHeight: '75vh', display: 'block', margin: '0 auto', borderRadius: '8px' }}
+                />
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Header and Compliance Status */}
       <header className="dossier-header">
         <div className="dossier-title-group">
@@ -72,6 +199,11 @@ export default function AgentActivationView({
             <span className="dossier-status-badge pending">
               <Clock size={14} />
               <span>Application Under Review</span>
+            </span>
+          ) : isRejected ? (
+            <span className="dossier-status-badge inactive" style={{ background: 'rgba(239, 68, 68, 0.1)', borderColor: 'rgba(239, 68, 68, 0.25)', color: '#f87171' }}>
+              <AlertCircle size={14} />
+              <span>Application Rejected</span>
             </span>
           ) : (
             <span className="dossier-status-badge inactive">
@@ -192,6 +324,43 @@ export default function AgentActivationView({
         </div>
       )}
 
+      {/* Rejected State — allow the agent to correct and re-apply */}
+      {isRejected && (
+        <section className="pending-dossier" style={{ borderColor: 'rgba(239, 68, 68, 0.3)' }}>
+          <div
+            className="pending-banner"
+            style={{ background: 'rgba(239, 68, 68, 0.08)', borderColor: 'rgba(239, 68, 68, 0.2)' }}
+          >
+            <div
+              className="pending-banner-icon"
+              style={{ background: 'rgba(239, 68, 68, 0.2)', color: '#f87171' }}
+            >
+              <AlertCircle size={18} />
+            </div>
+            <div>
+              <h4>Verification Not Approved</h4>
+              <p>
+                Your previous application was reviewed and not approved. Reason:{' '}
+                <strong>{profile?.rejection_reason || 'Submitted documentation did not satisfy regulatory requirements.'}</strong>
+              </p>
+            </div>
+          </div>
+
+          <div className="dossier-action-footer">
+            <p className="dossier-help-text">
+              Update your personal details and re-attach valid FICA documents, then resubmit for review.
+            </p>
+            <button
+              onClick={() => setIsModalOpen(true)}
+              className="dossier-primary-btn"
+            >
+              <span>Re-apply for Verification</span>
+              <ArrowRight size={15} />
+            </button>
+          </div>
+        </section>
+      )}
+
       {/* Pending Review State (Submitted) */}
       {isPending && (
         <section className="pending-dossier">
@@ -215,7 +384,7 @@ export default function AgentActivationView({
                 style={{
                   background: 'none',
                   border: 'none',
-                  color: '#60a5fa',
+                  color: '#7da2ff',
                   fontSize: '0.78rem',
                   display: 'flex',
                   alignItems: 'center',
@@ -258,55 +427,86 @@ export default function AgentActivationView({
             </table>
           </div>
 
-          {(profile?.id_document_url || profile?.proof_of_residence_url) && (
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '1rem', paddingTop: '1rem', borderTop: '1px solid rgba(255, 255, 255, 0.06)' }}>
-              {profile?.id_document_url && (
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.5rem 0.75rem', background: '#0a0e1a', border: '1px solid rgba(255, 255, 255, 0.08)', borderRadius: '6px' }}>
-                  <img src={profile.id_document_url} alt="ID Document" style={{ width: '42px', height: '32px', objectFit: 'cover', borderRadius: '4px' }} />
-                  <div>
-                    <span style={{ fontSize: '0.75rem', fontWeight: 600, color: '#f1f5f9', display: 'block' }}>Identity Document</span>
-                    <span style={{ fontSize: '0.68rem', color: '#34d399' }}>Attached & Submitted</span>
-                  </div>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '1rem', alignItems: 'center', paddingTop: '1rem', borderTop: '1px solid rgba(255, 255, 255, 0.06)' }}>
+            {(docUrls.id || profile?.id_document_url) && (
+              <button
+                type="button"
+                onClick={() => openDocPreview('Identity Document', docUrls.id || profile?.id_document_url)}
+                style={docChipStyle}
+                title="Preview identity document"
+              >
+                <img
+                  src={docUrls.id || profile?.id_document_url}
+                  alt="ID Document"
+                  style={{ width: '42px', height: '32px', objectFit: 'cover', borderRadius: '4px' }}
+                  onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                />
+                <div>
+                  <span style={{ fontSize: '0.75rem', fontWeight: 600, color: '#f1f5f9', display: 'block' }}>Identity Document</span>
+                  <span style={{ fontSize: '0.68rem', color: '#34d399', display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}>
+                    <Eye size={11} /> Attached & Submitted — click to preview
+                  </span>
                 </div>
-              )}
-              {profile?.proof_of_residence_url && (
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.5rem 0.75rem', background: '#0a0e1a', border: '1px solid rgba(255, 255, 255, 0.08)', borderRadius: '6px' }}>
-                  <img src={profile.proof_of_residence_url} alt="Proof of Residence" style={{ width: '42px', height: '32px', objectFit: 'cover', borderRadius: '4px' }} />
-                  <div>
-                    <span style={{ fontSize: '0.75rem', fontWeight: 600, color: '#f1f5f9', display: 'block' }}>Proof of Residence</span>
-                    <span style={{ fontSize: '0.68rem', color: '#34d399' }}>Attached & Submitted</span>
-                  </div>
+              </button>
+            )}
+
+            {(docUrls.por || profile?.proof_of_residence_url) && (
+              <button
+                type="button"
+                onClick={() => openDocPreview('Proof of Residence', docUrls.por || profile?.proof_of_residence_url)}
+                style={docChipStyle}
+                title="Preview proof of residence"
+              >
+                <img
+                  src={docUrls.por || profile?.proof_of_residence_url}
+                  alt="Proof of Residence"
+                  style={{ width: '42px', height: '32px', objectFit: 'cover', borderRadius: '4px' }}
+                  onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                />
+                <div>
+                  <span style={{ fontSize: '0.75rem', fontWeight: 600, color: '#f1f5f9', display: 'block' }}>Proof of Residence</span>
+                  <span style={{ fontSize: '0.68rem', color: '#34d399', display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}>
+                    <Eye size={11} /> Attached & Submitted — click to preview
+                  </span>
                 </div>
-              )}
-            </div>
-          )}
+              </button>
+            )}
+
+            {(docUrls.ffc || profile?.fidelity_fund_cert_url) && (
+              <button
+                type="button"
+                onClick={() => openDocPreview('Fidelity Fund Certificate', docUrls.ffc || profile?.fidelity_fund_cert_url)}
+                style={docChipStyle}
+                title="Preview Fidelity Fund Certificate"
+              >
+                <img
+                  src={docUrls.ffc || profile?.fidelity_fund_cert_url}
+                  alt="Fidelity Fund Certificate"
+                  style={{ width: '42px', height: '32px', objectFit: 'cover', borderRadius: '4px' }}
+                  onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                />
+                <div>
+                  <span style={{ fontSize: '0.75rem', fontWeight: 600, color: '#f1f5f9', display: 'block' }}>Fidelity Fund Certificate</span>
+                  <span style={{ fontSize: '0.68rem', color: '#34d399', display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}>
+                    <Eye size={11} /> Attached & Submitted — click to preview
+                  </span>
+                </div>
+              </button>
+            )}
+
+            <button
+              type="button"
+              onClick={() => setIsModalOpen(true)}
+              className="dossier-primary-btn"
+              style={{ marginLeft: 'auto' }}
+              title="Change your details or replace your FICA documents"
+            >
+              <span>Edit / Update Application</span>
+              <ArrowRight size={15} />
+            </button>
+          </div>
         </section>
       )}
-
-      {/* Developer / Testing Simulator Utility Strip */}
-      <footer className="dev-sim-toolbar">
-        <div className="dev-sim-label">
-          <span className="mono-badge">DEV</span>
-          <span>Verification Simulator — Test approved vs inactive states</span>
-        </div>
-
-        <div className="dev-sim-actions">
-          <button
-            onClick={() => handleSimulateToggle(true)}
-            disabled={isSimulating}
-            className="dev-btn approve"
-          >
-            Simulate Approved
-          </button>
-          <button
-            onClick={() => handleSimulateToggle(false)}
-            disabled={isSimulating}
-            className="dev-btn reset"
-          >
-            Reset to Inactive
-          </button>
-        </div>
-      </footer>
     </div>
   );
 }

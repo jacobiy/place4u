@@ -7,8 +7,11 @@ import {
 import { TenantQueries } from '../db/queries'
 import PdfAttachmentSection, { DOCUMENT_CONFIG } from './PdfAttachmentSection'
 import ApplicationFeeCardModal from '../../../component/ApplicationFeeCardModal'
+import { applyApplicationUpdate } from '../../../services/applicationSync'
+import { APPLICATION_STATUS } from '../../../services/applicationStatus'
+import { describeProperty, isGenericPropertyTitle } from '../../../utils/propertyLabel'
 
-const CustomApplication = ({ onCancel, property, user, application, onSuccess }) => {
+const CustomApplication = ({ onCancel, property, user, profile, application, onSuccess }) => {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [success, setSuccess] = useState(false)
   const [error, setError] = useState(null)
@@ -125,7 +128,14 @@ const CustomApplication = ({ onCancel, property, user, application, onSuccess })
 
     const docsList = Object.values(documents).filter(Boolean);
 
-    const targetPropertyTitle = property?.title || property?.name || (category === 'student_room' ? 'Student Accommodation Application' : 'Residential Rental Application');
+    // Record which specific property this application is for. The properties
+    // table has no `title` column, so resolve the label from its real fields —
+    // otherwise every specific-unit application saved a generic placeholder and
+    // the tenant, agent and admin views could not tell which property it was.
+    const targetPropertyTitle =
+      describeProperty(property) ||
+      (!isGenericPropertyTitle(application?.property_title) ? application.property_title : null) ||
+      (category === 'student_room' ? 'Student Accommodation Application' : 'Residential Rental Application');
 
     const assignedPaymentId = paymentId || feeReceipt?.paymentId || application?.payment_id || (typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : null);
 
@@ -148,7 +158,7 @@ const CustomApplication = ({ onCancel, property, user, application, onSuccess })
       fee_receipt: feeReceipt?.receiptNumber || (typeof feeReceipt === 'string' ? feeReceipt : `REC-P4U-${Date.now().toString().slice(-6)}`),
       payment_method: 'Card (PayPal)',
       payment_id: assignedPaymentId,
-      status: 'submitted'
+      status: APPLICATION_STATUS.SUBMITTED
     }
 
     let result;
@@ -189,9 +199,9 @@ const CustomApplication = ({ onCancel, property, user, application, onSuccess })
           gateway_capture_id: feeReceipt.orderId || null,
           receipt_number: feeReceipt.receiptNumber || payload.fee_receipt,
           card_brand: feeReceipt.cardBrand || 'Card',
-          card_last4: feeReceipt.cardLast4 || '4242',
+          card_last4: feeReceipt.cardLast4 || null,
           status: 'completed',
-          payer_name: feeReceipt.applicantName || user?.user_metadata?.full_name || 'Resident Tenant',
+          payer_name: feeReceipt.applicantName || profile?.full_name || user?.user_metadata?.full_name || 'Resident Tenant',
           payer_email: user?.email || null,
           description: `Application Screening Fee (R100) - ${targetPropertyTitle}`,
           metadata: {
@@ -233,6 +243,19 @@ const CustomApplication = ({ onCancel, property, user, application, onSuccess })
 
     setSuccess(true);
     if (onSuccess) onSuccess(finalizedApp);
+    // Fan the new/updated application out to the agent, admin and landlord
+    // dashboards so they do not have to wait for a manual refresh.
+    try {
+      applyApplicationUpdate(finalizedApp.id, APPLICATION_STATUS.SUBMITTED, {
+        tenant_id: payload.tenant_id,
+        property_id: finalizedApp.property_id,
+        property_title: finalizedApp.property_title,
+        submitted_at: finalizedApp.submitted_at,
+        documents: finalizedApp.documents
+      });
+    } catch (e) {
+      console.warn('Application broadcast notice:', e);
+    }
     setTimeout(() => {
       onCancel();
     }, 1500);
@@ -676,9 +699,9 @@ const CustomApplication = ({ onCancel, property, user, application, onSuccess })
                 gateway_capture_id: receipt.orderId || null,
                 receipt_number: receipt.receiptNumber,
                 card_brand: receipt.cardBrand || 'Card',
-                card_last4: receipt.cardLast4 || '4242',
+                card_last4: receipt.cardLast4 || null,
                 status: 'completed',
-                payer_name: receipt.applicantName || user?.user_metadata?.full_name || 'Resident Tenant',
+                payer_name: receipt.applicantName || profile?.full_name || user?.user_metadata?.full_name || 'Resident Tenant',
                 payer_email: user?.email || null,
                 description: `Application Fee (R100) - ${property?.title || 'Rental Application'}`,
                 metadata: {
@@ -694,7 +717,7 @@ const CustomApplication = ({ onCancel, property, user, application, onSuccess })
               console.warn('Direct payment recording notice:', err);
             }
           }}
-          applicantName={user?.user_metadata?.full_name || 'Resident Tenant'}
+          applicantName={profile?.full_name || user?.user_metadata?.full_name || 'Resident Tenant'}
           propertyTitle={property?.title || 'Rental Application'}
           amountZar={100}
         />

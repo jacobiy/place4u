@@ -4,6 +4,8 @@ import {
   getAgentsList,
   assignAgentToApplication,
   updateApplicationStatus,
+  approveApplicationCompletion,
+  getApplicationsNeedingReassignment,
   formatCurrency,
   formatDate,
   openGmail
@@ -13,17 +15,17 @@ import {
   broadcastApplicationUpdate
 } from '../../services/applicationSync'
 import {
+  SELECTABLE_APPLICATION_STATUSES,
+  applicationStatusLabel,
+  getApplicationStatusMeta,
+  normalizeApplicationStatus
+} from '../../services/applicationStatus'
+import {
   Search,
-  Filter,
   CheckCircle2,
   Clock,
-  MapPin,
   Mail,
-  UserCheck,
-  AlertCircle,
-  FileCheck2,
-  Calendar,
-  X
+  AlertCircle
 } from 'lucide-react'
 
 export default function ApplicationsPage() {
@@ -35,6 +37,9 @@ export default function ApplicationsPage() {
   const [agentFilter, setAgentFilter] = useState('All')
   const [toast, setToast] = useState(null)
   const [selectedApp, setSelectedApp] = useState(null)
+  const [reassignQueue, setReassignQueue] = useState([])
+  const [needsReassignOnly, setNeedsReassignOnly] = useState(false)
+  const [completionOnly, setCompletionOnly] = useState(false)
 
   useEffect(() => {
     fetchData()
@@ -48,12 +53,14 @@ export default function ApplicationsPage() {
 
   const fetchData = async () => {
     setLoading(true)
-    const [appsData, agentsData] = await Promise.all([
+    const [appsData, agentsData, queueData] = await Promise.all([
       getAdminApplications(),
-      getAgentsList()
+      getAgentsList(),
+      getApplicationsNeedingReassignment()
     ])
     setApplications(appsData || [])
     setAgents(agentsData || [])
+    setReassignQueue(queueData || [])
     setLoading(false)
   }
 
@@ -68,6 +75,10 @@ export default function ApplicationsPage() {
               ...app,
               assigned_to: agentId || null,
               status: agentId ? 'under_review' : 'submitted',
+              // Reassignment resets the previous agent's Accept/Reject response
+              assignment_status: agentId ? 'assigned' : 'unassigned',
+              assignment_responded_at: null,
+              assignment_rejection_reason: null,
               agent: targetAgent || null
             }
           }
@@ -75,9 +86,15 @@ export default function ApplicationsPage() {
         })
       )
 
+      // Any rejection for this job is resolved by the reassignment
+      setReassignQueue((prev) => prev.filter((item) => item.id !== appId))
+
       // Broadcast update across all dashboards (Agent, Tenant, Landlord)
       broadcastApplicationUpdate(appId, agentId ? 'under_review' : 'submitted', {
         assigned_to: agentId || null,
+        assignment_status: agentId ? 'assigned' : 'unassigned',
+        assignment_responded_at: null,
+        assignment_rejection_reason: null,
         agent: targetAgent || null
       })
 
@@ -98,12 +115,37 @@ export default function ApplicationsPage() {
       // Broadcast status update across all dashboards
       broadcastApplicationUpdate(appId, newStatus)
 
-      setToast(`Status updated to ${newStatus.replace('_', ' ')}`)
+      setToast(`Status updated to ${applicationStatusLabel(newStatus)}`)
     } catch (err) {
       setToast(`Failed to update status: ${err.message}`)
     }
     setTimeout(() => setToast(null), 3500)
   }
+
+  const handleApproveCompletion = async (appId) => {
+    try {
+      await approveApplicationCompletion(appId)
+      const nowIso = new Date().toISOString()
+      setApplications((prev) =>
+        prev.map((app) =>
+          app.id === appId
+            ? { ...app, status: 'completed', completion_approved_at: nowIso }
+            : app
+        )
+      )
+
+      broadcastApplicationUpdate(appId, 'completed', { completion_approved_at: nowIso })
+      setToast('Application approved as Completed! Agent 50% commission unlocked.')
+    } catch (err) {
+      setToast(`Failed to approve completion: ${err.message}`)
+    }
+    setTimeout(() => setToast(null), 3500)
+  }
+
+  const completionQueue = useMemo(
+    () => applications.filter((a) => a.completion_requested_at && a.status !== 'completed'),
+    [applications]
+  )
 
   const filtered = useMemo(() => {
     return applications.filter((app) => {
@@ -114,7 +156,7 @@ export default function ApplicationsPage() {
       const haystack = `${tenantName} ${tenantEmail} ${agentName} ${areas} ${app.id}`.toLowerCase()
 
       const matchesQuery = !query.trim() || haystack.includes(query.toLowerCase())
-      const matchesStatus = statusFilter === 'All' || app.status === statusFilter
+      const matchesStatus = statusFilter === 'All' || normalizeApplicationStatus(app.status) === statusFilter
       const matchesAgent =
         agentFilter === 'All'
           ? true
@@ -122,9 +164,12 @@ export default function ApplicationsPage() {
             ? !app.assigned_to
             : app.assigned_to === agentFilter
 
-      return matchesQuery && matchesStatus && matchesAgent
+      const matchesReassign = !needsReassignOnly || app.assignment_status === 'rejected'
+      const matchesCompletion = !completionOnly || (app.completion_requested_at && app.status !== 'completed')
+
+      return matchesQuery && matchesStatus && matchesAgent && matchesReassign && matchesCompletion
     })
-  }, [applications, query, statusFilter, agentFilter])
+  }, [applications, query, statusFilter, agentFilter, needsReassignOnly, completionOnly])
 
   return (
     <div className="space-y-5">
@@ -152,6 +197,114 @@ export default function ApplicationsPage() {
         </button>
       </section>
 
+      {/* Agent rejection alerts — jobs needing reassignment */}
+      {reassignQueue.length > 0 && (
+        <section className="bg-red-50 border border-red-200 rounded-xl p-4 shadow-xs">
+          <div className="flex items-start gap-3">
+            <AlertCircle size={18} className="text-red-600 mt-0.5 flex-shrink-0" />
+            <div className="flex-1 min-w-0">
+              <h3 className="text-sm font-bold text-red-800">
+                {reassignQueue.length} assigned job{reassignQueue.length === 1 ? '' : 's'} rejected by
+                agent{reassignQueue.length === 1 ? '' : 's'} — needs reassignment
+              </h3>
+              <p className="text-[11px] text-red-600 mt-0.5">
+                These agents declined the job. Assign a different agent to keep the tenant application
+                moving.
+              </p>
+              <ul className="mt-3 space-y-1.5">
+                {reassignQueue.map((item) => (
+                  <li
+                    key={item.id}
+                    className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[11px] text-red-900 bg-white/70 border border-red-100 rounded-lg px-2.5 py-1.5"
+                  >
+                    <span className="font-mono text-red-500">#{String(item.id).slice(0, 8)}</span>
+                    <span className="font-semibold">{item.tenant?.full_name || 'Tenant'}</span>
+                    <span className="text-red-300">·</span>
+                    <span>
+                      declined by <strong>{item.agent?.full_name || 'agent'}</strong>
+                    </span>
+                    {item.assignment_rejection_reason && (
+                      <>
+                        <span className="text-red-300">·</span>
+                        <span className="italic">“{item.assignment_rejection_reason}”</span>
+                      </>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            </div>
+            <button
+              type="button"
+              onClick={() => setNeedsReassignOnly((v) => !v)}
+              className={`flex-shrink-0 px-3 py-1.5 rounded-lg text-[11px] font-semibold border transition-colors ${
+                needsReassignOnly
+                  ? 'bg-red-600 text-white border-red-600 hover:bg-red-700'
+                  : 'bg-white text-red-700 border-red-300 hover:bg-red-100'
+              }`}
+            >
+              {needsReassignOnly ? 'Show all applications' : 'Show rejected only'}
+            </button>
+          </div>
+        </section>
+      )}
+
+      {/* Agent completion request alerts — jobs waiting for admin completion approval */}
+      {completionQueue.length > 0 && (
+        <section className="bg-amber-50 border border-amber-200 rounded-xl p-4 shadow-xs">
+          <div className="flex items-start gap-3">
+            <Clock size={18} className="text-amber-600 mt-0.5 flex-shrink-0" />
+            <div className="flex-1 min-w-0">
+              <h3 className="text-sm font-bold text-amber-900">
+                {completionQueue.length} job{completionQueue.length === 1 ? '' : 's'} awaiting completion approval
+              </h3>
+              <p className="text-[11px] text-amber-700 mt-0.5">
+                The assigned agent has requested sign-off for completed tenant placement. Approving marks the job completed and unlocks their 50% commission (R50.00).
+              </p>
+              <ul className="mt-3 space-y-1.5">
+                {completionQueue.map((item) => (
+                  <li
+                    key={item.id}
+                    className="flex flex-wrap items-center justify-between gap-2 text-[11px] text-amber-950 bg-white/80 border border-amber-100 rounded-lg px-2.5 py-1.5"
+                  >
+                    <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
+                      <span className="font-mono text-amber-600">#{String(item.id).slice(0, 8)}</span>
+                      <span className="font-semibold">{item.tenant?.full_name || 'Tenant'}</span>
+                      <span className="text-amber-300">·</span>
+                      <span>Agent: <strong>{item.agent?.full_name || 'Assigned Agent'}</strong></span>
+                      {item.completion_request_note && (
+                        <>
+                          <span className="text-amber-300">·</span>
+                          <span className="italic text-slate-600">&ldquo;{item.completion_request_note}&rdquo;</span>
+                        </>
+                      )}
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => handleApproveCompletion(item.id)}
+                      className="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-[11px] rounded-lg shadow-xs transition-colors inline-flex items-center gap-1 cursor-pointer"
+                    >
+                      <CheckCircle2 size={12} />
+                      Approve Job Completed
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </div>
+            <button
+              type="button"
+              onClick={() => setCompletionOnly((v) => !v)}
+              className={`flex-shrink-0 px-3 py-1.5 rounded-lg text-[11px] font-semibold border transition-colors ${
+                completionOnly
+                  ? 'bg-amber-600 text-white border-amber-600 hover:bg-amber-700'
+                  : 'bg-white text-amber-800 border-amber-300 hover:bg-amber-100'
+              }`}
+            >
+              {completionOnly ? 'Show all applications' : 'Filter requested only'}
+            </button>
+          </div>
+        </section>
+      )}
+
       {/* Filters and Search Bar */}
       <section className="bg-white rounded-xl shadow-xs border border-slate-200 overflow-hidden">
         <div className="p-4 border-b border-slate-100 flex flex-col lg:flex-row lg:items-center justify-between gap-3">
@@ -166,16 +319,30 @@ export default function ApplicationsPage() {
           </div>
 
           <div className="flex flex-wrap items-center gap-2.5 text-xs">
+            {completionQueue.length > 0 && (
+              <button
+                type="button"
+                onClick={() => setCompletionOnly((v) => !v)}
+                className={`px-2.5 py-1.5 rounded-lg text-xs font-semibold border transition-colors flex items-center gap-1 cursor-pointer ${
+                  completionOnly
+                    ? 'bg-amber-600 text-white border-amber-600'
+                    : 'bg-amber-50 text-amber-800 border-amber-200 hover:bg-amber-100'
+                }`}
+              >
+                <Clock size={12} />
+                {completionQueue.length} Awaiting Approval
+              </button>
+            )}
+
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
               className="p-1.5 rounded-lg border border-slate-200 bg-slate-50 text-slate-700 focus:outline-none focus:border-blue-600"
             >
               <option value="All">All Statuses</option>
-              <option value="submitted">Submitted</option>
-              <option value="under_review">Under Review</option>
-              <option value="completed">Completed</option>
-              <option value="expired">Expired</option>
+              {SELECTABLE_APPLICATION_STATUSES.map((s) => (
+                <option key={s} value={s}>{applicationStatusLabel(s)}</option>
+              ))}
             </select>
 
             <select
@@ -229,7 +396,14 @@ export default function ApplicationsPage() {
                   const types = Array.isArray(app.preferred_types) ? app.preferred_types.join(', ') : 'Any'
 
                   return (
-                    <tr key={app.id} className="hover:bg-slate-50/70 transition-colors">
+                    <tr
+                      key={app.id}
+                      className={`transition-colors ${
+                        app.assignment_status === 'rejected'
+                          ? 'bg-red-50/40 hover:bg-red-50/70'
+                          : 'hover:bg-slate-50/70'
+                      }`}
+                    >
                       <td className="px-5 py-3.5 font-mono text-blue-600">
                         <div>{app.id.slice(0, 8)}…</div>
                         <span className="text-[10px] text-slate-400">{app.lease_duration_months || 12} mo</span>
@@ -262,21 +436,39 @@ export default function ApplicationsPage() {
                         <select
                           value={app.status || 'submitted'}
                           onChange={(e) => handleStatusChange(app.id, e.target.value)}
-                          className={`text-[11px] font-semibold rounded-lg px-2 py-1 border transition-colors ${
-                            app.status === 'completed'
-                              ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                              : app.status === 'under_review'
-                                ? 'bg-blue-50 text-blue-700 border-blue-200'
-                                : app.status === 'expired'
-                                  ? 'bg-slate-100 text-slate-700 border-slate-200'
-                                  : 'bg-amber-50 text-amber-700 border-amber-200'
-                          }`}
+                          className={`text-[11px] font-semibold rounded-lg px-2 py-1 border transition-colors ${getApplicationStatusMeta(app.status).tailwind}`}
                         >
-                          <option value="submitted">Submitted</option>
-                          <option value="under_review">Under Review</option>
-                          <option value="completed">Completed</option>
-                          <option value="expired">Expired</option>
+                          {SELECTABLE_APPLICATION_STATUSES.map((s) => (
+                            <option key={s} value={s}>{applicationStatusLabel(s)}</option>
+                          ))}
                         </select>
+
+                        {app.completion_requested_at && app.status !== 'completed' && (
+                          <div className="mt-1.5 flex flex-col gap-1">
+                            <span className="inline-flex items-center gap-1 text-[10px] font-bold text-amber-800 bg-amber-50 border border-amber-200 rounded-full px-2 py-0.5">
+                              <Clock size={10} /> Completion Requested
+                            </span>
+                            {app.completion_request_note && (
+                              <p className="text-[10px] text-slate-500 italic truncate max-w-[150px]" title={app.completion_request_note}>
+                                &ldquo;{app.completion_request_note}&rdquo;
+                              </p>
+                            )}
+                            <button
+                              type="button"
+                              onClick={() => handleApproveCompletion(app.id)}
+                              className="inline-flex items-center justify-center gap-1 text-[10px] font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-md px-2 py-1 transition-colors shadow-xs cursor-pointer"
+                            >
+                              <CheckCircle2 size={11} /> Approve Completed
+                            </button>
+                          </div>
+                        )}
+                        {app.completion_approved_at && app.status === 'completed' && (
+                          <div className="mt-1">
+                            <span className="inline-flex items-center gap-1 text-[9px] font-medium text-emerald-700 bg-emerald-50 border border-emerald-200 rounded px-1.5 py-0.5">
+                              <CheckCircle2 size={9} /> Approved by Admin
+                            </span>
+                          </div>
+                        )}
                       </td>
 
                       <td className="px-4 py-3.5">
@@ -292,6 +484,24 @@ export default function ApplicationsPage() {
                             </option>
                           ))}
                         </select>
+
+                        {app.assigned_to && (
+                          <div className="mt-1.5">
+                            {app.assignment_status === 'accepted' ? (
+                              <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-full px-2 py-0.5">
+                                <CheckCircle2 size={10} /> Accepted
+                              </span>
+                            ) : app.assignment_status === 'rejected' ? (
+                              <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-red-700 bg-red-50 border border-red-200 rounded-full px-2 py-0.5">
+                                <AlertCircle size={10} /> Rejected — reassign
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-amber-700 bg-amber-50 border border-amber-200 rounded-full px-2 py-0.5">
+                                <Clock size={10} /> Awaiting response
+                              </span>
+                            )}
+                          </div>
+                        )}
                       </td>
 
                       <td className="px-5 py-3.5 text-right">

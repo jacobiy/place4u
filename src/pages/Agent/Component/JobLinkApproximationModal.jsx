@@ -18,6 +18,7 @@ import {
   Sparkles
 } from 'lucide-react';
 import { evaluateJobApplicationMatch } from '../../../utils/jobAffordabilityMatcher';
+import { resolveApplicationProperty, describeProperty } from '../../../utils/propertyLabel';
 import './JobLinkApproximationModal.css';
 
 export const JobLinkApproximationModal = ({
@@ -29,22 +30,42 @@ export const JobLinkApproximationModal = ({
   onOpenDocuments = () => {},
   onUpdateStatus = () => {}
 }) => {
+  // Which property this application is actually for (id link first, then the
+  // stored title snapshot). Never silently borrow an unrelated listing.
+  const resolution = useMemo(
+    () => resolveApplicationProperty(application, properties),
+    [application, properties]
+  );
+
   // Find linked property if any, or default to first property / application info
   const initialProperty = useMemo(() => {
     if (!application) return null;
-    if (application.property_id) {
-      const match = properties.find(p => p.id === application.property_id);
-      if (match) return match;
+    if (resolution.property) return resolution.property;
+
+    if (application.property_id != null) {
+      // The application is linked to a specific listing that is not in this
+      // agent's inventory. Represent the link explicitly instead of evaluating
+      // against a different (unrelated) property.
+      return {
+        id: application.property_id,
+        title: resolution.label || application.property_title || 'Linked property',
+        price: application.max_budget || null,
+        address: application.preferred_areas?.[0] || '',
+        city: application.preferred_areas?.[0] || '',
+        __unresolvedLink: true
+      };
     }
-    // Fallback if applied to a specific property name or area
+
+    // Genuine general application (no property linked) — any listing is a
+    // deliberate comparison target rather than a silent substitution.
     return properties[0] || {
       id: 'default-prop',
-      title: application.property_title || 'Selected Rental Property',
+      title: resolution.label || 'General application (no property linked)',
       price: application.max_budget || 8500,
       address: application.preferred_areas?.[0] || 'Johannesburg',
       city: 'Johannesburg'
     };
-  }, [application, properties]);
+  }, [application, properties, resolution]);
 
   const [selectedPropertyId, setSelectedPropertyId] = useState(
     initialProperty?.id || (properties[0]?.id || '')
@@ -54,11 +75,22 @@ export const JobLinkApproximationModal = ({
   const activeProperty = useMemo(() => {
     const found = properties.find(p => p.id === selectedPropertyId);
     return found || initialProperty || {
-      title: application?.property_title || 'Rental Unit',
+      title: resolution.label || application?.property_title || 'Rental unit',
       price: application?.max_budget || 8500,
       address: application?.preferred_areas?.[0] || 'Johannesburg'
     };
-  }, [selectedPropertyId, properties, initialProperty, application]);
+  }, [selectedPropertyId, properties, initialProperty, application, resolution]);
+
+  // Options rendered in the selector. A listing the application is linked to is
+  // kept visible even when it is not part of this agent's inventory.
+  const propertyOptions = useMemo(() => {
+    const list = Array.isArray(properties) ? properties : [];
+    const activeId = activeProperty?.id;
+    if (activeId != null && !list.some((p) => p.id === activeId)) {
+      return [activeProperty, ...list];
+    }
+    return list;
+  }, [properties, activeProperty]);
 
   // Run the linking and approximation algorithm
   const matchResult = useMemo(() => {
@@ -102,29 +134,43 @@ export const JobLinkApproximationModal = ({
         <div className="job-link-property-bar">
           <div className="property-bar-label">
             <Building size={16} />
-            <span>Target Property:</span>
+            <span>Target property</span>
           </div>
           <div className="property-select-wrapper">
             <select
               value={selectedPropertyId}
               onChange={(e) => setSelectedPropertyId(e.target.value)}
               className="property-select"
+              aria-label="Property to evaluate this application against"
             >
-              {properties.length > 0 ? (
-                properties.map(p => (
+              {propertyOptions.length > 0 ? (
+                propertyOptions.map((p) => (
                   <option key={p.id} value={p.id}>
-                    {p.title || p.name} — R{Number(p.price || 0).toLocaleString()}/mo ({p.city || p.location || 'Metro'})
+                    {describeProperty(p) || `Listing ${String(p.id).slice(0, 8)}`}
                   </option>
                 ))
               ) : (
-                <option value={activeProperty.id}>
-                  {activeProperty.title} — R{Number(activeProperty.price || 0).toLocaleString()}/mo
+                <option value={activeProperty?.id}>
+                  {describeProperty(activeProperty) || 'Rental unit'}
                 </option>
               )}
             </select>
             <ChevronDown size={16} className="select-arrow-icon" />
           </div>
         </div>
+
+        {/* Which property the tenant actually applied for */}
+        {resolution.isLinked && (
+          <div className={`job-link-applied-note${resolution.property ? '' : ' is-unresolved'}`}>
+            {resolution.property ? <CheckCircle2 size={13} /> : <AlertTriangle size={13} />}
+            <span>
+              Tenant applied for <strong>{resolution.label || 'a specific listing'}</strong>
+              {resolution.property
+                ? ' — the analysis below is scored against that listing.'
+                : ' — that listing is not in your inventory, so the analysis below uses the application snapshot.'}
+            </span>
+          </div>
+        )}
 
         {/* Modal Scrollable Body */}
         <div className="job-link-modal-body">
@@ -260,7 +306,7 @@ export const JobLinkApproximationModal = ({
             {/* 3. Employment & Verification Pillar */}
             <div className="pillar-card">
               <div className="pillar-header">
-                <div className="pillar-icon" style={{ background: 'rgba(139, 92, 246, 0.15)', color: '#8b5cf6' }}>
+                <div className="pillar-icon" style={{ background: 'rgba(79, 126, 248, 0.15)', color: '#7da2ff' }}>
                   <Briefcase size={20} />
                 </div>
                 <div>
@@ -358,7 +404,7 @@ export const JobLinkApproximationModal = ({
               onClick={() => {
                 onUpdateStatus?.(application.id, 'matches_found', {
                   property_id: activeProperty?.id,
-                  property_title: activeProperty?.title,
+                  property_title: describeProperty(activeProperty) || activeProperty?.title || null,
                   matched_property_id: activeProperty?.id,
                   matched_property: activeProperty,
                   match_score: compositeScore || 96,

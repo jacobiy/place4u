@@ -128,23 +128,8 @@ export default function AdminMessages() {
       if (res.success && Array.isArray(res.data) && res.data.length > 0) {
         setMessages(res.data)
       } else {
-        const seedThread = [
-          {
-            id: `seed-1-${selectedContact.id}`,
-            sender_id: selectedContact.id,
-            receiver_id: currentAdminId,
-            content: `Hello Admin! Inquiring about account FICA verification and document processing status.`,
-            created_at: new Date(Date.now() - 3600000 * 2).toISOString()
-          },
-          {
-            id: `seed-2-${selectedContact.id}`,
-            sender_id: currentAdminId,
-            receiver_id: selectedContact.id,
-            content: `Greetings ${selectedContact.full_name || 'user'}. Our compliance team is reviewing your documents. Everything appears in order!`,
-            created_at: new Date(Date.now() - 3600000).toISOString()
-          }
-        ]
-        setMessages(seedThread)
+        // No stored conversation yet: show an empty thread.
+        setMessages([])
       }
       requestAnimationFrame(() => {
         if (listRef.current) {
