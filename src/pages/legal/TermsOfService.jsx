@@ -72,7 +72,7 @@ export default function TermsOfService() {
             <div className="space-y-2 text-xs text-[#3f4850] mt-2">
               <p>• <strong>Fee Amount:</strong> Place4U charges a fixed administrative assistance fee of <strong>R 350.00</strong> upon verified application submission.</p>
               <p>• <strong>Scope of Fee:</strong> This fee covers applicant digital passport vetting, identity verification, deed record verification, background checks, and coordination support.</p>
-              <p>• <strong>Non-Refundable Administrative Charge:</strong> The fee is earned upon commencement of screening and matching operations and is strictly non-refundable.</p>
+              <p>• <strong>Refundable Administrative Charge:</strong> The fee is fully refundable if no placement is made.</p>
               <p>• <strong>No Placement Guarantee:</strong> While Place4U works diligently to find optimal accommodation matches, payment of the assistance fee does not guarantee successful lease signing or landlord acceptance.</p>
             </div>
           </section>

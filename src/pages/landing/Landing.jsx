@@ -922,7 +922,7 @@ const Landing = () => {
 					</div>
 
 					<p className="text-xs text-[#3f4850] mt-12 max-w-2xl mx-auto text-center leading-relaxed">
-						Place4U is a technology and relocation-assistance platform, not an estate agency or property practitioner. The assistance fee covers application support, screening and introductions only and is non-refundable; placement is not guaranteed, and all leases are entered into directly between landlords and tenants.
+						Place4U is a technology and relocation-assistance platform, not an estate agency or property practitioner. The assistance fee covers application support, screening and introductions only and is fully refundable if no placement is made; placement is not guaranteed, and all leases are entered into directly between landlords and tenants.
 					</p>
 				</div>
 			</section>
