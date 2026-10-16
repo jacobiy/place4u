@@ -1,5 +1,5 @@
 // Signup.jsx - Lead UI Designer Overhaul for Place4U
-import React, { useState } from 'react'
+import React, { useState, useRef } from 'react'
 import { motion } from 'framer-motion'
 import { supabase } from "../../utils/Supabase";
 import { 
@@ -15,7 +15,7 @@ import {
   HiArrowRight,
   HiArrowLeft
 } from 'react-icons/hi'
-import { FaGoogle, FaFacebook } from 'react-icons/fa'
+import { FaGoogle } from 'react-icons/fa'
 import { Link, useNavigate } from 'react-router-dom'
 
 const Signup = () => {
@@ -34,6 +34,7 @@ const Signup = () => {
   })
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const emailInputRef = useRef(null)
   const navigate = useNavigate()
 
   const handleChange = (e) => {
@@ -288,6 +289,7 @@ const Signup = () => {
                       <div className="relative">
                         <HiMail className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500 w-4 h-4" />
                         <input
+                          ref={emailInputRef}
                           type="email"
                           name="email"
                           value={formData.email}
@@ -534,20 +536,14 @@ const Signup = () => {
 
                 <button
                   type="button"
-                  onClick={async () => {
-                    try {
-                      await supabase.auth.signInWithOAuth({
-                        provider: 'facebook',
-                        options: { redirectTo: window.location.origin + '/tenant' }
-                      })
-                    } catch (err) {
-                      setError('Facebook registration failed.')
-                    }
+                  onClick={() => {
+                    emailInputRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+                    emailInputRef.current?.focus()
                   }}
                   className="btn-tactile py-2 px-3 rounded-xl bg-white/[0.03] hover:bg-white/[0.08] border border-white/[0.08] text-xs font-medium text-slate-300 flex items-center justify-center gap-2"
                 >
-                  <FaFacebook className="w-3.5 h-3.5 text-blue-400" />
-                  <span>Facebook</span>
+                  <HiMail className="w-3.5 h-3.5 text-blue-400" />
+                  <span>Sign up with email</span>
                 </button>
               </div>
             </div>

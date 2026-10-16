@@ -8,7 +8,6 @@ import {
 	HiInformationCircle
 } from 'react-icons/hi'
 import {
-	FaFacebookF,
 	FaTwitter,
 	FaInstagram,
 	FaLinkedinIn,
@@ -58,7 +57,7 @@ const Footer = ({ theme = 'dark' }) => {
 	]
 
 	const socialLinks = [
-		{ icon: <FaFacebookF />, href: '#', label: 'Facebook' },
+		{ icon: <HiMail />, href: 'mailto:support@place4u.co.za', label: 'Email' },
 		{ icon: <FaTwitter />, href: '#', label: 'Twitter' },
 		{ icon: <FaInstagram />, href: '#', label: 'Instagram' },
 		{ icon: <FaLinkedinIn />, href: '#', label: 'LinkedIn' },

@@ -1,5 +1,5 @@
 // Login.jsx - Lead UI Designer & Robust Auth Resolution for Place4U
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import { motion } from 'framer-motion'
 import {
 	HiMail,
@@ -12,7 +12,7 @@ import {
 	HiCheckCircle,
 	HiX
 } from 'react-icons/hi'
-import { FaGoogle, FaFacebook } from 'react-icons/fa'
+import { FaGoogle } from 'react-icons/fa'
 import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { supabase } from '../../utils/Supabase'
 import ResetPasswordModal from '../../component/ResetPasswordModal'
@@ -28,6 +28,7 @@ const Login = () => {
 	const [error, setError] = useState('')
 	const [successMessage, setSuccessMessage] = useState('')
 	const [resetModalOpen, setResetModalOpen] = useState(false)
+	const emailInputRef = useRef(null)
 	const navigate = useNavigate()
 	const location = useLocation()
 
@@ -261,6 +262,7 @@ const Login = () => {
 								<div className="relative">
 									<HiMail className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500 w-4 h-4" />
 									<input
+										ref={emailInputRef}
 										type="email"
 										name="email"
 										value={formData.email}
@@ -354,11 +356,14 @@ const Login = () => {
 								</button>
 								<button
 									type="button"
-									onClick={() => handleSocialLogin('facebook')}
+									onClick={() => {
+										emailInputRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+										emailInputRef.current?.focus()
+									}}
 									className="btn-tactile py-2.5 px-3 rounded-xl bg-white/[0.03] hover:bg-white/[0.08] border border-white/[0.08] text-xs font-medium text-slate-300 flex items-center justify-center gap-2 transition-all"
 								>
-									<FaFacebook className="w-3.5 h-3.5 text-blue-400" />
-									<span>Facebook</span>
+									<HiMail className="w-3.5 h-3.5 text-blue-400" />
+									<span>Sign in with email</span>
 								</button>
 							</div>
 						</div>
