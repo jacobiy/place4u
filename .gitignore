@@ -31,3 +31,6 @@ house_rules
 house_rules.md
 house_rules/
 
+# Local-only SQL (applied by hand in the Supabase SQL editor) - never commit
+database/
+
