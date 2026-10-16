@@ -219,7 +219,7 @@ export default function DataProtectionNotice() {
               </div>
               <div className="flex items-center gap-2.5 sm:col-span-2">
                 <MapPin className="text-[#006194] w-4 h-4 flex-shrink-0" />
-                <span>Office 205, The Zone, 184 Oxford Road, Rosebank, Johannesburg, 2196</span>
+                <span>Office 205, The Zone, 184 Oxford Road, Rosebank, Johannesburg, 2196 (Coming Soon)</span>
               </div>
             </div>
           </section>

@@ -40,7 +40,7 @@ const Footer = ({ theme = 'dark' }) => {
 	const contactInfo = [
 		{
 			icon: <HiLocationMarker className={`w-4 h-4 ${isLight ? 'text-[#006194]' : 'text-blue-400'}`} />,
-			text: 'Office 205, The Zone, 184 Oxford Road, Rosebank, Johannesburg, 2196'
+			text: 'Office 205, The Zone, 184 Oxford Road, Rosebank, Johannesburg, 2196 (Coming Soon)'
 		},
 		{
 			icon: <HiMail className={`w-4 h-4 ${isLight ? 'text-[#006194]' : 'text-blue-400'}`} />,
