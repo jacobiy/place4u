@@ -569,8 +569,8 @@ export default function PrivacyConsent() {
                   <div className="p-3.5 rounded-xl bg-white/[0.02] border border-white/[0.06] space-y-1 text-slate-300">
                     <p className="font-medium text-slate-200">Information Officer — Place4U (Pty) Ltd</p>
                     <p>Office 205, The Zone, 184 Oxford Road, Rosebank, Johannesburg, 2196</p>
-                    <p>Email: <a href="mailto:privacy@place4u.co.za" className="text-blue-400 hover:underline">privacy@place4u.co.za</a> / <a href="mailto:support@place4u.co.za" className="text-blue-400 hover:underline">support@place4u.co.za</a></p>
-                    <p>Phone: +27 (0) 11 234 5678</p>
+                    <p>Email: <a href="mailto:privacy@place4u.co.za" className="text-blue-400 hover:underline">privacy@place4u.co.za</a> / <a href="mailto:jacob@place4u.xyz" className="text-blue-400 hover:underline">jacob@place4u.xyz</a></p>
+                    <p>Phone: 082 482 2611</p>
                     <p className="pt-1 text-[11px] text-slate-400">
                       You also retain the right to lodge a complaint with the South African Information Regulator at <span className="text-slate-300">enquiries@inforegulator.org.za</span>.
                     </p>

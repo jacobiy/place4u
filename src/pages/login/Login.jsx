@@ -28,6 +28,11 @@ const Login = () => {
 	const [error, setError] = useState('')
 	const [successMessage, setSuccessMessage] = useState('')
 	const [resetModalOpen, setResetModalOpen] = useState(false)
+	// Set when Supabase reports the account exists but the email is not yet
+	// confirmed, so we can offer a resend action.
+	const [unconfirmedEmail, setUnconfirmedEmail] = useState('')
+	const [resending, setResending] = useState(false)
+	const [resendMessage, setResendMessage] = useState('')
 	const emailInputRef = useRef(null)
 	const navigate = useNavigate()
 	const location = useLocation()
@@ -72,6 +77,8 @@ const Login = () => {
 		setLoading(true)
 		setError('')
 		setSuccessMessage('')
+		setUnconfirmedEmail('')
+		setResendMessage('')
 
 		try {
 			// Clear demo role when doing real credential login
@@ -129,6 +136,7 @@ const Login = () => {
 				setError('Invalid email or password. Please verify your details and try again.')
 			} else if (msg.includes('Email not confirmed')) {
 				setError('Your email is awaiting confirmation. Please check your inbox.')
+				setUnconfirmedEmail(trimmedEmail)
 			} else {
 				setError(msg || 'Unable to log in. Please check your credentials.')
 			}
@@ -141,6 +149,27 @@ const Login = () => {
 		setError('')
 		setSuccessMessage('')
 		setResetModalOpen(true)
+	}
+
+	// Offer a resend when sign-in fails because the email isn't confirmed yet.
+	const handleResendConfirmation = async () => {
+		if (!unconfirmedEmail) return
+
+		setResending(true)
+		setResendMessage('')
+		try {
+			const { error: resendError } = await supabase.auth.resend({
+				type: 'signup',
+				email: unconfirmedEmail,
+				options: { emailRedirectTo: `${window.location.origin}/auth/callback` }
+			})
+			if (resendError) throw resendError
+			setResendMessage('Confirmation email sent. Please check your inbox (and your spam folder).')
+		} catch (err) {
+			setResendMessage(err?.message || 'Could not resend the email. Please try again in a moment.')
+		} finally {
+			setResending(false)
+		}
 	}
 
 	const handleSocialLogin = async (provider) => {
@@ -243,6 +272,26 @@ const Login = () => {
 							<div className="mt-4 p-3.5 rounded-xl bg-red-950/40 border border-red-500/30 text-red-300 text-xs leading-relaxed flex items-center justify-between">
 								<span>{error}</span>
 								<button onClick={() => setError('')} className="text-red-400 hover:text-white ml-2 text-sm">✕</button>
+							</div>
+						)}
+
+						{unconfirmedEmail && (
+							<div className="mt-3 p-3.5 rounded-xl bg-blue-950/40 border border-blue-500/30 text-blue-200 text-xs leading-relaxed">
+								{resendMessage ? (
+									<span>{resendMessage}</span>
+								) : (
+									<>
+										Didn’t get the email?{' '}
+										<button
+											type="button"
+											onClick={handleResendConfirmation}
+											disabled={resending}
+											className="font-semibold text-blue-300 hover:text-white underline underline-offset-2 disabled:opacity-60"
+										>
+											{resending ? 'Sending…' : 'Resend confirmation email'}
+										</button>
+									</>
+								)}
 							</div>
 						)}
 

@@ -44,24 +44,24 @@ const Footer = ({ theme = 'dark' }) => {
 		},
 		{
 			icon: <HiMail className={`w-4 h-4 ${isLight ? 'text-[#006194]' : 'text-blue-400'}`} />,
-			text: 'support@place4u.co.za'
+			text: 'jacob@place4u.xyz'
 		},
 		{
 			icon: <HiPhone className={`w-4 h-4 ${isLight ? 'text-[#006194]' : 'text-blue-400'}`} />,
-			text: '+27 (0) 11 234 5678'
+			text: '082 482 2611'
 		},
 		{
 			icon: <FaWhatsapp className={`w-4 h-4 ${isLight ? 'text-[#006c4a]' : 'text-green-400'}`} />,
-			text: '+27 (0) 71 234 5678 (WhatsApp Support Desk)'
+			text: '082 482 2611 (WhatsApp Support Desk)'
 		}
 	]
 
 	const socialLinks = [
-		{ icon: <HiMail />, href: 'mailto:support@place4u.co.za', label: 'Email' },
+		{ icon: <HiMail />, href: 'mailto:jacob@place4u.xyz', label: 'Email' },
 		{ icon: <FaTwitter />, href: '#', label: 'Twitter' },
-		{ icon: <FaInstagram />, href: '#', label: 'Instagram' },
+		{ icon: <FaInstagram />, href: 'https://www.instagram.com/place4u', label: 'Instagram' },
 		{ icon: <FaLinkedinIn />, href: '#', label: 'LinkedIn' },
-		{ icon: <FaWhatsapp />, href: '#', label: 'WhatsApp' }
+		{ icon: <FaWhatsapp />, href: 'https://wa.me/27824822611', label: 'WhatsApp' }
 	]
 
 	return (

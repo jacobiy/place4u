@@ -12,8 +12,8 @@ export default function DirectContactModal({
 
   const name = contact.name || contact.full_name || "Representative";
   const role = contact.role || contact.user_type || "Agent";
-  const email = contact.email || "support@place4u.co.za";
-  const rawPhone = contact.phone || "+27 82 444 3322";
+  const email = contact.email || "jacob@place4u.xyz";
+  const rawPhone = contact.phone || "+27 82 482 2611";
   const propertyTitle = contact.propertyTitle || contact.unit || "";
 
   // Clean phone number for WhatsApp: remove non-digits

@@ -26,3 +26,8 @@ dist-ssr
 .env
 pkg/
 
+# Local-only AI working agreement (house style/font/general rules) - never commit
+house_rules
+house_rules.md
+house_rules/
+

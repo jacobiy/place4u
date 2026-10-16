@@ -168,7 +168,7 @@ export default function DisputeResolution() {
             </div>
             <div className="flex items-center gap-2.5">
               <Phone className="text-[#006194] w-4 h-4 flex-shrink-0" />
-              <span>+27 (0) 11 234 5678 (Governance Secretariat)</span>
+              <span>082 482 2611 (Governance Secretariat)</span>
             </div>
             <div className="flex items-center gap-2.5 sm:col-span-2">
               <MapPin className="text-[#006194] w-4 h-4 flex-shrink-0" />

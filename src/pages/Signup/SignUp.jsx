@@ -34,6 +34,11 @@ const Signup = () => {
   })
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  // Set when signUp() succeeds but email confirmation is required: we hold no
+  // session yet, so we show a "confirm your email" panel instead of redirecting.
+  const [pendingConfirmation, setPendingConfirmation] = useState(null)
+  const [resending, setResending] = useState(false)
+  const [resendMessage, setResendMessage] = useState('')
   const emailInputRef = useRef(null)
   const navigate = useNavigate()
 
@@ -97,11 +102,17 @@ const Signup = () => {
     setLoading(true)
     setError('')
 
+    // Where Supabase should send the user after they click the link in the
+    // confirmation email. AuthCallback then resolves their role from
+    // public.users and routes them to the correct portal.
+    const emailRedirectTo = `${window.location.origin}/auth/callback`
+
     try {
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email: formData.email,
         password: formData.password,
         options: {
+          emailRedirectTo,
           data: {
             full_name: formData.fullName,
             phone: formData.phone,
@@ -117,6 +128,21 @@ const Signup = () => {
       if (authError) throw authError
 
       if (authData.user) {
+        // "Confirm email" is enabled: signUp returns no session until the user
+        // clicks the link. We deliberately do NOT write the profile row here —
+        // the public.users insert policy (users_insert_self_non_admin) requires
+        // an authenticated caller — and we must not redirect into a portal the
+        // user cannot access yet. AuthCallback creates the row once a session
+        // exists. (Note: for an already-registered address Supabase returns an
+        // obfuscated user with an empty identities array; we show the same
+        // panel on purpose to avoid leaking which emails exist.)
+        if (!authData.session) {
+          setPendingConfirmation({ email: formData.email })
+          return
+        }
+
+        // Confirmation disabled — we already hold a session, so this
+        // self-insert passes RLS.
         const { error: profileError } = await supabase
           .from('users')
           .insert([
@@ -151,6 +177,29 @@ const Signup = () => {
       }
     } finally {
       setLoading(false)
+    }
+  }
+
+  // Resend the signup confirmation email (only meaningful once we're in the
+  // "confirm your email" state).
+  const handleResendConfirmation = async () => {
+    const email = pendingConfirmation?.email
+    if (!email) return
+
+    setResending(true)
+    setResendMessage('')
+    try {
+      const { error: resendError } = await supabase.auth.resend({
+        type: 'signup',
+        email,
+        options: { emailRedirectTo: `${window.location.origin}/auth/callback` }
+      })
+      if (resendError) throw resendError
+      setResendMessage('Confirmation email sent. Please check your inbox (and your spam folder).')
+    } catch (err) {
+      setResendMessage(err?.message || 'Could not resend the email. Please try again in a moment.')
+    } finally {
+      setResending(false)
     }
   }
 
@@ -220,6 +269,60 @@ const Signup = () => {
 
         {/* Right Form Column */}
         <div className="lg:col-span-7 p-6 sm:p-10 flex flex-col justify-between">
+          {pendingConfirmation ? (
+            /* AWAITING EMAIL CONFIRMATION */
+            <div className="max-w-md mx-auto w-full text-center py-6">
+              <div className="w-14 h-14 rounded-2xl bg-blue-600/15 border border-blue-500/30 flex items-center justify-center mx-auto mb-4">
+                <HiMail className="w-7 h-7 text-blue-400" />
+              </div>
+
+              <h2 className="font-serif-display text-2xl sm:text-3xl font-normal text-white">
+                Confirm your email
+              </h2>
+              <p className="text-slate-400 text-xs sm:text-sm mt-2 leading-relaxed">
+                We sent a confirmation link to{' '}
+                <span className="text-white font-semibold break-all">{pendingConfirmation.email}</span>.
+                {' '}Open that email and click the link to activate your account, then sign in.
+              </p>
+
+              {resendMessage && (
+                <div className="mt-5 p-3.5 rounded-xl bg-white/[0.04] border border-white/10 text-slate-300 text-xs leading-relaxed">
+                  {resendMessage}
+                </div>
+              )}
+
+              <div className="mt-6 space-y-3">
+                <button
+                  type="button"
+                  onClick={handleResendConfirmation}
+                  disabled={resending}
+                  className="btn-tactile w-full py-3 px-4 rounded-xl bg-blue-600 hover:bg-blue-500 active:bg-blue-700 text-white font-semibold text-sm shadow-lg shadow-blue-600/30 disabled:opacity-60"
+                >
+                  {resending ? 'Sending…' : 'Resend confirmation email'}
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setPendingConfirmation(null)
+                    setResendMessage('')
+                    setError('')
+                    setCurrentStep(1)
+                  }}
+                  className="btn-tactile w-full py-2.5 px-4 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] border border-white/10 text-slate-300 hover:text-white text-xs font-semibold"
+                >
+                  Use a different email address
+                </button>
+
+                <Link
+                  to="/login"
+                  className="block text-xs text-blue-400 hover:text-blue-300 underline underline-offset-4 pt-1"
+                >
+                  Already confirmed? Sign in
+                </Link>
+              </div>
+            </div>
+          ) : (
           <div>
             {/* Form Header with Stepper */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-white/[0.08]">
@@ -511,9 +614,10 @@ const Signup = () => {
               </div>
             </form>
           </div>
+          )}
 
           {/* Social Sign Up for Step 1 */}
-          {currentStep === 1 && (
+          {currentStep === 1 && !pendingConfirmation && (
             <div className="pt-6 mt-6 border-t border-white/[0.06]">
               <div className="grid grid-cols-2 gap-3">
                 <button

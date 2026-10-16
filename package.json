@@ -6,10 +6,7 @@
   "scripts": {
     "dev": "vite --host --port 1337",
     "build": "vite build",
-    "preview": "vite preview",
-    "test": "node test-agent-dashboard.js",
-    "test:agent": "node test-agent-dashboard.js",
-    "test:properties": "node test-admin-property-management.js"
+    "preview": "vite preview"
   },
   "dependencies": {
     "@paypal/react-paypal-js": "^10.6.0",

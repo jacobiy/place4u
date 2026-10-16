@@ -37,12 +37,48 @@ function AuthCallback() {
         }
 
         // Resolve the role authoritatively from public.users. No email or
-        // metadata inference — both are client-controlled and spoofable.
-        const { data: userData } = await supabase
+        // metadata inference for the ROLE — it only counts once the row is read
+        // back from the database below.
+        let { data: userData } = await supabase
           .from("users")
           .select("user_type, is_verified")
           .eq("id", session.user.id)
           .maybeSingle();
+
+        // First sign-in after email confirmation: with "Confirm email" enabled
+        // there was no session at signUp time, so the profile row could not be
+        // written then. Bootstrap it now from the metadata the user supplied.
+        // Safe because the DB trigger guard_user_privileges rejects
+        // user_type='admin' and any self-verification, and the RLS insert policy
+        // (users_insert_self_non_admin) requires id = auth.uid(). The role is
+        // still resolved by re-reading public.users immediately afterwards.
+        if (!userData) {
+          const meta = session.user.user_metadata || {};
+          const requestedRole = ["tenant", "landlord", "agent"].includes(meta.user_type)
+            ? meta.user_type
+            : "tenant";
+
+          const { error: bootstrapError } = await supabase.from("users").insert([
+            {
+              id: session.user.id,
+              email: session.user.email,
+              phone: meta.phone || null,
+              full_name: meta.full_name || null,
+              user_type: requestedRole,
+              is_verified: false,
+            },
+          ]);
+          if (bootstrapError) {
+            console.warn("Profile bootstrap after confirmation failed:", bootstrapError);
+          }
+
+          const { data: created } = await supabase
+            .from("users")
+            .select("user_type, is_verified")
+            .eq("id", session.user.id)
+            .maybeSingle();
+          userData = created;
+        }
 
         const role = userData?.user_type;
         if (!role || (role === "admin" && userData.is_verified === false)) {

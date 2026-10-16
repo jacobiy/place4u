@@ -724,7 +724,7 @@ const Landing = () => {
 						</div>
 
 						<a
-							href="https://wa.me/27712345678?text=Hello%20Place4U%20Desk%2C%20I%20need%20help%20with%20a%20listing"
+							href="https://wa.me/27824822611?text=Hello%20Place4U%20Desk%2C%20I%20need%20help%20with%20a%20listing"
 							target="_blank"
 							rel="noopener noreferrer"
 							className="bg-white text-[#131b2e] hover:bg-[#faf8ff] font-['Space_Grotesk'] font-bold text-sm px-8 py-4 rounded-xl shadow-lg transition-all flex items-center gap-3 whitespace-nowrap active:scale-95"
@@ -1065,7 +1065,7 @@ const Landing = () => {
 										Start Application
 									</button>
 									<a
-										href={`https://wa.me/27712345678?text=Hello%2C%20I%20am%20interested%20in%20${encodeURIComponent(selectedProperty.title)}%20(${selectedProperty.area})`}
+										href={`https://wa.me/27824822611?text=Hello%2C%20I%20am%20interested%20in%20${encodeURIComponent(selectedProperty.title)}%20(${selectedProperty.area})`}
 										target="_blank"
 										rel="noopener noreferrer"
 										className="px-4 py-3 bg-[#85f8c4]/60 hover:bg-[#85f8c4] text-[#005137] rounded-xl font-['Space_Grotesk'] font-bold text-sm flex items-center gap-1.5"
