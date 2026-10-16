@@ -172,7 +172,7 @@ export default function DisputeResolution() {
             </div>
             <div className="flex items-center gap-2.5 sm:col-span-2">
               <MapPin className="text-[#006194] w-4 h-4 flex-shrink-0" />
-              <span>Dispute Office, Suite 205, The Zone, 184 Oxford Road, Rosebank, 2196 (Coming Soon)</span>
+              <span>Coming Soon</span>
             </div>
           </div>
         </div>
