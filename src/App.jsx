@@ -10,6 +10,7 @@ import Loading from "./component/loading";
 const Landing = lazy(() => import("./pages/landing/Landing"));
 const Login = lazy(() => import("./pages/login/Login"));
 const Signup = lazy(() => import("./pages/Signup/SignUp"));
+const CompleteProfile = lazy(() => import("./pages/Signup/CompleteProfile"));
 const ResetPassword = lazy(() => import("./pages/resetpassword/resetpassword"));
 const ChangePassword = lazy(() => import("./pages/resetpassword/changepassword"));
 const TenantDashboard = lazy(() => import("./pages/Tenant/TenantDashboard"));
@@ -49,9 +50,14 @@ function AuthCallback() {
         // account — one whose public.users row an admin deleted — walk in via
         // /auth/callback on a still-valid session and resurrect its own profile.
         // If the row is genuinely absent we fail closed, below.
+        //
+        // select('*') rather than a column list: role_confirmed is added by
+        // database/oauth_role_onboarding.sql, and naming a column that does not
+        // exist yet would make this read fail and lock every user out. With '*'
+        // it is simply absent (undefined) until the migration is applied.
         const { data: userData } = await supabase
           .from("users")
-          .select("user_type, is_verified")
+          .select("*")
           .eq("id", session.user.id)
           .maybeSingle();
 
@@ -60,6 +66,16 @@ function AuthCallback() {
           // No authoritative profile (or a disabled admin): never guess a portal.
           await supabase.auth.signOut().catch(() => {});
           if (isMounted) navigate("/login", { replace: true });
+          return;
+        }
+
+        // An OAuth (Google) signup cannot carry a role — the provider only knows
+        // name/email — so the trigger provisions it as 'tenant' with
+        // role_confirmed = false. Send those accounts to the one-time role picker
+        // instead of straight into the tenant portal. (Absent/undefined when the
+        // migration has not been applied, in which case we fall through as before.)
+        if (userData.role_confirmed === false) {
+          if (isMounted) navigate("/complete-profile", { replace: true });
           return;
         }
 
@@ -219,6 +235,7 @@ export default function App() {
           <Route path="/reset-password" element={<ResetPassword />} />
           <Route path="/change-password" element={<ChangePassword />} />
           <Route path="/auth/callback" element={<AuthCallback />} />
+          <Route path="/complete-profile" element={<CompleteProfile />} />
           <Route path="/privacy" element={<PrivacyPolicy />} />
           <Route path="/terms" element={<TermsOfService />} />
           <Route path="/compliance" element={<ComplianceNotice />} />
