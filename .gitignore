@@ -34,3 +34,17 @@ house_rules/
 # Local-only SQL (applied by hand in the Supabase SQL editor) - never commit
 database/
 
+# Local-only film.html and related scratch files - never commit
+film.html
+film-*.html
+film_*.html
+**/film.html
+**/film-*.html
+**/film_*.html
+
+# Local-only film toolchain artifacts - never commit
+capture-page.js
+captures/
+scratch_frames/
+Business Commercial Music - Alec Koff Label.mp3
+

@@ -1,0 +1,22 @@
+# Security headers for the Netlify host (Vercel reads the equivalent block in vercel.json).
+# Netlify reads this file from the publish root; Vite copies public/ -> dist/, so it ships on build.
+#
+# The CSP below is tuned to what the app actually loads:
+#   - Supabase  : REST/Realtime (connect-src) + signed-URL document previews in
+#                 <iframe>/<object> (frame-src, object-src)
+#   - PayPal    : the JS SDK for the application-fee buttons (script/frame/connect)
+#   - Google    : Fonts stylesheet + woff2 files
+#   - img-src https: is broad on purpose - property photos come from Supabase storage.
+#
+# TEST ON A PREVIEW DEPLOY FIRST, especially the PayPal payment flow and the
+# document/PDF preview modals. If something is blocked, watch the browser console
+# for the report and add the origin here. To observe without blocking, rename the
+# header to "Content-Security-Policy-Report-Only".
+
+/*
+  Content-Security-Policy: default-src 'self'; base-uri 'self'; object-src 'self' blob: https://rfajxzjrzmckroitcqxz.supabase.co; frame-ancestors 'none'; form-action 'self' https://*.paypal.com; script-src 'self' https://*.paypal.com; worker-src 'self' blob:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: blob: https:; connect-src 'self' https://rfajxzjrzmckroitcqxz.supabase.co wss://rfajxzjrzmckroitcqxz.supabase.co https://*.paypal.com; frame-src 'self' blob: https://rfajxzjrzmckroitcqxz.supabase.co https://*.paypal.com; manifest-src 'self'; upgrade-insecure-requests
+  X-Frame-Options: DENY
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin
+  Permissions-Policy: geolocation=(), microphone=(), camera=(), payment=(), usb=()
+  Strict-Transport-Security: max-age=31536000; includeSubDomains

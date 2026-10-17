@@ -151,14 +151,29 @@ Do not introduce a new styling system or migrate a component to a different one;
 ## 8. Environment & secrets (gotchas)
 
 - Copy `.env.example` → `.env`. Vite only exposes `VITE_`-prefixed vars to the client.
-- **The app silently falls back to hardcoded live credentials if env vars are missing** (`resolveSupabaseUrl` + `FALLBACK_SUPABASE_*` in `src/utils/Supabase.js`; a live PayPal client ID default in `paypalService.js`). So it will "work" locally without `.env` while quietly using a shared production project — be aware when debugging data/credential issues.
+- **Missing credentials fail the build — there is no fallback.** `src/utils/Supabase.js` runs `requireEnv()` → `resolveSupabaseUrl()` and *throws* on a missing or invalid `VITE_SUPABASE_URL` / `VITE_SUPABASE_ANON_KEY`; `vite.config.js` fails the build even earlier, before anything reaches the browser. `paypalService.js` likewise defaults the client ID to `''` and the environment to `sandbox`, so a misconfigured build cannot take live payments. An earlier revision *did* silently fall back to a hard-coded live project — do not reintroduce that; this section documented the old behaviour for a while and it misled a security review into reporting a non-existent "hardcoded credentials" finding.
+- Because Vite **inlines** every `VITE_*` value into the bundle at build time, seeing the production Supabase URL / publishable key as a literal string in a built bundle is **expected and not a leak**. Only a `service_role`/secret key in client code would be.
+- The committed `.env` points at the shared production Supabase project, so local dev reads and writes production data. Give dev/uat their own values per `.env.example` before trusting anything you see locally.
 - `.env` is gitignored. Never commit real secrets.
 
 ---
 
 ## 9. Deployment
 
-Vercel, configured by `vercel.json`: a catch-all rewrite to `/index.html` for SPA client routing. `public/_redirects` covers equivalent hosts. Build output is `dist/` (gitignored). `vite.config.js` sets `manualChunks` for react/charts/framer/supabase vendors and a 600 kB chunk warning limit.
+The SPA is host-agnostic and **both hosts are configured**. `place4u.xyz` currently runs on **Netlify** (verify with `curl -sSI https://place4u.xyz/` → `Server: Netlify`), so do not assume Vercel:
+
+- **Vercel** — `vercel.json`: a catch-all rewrite to `/index.html` for SPA client routing, plus security headers.
+- **Netlify** — `public/_redirects` (`/*    /index.html   200`) for routing, plus `public/_headers` for the same security headers.
+
+Because Vite copies `public/` into `dist/`, both `_redirects` and `_headers` ship on build (build output is `dist/`, gitignored; `vite.config.js` sets `manualChunks` for react/charts/framer/supabase vendors and a 600 kB chunk warning limit).
+
+**The two header mechanisms are not interchangeable.** Netlify does *not* read the `headers` array in `vercel.json`, and Vercel does *not* read `public/_headers`. A header added to only one file is silently absent on the other host — so change **both** or the live host will serve the app with no CSP. After deploying, confirm with:
+
+```powershell
+curl -sSI https://place4u.xyz/ | Select-String "content-security-policy|x-frame-options|x-content-type-options"
+```
+
+The CSP is deliberately tuned to what the app loads — Supabase (REST, Realtime, and signed-URL documents rendered in `<iframe>`/`<object>`), the PayPal SDK for the application-fee buttons, and Google Fonts. Test any CSP change on a preview deploy, and exercise the payment flow and the document/PDF preview modals specifically.
 
 ---
 
