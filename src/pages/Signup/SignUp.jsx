@@ -604,40 +604,37 @@ const Signup = () => {
           </div>
           )}
 
-          {/* Social Sign Up for Step 1 */}
+          {/* Social Sign Up for Step 1 — email is the default path (the form
+              above), so Google is offered as the single alternative. */}
           {currentStep === 1 && !pendingConfirmation && (
             <div className="pt-6 mt-6 border-t border-white/[0.06]">
-              <div className="grid grid-cols-2 gap-3">
-                <button
-                  type="button"
-                  onClick={async () => {
-                    try {
-                      await supabase.auth.signInWithOAuth({
-                        provider: 'google',
-                        options: { redirectTo: window.location.origin + '/tenant' }
-                      })
-                    } catch (err) {
-                      setError('Google registration failed.')
-                    }
-                  }}
-                  className="btn-tactile py-2 px-3 rounded-xl bg-white/[0.03] hover:bg-white/[0.08] border border-white/[0.08] text-xs font-medium text-slate-300 flex items-center justify-center gap-2"
-                >
-                  <FaGoogle className="w-3.5 h-3.5 text-red-400" />
-                  <span>Google</span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => {
-                    emailInputRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })
-                    emailInputRef.current?.focus()
-                  }}
-                  className="btn-tactile py-2 px-3 rounded-xl bg-white/[0.03] hover:bg-white/[0.08] border border-white/[0.08] text-xs font-medium text-slate-300 flex items-center justify-center gap-2"
-                >
-                  <HiMail className="w-3.5 h-3.5 text-blue-400" />
-                  <span>Sign up with email</span>
-                </button>
-              </div>
+              <span className="text-[11px] uppercase tracking-wider text-slate-500 font-semibold text-center block mb-3">
+                Or continue with
+              </span>
+              <button
+                type="button"
+                onClick={async () => {
+                  setError('')
+                  try {
+                    // Route OAuth through /auth/callback — NOT straight into a
+                    // portal. Which portal someone belongs in is decided by their
+                    // role in public.users, never by the provider they signed up
+                    // with. (AuthCallback resolves it and redirects.)
+                    const { error: oauthError } = await supabase.auth.signInWithOAuth({
+                      provider: 'google',
+                      options: { redirectTo: `${window.location.origin}/auth/callback` }
+                    })
+                    if (oauthError) throw oauthError
+                  } catch (err) {
+                    console.error('Google sign-up error:', err)
+                    setError(err?.message || 'Google registration failed. Please try again.')
+                  }
+                }}
+                className="btn-tactile w-full py-2.5 px-3 rounded-xl bg-white/[0.03] hover:bg-white/[0.08] border border-white/[0.08] text-xs font-medium text-slate-300 flex items-center justify-center gap-2"
+              >
+                <FaGoogle className="w-3.5 h-3.5 text-red-400" />
+                <span>Sign up with Google</span>
+              </button>
             </div>
           )}
         </div>
