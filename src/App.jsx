@@ -39,46 +39,21 @@ function AuthCallback() {
         // Resolve the role authoritatively from public.users. No email or
         // metadata inference for the ROLE — it only counts once the row is read
         // back from the database below.
-        let { data: userData } = await supabase
+        //
+        // The row is created SERVER-SIDE by the `on_auth_user_created` trigger
+        // on auth.users (database/auth_signup_profile_sync.sql), so it already
+        // exists by the time we get here — including the first sign-in right
+        // after email confirmation. This component deliberately does NOT create
+        // it: the browser carries a self-insert RLS policy
+        // (users_insert_self_non_admin), so a bootstrap here would let a REVOKED
+        // account — one whose public.users row an admin deleted — walk in via
+        // /auth/callback on a still-valid session and resurrect its own profile.
+        // If the row is genuinely absent we fail closed, below.
+        const { data: userData } = await supabase
           .from("users")
           .select("user_type, is_verified")
           .eq("id", session.user.id)
           .maybeSingle();
-
-        // First sign-in after email confirmation: with "Confirm email" enabled
-        // there was no session at signUp time, so the profile row could not be
-        // written then. Bootstrap it now from the metadata the user supplied.
-        // Safe because the DB trigger guard_user_privileges rejects
-        // user_type='admin' and any self-verification, and the RLS insert policy
-        // (users_insert_self_non_admin) requires id = auth.uid(). The role is
-        // still resolved by re-reading public.users immediately afterwards.
-        if (!userData) {
-          const meta = session.user.user_metadata || {};
-          const requestedRole = ["tenant", "landlord", "agent"].includes(meta.user_type)
-            ? meta.user_type
-            : "tenant";
-
-          const { error: bootstrapError } = await supabase.from("users").insert([
-            {
-              id: session.user.id,
-              email: session.user.email,
-              phone: meta.phone || null,
-              full_name: meta.full_name || null,
-              user_type: requestedRole,
-              is_verified: false,
-            },
-          ]);
-          if (bootstrapError) {
-            console.warn("Profile bootstrap after confirmation failed:", bootstrapError);
-          }
-
-          const { data: created } = await supabase
-            .from("users")
-            .select("user_type, is_verified")
-            .eq("id", session.user.id)
-            .maybeSingle();
-          userData = created;
-        }
 
         const role = userData?.user_type;
         if (!role || (role === "admin" && userData.is_verified === false)) {

@@ -128,38 +128,26 @@ const Signup = () => {
       if (authError) throw authError
 
       if (authData.user) {
-        // "Confirm email" is enabled: signUp returns no session until the user
-        // clicks the link. We deliberately do NOT write the profile row here —
-        // the public.users insert policy (users_insert_self_non_admin) requires
-        // an authenticated caller — and we must not redirect into a portal the
-        // user cannot access yet. AuthCallback creates the row once a session
-        // exists. (Note: for an already-registered address Supabase returns an
-        // obfuscated user with an empty identities array; we show the same
-        // panel on purpose to avoid leaking which emails exist.)
+        // The public.users row is created SERVER-SIDE by the
+        // `on_auth_user_created` trigger on auth.users
+        // (database/auth_signup_profile_sync.sql), which fires for every signup
+        // whether or not a session is returned. The client must NEVER insert it:
+        // the self-insert RLS policy (users_insert_self_non_admin) would also let
+        // a revoked account recreate its own row.
+        //
+        // With "Confirm email" enabled signUp returns no session until the user
+        // clicks the link, so we must not redirect into a portal the user cannot
+        // access yet — we show the "confirm your email" panel instead. (For an
+        // already-registered address Supabase returns an obfuscated user with an
+        // empty identities array; we show the same panel on purpose to avoid
+        // leaking which emails exist.)
         if (!authData.session) {
           setPendingConfirmation({ email: formData.email })
           return
         }
 
-        // Confirmation disabled — we already hold a session, so this
-        // self-insert passes RLS.
-        const { error: profileError } = await supabase
-          .from('users')
-          .insert([
-            {
-              id: authData.user.id,
-              email: formData.email,
-              phone: formData.phone,
-              full_name: formData.fullName,
-              user_type: formData.userType,
-              is_verified: false
-            }
-          ])
-
-        if (profileError) {
-          console.warn('Profile table insert warning:', profileError)
-        }
-
+        // Confirmation disabled — we already hold a session, and the trigger has
+        // already created the profile row, so we can go straight in.
         // Direct redirect based on user role
         if (formData.userType === 'tenant') navigate('/tenant')
         else if (formData.userType === 'landlord') navigate('/landlord')
