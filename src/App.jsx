@@ -1,5 +1,5 @@
 import React, { lazy, Suspense, useEffect } from "react";
-import { Navigate, Route, Routes, useNavigate } from "react-router-dom";
+import { Navigate, Route, Routes, useLocation, useNavigate } from "react-router-dom";
 
 import ProtectedRoute from "./component/ProtectedRoute";
 import { supabase } from "./utils/Supabase";
@@ -215,6 +215,66 @@ class ChunkErrorBoundary extends React.Component {
   }
 }
 
+// Global onboarding guard.
+//
+// Supabase only honours `redirectTo` when the target is on the project's
+// Redirect URLs allowlist; otherwise it SILENTLY falls back to the Site URL.
+// That is exactly how a Google signup ends up on "https://place4u.xyz/#" with
+// the account still defaulted to 'tenant': /auth/callback is never reached, so
+// the role check inside it never runs. Watching the session from here instead
+// means the picker runs wherever the provider drops the user — and it also
+// closes the gap where an un-onboarded account navigates straight to /tenant.
+function RoleOnboardingGate() {
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const check = async () => {
+      if (location.pathname === "/complete-profile") return;
+
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (cancelled || !session?.user) return;
+
+        // select('*') so that a missing role_confirmed column (migration not
+        // applied yet) is simply undefined instead of a failing query.
+        const { data: row } = await supabase
+          .from("users")
+          .select("*")
+          .eq("id", session.user.id)
+          .maybeSingle();
+        if (cancelled || !row) return;
+
+        if (row.role_confirmed === false) {
+          navigate("/complete-profile", { replace: true });
+        }
+      } catch (err) {
+        // This guard must never break navigation.
+        console.warn("Role onboarding check failed (non-fatal):", err);
+      }
+    };
+
+    check();
+
+    const { data } = supabase.auth.onAuthStateChange(() => {
+      // MUST defer to a macrotask. The auth client holds an internal lock during
+      // this callback, and issuing a PostgREST query inline re-enters that lock
+      // and deadlocks the client permanently (every page sticks on its spinner).
+      // Same rule as useAuth.js / ProtectedRoute.jsx.
+      setTimeout(() => { if (!cancelled) check(); }, 0);
+    });
+
+    return () => {
+      cancelled = true;
+      data?.subscription?.unsubscribe();
+    };
+  }, [navigate, location.pathname]);
+
+  return null;
+}
+
 // Stable role arrays. Passing an inline `["tenant"]` literal creates a new
 // array on every render, which would re-run ProtectedRoute's auth effect (and
 // tear down/re-create its auth subscription) needlessly on each render.
@@ -286,6 +346,7 @@ export default function App() {
         </Routes>
       </Suspense>
       </ChunkErrorBoundary>
+      <RoleOnboardingGate />
       <PrivacyConsent />
     </>
   );
