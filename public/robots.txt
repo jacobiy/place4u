@@ -1,0 +1,31 @@
+# Place4U — https://place4u.xyz
+# Public marketing content is crawlable; every signed-in or authentication
+# surface is not. Be aware that robots.txt is advisory: the same paths are also
+# marked `noindex` at runtime (src/utils/seo.js), and private data is protected
+# by Supabase Row Level Security regardless of what a crawler does.
+
+User-agent: *
+Allow: /
+
+# Authentication
+Disallow: /login
+Disallow: /signup
+Disallow: /auth/
+Disallow: /complete-profile
+Disallow: /reset-password
+Disallow: /change-password
+
+# Signed-in portals (and everything beneath them)
+Disallow: /tenant
+Disallow: /landlord
+Disallow: /agent
+Disallow: /admin
+
+# Legacy redirects into the admin console
+Disallow: /dashboard
+Disallow: /payments
+Disallow: /paymentns
+Disallow: /agent-applications
+Disallow: /landlord-applications
+
+Sitemap: https://place4u.xyz/sitemap.xml

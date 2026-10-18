@@ -1,36 +1,167 @@
 <!doctype html>
-<html lang="en">
+<html lang="en-ZA">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/src/assets/place4u-logo.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <!--
+      This is the static head for the SPA shell. Everything below marked
+      "runtime overrides" is a DEFAULT for the home page only: src/utils/seo.js
+      rewrites the title, description, canonical, robots and social tags per
+      route (see `RouteSeo` in src/App.jsx). Keep the defaults here in sync with
+      DEFAULT_DESCRIPTION / DEFAULT_IMAGE in src/utils/seo.js.
+    -->
+    <title>Place4U | Verified Student Accommodation &amp; Rentals in South Africa</title>
     <meta
       name="description"
-      content="Place4U is South Africa's verified housing marketplace. Rent deed-checked rooms, cottages and student digs with no deposit risk and zero application fees."
+      content="South Africa's rental matching platform. Submit one application and get introduced to reviewed student digs, cottages and apartments — landlord identity and ownership documents are reviewed first."
     />
+    <meta
+      name="robots"
+      content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1"
+    />
+    <!-- runtime override: per-route canonical -->
+    <link rel="canonical" href="https://place4u.xyz/" />
+
     <meta name="theme-color" content="#006194" />
+    <meta name="color-scheme" content="light" />
+    <meta name="author" content="Place4U" />
+    <meta name="geo.region" content="ZA" />
+    <meta name="geo.placename" content="Johannesburg, South Africa" />
+
+    <!-- Open Graph (runtime overrides) -->
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="Place4U" />
-    <meta property="og:title" content="Place4U — Rent verified digs without deposit risk" />
+    <meta property="og:locale" content="en_ZA" />
+    <meta property="og:url" content="https://place4u.xyz/" />
+    <meta
+      property="og:title"
+      content="Place4U | Verified Student Accommodation &amp; Rentals in South Africa"
+    />
     <meta
       property="og:description"
-      content="Deed-checked landlords, verified listings and a live WhatsApp desk for students and renters across Mzansi."
+      content="Submit one rental application and get introduced to reviewed student digs, cottages and apartments across South Africa. Landlord identity and ownership documents are reviewed before a listing goes live."
     />
-    <meta property="og:image" content="/hero-loft.jpg" />
+    <meta property="og:image" content="https://place4u.xyz/hero-loft.jpg" />
+    <meta property="og:image:width" content="896" />
+    <meta property="og:image:height" content="1200" />
+    <meta property="og:image:alt" content="A light-filled student loft apartment listed on Place4U" />
+
+    <!-- Twitter / X card (runtime overrides) -->
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content="Place4U — Rent verified digs without deposit risk" />
+    <meta
+      name="twitter:title"
+      content="Place4U | Verified Student Accommodation &amp; Rentals in South Africa"
+    />
     <meta
       name="twitter:description"
-      content="Deed-checked landlords, verified listings and a live WhatsApp desk for students and renters across Mzansi."
+      content="Submit one rental application and get introduced to reviewed student digs, cottages and apartments across South Africa."
     />
-    <title>Place4U - Matched, not searched.</title>
+    <meta name="twitter:image" content="https://place4u.xyz/hero-loft.jpg" />
+    <meta name="twitter:image:alt" content="A light-filled student loft apartment listed on Place4U" />
+
+    <!-- Icons -->
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="mask-icon" href="/favicon.svg" color="#0F172A" />
+    <link rel="manifest" href="/site.webmanifest" />
+
+    <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <!-- The hero image is the landing page's LCP element; start it early. -->
+    <link rel="preload" as="image" href="/hero-loft.jpg" fetchpriority="high" />
     <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400;1,600&family=Space+Grotesk:wght@400;500;600;700&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+
+    <!--
+      Structured data for the organisation and the site. A JSON-LD script is a
+      data block, not executed JavaScript, so the strict script-src CSP in
+      public/_headers and vercel.json does not apply to it.
+    -->
+    <script type="application/ld+json" data-seo-id="organization">
+      {
+        "@context": "https://schema.org",
+        "@graph": [
+          {
+            "@type": "Organization",
+            "@id": "https://place4u.xyz/#organization",
+            "name": "Place4U",
+            "url": "https://place4u.xyz/",
+            "logo": {
+              "@type": "ImageObject",
+              "url": "https://place4u.xyz/logo.png"
+            },
+            "description": "Place4U is a South African relocation-assistance and tenant-property matching platform. Landlords submit identity and proof-of-ownership documents for review before a listing goes live, and tenants submit one application instead of many.",
+            "email": "jacob@place4u.xyz",
+            "telephone": "+27824822611",
+            "address": {
+              "@type": "PostalAddress",
+              "addressLocality": "Johannesburg",
+              "addressCountry": "ZA"
+            },
+            "areaServed": { "@type": "Country", "name": "South Africa" },
+            "knowsLanguage": ["en-ZA"],
+            "contactPoint": [
+              {
+                "@type": "ContactPoint",
+                "contactType": "customer support",
+                "telephone": "+27824822611",
+                "email": "jacob@place4u.xyz",
+                "areaServed": "ZA",
+                "availableLanguage": ["en", "af"]
+              }
+            ]
+          },
+          {
+            "@type": "WebSite",
+            "@id": "https://place4u.xyz/#website",
+            "url": "https://place4u.xyz/",
+            "name": "Place4U",
+            "inLanguage": "en-ZA",
+            "publisher": { "@id": "https://place4u.xyz/#organization" }
+          }
+        ]
+      }
+    </script>
   </head>
   <body class="min-h-screen bg-[#faf8ff] text-[#131b2e] overflow-x-hidden">
     <div id="root"></div>
+
+    <!--
+      Shown only when JavaScript is unavailable (or a crawler does not execute
+      it). The SPA renders over #root; this fallback keeps the page useful and
+      gives a non-rendering crawler real text and internal links to follow.
+    -->
+    <noscript>
+      <main style="max-width: 46rem; margin: 0 auto; padding: 3rem 1.5rem; font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif; color: #131b2e; line-height: 1.6;">
+        <h1 style="font-size: 1.75rem; line-height: 1.25;">Place4U — rental matching for student digs, cottages and apartments in South Africa</h1>
+        <p>
+          Place4U is a South African relocation-assistance and tenant-property matching platform.
+          Submit one application instead of many, and get introduced to reviewed housing.
+          Landlords submit identity and proof-of-ownership documents for review before a listing
+          goes live. Matched, not searched.
+        </p>
+        <p>
+          Place4U is not an estate agency and does not handle rent, deposits or leases. It charges a
+          one-time, non-refundable assistance fee for application support, screening and
+          introductions, and placement is not guaranteed.
+        </p>
+        <p>
+          Please enable JavaScript to use the platform. You can also reach our WhatsApp desk on
+          <a href="https://wa.me/27824822611">082 482 2611</a> or email
+          <a href="mailto:jacob@place4u.xyz">jacob@place4u.xyz</a>.
+        </p>
+        <ul>
+          <li><a href="/">Home</a></li>
+          <li><a href="/terms">Terms of Service</a></li>
+          <li><a href="/privacy">Privacy Policy &amp; POPIA Notice</a></li>
+          <li><a href="/compliance">Compliance &amp; Regulatory Disclosures</a></li>
+          <li><a href="/dispute-resolution">Dispute Resolution Guidelines</a></li>
+          <li><a href="/cookie-preferences">Cookie Preferences</a></li>
+        </ul>
+      </main>
+    </noscript>
+
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>

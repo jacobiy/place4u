@@ -8,8 +8,6 @@ import {
 	HiInformationCircle
 } from 'react-icons/hi'
 import {
-	FaTwitter,
-	FaInstagram,
 	FaLinkedinIn,
 	FaWhatsapp
 } from 'react-icons/fa'
@@ -56,11 +54,14 @@ const Footer = ({ theme = 'dark' }) => {
 		}
 	]
 
+	// Only channels that actually exist. Placeholder social links (a "#" href or
+	// an account that has not been created) are worse than none: they 404 or dead
+	// end for visitors and they tell search engines about profiles that are not
+	// ours. Add Twitter / Instagram here AND to the Organization `sameAs` in
+	// index.html only once the accounts are live.
 	const socialLinks = [
 		{ icon: <HiMail />, href: 'mailto:jacob@place4u.xyz', label: 'Email' },
-		{ icon: <FaTwitter />, href: '#', label: 'Twitter' },
-		{ icon: <FaInstagram />, href: 'https://www.instagram.com/place4u', label: 'Instagram' },
-		{ icon: <FaLinkedinIn />, href: '#', label: 'LinkedIn' },
+		{ icon: <FaLinkedinIn />, href: 'https://www.linkedin.com/in/jacob-molomo-002428242/', label: 'Founder on LinkedIn' },
 		{ icon: <FaWhatsapp />, href: 'https://wa.me/27824822611', label: 'WhatsApp' }
 	]
 
@@ -81,7 +82,9 @@ const Footer = ({ theme = 'dark' }) => {
 				>
 					{/* Brand & Purpose Column */}
 					<div className="lg:col-span-4 space-y-4">
-						<div className="flex items-center gap-3">
+						{/* Brand mark links home so every page (legal pages included) has a
+						    crawlable path back to the landing page, not just the navbar. */}
+						<Link to="/" className="flex items-center gap-3 w-fit" aria-label="Place4U — home">
 							<div
 								className={`w-9 h-9 rounded-xl flex items-center justify-center p-1.5 ${
 									isLight
@@ -103,7 +106,7 @@ const Footer = ({ theme = 'dark' }) => {
 									Matched, Not Searched
 								</p>
 							</div>
-						</div>
+						</Link>
 
 						<p className={`text-xs leading-relaxed font-normal ${isLight ? 'text-[#3f4850]' : 'text-slate-400'}`}>
 							South Africa’s rental matching network. We reduce marketplace fraud by connecting reviewed student accommodation, backyard cottages, and modern urban apartments with pre-screened tenants.

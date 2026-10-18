@@ -5,6 +5,7 @@ import ProtectedRoute from "./component/ProtectedRoute";
 import { supabase } from "./utils/Supabase";
 import PrivacyConsent from "./component/PrivacyConsent";
 import Loading from "./component/loading";
+import { applySeo, resolveSeoForPath } from "./utils/seo";
 
 // Code-split route components for fast initial load & reduced bundle size
 const Landing = lazy(() => import("./pages/landing/Landing"));
@@ -98,6 +99,22 @@ function AuthCallback() {
 // Fallback spinner while loading route chunks
 function RouteLoader() {
   return <Loading fullScreen message="Loading page..." />;
+}
+
+// Route-scoped SEO. Side-effect-only, rendered once inside the Router: it
+// applies the title, description, canonical and social tags for the current
+// path so the single static index.html head is correct per URL. The route →
+// metadata map lives in src/utils/seo.js — add new pages there, not here.
+// Private portals resolve to a `noindex` entry, which is also how a crawler
+// that executes JS is kept out of them.
+function RouteSeo() {
+  const { pathname } = useLocation();
+
+  useEffect(() => {
+    applySeo(resolveSeoForPath(pathname));
+  }, [pathname]);
+
+  return null;
 }
 
 // Resilient boundary handling chunk loading, adblocker interception, and general React errors
@@ -346,6 +363,7 @@ export default function App() {
         </Routes>
       </Suspense>
       </ChunkErrorBoundary>
+      <RouteSeo />
       <RoleOnboardingGate />
       <PrivacyConsent />
     </>

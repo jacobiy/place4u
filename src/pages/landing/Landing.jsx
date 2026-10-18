@@ -26,6 +26,7 @@ import { useNavigate } from 'react-router-dom'
 import Navbar from '../../component/Navbar'
 import Footer from '../../component/Footer'
 import { getFeaturedProperties } from './db/queries'
+import { setJsonLd, buildItemListJsonLd } from '../../utils/seo'
 
 // Live listings are loaded from the database only; no sample fallback.
 
@@ -197,6 +198,14 @@ const Landing = () => {
 
 	const properties = useMemo(() => liveProperties || [], [liveProperties])
 
+	// Structured data for the grid that is actually on screen. Re-created when
+	// the inventory (or a filter-independent fetch) changes, and removed when the
+	// grid is empty, so the markup never describes listings a visitor cannot see.
+	useEffect(() => {
+		setJsonLd('featured-listings', buildItemListJsonLd(properties))
+		return () => setJsonLd('featured-listings', null)
+	}, [properties])
+
 	const provinceOptions = useMemo(() => {
 		const provinces = Array.from(
 			new Set(properties.map((prop) => prop.province).filter(Boolean))
@@ -291,7 +300,7 @@ const Landing = () => {
 						</div>
 
 						<h1 className="font-['Space_Grotesk'] text-4xl sm:text-5xl lg:text-[3.5rem] font-bold text-[#131b2e] tracking-tight leading-[1.12]">
-							Find rooms & cottages from reviewed landlords
+							Find rooms, cottages and student digs
 						</h1>
 
 						<p className="font-['Plus_Jakarta_Sans'] text-base sm:text-lg text-[#3f4850] max-w-2xl leading-relaxed">

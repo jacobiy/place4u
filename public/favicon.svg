@@ -1,0 +1,13 @@
+<svg width="220" height="80" viewBox="0 0 220 80" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!--
+    Stable, unhashed copy of src/assets/place4u-logo.svg for the document head
+    (/favicon.svg) and the web manifest. Files in public/ ship as-is so the icon
+    URL never changes between builds; keep the artwork in sync with the source
+    asset.
+  -->
+  <rect width="220" height="80" rx="12" fill="#0F172A"/>
+  <path d="M38 22L20 40H26V58H50V40H56L38 22Z" stroke="#FBBF24" stroke-width="3" stroke-linejoin="round"/>
+  <path d="M34 52V42H42V52H34Z" fill="#FBBF24"/>
+  <text x="70" y="50" fill="#F8FAFC" font-family="'Segoe UI', sans-serif" font-size="26" font-weight="600">Place4U</text>
+  <text x="70" y="66" fill="#94A3B8" font-family="'Segoe UI', sans-serif" font-size="10" letter-spacing="2">MATCHED · NOT SEARCHED</text>
+</svg>
