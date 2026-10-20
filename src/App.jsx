@@ -3,6 +3,7 @@ import { Navigate, Route, Routes, useLocation, useNavigate } from "react-router-
 
 import ProtectedRoute from "./component/ProtectedRoute";
 import { supabase } from "./utils/Supabase";
+import { claimPostSignInRedirect } from "./utils/authReturn";
 import PrivacyConsent from "./component/PrivacyConsent";
 import Loading from "./component/loading";
 import { applySeo, resolveSeoForPath } from "./utils/seo";
@@ -232,15 +233,25 @@ class ChunkErrorBoundary extends React.Component {
   }
 }
 
-// Global onboarding guard.
+// Global onboarding + post-sign-in guard.
 //
 // Supabase only honours `redirectTo` when the target is on the project's
 // Redirect URLs allowlist; otherwise it SILENTLY falls back to the Site URL.
-// That is exactly how a Google signup ends up on "https://place4u.xyz/#" with
+// That is exactly how a Google sign-in ends up on "https://place4u.xyz/#" with
 // the account still defaulted to 'tenant': /auth/callback is never reached, so
 // the role check inside it never runs. Watching the session from here instead
 // means the picker runs wherever the provider drops the user — and it also
 // closes the gap where an un-onboarded account navigates straight to /tenant.
+//
+// It additionally finishes the sign-in when the provider returned to a PUBLIC
+// page (the Site-URL fallback above): a session that appears on "/", "/login"
+// or "/signup" is sent straight to the portal its role belongs to, so the user
+// never lands on a signed-in-but-looks-signed-out landing page. The "did we
+// arrive from a provider?" test lives in utils/authReturn.js.
+// This guard must never run on /auth/callback — that route owns its own
+// redirect and the two racing would be pointless.
+const PUBLIC_ENTRY_PATHS = ["/", "/login", "/signup"];
+
 function RoleOnboardingGate() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -250,6 +261,7 @@ function RoleOnboardingGate() {
 
     const check = async () => {
       if (location.pathname === "/complete-profile") return;
+      if (location.pathname === "/auth/callback") return;
 
       try {
         const { data: { session } } = await supabase.auth.getSession();
@@ -266,6 +278,23 @@ function RoleOnboardingGate() {
 
         if (row.role_confirmed === false) {
           navigate("/complete-profile", { replace: true });
+          return;
+        }
+
+        // A disabled admin is not sent anywhere: ProtectedRoute fails them
+        // closed, and bouncing them onto /admin would only create a loop.
+        if (row.user_type === "admin" && row.is_verified === false) return;
+
+        // Finish a provider sign-in that landed on a public page (tokens are
+        // already in the session — nothing else routes the user onward).
+        // claimPostSignInRedirect() self-limits to once per page load, so a
+        // signed-in user who deliberately opens "/" is not trapped.
+        if (
+          PUBLIC_ENTRY_PATHS.includes(location.pathname) &&
+          row.user_type &&
+          claimPostSignInRedirect(session)
+        ) {
+          navigate(`/${row.user_type}`, { replace: true });
         }
       } catch (err) {
         // This guard must never break navigation.
