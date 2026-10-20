@@ -27,8 +27,6 @@ const ROLES = [
     blurb: 'Looking to rent',
     Icon: HiUser,
     accent: 'blue',
-    fee: 'R100',
-    feeNote: 'Application & vetting fee',
     hasFee: true,
   },
   {
@@ -37,8 +35,6 @@ const ROLES = [
     blurb: 'Have space to let',
     Icon: HiBadgeCheck,
     accent: 'emerald',
-    fee: 'Free',
-    feeNote: 'No signup or listing fees',
     hasFee: false,
   },
   {
@@ -47,8 +43,6 @@ const ROLES = [
     blurb: 'Manage listings',
     Icon: HiShieldCheck,
     accent: 'purple',
-    fee: 'No fee',
-    feeNote: 'Earn commission on matches',
     hasFee: false,
   },
 ]
@@ -240,28 +234,6 @@ const CompleteProfile = () => {
             </div>
           </div>
 
-          {role && (
-            <div className={`p-4 rounded-2xl border transition-all ${
-              ROLES.find(r => r.key === role)?.hasFee
-                ? 'bg-blue-950/40 border-blue-500/20'
-                : 'bg-emerald-950/40 border-emerald-500/20'
-            }`}>
-              <div className="flex items-center justify-between mb-1">
-                <span className="text-xs font-semibold text-blue-300">Assistance & Verification Fee</span>
-                <span className="text-xs font-bold text-white px-2 py-0.5 rounded-md border ${
-                  ROLES.find(r => r.key === role)?.hasFee
-                    ? 'bg-blue-600/40 border-blue-400/30'
-                    : 'bg-emerald-600/40 border-emerald-400/30'
-                }">
-                  {ROLES.find(r => r.key === role)?.fee}
-                </span>
-              </div>
-              <p className="text-[11px] text-slate-400 leading-relaxed">
-                {ROLES.find(r => r.key === role)?.feeNote}
-              </p>
-            </div>
-          )}
-
           <div className="space-y-2.5">
             <label className="flex items-start gap-2.5 text-xs text-slate-300 cursor-pointer">
               <input
@@ -287,7 +259,7 @@ const CompleteProfile = () => {
                   className="w-4 h-4 rounded bg-slate-950 border-white/20 text-blue-600 focus:ring-0 mt-0.5 cursor-pointer"
                 />
                 <span>
-                  I acknowledge the standard <strong className="text-white">{ROLES.find(r => r.key === role)?.fee} assistance fee</strong> terms upon verified application submission.
+                  I acknowledge the assistance fee terms upon verified application submission.
                 </span>
               </label>
             )}
