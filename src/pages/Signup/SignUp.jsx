@@ -71,7 +71,7 @@ const Signup = () => {
 
   const validateStep2 = () => {
     if (!formData.agreeToTerms) return 'You must agree to the Terms of Service & Privacy Policy.'
-    if (!formData.acceptFee) return 'Please acknowledge the assistance fee terms to proceed.'
+    if (formData.userType === 'tenant' && !formData.acceptFee) return 'Please acknowledge the assistance fee terms to proceed.'
     return null
   }
 
@@ -120,7 +120,7 @@ const Signup = () => {
             popia_consented_at: new Date().toISOString(),
             terms_version: "2026.1",
             privacy_policy_accepted: true,
-            assistance_fee_acknowledged: true
+            assistance_fee_acknowledged: formData.userType === 'tenant'
           }
         }
       })
@@ -515,20 +515,34 @@ const Signup = () => {
                     </div>
                   </div>
 
-                  {/* Assistance Fee Disclosure */}
-                  <div className="p-4 rounded-2xl bg-blue-950/40 border border-blue-500/20">
-                    <div className="flex items-center justify-between mb-1">
-                      <span className="text-xs font-semibold text-blue-300">
-                        Assistance & Verification Fee
-                      </span>
-                      <span className="text-xs font-bold text-white bg-blue-600/40 px-2 py-0.5 rounded-md border border-blue-400/30">
-                        R 350
-                      </span>
+                  {/* Dynamic Assistance Fee Disclosure */}
+                  {formData.userType && (
+                    <div className={`p-4 rounded-2xl border transition-all ${
+                      formData.userType === 'tenant'
+                        ? 'bg-blue-950/40 border-blue-500/20'
+                        : 'bg-emerald-950/40 border-emerald-500/20'
+                    }`}>
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="text-xs font-semibold text-blue-300">
+                          Assistance & Verification Fee
+                        </span>
+                        <span className="text-xs font-bold text-white px-2 py-0.5 rounded-md border ${
+                          formData.userType === 'tenant'
+                            ? 'bg-blue-600/40 border-blue-400/30'
+                            : 'bg-emerald-600/40 border-emerald-400/30'
+                        }">
+                          {formData.userType === 'tenant' ? 'R100' : 'Free'}
+                        </span>
+                      </div>
+                      <p className="text-[11px] text-slate-400 leading-relaxed">
+                        {formData.userType === 'tenant'
+                          ? 'Covers application vetting, screening, and introduction coordination.'
+                          : formData.userType === 'landlord'
+                          ? 'No signup or listing fees. Free to list verified properties.'
+                          : 'No signup fee. Earn 50% commission on successful tenant matches.'}
+                      </p>
                     </div>
-                    <p className="text-[11px] text-slate-400 leading-relaxed">
-                      Covers 1-time digital passport vetting, deed authentication, background screening, and WhatsApp coordination.
-                    </p>
-                  </div>
+                  )}
 
                   {/* Checkboxes */}
                   <div className="space-y-2.5 pt-1">
@@ -541,25 +555,41 @@ const Signup = () => {
                         className="w-4 h-4 rounded bg-slate-950 border-white/20 text-blue-600 focus:ring-0 mt-0.5 cursor-pointer"
                       />
                       <span>
-                        I agree to Place4U’s{' '}
+                        I agree to Place4U's{' '}
                         <Link to="/terms" target="_blank" rel="noopener noreferrer" className="text-blue-400 underline underline-offset-2">Terms of Service</Link>
                         {' '}and{' '}
                         <Link to="/privacy" target="_blank" rel="noopener noreferrer" className="text-blue-400 underline underline-offset-2">POPIA Privacy Policy</Link>.
                       </span>
                     </label>
 
-                    <label className="flex items-start gap-2.5 text-xs text-slate-300 cursor-pointer">
-                      <input
-                        type="checkbox"
-                        name="acceptFee"
-                        checked={formData.acceptFee}
-                        onChange={handleChange}
-                        className="w-4 h-4 rounded bg-slate-950 border-white/20 text-blue-600 focus:ring-0 mt-0.5 cursor-pointer"
-                      />
-                      <span>
-                        I acknowledge the standard <strong className="text-white">R 350 assistance fee</strong> terms upon verified application submission.
-                      </span>
-                    </label>
+                    {formData.userType === 'tenant' && (
+                      <label className="flex items-start gap-2.5 text-xs text-slate-300 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          name="acceptFee"
+                          checked={formData.acceptFee}
+                          onChange={handleChange}
+                          className="w-4 h-4 rounded bg-slate-950 border-white/20 text-blue-600 focus:ring-0 mt-0.5 cursor-pointer"
+                        />
+                        <span>
+                          I acknowledge the standard <strong className="text-white">R100 assistance fee</strong> terms upon verified application submission.
+                        </span>
+                      </label>
+                    )}
+                    {!formData.userType && (
+                      <label className="flex items-start gap-2.5 text-xs text-slate-300 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          name="acceptFee"
+                          checked={formData.acceptFee}
+                          onChange={handleChange}
+                          className="w-4 h-4 rounded bg-slate-950 border-white/20 text-blue-600 focus:ring-0 mt-0.5 cursor-pointer"
+                        />
+                        <span>
+                          I acknowledge the standard <strong className="text-white">assistance fee</strong> terms upon verified application submission.
+                        </span>
+                      </label>
+                    )}
                   </div>
                 </div>
               )}

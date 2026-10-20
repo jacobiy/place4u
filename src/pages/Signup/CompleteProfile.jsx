@@ -21,9 +21,36 @@ import { Link, useNavigate } from 'react-router-dom'
 import { supabase } from '../../utils/Supabase'
 
 const ROLES = [
-  { key: 'tenant',   label: 'Tenant',   blurb: 'Looking to rent',   Icon: HiUser,       accent: 'blue' },
-  { key: 'landlord', label: 'Landlord', blurb: 'Have space to let', Icon: HiBadgeCheck, accent: 'emerald' },
-  { key: 'agent',    label: 'Agent',    blurb: 'Manage listings',   Icon: HiShieldCheck, accent: 'purple' },
+  {
+    key: 'tenant',
+    label: 'Tenant',
+    blurb: 'Looking to rent',
+    Icon: HiUser,
+    accent: 'blue',
+    fee: 'R100',
+    feeNote: 'Application & vetting fee',
+    hasFee: true,
+  },
+  {
+    key: 'landlord',
+    label: 'Landlord',
+    blurb: 'Have space to let',
+    Icon: HiBadgeCheck,
+    accent: 'emerald',
+    fee: 'Free',
+    feeNote: 'No signup or listing fees',
+    hasFee: false,
+  },
+  {
+    key: 'agent',
+    label: 'Agent',
+    blurb: 'Manage listings',
+    Icon: HiShieldCheck,
+    accent: 'purple',
+    fee: 'No fee',
+    feeNote: 'Earn commission on matches',
+    hasFee: false,
+  },
 ]
 
 const ACCENT_ON = {
@@ -99,7 +126,9 @@ const CompleteProfile = () => {
     e.preventDefault()
     if (!role) return setError('Please choose how you will use Place4U.')
     if (!agreeToTerms) return setError('You must agree to the Terms of Service & Privacy Policy.')
-    if (!acceptFee) return setError('Please acknowledge the assistance fee terms to proceed.')
+
+    const selectedRole = ROLES.find(r => r.key === role)
+    if (selectedRole?.hasFee && !acceptFee) return setError('Please acknowledge the assistance fee terms to proceed.')
 
     setLoading(true)
     setError('')
@@ -132,7 +161,7 @@ const CompleteProfile = () => {
           popia_consented_at: new Date().toISOString(),
           terms_version: '2026.1',
           privacy_policy_accepted: true,
-          assistance_fee_acknowledged: true,
+          assistance_fee_acknowledged: selectedRole?.hasFee || false,
         },
       })
 
@@ -177,7 +206,7 @@ const CompleteProfile = () => {
 
         <form onSubmit={handleSubmit} className="mt-6 space-y-6">
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-            {ROLES.map(({ key, label, blurb, Icon, accent }) => (
+            {ROLES.map(({ key, label, blurb, Icon, accent, fee, feeNote, hasFee }) => (
               <button
                 key={key}
                 type="button"
@@ -211,15 +240,27 @@ const CompleteProfile = () => {
             </div>
           </div>
 
-          <div className="p-4 rounded-2xl bg-blue-950/40 border border-blue-500/20">
-            <div className="flex items-center justify-between mb-1">
-              <span className="text-xs font-semibold text-blue-300">Assistance & Verification Fee</span>
-              <span className="text-xs font-bold text-white bg-blue-600/40 px-2 py-0.5 rounded-md border border-blue-400/30">R 350</span>
+          {role && (
+            <div className={`p-4 rounded-2xl border transition-all ${
+              ROLES.find(r => r.key === role)?.hasFee
+                ? 'bg-blue-950/40 border-blue-500/20'
+                : 'bg-emerald-950/40 border-emerald-500/20'
+            }`}>
+              <div className="flex items-center justify-between mb-1">
+                <span className="text-xs font-semibold text-blue-300">Assistance & Verification Fee</span>
+                <span className="text-xs font-bold text-white px-2 py-0.5 rounded-md border ${
+                  ROLES.find(r => r.key === role)?.hasFee
+                    ? 'bg-blue-600/40 border-blue-400/30'
+                    : 'bg-emerald-600/40 border-emerald-400/30'
+                }">
+                  {ROLES.find(r => r.key === role)?.fee}
+                </span>
+              </div>
+              <p className="text-[11px] text-slate-400 leading-relaxed">
+                {ROLES.find(r => r.key === role)?.feeNote}
+              </p>
             </div>
-            <p className="text-[11px] text-slate-400 leading-relaxed">
-              Covers 1-time digital passport vetting, deed authentication, background screening, and WhatsApp coordination.
-            </p>
-          </div>
+          )}
 
           <div className="space-y-2.5">
             <label className="flex items-start gap-2.5 text-xs text-slate-300 cursor-pointer">
@@ -230,24 +271,39 @@ const CompleteProfile = () => {
                 className="w-4 h-4 rounded bg-slate-950 border-white/20 text-blue-600 focus:ring-0 mt-0.5 cursor-pointer"
               />
               <span>
-                I agree to Place4U’s{' '}
+                I agree to Place4U's{' '}
                 <Link to="/terms" target="_blank" rel="noopener noreferrer" className="text-blue-400 underline underline-offset-2">Terms of Service</Link>
                 {' '}and{' '}
                 <Link to="/privacy" target="_blank" rel="noopener noreferrer" className="text-blue-400 underline underline-offset-2">POPIA Privacy Policy</Link>.
               </span>
             </label>
 
-            <label className="flex items-start gap-2.5 text-xs text-slate-300 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={acceptFee}
-                onChange={(e) => setAcceptFee(e.target.checked)}
-                className="w-4 h-4 rounded bg-slate-950 border-white/20 text-blue-600 focus:ring-0 mt-0.5 cursor-pointer"
-              />
-              <span>
-                I acknowledge the standard <strong className="text-white">R 350 assistance fee</strong> terms upon verified application submission.
-              </span>
-            </label>
+            {role && ROLES.find(r => r.key === role)?.hasFee && (
+              <label className="flex items-start gap-2.5 text-xs text-slate-300 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={acceptFee}
+                  onChange={(e) => setAcceptFee(e.target.checked)}
+                  className="w-4 h-4 rounded bg-slate-950 border-white/20 text-blue-600 focus:ring-0 mt-0.5 cursor-pointer"
+                />
+                <span>
+                  I acknowledge the standard <strong className="text-white">{ROLES.find(r => r.key === role)?.fee} assistance fee</strong> terms upon verified application submission.
+                </span>
+              </label>
+            )}
+            {!role && (
+              <label className="flex items-start gap-2.5 text-xs text-slate-300 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={acceptFee}
+                  onChange={(e) => setAcceptFee(e.target.checked)}
+                  className="w-4 h-4 rounded bg-slate-950 border-white/20 text-blue-600 focus:ring-0 mt-0.5 cursor-pointer"
+                />
+                <span>
+                  I acknowledge the standard <strong className="text-white">assistance fee</strong> terms upon verified application submission.
+                </span>
+              </label>
+            )}
           </div>
 
           <button
