@@ -300,11 +300,11 @@ const Landing = () => {
 						</div>
 
 						<h1 className="font-['Space_Grotesk'] text-4xl sm:text-5xl lg:text-[3.5rem] font-bold text-[#131b2e] tracking-tight leading-[1.12]">
-							Find rooms, cottages and student digs
+							One Application, Unlimited Possibilities.
 						</h1>
 
 						<p className="font-['Plus_Jakarta_Sans'] text-base sm:text-lg text-[#3f4850] max-w-2xl leading-relaxed">
-							Landlords who submit ID and proof-of-ownership documents for our team to review, for students, young professionals, and urban renters across Mzansi.
+							Discover rental listings from landlords whose identity and proof of ownership are reviewed by our team, helping students, young professionals and renters across Mzansi search with greater confidence.
 						</p>
 
 						{/* Interactive Search Dock */}
