@@ -1,7 +1,7 @@
 import React from 'react'
 import { Link } from 'react-router-dom'
-import { ShieldCheck, Lock, Eye, FileText, CheckCircle, ArrowLeft, Mail, Phone, MapPin, Cookie, SlidersHorizontal } from 'lucide-react'
-import { openConsentPreferences } from '../../utils/privacyConsent'
+import { ShieldCheck, Lock, Eye, FileText, CheckCircle, ArrowLeft, Mail, Phone, MapPin, Cookie } from 'lucide-react'
+import { openConsentNotice } from '../../utils/privacyConsent'
 import Navbar from '../../component/Navbar'
 import Footer from '../../component/Footer'
 
@@ -166,20 +166,19 @@ export default function DataProtectionNotice() {
                   <span>4. Cookies & Tracking Technologies</span>
                 </h2>
                 <p className="text-xs text-[#707881] mt-1">
-                  How we use cookies to provide secure authentication and comply with POPIA consent mandates.
+                  Essential browser storage helps keep your account session secure and the platform working.
                 </p>
               </div>
               <button
                 type="button"
-                onClick={openConsentPreferences}
+                onClick={openConsentNotice}
                 className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-semibold text-white bg-[#006194] hover:bg-[#004b73] shadow-[0_12px_30px_-16px_rgba(0,97,148,0.7)] transition-all cursor-pointer shrink-0"
               >
-                <SlidersHorizontal size={14} />
-                <span>Manage Cookie Preferences</span>
+                <span>View Cookie Notice</span>
               </button>
             </div>
             <p className="text-xs text-[#3f4850] leading-relaxed">
-              We employ strictly necessary cookies for session authentication via Supabase, CSRF defense, and user routing. Non-essential cookies (such as functional filter persistence, diagnostic telemetry, and personalization) are optional and subject to your consent, which can be modified or withdrawn at any time.
+              Place4U currently uses essential browser storage for account access and core platform functions. The site does not currently use analytics or advertising cookies.
             </p>
           </section>
 

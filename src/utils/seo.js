@@ -51,6 +51,11 @@ export const ROUTE_SEO = {
     title: 'Place4U | Verified Student Accommodation & Rentals in South Africa',
     description: DEFAULT_DESCRIPTION
   },
+  '/about': {
+    title: 'Leadership & Our Story | Place4U',
+    description:
+      'Meet the team behind Place4U — the people accountable for reviewing landlord ownership documents and matching one application to verified rental homes across South Africa.'
+  },
   '/privacy': {
     title: 'Privacy Policy & POPIA Notice | Place4U',
     description:
@@ -72,9 +77,9 @@ export const ROUTE_SEO = {
       'How complaints and disputes are escalated at Place4U: the governance desk, the statutory tribunal and ombudsman recourse, with the categories and timelines that apply.'
   },
   '/cookie-preferences': {
-    title: 'Cookie Preferences & Tracking Controls | Place4U',
+    title: 'Cookie Notice | Place4U',
     description:
-      'Manage your cookie and tracking preferences. Place4U stores only what the platform needs to work and honours your POPIA consent choices.'
+      'Learn how Place4U uses essential browser storage to support secure account access and core platform functions.'
   }
 };
 

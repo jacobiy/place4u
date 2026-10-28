@@ -10,6 +10,7 @@ import { applySeo, resolveSeoForPath } from "./utils/seo";
 
 // Code-split route components for fast initial load & reduced bundle size
 const Landing = lazy(() => import("./pages/landing/Landing"));
+const About = lazy(() => import("./pages/landing/About"));
 const Login = lazy(() => import("./pages/login/Login"));
 const Signup = lazy(() => import("./pages/Signup/SignUp"));
 const CompleteProfile = lazy(() => import("./pages/Signup/CompleteProfile"));
@@ -336,6 +337,7 @@ export default function App() {
         <Suspense fallback={<RouteLoader />}>
         <Routes>
           <Route path="/" element={<Landing />} />
+          <Route path="/about" element={<About />} />
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<Signup />} />
           <Route path="/reset-password" element={<ResetPassword />} />

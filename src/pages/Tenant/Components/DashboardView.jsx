@@ -1126,7 +1126,7 @@ export default function DashboardView({
                         contact: {
                           name: activeLease.landlord_name || 'Property Manager',
                           role: 'Property Manager',
-                          email: activeLease.landlord_email || 'jacob@place4u.xyz',
+                          email: activeLease.landlord_email || 'support@place4u.xyz',
                           phone: activeLease.landlord_phone || '',
                           unit: activeLease.property_title || 'Your unit'
                         },

@@ -110,7 +110,7 @@ export default function TermsOfService() {
               These terms are governed exclusively by the laws of the Republic of South Africa. In the event of any dispute or disagreement:
             </p>
             <ol className="list-decimal pl-5 space-y-1.5 text-xs text-[#3f4850]">
-              <li>The parties shall first attempt informal dispute resolution by notifying the Place4U Governance Desk at <span className="text-[#006194]">jacob@place4u.xyz</span>.</li>
+              <li>The parties shall first attempt informal dispute resolution by notifying the Place4U Governance Desk at <span className="text-[#006194]">support@place4u.xyz</span>.</li>
               <li>If unresolved within 14 business days, disputes may be referred to the Rental Housing Tribunal having jurisdiction or submitted to arbitration under the rules of the Arbitration Foundation of Southern Africa (AFSA).</li>
               <li>Tenants maintain all rights available under the Consumer Protection Act and Rental Housing Act.</li>
             </ol>
