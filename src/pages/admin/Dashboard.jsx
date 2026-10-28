@@ -211,13 +211,16 @@ export default function Dashboard() {
               Release Payments & Refunds
             </Link>
 
-            <button
-              onClick={() => openEmailClient('support@place4u.xyz', 'Place4U Operations Notice', 'Team, please review the latest tenant applications.')}
-              className="inline-flex items-center gap-2 px-3.5 py-2 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold shadow-xs transition-colors"
-            >
-              <Mail size={13} />
-              Compose Email
-            </button>
+            <p className="inline-flex items-center gap-1.5 text-xs text-slate-300">
+              <Mail size={13} className="text-slate-400" />
+              Questions? Email us:
+              <a
+                href="mailto:support@place4u.xyz"
+                className="font-semibold text-white hover:text-blue-300 transition-colors"
+              >
+                support@place4u.xyz
+              </a>
+            </p>
           </div>
         </div>
       </div>

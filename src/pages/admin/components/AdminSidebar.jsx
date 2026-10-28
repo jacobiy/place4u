@@ -17,7 +17,7 @@ import {
   Mail,
   GitBranch
 } from 'lucide-react'
-import { openEmailClient, getAdminAgentApplications, getAdminLandlordApplications, getPropertySubmissionCount } from '../db/queries'
+import { getAdminAgentApplications, getAdminLandlordApplications, getPropertySubmissionCount } from '../db/queries'
 import { subscribeToApplicationUpdates } from '../../../services/applicationSync'
 import { listPipelineMatches } from '../../../services/matchWorkflowService'
 
@@ -305,15 +305,17 @@ export default function AdminSidebar({ isOpen, onClose }) {
             Settings
           </NavLink>
 
-          {/* Quick email compose */}
-          <div className="pt-4 px-1">
-            <button
-              onClick={() => openEmailClient('support@place4u.xyz', 'Place4U Admin Update', 'Hello team,')}
-              className="w-full flex items-center justify-center gap-2 py-2 px-3 rounded-lg bg-blue-600/20 hover:bg-blue-600/30 text-blue-300 border border-blue-500/30 text-xs font-semibold transition-colors"
-            >
-              <Mail size={14} className="text-blue-400" />
-              Compose Email
-            </button>
+          {/* Support contact */}
+          <div className="pt-4 px-2">
+            <p className="text-[11px] leading-relaxed text-slate-400">
+              Questions? Email us:
+              <a
+                href="mailto:support@place4u.xyz"
+                className="block font-semibold text-blue-300 hover:text-blue-200 transition-colors break-all"
+              >
+                support@place4u.xyz
+              </a>
+            </p>
           </div>
         </nav>
 
