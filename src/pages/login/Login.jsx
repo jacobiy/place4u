@@ -1,6 +1,5 @@
 // Login.jsx - Lead UI Designer & Robust Auth Resolution for Place4U
-import React, { useState, useEffect, useRef } from 'react'
-import { motion } from 'framer-motion'
+import React, { useState } from 'react'
 import {
 	HiMail,
 	HiLockClosed,
@@ -8,16 +7,15 @@ import {
 	HiEyeOff,
 	HiShieldCheck,
 	HiArrowRight,
-	HiUser,
 	HiCheckCircle,
 	HiX
 } from 'react-icons/hi'
 import { FaGoogle } from 'react-icons/fa'
-import { Link, useNavigate, useLocation } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { supabase } from '../../utils/Supabase'
 import ResetPasswordModal from '../../component/ResetPasswordModal'
 
-const Login = () => {
+const Login = ({ isModal = false, onSwitchToSignup }) => {
 	const [showPassword, setShowPassword] = useState(false)
 	const [formData, setFormData] = useState({
 		email: '',
@@ -33,9 +31,7 @@ const Login = () => {
 	const [unconfirmedEmail, setUnconfirmedEmail] = useState('')
 	const [resending, setResending] = useState(false)
 	const [resendMessage, setResendMessage] = useState('')
-	const emailInputRef = useRef(null)
 	const navigate = useNavigate()
-	const location = useLocation()
 
 	const redirectToDashboard = (userType) => {
 		switch (userType?.toLowerCase()) {
@@ -190,13 +186,13 @@ const Login = () => {
 	}
 
 	return (
-		<div className="min-h-screen bg-slate-950 text-slate-100 flex items-center justify-center p-4 sm:p-6 lg:p-8 bg-grid-subtle relative selection:bg-blue-600 selection:text-white">
+		<div className={isModal ? 'w-full text-slate-100 selection:bg-blue-600 selection:text-white' : 'min-h-screen bg-slate-950 text-slate-100 flex items-center justify-center p-4 sm:p-6 lg:p-8 bg-grid-subtle relative selection:bg-blue-600 selection:text-white'}>
 			{/* Ambient background light */}
-			<div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[600px] h-[400px] bg-blue-600/[0.06] blur-[140px] pointer-events-none -z-10" />
+			{!isModal && <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[600px] h-[400px] bg-blue-600/[0.06] blur-[140px] pointer-events-none -z-10" />}
 
-			<div className="max-w-4xl w-full bg-slate-900/90 backdrop-blur-2xl rounded-3xl border border-white/[0.1] shadow-2xl shadow-black/80 overflow-hidden relative z-10 grid grid-cols-1 lg:grid-cols-12">
+			<div className={isModal ? 'w-full grid grid-cols-1' : 'max-w-4xl w-full bg-slate-900/90 backdrop-blur-2xl rounded-3xl border border-white/[0.1] shadow-2xl shadow-black/80 overflow-hidden relative z-10 grid grid-cols-1 lg:grid-cols-12'}>
 				{/* Cancel / Close 'X' Button */}
-				<button
+				{!isModal && <button
 					type="button"
 					onClick={() => navigate('/')}
 					aria-label="Cancel login and return home"
@@ -204,10 +200,10 @@ const Login = () => {
 					className="absolute top-4 right-4 sm:top-5 sm:right-5 z-30 w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-white/[0.06] hover:bg-white/[0.12] active:scale-95 border border-white/10 flex items-center justify-center text-slate-400 hover:text-white transition-all shadow-md group"
 				>
 					<HiX className="w-5 h-5 transition-transform duration-200 group-hover:scale-110" />
-				</button>
+				</button>}
 
 				{/* Left Editorial Visual Column */}
-				<div className="hidden lg:flex lg:col-span-5 relative flex-col justify-between p-8 bg-slate-950 border-r border-white/[0.08] overflow-hidden">
+				{!isModal && <div className="hidden lg:flex lg:col-span-5 relative flex-col justify-between p-8 bg-slate-950 border-r border-white/[0.08] overflow-hidden">
 					<div
 						className="absolute inset-0 bg-cover bg-center opacity-30 mix-blend-luminosity"
 						style={{ backgroundImage: "url('/download.png')" }}
@@ -244,18 +240,18 @@ const Login = () => {
 							<span>POPIA Encrypted & Authenticated</span>
 						</div>
 					</div>
-				</div>
+				</div>}
 
 				{/* Right Form Column */}
-				<div className="lg:col-span-7 p-6 sm:p-10 flex flex-col justify-between">
+				<div className={isModal ? 'w-full max-w-lg mx-auto p-5 sm:p-7 flex flex-col justify-between' : 'lg:col-span-7 p-6 sm:p-10 flex flex-col justify-between'}>
 					<div>
 						{/* Mobile Brand Link */}
-						<div className="lg:hidden flex items-center justify-between mb-6 pr-12">
+						{!isModal && <div className="lg:hidden flex items-center justify-between mb-6 pr-12">
 							<Link to="/">
 								<img src="/logo.png" alt="Place4U Logo" className="h-8 w-auto object-contain" />
 							</Link>
 							<span className="text-xs text-slate-400">Portal Login</span>
-						</div>
+						</div>}
 
 						{/* Form Header */}
 						<div>
@@ -263,7 +259,7 @@ const Login = () => {
 								Welcome back
 							</h2>
 							<p className="text-slate-400 text-xs sm:text-sm mt-1">
-								Sign in to access your properties, applications, and messages.
+								Sign in to pick up where you left off.
 							</p>
 						</div>
 
@@ -306,12 +302,11 @@ const Login = () => {
 						<form onSubmit={handleSubmit} className="mt-6 space-y-4">
 							<div>
 								<label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1.5">
-									Email Address
+									Email address
 								</label>
 								<div className="relative">
 									<HiMail className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500 w-4 h-4" />
 									<input
-										ref={emailInputRef}
 										type="email"
 										name="email"
 										value={formData.email}
@@ -380,7 +375,7 @@ const Login = () => {
 									<span>Verifying credentials...</span>
 								) : (
 									<>
-										<span>Sign In to Dashboard</span>
+										<span>Sign in</span>
 										<HiArrowRight className="w-4 h-4" />
 									</>
 								)}
@@ -389,30 +384,19 @@ const Login = () => {
 
 
 						{/* Social Providers */}
-						<div className="mt-6 pt-6 border-t border-white/[0.08]">
-							<span className="text-[11px] uppercase tracking-wider text-slate-500 font-semibold text-center block mb-3">
+						<div className="mt-6 pt-5 border-t border-white/[0.08]">
+							<span className="text-[11px] text-slate-500 font-medium text-center block mb-3">
 								Or continue with
 							</span>
 
-							<div className="grid grid-cols-2 gap-3">
+							<div className="grid grid-cols-1 gap-3">
 								<button
 									type="button"
 									onClick={() => handleSocialLogin('google')}
 									className="btn-tactile py-2.5 px-3 rounded-xl bg-white/[0.03] hover:bg-white/[0.08] border border-white/[0.08] text-xs font-medium text-slate-300 flex items-center justify-center gap-2 transition-all"
 								>
 									<FaGoogle className="w-3.5 h-3.5 text-red-400" />
-									<span>Google</span>
-								</button>
-								<button
-									type="button"
-									onClick={() => {
-										emailInputRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })
-										emailInputRef.current?.focus()
-									}}
-									className="btn-tactile py-2.5 px-3 rounded-xl bg-white/[0.03] hover:bg-white/[0.08] border border-white/[0.08] text-xs font-medium text-slate-300 flex items-center justify-center gap-2 transition-all"
-								>
-									<HiMail className="w-3.5 h-3.5 text-blue-400" />
-									<span>Sign in with email</span>
+									<span>Continue with Google</span>
 								</button>
 							</div>
 						</div>
@@ -420,10 +404,16 @@ const Login = () => {
 
 					{/* Sign Up Redirect */}
 					<div className="pt-6 mt-6 border-t border-white/[0.06] text-center text-xs text-slate-400">
-						Don’t have a verified account yet?{' '}
-						<Link to="/signup" className="font-semibold text-blue-400 hover:text-blue-300 underline underline-offset-4">
-							Create free profile
-						</Link>
+						New to Place4U?{' '}
+						{isModal ? (
+							<button type="button" onClick={onSwitchToSignup} className="font-semibold text-blue-400 hover:text-blue-300 underline underline-offset-4">
+								Create a profile
+							</button>
+						) : (
+							<Link to="/signup" className="font-semibold text-blue-400 hover:text-blue-300 underline underline-offset-4">
+								Create free profile
+							</Link>
+						)}
 					</div>
 				</div>
 			</div>
@@ -432,6 +422,11 @@ const Login = () => {
 				isOpen={resetModalOpen}
 				onClose={() => setResetModalOpen(false)}
 				initialEmail={formData.email}
+				isModal={isModal}
+				onSwitchToSignup={() => {
+					setResetModalOpen(false)
+					onSwitchToSignup?.()
+				}}
 			/>
 		</div>
 	)

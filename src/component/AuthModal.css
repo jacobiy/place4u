@@ -1,0 +1,322 @@
+.place-auth-modal {
+  --auth-ink: #1b3036;
+  --auth-muted: #65777a;
+  --auth-line: #dce5e0;
+  --auth-paper: #fbfaf7;
+  --auth-blue: #006194;
+  color: var(--auth-ink);
+  background: var(--auth-paper);
+  border: 1px solid var(--auth-line);
+  border-top: 3px solid var(--auth-blue);
+  box-shadow: 0 28px 90px -32px rgba(11, 34, 42, 0.42);
+}
+
+.place-auth-modal__header {
+  border-bottom: 1px solid #e5ebe7;
+  background: #fff;
+}
+
+.place-auth-modal__logo {
+  filter: brightness(0);
+  opacity: 0.78;
+}
+
+.place-auth-modal__close {
+  border: 1px solid #e1e8e3;
+  background: #fff;
+  color: #5c7074;
+}
+
+.place-auth-modal__close:hover {
+  background: #f2f5f2;
+  color: #18343b;
+}
+
+.place-auth-modal__signout {
+  border: 1px solid #e1e8e3;
+  background: #f5f7f4;
+  color: #526a70;
+}
+
+.place-auth-modal__signout:hover {
+  border-color: #c7d4ce;
+  background: #edf2ee;
+  color: #18343b;
+}
+
+.place-auth-modal > div:last-child {
+  background: var(--auth-paper);
+  scrollbar-color: #c3d0ca transparent;
+}
+
+.place-auth-modal .text-slate-100,
+.place-auth-modal .text-slate-200,
+.place-auth-modal .text-slate-300,
+.place-auth-modal .text-slate-400,
+.place-auth-modal .text-slate-500,
+.place-auth-modal .text-slate-600,
+.place-auth-modal .text-white {
+  color: var(--auth-ink) !important;
+}
+
+.place-auth-modal .text-slate-400,
+.place-auth-modal .text-slate-500,
+.place-auth-modal .text-slate-600 {
+  color: var(--auth-muted) !important;
+}
+
+.place-auth-modal .font-serif-display {
+  color: var(--auth-ink) !important;
+  font-size: clamp(1.8rem, 3vw, 2.15rem);
+  line-height: 1.12;
+  letter-spacing: -0.025em;
+}
+
+.place-auth-modal__logo {
+  height: 2.8rem;
+}
+
+.place-auth-modal p {
+  color: var(--auth-muted);
+  line-height: 1.6;
+}
+
+.place-auth-modal label:not(.flex) {
+  display: block;
+  margin-bottom: 0.45rem;
+  color: #41585e !important;
+  font-size: 0.76rem;
+  font-weight: 600;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.place-auth-modal input:not([type="checkbox"]) {
+  min-height: 46px;
+  border: 1px solid #cbd8d2 !important;
+  border-radius: 11px !important;
+  background: #fff !important;
+  color: #1b3036 !important;
+  box-shadow: inset 0 1px 1px rgba(20, 47, 51, 0.025);
+}
+
+.place-auth-modal input:not([type="checkbox"])::placeholder {
+  color: #91a09e !important;
+}
+
+.place-auth-modal input:not([type="checkbox"]):focus {
+  border-color: var(--auth-blue) !important;
+  outline: 3px solid rgba(0, 97, 148, 0.13) !important;
+  outline-offset: 0;
+}
+
+.place-auth-modal input[type="checkbox"] {
+  accent-color: var(--auth-blue);
+}
+
+.place-auth-modal .text-slate-500.w-4,
+.place-auth-modal .text-slate-500.w-4.h-4 {
+  color: #82938f !important;
+}
+
+.place-auth-modal .text-blue-400,
+.place-auth-modal .text-blue-300,
+.place-auth-modal .text-blue-200 {
+  color: var(--auth-blue) !important;
+}
+
+.place-auth-modal .text-emerald-400,
+.place-auth-modal .text-purple-400 {
+  color: var(--auth-blue) !important;
+}
+
+.place-auth-modal button[type="submit"] {
+  min-height: 48px;
+  border: 1px solid #00547e !important;
+  border-radius: 11px !important;
+  background: var(--auth-blue) !important;
+  color: #fff !important;
+  box-shadow: 0 5px 14px rgba(0, 97, 148, 0.17) !important;
+  font-size: 0.88rem;
+  font-weight: 650;
+}
+
+.place-auth-modal button[type="submit"]:hover {
+  background: #004f78 !important;
+}
+
+.place-auth-modal .btn-tactile:not([type="submit"]) {
+  border: 1px solid #d5dfda !important;
+  border-radius: 11px !important;
+  background: #fff !important;
+  color: #294149 !important;
+  box-shadow: none !important;
+}
+
+.place-auth-modal .btn-tactile:not([type="submit"]):hover {
+  background: #f3f6f3 !important;
+  border-color: #bdcec7 !important;
+}
+
+.place-auth-modal .auth-role-choice {
+  min-height: 112px;
+  border: 1px solid #d9e2dd !important;
+  border-radius: 13px !important;
+  background: #fff !important;
+  box-shadow: none !important;
+}
+
+.place-auth-modal .auth-role-choice:hover {
+  border-color: #9eb8bd !important;
+  background: #f7faf8 !important;
+}
+
+.place-auth-modal .auth-role-choice[aria-pressed="true"] {
+  border-color: #006194 !important;
+  background: #edf5f6 !important;
+  box-shadow: inset 0 0 0 1px #006194 !important;
+}
+
+.place-auth-modal .auth-role-choice svg {
+  width: 1.2rem;
+  height: 1.2rem;
+  margin-bottom: 0.6rem;
+  color: #507078 !important;
+}
+
+.place-auth-modal .auth-role-choice[aria-pressed="true"] svg {
+  color: var(--auth-blue) !important;
+}
+
+.place-auth-modal [class*="bg-blue-600"][class*="rounded-full"] {
+  background: #eaf2f3 !important;
+  color: #00547e !important;
+}
+
+.place-auth-modal .auth-role-choice span:first-of-type {
+  color: #1b3036 !important;
+  font-size: 0.78rem;
+}
+
+.place-auth-modal .auth-role-choice span:last-of-type {
+  color: #71817f !important;
+  font-size: 0.68rem;
+}
+
+.place-auth-modal [class*="bg-red-950"] {
+  border-radius: 11px;
+  background: #f7eeeb !important;
+  border-color: #ead2c9 !important;
+  color: #743a2c !important;
+}
+
+.place-auth-modal [class*="bg-blue-950"] {
+  border-radius: 11px;
+  background: #edf4f6 !important;
+  border-color: #c9dfe5 !important;
+  color: #245364 !important;
+}
+
+.place-auth-modal [class*="bg-emerald-950"] {
+  border-radius: 11px;
+  background: #edf5ef !important;
+  border-color: #cfe3d4 !important;
+  color: #356747 !important;
+}
+
+.place-auth-modal [class*="border-white/"] {
+  border-color: #e2e9e5 !important;
+}
+
+.place-auth-modal a {
+  color: var(--auth-blue) !important;
+}
+
+.place-auth-modal a:hover {
+  color: #004f78 !important;
+}
+
+.place-auth-modal button:focus-visible,
+.place-auth-modal a:focus-visible,
+.place-auth-modal input:focus-visible {
+  outline: 3px solid rgba(0, 97, 148, 0.3);
+  outline-offset: 2px;
+}
+
+.place-auth-reset {
+  background: rgba(23, 45, 50, 0.38) !important;
+  backdrop-filter: blur(3px) !important;
+}
+
+.place-auth-reset > div[role="dialog"] {
+  border: 1px solid #dce5e0 !important;
+  border-top: 3px solid #006194;
+  border-radius: 22px !important;
+  background: #fbfaf7 !important;
+  color: #1b3036;
+  box-shadow: 0 28px 90px -32px rgba(11, 34, 42, 0.42) !important;
+}
+
+.place-auth-reset h2,
+.place-auth-reset .text-white {
+  color: #1b3036 !important;
+}
+
+.place-auth-reset p,
+.place-auth-reset .text-slate-400,
+.place-auth-reset .text-slate-500,
+.place-auth-reset .text-slate-300 {
+  color: #65777a !important;
+}
+
+.place-auth-reset label {
+  color: #41585e !important;
+  font-size: 0.76rem !important;
+  font-weight: 600 !important;
+  letter-spacing: 0 !important;
+  text-transform: none !important;
+}
+
+.place-auth-reset input {
+  min-height: 46px;
+  border: 1px solid #cbd8d2 !important;
+  border-radius: 11px !important;
+  background: #fff !important;
+  color: #1b3036 !important;
+}
+
+.place-auth-reset button[type="submit"] {
+  min-height: 48px;
+  border-radius: 11px !important;
+  background: #006194 !important;
+  color: #fff !important;
+  box-shadow: none !important;
+}
+
+.place-auth-reset button[aria-label="Close password reset dialog"] {
+  border: 1px solid #e1e8e3;
+  background: #fff;
+  color: #5c7074;
+}
+
+.place-auth-reset .h-1 {
+  display: none;
+}
+
+@media (max-width: 520px) {
+  .place-auth-modal__header {
+    padding: 0.8rem 1rem;
+  }
+
+  .place-auth-modal__logo {
+    height: 1.7rem;
+  }
+
+  .place-auth-modal__logo {
+    height: 2.25rem;
+  }
+
+  .place-auth-modal .max-w-2xl {
+    padding: 1.1rem;
+  }
+}

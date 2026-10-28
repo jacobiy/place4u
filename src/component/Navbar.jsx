@@ -3,11 +3,11 @@ import React, { useState } from 'react'
 import { BiMenuAltRight } from 'react-icons/bi'
 import { HiX, HiArrowRight } from 'react-icons/hi'
 import OutsideClickHandler from 'react-outside-click-handler'
-import { Link, useLocation, useNavigate } from 'react-router-dom'
+import { Link, useLocation } from 'react-router-dom'
+import { openAuthModal } from '../utils/authModal'
 
 const Navbar = () => {
 	const [menuOpened, setMenuOpened] = useState(false)
-	const navigate = useNavigate()
 	const { pathname } = useLocation()
 
 	// The navbar is shared by every public page, but its items are landing-page
@@ -55,14 +55,15 @@ const Navbar = () => {
 
 				{/* Desktop Auth CTAs - right */}
 				<div className="hidden lg:flex items-center justify-end gap-3 justify-self-end">
-					<Link
-						to="/login"
+					<button
+						type="button"
+						onClick={() => openAuthModal('login')}
 						className="px-4 py-2 text-sm font-medium text-[#28434e] hover:text-[#006194] rounded-lg transition-colors"
 					>
 						Sign In
-					</Link>
+					</button>
 					<button
-						onClick={() => navigate('/signup')}
+						onClick={() => openAuthModal('signup')}
 						className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold text-white bg-[#006194] hover:bg-[#004b73] transition-colors duration-200 active:scale-[0.98]"
 					>
 						<span>Get Matched</span>
@@ -111,7 +112,7 @@ const Navbar = () => {
 								<button
 									onClick={() => {
 										setMenuOpened(false)
-										navigate('/login')
+									openAuthModal('login')
 									}}
 									className="w-full py-2.5 text-center text-sm font-medium text-[#28434e] hover:text-[#006194] bg-white border border-[#d5e0df] rounded-lg transition-colors"
 								>
@@ -120,7 +121,7 @@ const Navbar = () => {
 								<button
 									onClick={() => {
 										setMenuOpened(false)
-										navigate('/signup')
+									openAuthModal('signup')
 									}}
 									className="w-full py-3 text-center text-sm font-semibold text-white bg-[#006194] hover:bg-[#004b73] rounded-lg transition-colors"
 								>

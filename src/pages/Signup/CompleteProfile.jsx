@@ -16,11 +16,6 @@
 // undefined, AuthCallback never routes here, and this page is unreachable — it
 // degrades to the previous behaviour rather than breaking.
 //
-// DESIGN: this is a sibling of Login.jsx (the screen that starts the Google
-// flow), so it deliberately reuses the same shell — split editorial panel,
-// `font-serif-display` headings, uppercase tracking-wider labels, `btn-tactile`
-// actions, `bg-slate-950/80` inputs. It is ONE screen, not a wizard: the role
-// picker is the hero and everything else is progressive disclosure beneath it.
 import React, { useEffect, useState } from 'react'
 import {
 	HiUser,
@@ -28,54 +23,36 @@ import {
 	HiShieldCheck,
 	HiCheck,
 	HiPhone,
-	HiArrowRight,
-	HiX
+	HiArrowRight
 } from 'react-icons/hi'
 import { Link, useNavigate } from 'react-router-dom'
 import { supabase } from '../../utils/Supabase'
+import './CompleteProfile.css'
 
 // Accent sets are written out in full. Tailwind's scanner only sees literal
 // class strings, so these must never be assembled at runtime.
 const ROLES = [
 	{
 		key: 'tenant',
-		label: 'Tenant',
-		blurb: 'Looking to rent',
+		label: 'Renter',
+		blurb: 'I’m looking for a place to rent.',
 		Icon: HiUser,
-		headline: 'I need somewhere to live.',
-		note: 'One application, matched against verified listings and introduced to the right landlord.',
-		perks: ['Browse verified listings', 'One application, many properties', 'Track every step in real time'],
-		row: 'border-blue-500/60 bg-blue-500/[0.07]',
-		icon: 'bg-blue-500/15 text-blue-400 ring-blue-500/30',
-		dot: 'bg-blue-500'
 	},
 	{
 		key: 'landlord',
-		label: 'Landlord',
-		blurb: 'Have space to let',
+		label: 'Property owner',
+		blurb: 'I have a room or home to let.',
 		Icon: HiHome,
-		headline: 'I have space to let.',
-		note: 'List once, then meet screened tenants who have already been verified.',
-		perks: ['Free to list properties', 'Verified tenant applications', 'Direct tenant communication'],
-		row: 'border-emerald-500/60 bg-emerald-500/[0.07]',
-		icon: 'bg-emerald-500/15 text-emerald-400 ring-emerald-500/30',
-		dot: 'bg-emerald-500'
 	},
 	{
 		key: 'agent',
 		label: 'Agent',
-		blurb: 'Manage listings',
+		blurb: 'I manage rental listings for others.',
 		Icon: HiShieldCheck,
-		headline: 'I work the market for others.',
-		note: 'Receive qualified tenant applications, do the work, and get paid on the match.',
-		perks: ['Assigned tenant applications', '50% commission on matches', 'Payouts tracked in your wallet'],
-		row: 'border-purple-500/60 bg-purple-500/[0.07]',
-		icon: 'bg-purple-500/15 text-purple-400 ring-purple-500/30',
-		dot: 'bg-purple-500'
 	}
 ]
 
-const CompleteProfile = () => {
+const CompleteProfile = ({ isModal = false }) => {
 	const navigate = useNavigate()
 	const [email, setEmail] = useState('')
 	const [role, setRole] = useState('')
@@ -187,252 +164,125 @@ const CompleteProfile = () => {
 	}
 
 	return (
-		<div className="min-h-screen bg-slate-950 text-slate-100 flex items-center justify-center p-4 sm:p-6 lg:p-8 bg-grid-subtle relative selection:bg-blue-600 selection:text-white">
-			{/* Ambient background light */}
-			<div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[600px] h-[400px] bg-blue-600/[0.06] blur-[140px] pointer-events-none -z-10" aria-hidden="true" />
+		<div className={`place-complete-profile ${isModal ? 'place-complete-profile--modal' : 'min-h-screen flex items-center justify-center p-4 sm:p-6'}`}>
+			<main className="place-complete-profile__card w-full max-w-3xl overflow-hidden rounded-3xl border bg-white shadow-xl">
+				<header className="place-complete-profile__header flex items-center justify-between gap-4 px-5 py-4 sm:px-8">
+					<Link to="/" className="inline-flex items-center" aria-label="Place4U home">
+						<img src="/logo.png" alt="Place4U" className="place-complete-profile__logo h-10 w-auto" />
+					</Link>
+					<button
+						type="button"
+						onClick={() => supabase.auth.signOut().catch(() => {}).finally(() => navigate('/'))}
+						className="place-complete-profile__signout inline-flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium"
+					>
+						Sign out
+					</button>
+				</header>
 
-			<div className="max-w-5xl w-full bg-slate-900/90 backdrop-blur-2xl rounded-3xl border border-white/[0.1] shadow-2xl shadow-black/80 overflow-hidden relative z-10 grid grid-cols-1 lg:grid-cols-12">
-
-				{/* Dismiss */}
-				<button
-					type="button"
-					onClick={() => supabase.auth.signOut().catch(() => {}).finally(() => navigate('/'))}
-					aria-label="Sign out and return home"
-					title="Sign out and return home"
-					className="absolute top-4 right-4 sm:top-5 sm:right-5 z-30 w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-white/[0.06] hover:bg-white/[0.12] active:scale-95 border border-white/10 flex items-center justify-center text-slate-400 hover:text-white transition-all shadow-md group"
-				>
-					<HiX className="w-5 h-5 transition-transform duration-200 group-hover:scale-110" />
-				</button>
-
-				{/* Left Editorial Column — mirrors Login.jsx */}
-				<div className="hidden lg:flex lg:col-span-5 relative flex-col justify-between p-8 bg-slate-950 border-r border-white/[0.08] overflow-hidden">
-					<div
-						className="absolute inset-0 bg-cover bg-center opacity-30 mix-blend-luminosity transition-opacity duration-500"
-						style={{ backgroundImage: "url('/download.png')" }}
-						aria-hidden="true"
-					/>
-					<div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/80 to-transparent" aria-hidden="true" />
-
-					{/* Brand Lockup */}
-					<div className="relative z-10">
-						<Link to="/" className="inline-flex items-center group">
-							<img
-								src="/logo.png"
-								alt="Place4U Logo"
-								className="h-10 w-auto object-contain transition-transform group-hover:scale-105"
-							/>
-						</Link>
-					</div>
-
-					{/* Editorial statement — responds to the chosen role */}
-					<div className="relative z-10 space-y-4">
-						<span className="text-xs uppercase tracking-widest font-semibold text-blue-400">
-							{selected ? `${selected.label} account` : 'Place4U Onboarding'}
-						</span>
-						<h2 className="text-2xl font-bold font-serif text-white leading-tight transition-opacity duration-300">
-							{selected ? selected.headline : 'One profile. Whichever side of the deal you are on.'}
-						</h2>
-						<p className="text-xs text-slate-400 leading-relaxed">
-							{selected
-								? selected.note
-								: 'Verified listings, screened tenants and warm introductions — all in one place.'}
+				<div className="place-complete-profile__content px-5 py-6 sm:px-8 sm:py-8">
+					<div className="mb-5 max-w-2xl">
+						<p className="place-complete-profile__eyebrow mb-2 text-xs font-semibold">ACCOUNT SETUP</p>
+						<h1 className="font-serif-display text-3xl font-normal sm:text-4xl">Set up your profile</h1>
+						<p className="mt-2 text-sm leading-relaxed">
+							Choose how you’ll use Place4U to get started.
+							{email && <span className="place-complete-profile__account-email"> Signed in as {email}.</span>}
 						</p>
 					</div>
 
-					{/* Trust marker */}
-					<div className="relative z-10 flex items-center gap-1.5 text-xs text-emerald-400">
-						<HiShieldCheck className="w-4 h-4 text-emerald-400" aria-hidden="true" />
-						<span>POPIA Encrypted &amp; Authenticated</span>
-					</div>
-				</div>
+					{error && (
+						<div role="alert" className="place-complete-profile__error mb-5 flex items-center justify-between gap-3 rounded-xl px-4 py-3 text-sm leading-relaxed">
+							<span>{error}</span>
+							<button type="button" onClick={() => setError('')} aria-label="Dismiss error" className="shrink-0 rounded p-1">✕</button>
+						</div>
+					)}
 
-				{/* Right Form Column */}
-				<div className="lg:col-span-7 p-6 sm:p-10 flex flex-col justify-between">
+					<form onSubmit={handleSubmit} className="space-y-4" noValidate>
+						<fieldset>
+							<legend className="mb-3 text-sm font-semibold">What brings you to Place4U?</legend>
+							<div className="place-complete-profile__roles grid grid-cols-1 gap-3 sm:grid-cols-3">
+								{ROLES.map((r) => {
+									const isSelected = role === r.key
+									return (
+										<button
+											key={r.key}
+											type="button"
+											onClick={() => { setRole(r.key); setError('') }}
+											aria-pressed={isSelected}
+											className={`place-complete-profile__role w-full rounded-xl border p-3 text-left transition-colors ${isSelected ? 'is-selected' : ''}`}
+										>
+											<span className="mb-3 flex h-8 w-8 items-center justify-center rounded-lg">
+												<r.Icon className="h-5 w-5" aria-hidden="true" />
+											</span>
+											<span className="block text-sm font-semibold">{r.label}</span>
+											<span className="mt-1 block text-xs leading-relaxed">{r.blurb}</span>
+											<span className="place-complete-profile__radio mt-3 flex h-5 w-5 items-center justify-center rounded-full border">
+												{isSelected && <HiCheck className="h-3 w-3" aria-hidden="true" />}
+											</span>
+										</button>
+									)
+								})}
+							</div>
+						</fieldset>
 
-					{/* Mobile Brand */}
-					<div className="lg:hidden flex items-center justify-between mb-6 pr-12">
-						<Link to="/">
-							<img src="/logo.png" alt="Place4U Logo" className="h-8 w-auto object-contain" />
-						</Link>
-						<span className="text-xs text-slate-400">One more step</span>
-					</div>
-
-					<div>
-						{/* Form Header */}
 						<div>
-							<h1 className="font-serif-display text-2xl sm:text-3xl font-normal text-white">
-								How will you use Place4U?
-							</h1>
-							<p className="text-slate-400 text-xs sm:text-sm mt-1 leading-relaxed">
-								You signed in with Google, so we couldn&apos;t tell whether you are renting, letting, or
-								managing listings.
-								{email && <span className="text-slate-300"> Signed in as {email}.</span>}
-							</p>
+							<label htmlFor="cp-phone" className="mb-2 block text-sm font-semibold">
+								Phone or WhatsApp <span className="place-complete-profile__optional font-normal">Optional</span>
+							</label>
+							<div className="relative">
+								<HiPhone className="place-complete-profile__field-icon absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2" aria-hidden="true" />
+								<input
+									id="cp-phone"
+									type="tel"
+									inputMode="tel"
+									autoComplete="tel"
+									value={phone}
+									onChange={(e) => setPhone(e.target.value)}
+									placeholder="082 123 4567"
+									className="place-complete-profile__input w-full rounded-xl py-3 pl-10 pr-4 text-sm"
+								/>
+							</div>
 						</div>
 
-						{/* Feedback */}
-						{error && (
-							<div
-								role="alert"
-								className="mt-4 p-3.5 rounded-xl bg-red-950/40 border border-red-500/30 text-red-300 text-xs leading-relaxed flex items-center justify-between"
-							>
-								<span>{error}</span>
-								<button
-									type="button"
-									onClick={() => setError('')}
-									className="text-red-400 hover:text-white ml-2 text-sm"
-									aria-label="Dismiss error"
-								>
-									✕
-								</button>
-							</div>
-						)}
+						<div className="place-complete-profile__consents space-y-3 border-t pt-5">
+							<label className="flex cursor-pointer items-start gap-3 text-sm leading-relaxed">
+								<input
+									type="checkbox"
+									checked={agreeToTerms}
+									onChange={(e) => setAgreeToTerms(e.target.checked)}
+									className="mt-1 h-4 w-4 shrink-0"
+								/>
+								<span>
+									I agree to Place4U’s{' '}
+									<Link to="/terms" target="_blank" rel="noopener noreferrer">Terms of Service</Link>
+									{' '}and{' '}
+									<Link to="/privacy" target="_blank" rel="noopener noreferrer">POPIA Privacy Policy</Link>.
+								</span>
+							</label>
 
-						<form onSubmit={handleSubmit} className="mt-6 space-y-5" noValidate>
-
-							{/* Role picker — a vertical list reads editorial; a 3-up card
-							    grid reads like a template. */}
-							<fieldset>
-								<legend className="text-xs font-semibold uppercase tracking-wider text-slate-300 mb-2">
-									Select your primary role
-								</legend>
-								<div className="space-y-2">
-									{ROLES.map((r) => {
-										const isSelected = role === r.key
-										return (
-											<div key={r.key}>
-												<button
-													type="button"
-													onClick={() => { setRole(r.key); setError('') }}
-													aria-pressed={isSelected}
-													className={`w-full flex items-center gap-4 p-3.5 rounded-2xl border text-left transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900 ${
-														isSelected
-															? `${r.row} border`
-															: 'bg-white/[0.02] border-white/10 hover:border-white/20 hover:bg-white/[0.04]'
-													}`}
-												>
-													<span
-														className={`w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0 ring-1 transition-all duration-200 ${
-															isSelected ? r.icon : 'bg-white/[0.04] text-slate-400 ring-white/10'
-														}`}
-														aria-hidden="true"
-													>
-														<r.Icon className="w-5 h-5" />
-													</span>
-
-													<span className="flex-1 min-w-0">
-														<span className="block text-sm font-semibold text-white">{r.label}</span>
-														<span className="block text-[11px] text-slate-400 mt-0.5">{r.blurb}</span>
-													</span>
-
-													<span
-														className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-all duration-200 ${
-															isSelected ? `${r.dot} border-transparent` : 'border-slate-600'
-														}`}
-														aria-hidden="true"
-													>
-														{isSelected && <HiCheck className="w-3 h-3 text-white" />}
-													</span>
-												</button>
-
-												{/* Progressive disclosure: what this role actually gets */}
-												{isSelected && (
-													<div className="mt-2 ml-4 pl-4 border-l-2 border-white/[0.08]">
-														<ul className="space-y-1.5 py-1">
-															{r.perks.map((perk) => (
-																<li key={perk} className="flex items-center gap-2 text-[11px] text-slate-400">
-																	<span className={`w-1 h-1 rounded-full ${r.dot} flex-shrink-0`} aria-hidden="true" />
-																	{perk}
-																</li>
-															))}
-														</ul>
-													</div>
-												)}
-											</div>
-										)
-									})}
-								</div>
-							</fieldset>
-
-							{/* Contact */}
-							<div>
-								<label
-									htmlFor="cp-phone"
-									className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1.5"
-								>
-									Phone / WhatsApp <span className="font-normal normal-case tracking-normal text-slate-500">(optional)</span>
-								</label>
-								<div className="relative">
-									<HiPhone className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500 w-4 h-4" aria-hidden="true" />
-									<input
-										id="cp-phone"
-										type="tel"
-										inputMode="tel"
-										autoComplete="tel"
-										value={phone}
-										onChange={(e) => setPhone(e.target.value)}
-										placeholder="082 123 4567"
-										className="w-full pl-10 pr-4 py-2.5 bg-slate-950/80 border border-white/10 rounded-xl text-sm text-white placeholder-slate-600 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors"
-									/>
-								</div>
-							</div>
-
-							{/* Consents */}
-							<div className="space-y-2.5 pt-1">
-								<label className="flex items-start gap-2.5 text-xs text-slate-300 cursor-pointer">
+							{role === 'tenant' && (
+								<label className="flex cursor-pointer items-start gap-3 text-sm leading-relaxed">
 									<input
 										type="checkbox"
-										checked={agreeToTerms}
-										onChange={(e) => setAgreeToTerms(e.target.checked)}
-										className="w-4 h-4 mt-0.5 rounded bg-slate-950 border-white/20 text-blue-600 focus:ring-1 focus:ring-blue-600 focus:ring-offset-0 cursor-pointer"
+										checked={acceptFee}
+										onChange={(e) => setAcceptFee(e.target.checked)}
+										className="mt-1 h-4 w-4 shrink-0"
 									/>
-									<span className="leading-relaxed">
-										I agree to Place4U&apos;s{' '}
-										<Link to="/terms" target="_blank" rel="noopener noreferrer" className="text-blue-400 underline underline-offset-2 hover:text-blue-300">Terms of Service</Link>
-										{' '}and{' '}
-										<Link to="/privacy" target="_blank" rel="noopener noreferrer" className="text-blue-400 underline underline-offset-2 hover:text-blue-300">POPIA Privacy Policy</Link>.
-									</span>
+									<span>I acknowledge the assistance fee terms for tenant applications.</span>
 								</label>
+							)}
+						</div>
 
-								{/* Only the tenant is charged, so only the tenant acknowledges a fee. */}
-								{role === 'tenant' && (
-									<label className="flex items-start gap-2.5 text-xs text-slate-300 cursor-pointer">
-										<input
-											type="checkbox"
-											checked={acceptFee}
-											onChange={(e) => setAcceptFee(e.target.checked)}
-											className="w-4 h-4 mt-0.5 rounded bg-slate-950 border-white/20 text-blue-600 focus:ring-1 focus:ring-blue-600 focus:ring-offset-0 cursor-pointer"
-										/>
-										<span className="leading-relaxed">
-											I acknowledge the assistance fee terms upon verified application submission.
-										</span>
-									</label>
-								)}
-							</div>
-
-							<button
-								type="submit"
-								disabled={loading}
-								className="btn-tactile w-full py-3 px-4 rounded-xl bg-blue-600 hover:bg-blue-500 active:bg-blue-700 text-white font-semibold text-sm shadow-lg shadow-blue-600/30 flex items-center justify-center gap-2 disabled:opacity-60"
-							>
-								{loading ? (
-									<span>Setting up your account…</span>
-								) : (
-									<>
-										<span>Continue to my dashboard</span>
-										<HiArrowRight className="w-4 h-4" />
-									</>
-								)}
-							</button>
-						</form>
-					</div>
-
-					{/* Footer reassurance */}
-					<div className="pt-6 mt-6 border-t border-white/[0.06] text-center text-[11px] text-slate-500">
-						You can change your details later in settings. Role changes after approval are handled by our team.
-					</div>
+						<button
+							type="submit"
+							disabled={loading}
+							className="place-complete-profile__submit inline-flex w-full items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-semibold transition-colors disabled:opacity-60"
+						>
+							{loading ? 'Setting up your account…' : 'Finish profile setup'}
+							<HiArrowRight className="h-4 w-4" aria-hidden="true" />
+						</button>
+					</form>
 				</div>
-			</div>
+			</main>
 		</div>
 	)
 }

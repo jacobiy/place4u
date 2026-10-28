@@ -5,15 +5,13 @@ import ProtectedRoute from "./component/ProtectedRoute";
 import { supabase } from "./utils/Supabase";
 import { claimPostSignInRedirect } from "./utils/authReturn";
 import PrivacyConsent from "./component/PrivacyConsent";
+import AuthModal from "./component/AuthModal";
 import Loading from "./component/loading";
 import { applySeo, resolveSeoForPath } from "./utils/seo";
 
 // Code-split route components for fast initial load & reduced bundle size
 const Landing = lazy(() => import("./pages/landing/Landing"));
 const About = lazy(() => import("./pages/landing/About"));
-const Login = lazy(() => import("./pages/login/Login"));
-const Signup = lazy(() => import("./pages/Signup/SignUp"));
-const CompleteProfile = lazy(() => import("./pages/Signup/CompleteProfile"));
 const ResetPassword = lazy(() => import("./pages/resetpassword/resetpassword"));
 const ChangePassword = lazy(() => import("./pages/resetpassword/changepassword"));
 const TenantDashboard = lazy(() => import("./pages/Tenant/TenantDashboard"));
@@ -338,12 +336,14 @@ export default function App() {
         <Routes>
           <Route path="/" element={<Landing />} />
           <Route path="/about" element={<About />} />
-          <Route path="/login" element={<Login />} />
-          <Route path="/signup" element={<Signup />} />
+          {/* Keep legacy auth URLs working, but show the shared modal over the landing page. */}
+          <Route path="/login" element={<Landing />} />
+          <Route path="/signup" element={<Landing />} />
           <Route path="/reset-password" element={<ResetPassword />} />
           <Route path="/change-password" element={<ChangePassword />} />
           <Route path="/auth/callback" element={<AuthCallback />} />
-          <Route path="/complete-profile" element={<CompleteProfile />} />
+          {/* The protected OAuth role picker opens in AuthModal over the landing page. */}
+          <Route path="/complete-profile" element={<Landing />} />
           <Route path="/privacy" element={<PrivacyPolicy />} />
           <Route path="/terms" element={<TermsOfService />} />
           <Route path="/compliance" element={<ComplianceNotice />} />
@@ -392,6 +392,7 @@ export default function App() {
           <Route path="/dashboard" element={<Navigate to="/login" replace />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
+        <AuthModal />
       </Suspense>
       </ChunkErrorBoundary>
       <RouteSeo />

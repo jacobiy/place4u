@@ -13,6 +13,7 @@ import {
 } from 'react-icons/fa'
 import { Link } from 'react-router-dom'
 import { openConsentNotice } from '../utils/privacyConsent'
+import { openAuthModal } from '../utils/authModal'
 
 const Footer = ({ theme = 'dark' }) => {
 	const currentYear = new Date().getFullYear()
@@ -31,8 +32,8 @@ const Footer = ({ theme = 'dark' }) => {
 		// (/about) now, not a landing-page anchor, and the header is reserved for
 		// the tenant/landlord funnel.
 		{ name: 'About Us', to: '/about' },
-		{ name: 'Tenant Portal', to: '/login' },
-		{ name: 'Landlord Portal', to: '/login' }
+		{ name: 'Tenant Portal', action: () => openAuthModal('login') },
+		{ name: 'Landlord Portal', action: () => openAuthModal('login') }
 	]
 
 	const legalLinks = [
@@ -151,14 +152,26 @@ const Footer = ({ theme = 'dark' }) => {
 						<ul className="space-y-3">
 							{quickLinks.map((link) => (
 								<li key={link.name}>
-									<Link
-										to={link.to}
-										className={`text-sm transition-colors ${
-											isLight ? 'text-[#40555c] hover:text-[#006194]' : 'text-slate-300 hover:text-white'
-										}`}
-									>
-										{link.name}
-									</Link>
+									{link.action ? (
+										<button
+											type="button"
+											onClick={link.action}
+											className={`text-sm transition-colors cursor-pointer text-left block ${
+												isLight ? 'text-[#40555c] hover:text-[#006194]' : 'text-slate-300 hover:text-white'
+											}`}
+										>
+											{link.name}
+										</button>
+									) : (
+										<Link
+											to={link.to}
+											className={`text-sm transition-colors ${
+												isLight ? 'text-[#40555c] hover:text-[#006194]' : 'text-slate-300 hover:text-white'
+											}`}
+										>
+											{link.name}
+										</Link>
+									)}
 								</li>
 							))}
 						</ul>

@@ -14,7 +14,7 @@ import {
 import { Link } from 'react-router-dom'
 import { supabase } from '../utils/Supabase'
 
-const ResetPasswordModal = ({ isOpen, onClose, initialEmail = '' }) => {
+const ResetPasswordModal = ({ isOpen, onClose, initialEmail = '', isModal = false, onSwitchToSignup }) => {
 	const [email, setEmail] = useState(initialEmail)
 	const [loading, setLoading] = useState(false)
 	const [error, setError] = useState('')
@@ -80,7 +80,7 @@ const ResetPasswordModal = ({ isOpen, onClose, initialEmail = '' }) => {
 
 	return (
 		<div
-			className="fixed inset-0 z-[10050] flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-xl"
+			className={`fixed inset-0 z-[10050] flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-xl ${isModal ? 'place-auth-reset' : ''}`}
 			style={{ animation: 'alertBackdropFade 0.2s cubic-bezier(0.16, 1, 0.3, 1)' }}
 			onClick={() => {
 				if (!loading) onClose()
@@ -177,25 +177,31 @@ const ResetPasswordModal = ({ isOpen, onClose, initialEmail = '' }) => {
 					</div>
 
 					<div className="mt-6 pt-6 border-t border-white/[0.08] space-y-3 text-center text-xs text-slate-400">
-						<Link
-							to="/login"
-							onClick={onClose}
-							className="inline-flex items-center justify-center gap-2 font-semibold text-blue-400 hover:text-blue-300 transition-colors"
-						>
-							<HiArrowLeft className="w-4 h-4" />
-							Back to sign in
-						</Link>
+						{isModal ? (
+							<button type="button" onClick={onClose} className="inline-flex items-center justify-center gap-2 font-semibold text-blue-400 hover:text-blue-300 transition-colors">
+								<HiArrowLeft className="w-4 h-4" />
+								Back to sign in
+							</button>
+						) : (
+							<Link to="/login" onClick={onClose} className="inline-flex items-center justify-center gap-2 font-semibold text-blue-400 hover:text-blue-300 transition-colors">
+								<HiArrowLeft className="w-4 h-4" />
+								Back to sign in
+							</Link>
+						)}
 
 						<div>
 							Don’t have an account yet?{' '}
-							<Link
-								to="/signup"
-								onClick={onClose}
-								className="inline-flex items-center gap-1 font-semibold text-blue-400 hover:text-blue-300 underline underline-offset-4 transition-colors"
-							>
-								<HiUserAdd className="w-3.5 h-3.5" />
-								Create free account
-							</Link>
+							{isModal ? (
+								<button type="button" onClick={onSwitchToSignup} className="inline-flex items-center gap-1 font-semibold text-blue-400 hover:text-blue-300 underline underline-offset-4 transition-colors">
+									<HiUserAdd className="w-3.5 h-3.5" />
+									Create free account
+								</button>
+							) : (
+								<Link to="/signup" onClick={onClose} className="inline-flex items-center gap-1 font-semibold text-blue-400 hover:text-blue-300 underline underline-offset-4 transition-colors">
+									<HiUserAdd className="w-3.5 h-3.5" />
+									Create free account
+								</Link>
+							)}
 						</div>
 					</div>
 				</div>

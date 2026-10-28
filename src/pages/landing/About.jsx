@@ -14,6 +14,7 @@ import Navbar from '../../component/Navbar'
 import Footer from '../../component/Footer'
 import TeamSection from '../../component/TeamSection'
 import useHashScroll from '../../hooks/useHashScroll'
+import { openAuthModal } from '../../utils/authModal'
 
 const About = () => {
 	// Keeps direct links to individual team cards aligned below the sticky navbar.
@@ -187,13 +188,14 @@ const About = () => {
 							</p>
 						</div>
 						<div className="flex flex-col sm:flex-row gap-3 flex-shrink-0">
-							<Link
-								to="/signup"
+							<button
+								type="button"
+								onClick={() => openAuthModal('signup')}
 								className="inline-flex items-center justify-center gap-2 bg-white text-[#131b2e] font-['Space_Grotesk'] font-bold text-sm px-6 py-3 rounded-xl hover:bg-[#eaedff] transition-colors"
 							>
 								Get matched
 								<HiArrowRight className="w-4 h-4" />
-							</Link>
+							</button>
 							<Link
 								to="/"
 								className="inline-flex items-center justify-center gap-2 border border-white/25 text-white font-['Space_Grotesk'] font-bold text-sm px-6 py-3 rounded-xl hover:bg-white/10 transition-colors"

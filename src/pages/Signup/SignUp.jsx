@@ -1,6 +1,5 @@
 // Signup.jsx - Lead UI Designer Overhaul for Place4U
-import React, { useState, useRef } from 'react'
-import { motion } from 'framer-motion'
+import React, { useState } from 'react'
 import { supabase } from "../../utils/Supabase";
 import { 
   HiMail, 
@@ -18,7 +17,7 @@ import {
 import { FaGoogle } from 'react-icons/fa'
 import { Link, useNavigate } from 'react-router-dom'
 
-const Signup = () => {
+const Signup = ({ isModal = false, onSwitchToLogin }) => {
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [currentStep, setCurrentStep] = useState(1)
@@ -39,7 +38,6 @@ const Signup = () => {
   const [pendingConfirmation, setPendingConfirmation] = useState(null)
   const [resending, setResending] = useState(false)
   const [resendMessage, setResendMessage] = useState('')
-  const emailInputRef = useRef(null)
   const navigate = useNavigate()
 
   const handleChange = (e) => {
@@ -192,13 +190,13 @@ const Signup = () => {
   }
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex items-center justify-center p-4 sm:p-6 lg:p-8 bg-grid-subtle relative selection:bg-blue-600 selection:text-white">
+    <div className={isModal ? 'w-full text-slate-100 selection:bg-blue-600 selection:text-white' : 'min-h-screen bg-slate-950 text-slate-100 flex items-center justify-center p-4 sm:p-6 lg:p-8 bg-grid-subtle relative selection:bg-blue-600 selection:text-white'}>
       {/* Ambient background light */}
-      <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[700px] h-[450px] bg-blue-600/[0.06] blur-[150px] pointer-events-none -z-10" />
+      {!isModal && <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[700px] h-[450px] bg-blue-600/[0.06] blur-[150px] pointer-events-none -z-10" />}
 
-      <div className="max-w-5xl w-full bg-slate-900/90 backdrop-blur-2xl rounded-3xl border border-white/[0.1] shadow-2xl shadow-black/80 overflow-hidden relative z-10 grid grid-cols-1 lg:grid-cols-12">
+      <div className={isModal ? 'w-full grid grid-cols-1' : 'max-w-5xl w-full bg-slate-900/90 backdrop-blur-2xl rounded-3xl border border-white/[0.1] shadow-2xl shadow-black/80 overflow-hidden relative z-10 grid grid-cols-1 lg:grid-cols-12'}>
         {/* Left Editorial Visual Column */}
-        <div className="hidden lg:flex lg:col-span-5 relative flex-col justify-between p-8 bg-slate-950 border-r border-white/[0.08] overflow-hidden">
+        {!isModal && <div className="hidden lg:flex lg:col-span-5 relative flex-col justify-between p-8 bg-slate-950 border-r border-white/[0.08] overflow-hidden">
           <div
             className="absolute inset-0 bg-cover bg-center opacity-25 mix-blend-luminosity"
             style={{ backgroundImage: "url('/download.png')" }}
@@ -253,10 +251,10 @@ const Signup = () => {
               </Link>
             </div>
           </div>
-        </div>
+        </div>}
 
         {/* Right Form Column */}
-        <div className="lg:col-span-7 p-6 sm:p-10 flex flex-col justify-between">
+        <div className={isModal ? 'w-full max-w-2xl mx-auto p-5 sm:p-7 flex flex-col justify-between' : 'lg:col-span-7 p-6 sm:p-10 flex flex-col justify-between'}>
           {pendingConfirmation ? (
             /* AWAITING EMAIL CONFIRMATION */
             <div className="max-w-md mx-auto w-full text-center py-6">
@@ -302,12 +300,15 @@ const Signup = () => {
                   Use a different email address
                 </button>
 
-                <Link
-                  to="/login"
-                  className="block text-xs text-blue-400 hover:text-blue-300 underline underline-offset-4 pt-1"
-                >
-                  Already confirmed? Sign in
-                </Link>
+                {isModal ? (
+                  <button type="button" onClick={onSwitchToLogin} className="text-xs text-blue-400 hover:text-blue-300 underline underline-offset-4 pt-1">
+                    Already confirmed? Sign in
+                  </button>
+                ) : (
+                  <Link to="/login" className="block text-xs text-blue-400 hover:text-blue-300 underline underline-offset-4 pt-1">
+                    Already confirmed? Sign in
+                  </Link>
+                )}
               </div>
             </div>
           ) : (
@@ -319,7 +320,7 @@ const Signup = () => {
                   Create your profile
                 </h2>
                 <p className="text-slate-400 text-xs sm:text-sm mt-0.5">
-                  {currentStep === 1 ? 'Step 1: Personal credentials' : 'Step 2: Role & verification setup'}
+                  {currentStep === 1 ? 'Your details' : 'Choose how you’ll use Place4U'}
                 </p>
               </div>
 
@@ -356,7 +357,7 @@ const Signup = () => {
                 <div className="space-y-4">
                   <div>
                     <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1.5">
-                      Full Legal Name
+                      Full name
                     </label>
                     <div className="relative">
                       <HiUser className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500 w-4 h-4" />
@@ -375,12 +376,11 @@ const Signup = () => {
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
                       <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1.5">
-                        Email Address
+                        Email address
                       </label>
                       <div className="relative">
                         <HiMail className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500 w-4 h-4" />
                         <input
-                          ref={emailInputRef}
                           type="email"
                           name="email"
                           value={formData.email}
@@ -394,7 +394,7 @@ const Signup = () => {
 
                     <div>
                       <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1.5">
-                        Phone / WhatsApp
+                        Phone or WhatsApp
                       </label>
                       <div className="relative">
                         <HiPhone className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500 w-4 h-4" />
@@ -414,7 +414,7 @@ const Signup = () => {
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
                       <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1.5">
-                        Password (min 8 chars)
+                        Password (8 characters minimum)
                       </label>
                       <div className="relative">
                         <HiLockClosed className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500 w-4 h-4" />
@@ -468,13 +468,14 @@ const Signup = () => {
                 <div className="space-y-5">
                   <div>
                     <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-2">
-                      Select your primary role:
+                      I’m joining as a…
                     </label>
                     <div className="grid grid-cols-3 gap-3">
                       <button
                         type="button"
+                        aria-pressed={formData.userType === 'tenant'}
                         onClick={() => setFormData(prev => ({ ...prev, userType: 'tenant' }))}
-                        className={`p-3.5 rounded-2xl border text-center transition-all ${
+                        className={`auth-role-choice p-3.5 rounded-2xl border text-center transition-all ${
                           formData.userType === 'tenant'
                             ? 'bg-blue-600/15 border-blue-500 shadow-md shadow-blue-600/20'
                             : 'bg-white/[0.02] border-white/10 hover:border-white/20'
@@ -487,8 +488,9 @@ const Signup = () => {
 
                       <button
                         type="button"
+                        aria-pressed={formData.userType === 'landlord'}
                         onClick={() => setFormData(prev => ({ ...prev, userType: 'landlord' }))}
-                        className={`p-3.5 rounded-2xl border text-center transition-all ${
+                        className={`auth-role-choice p-3.5 rounded-2xl border text-center transition-all ${
                           formData.userType === 'landlord'
                             ? 'bg-emerald-600/15 border-emerald-500 shadow-md shadow-emerald-600/20'
                             : 'bg-white/[0.02] border-white/10 hover:border-white/20'
@@ -501,8 +503,9 @@ const Signup = () => {
 
                       <button
                         type="button"
+                        aria-pressed={formData.userType === 'agent'}
                         onClick={() => setFormData(prev => ({ ...prev, userType: 'agent' }))}
-                        className={`p-3.5 rounded-2xl border text-center transition-all ${
+                        className={`auth-role-choice p-3.5 rounded-2xl border text-center transition-all ${
                           formData.userType === 'agent'
                             ? 'bg-purple-600/15 border-purple-500 shadow-md shadow-purple-600/20'
                             : 'bg-white/[0.02] border-white/10 hover:border-white/20'
@@ -590,12 +593,12 @@ const Signup = () => {
                     <span>Registering profile...</span>
                   ) : currentStep === 1 ? (
                     <>
-                      <span>Continue to Role Setup</span>
+                      <span>Continue</span>
                       <HiArrowRight className="w-4 h-4" />
                     </>
                   ) : (
                     <>
-                      <span>Complete Registration</span>
+                      <span>Create profile</span>
                       <HiCheck className="w-4 h-4" />
                     </>
                   )}
@@ -609,7 +612,7 @@ const Signup = () => {
               above), so Google is offered as the single alternative. */}
           {currentStep === 1 && !pendingConfirmation && (
             <div className="pt-6 mt-6 border-t border-white/[0.06]">
-              <span className="text-[11px] uppercase tracking-wider text-slate-500 font-semibold text-center block mb-3">
+              <span className="text-[11px] text-slate-500 font-medium text-center block mb-3">
                 Or continue with
               </span>
               <button
@@ -634,9 +637,18 @@ const Signup = () => {
                 className="btn-tactile w-full py-2.5 px-3 rounded-xl bg-white/[0.03] hover:bg-white/[0.08] border border-white/[0.08] text-xs font-medium text-slate-300 flex items-center justify-center gap-2"
               >
                 <FaGoogle className="w-3.5 h-3.5 text-red-400" />
-                <span>Sign up with Google</span>
+                <span>Continue with Google</span>
               </button>
             </div>
+          )}
+
+          {isModal && (
+            <p className="pt-5 text-center text-xs text-slate-400">
+              Already have an account?{' '}
+              <button type="button" onClick={onSwitchToLogin} className="font-semibold text-blue-400 underline underline-offset-4 hover:text-blue-300">
+                Sign in
+              </button>
+            </p>
           )}
         </div>
       </div>

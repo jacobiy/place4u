@@ -20,13 +20,14 @@ import {
 	FaBan,
 	FaComments
 } from 'react-icons/fa'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link } from 'react-router-dom'
 import Navbar from '../../component/Navbar'
 import Footer from '../../component/Footer'
 import TeamSection from '../../component/TeamSection'
 import { getFeaturedProperties } from './db/queries'
 import { setJsonLd, buildItemListJsonLd } from '../../utils/seo'
 import useHashScroll from '../../hooks/useHashScroll'
+import { openAuthModal } from '../../utils/authModal'
 
 // Live listings are loaded from the database only; no sample fallback.
 
@@ -199,7 +200,6 @@ const FAQS = [
 ]
 
 const Landing = () => {
-	const navigate = useNavigate()
 	const [activeCategory, setActiveCategory] = useState('All Listings')
 	const [activeProvince, setActiveProvince] = useState('All SA')
 	const [searchQuery, setSearchQuery] = useState('')
@@ -365,7 +365,7 @@ const Landing = () => {
 
 						<div className="flex flex-wrap items-center gap-3 pt-1">
 							<button
-								onClick={() => navigate('/signup')}
+								onClick={() => openAuthModal('signup')}
 								className="inline-flex items-center justify-center gap-2 bg-[#006194] hover:bg-[#004b73] text-white font-semibold text-sm px-6 py-3.5 rounded-xl transition-colors duration-200 active:scale-[0.98] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#006194]"
 							>
 								Start an application
@@ -657,7 +657,7 @@ const Landing = () => {
 
 								<div className="pt-4 flex items-center gap-3 border-t border-[#d5e0df]">
 									<button
-										onClick={() => navigate('/signup')}
+										onClick={() => openAuthModal('signup')}
 										className="flex-1 bg-[#006194] hover:bg-[#004b73] text-white py-2.5 rounded-lg text-xs font-['Space_Grotesk'] font-bold transition-all text-center shadow-sm"
 									>
 										Start Application
@@ -785,7 +785,7 @@ const Landing = () => {
 						</div>
 
 						<button
-							onClick={() => navigate('/signup')}
+							onClick={() => openAuthModal('signup')}
 							className="w-fit bg-[#006194] hover:bg-[#004b73] text-white font-['Space_Grotesk'] font-bold text-sm px-6 py-3 rounded-xl shadow-md transition-all flex items-center gap-2"
 						>
 							<span>Start My Application</span>
@@ -805,7 +805,7 @@ const Landing = () => {
 						</div>
 
 						<button
-							onClick={() => navigate('/signup')}
+							onClick={() => openAuthModal('signup')}
 							className="w-fit bg-[#e7eef0] hover:bg-[#dce8e9] text-[#18262d] font-['Space_Grotesk'] font-bold text-sm px-6 py-3 rounded-xl border border-[#c3cecd]/40 transition-all flex items-center gap-2"
 						>
 							<span>List Your Property</span>
@@ -926,7 +926,7 @@ const Landing = () => {
 									<button
 										onClick={() => {
 											setSelectedProperty(null)
-											navigate('/signup')
+											openAuthModal('signup')
 										}}
 										className="flex-1 bg-[#006194] hover:bg-[#004b73] text-white py-3 rounded-xl font-['Space_Grotesk'] font-bold text-sm shadow-md"
 									>
