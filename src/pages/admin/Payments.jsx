@@ -20,7 +20,7 @@ import {
   getAgentsList,
   formatCurrency,
   formatDate,
-  openGmail,
+  openEmailClient,
   approveApplicationCompletion
 } from './db/queries'
 import { broadcastApplicationUpdate } from '../../services/applicationSync'
@@ -363,7 +363,7 @@ export default function PaymentsPage() {
       setRefundModalItem(null)
       await fetchData(true)
 
-      openGmail(
+      openEmailClient(
         target.tenantEmail,
         `Place4U Application Fee Refund Remittance [${refNumber}]`,
         `Hi ${target.tenantName},\n\nYour application fee refund of R${Number(refundAmount) || APPLICATION_FEE}.00 has been successfully processed.\n\n• Reference: ${refNumber}\n• Method: ${refundMethod}\n• Details: Full refund of tenant application assistance fee.\n\nThank you for using Place4U.\n\nPlace4U Administration`
@@ -416,7 +416,7 @@ export default function PaymentsPage() {
       await fetchData(true)
 
       if (action === 'pay') {
-        openGmail(
+        openEmailClient(
           req.agent?.email,
           `Place4U Payout Remittance [${row?.reference || ''}]`,
           `Hi ${req.agent?.full_name || 'Agent'},\n\nYour withdrawal of R${Number(req.amount).toLocaleString()}.00 has been paid to your registered account.\n\n• Reference: ${row?.reference}\n• Method: ${payoutMethod}\n\nThank you for partnering with Place4U.\n\nPlace4U Administration`
@@ -451,7 +451,7 @@ export default function PaymentsPage() {
       setIsCustomPayoutModalOpen(false)
       await fetchData(true)
 
-      openGmail(
+      openEmailClient(
         targetAgent.email,
         `Place4U 50% Fee Split Remittance [${row?.reference || ''}]`,
         `Hi ${targetAgent.full_name},\n\nYour 50% application fee share payout of R${Number(customPayoutAmount).toLocaleString()}.00 has been released to your account.\n\n• Reference: ${row?.reference}\n• Method: ${customPayoutMethod}\n• Description: ${customPayoutDescription}\n\nPlace4U Administration`
@@ -813,7 +813,7 @@ export default function PaymentsPage() {
                                 {isPaid ? (
                                   <button
                                     onClick={() =>
-                                      openGmail(
+                                      openEmailClient(
                                         item.agentEmail,
                                         `Place4U 50% Fee Split Remittance [${item.payoutRecord?.id || 'EFT'}]`,
                                         `Hi ${item.agentName},\n\nYour 50% application payment share payout of R${item.payoutRecord?.amount?.toLocaleString() || item.agentShareAmount}.00 for processing application ${item.id.slice(0, 8)} (${item.tenantName}) has been disbursed.\n\n• Reference: ${item.payoutRecord?.id}\n• Channel: ${item.payoutRecord?.method}\n\nPlace4U Administration`
@@ -956,7 +956,7 @@ export default function PaymentsPage() {
                                 <button
                                   type="button"
                                   onClick={() =>
-                                    openGmail(
+                                    openEmailClient(
                                       ag.agentEmail,
                                       `Place4U Payment Statement for ${ag.agentName}`,
                                       `Hi ${ag.agentName},\n\nAll 50% application payment share settlements on your Place4U account are currently up to date.\nTotal disbursed: R${ag.totalPaid.toLocaleString()}.00\n\nPlace4U Administration`
@@ -1167,7 +1167,7 @@ export default function PaymentsPage() {
                           {item.isRefunded ? (
                             <button
                               onClick={() =>
-                                openGmail(
+                                openEmailClient(
                                   item.tenantEmail,
                                   `Place4U Application Fee Refund Receipt: ${item.refundRecord?.id || 'REF'}`,
                                   `Hi ${item.tenantName},\n\nYour application fee refund of R${item.refundRecord?.amount || 100}.00 has been released.\nReference: ${item.refundRecord?.id}\nMethod: ${item.refundRecord?.method}\n\nPlace4U Admin`
@@ -1266,7 +1266,7 @@ export default function PaymentsPage() {
                       <td className="px-5 py-3.5 text-right">
                         <button
                           onClick={() =>
-                            openGmail(
+                            openEmailClient(
                               record.beneficiaryEmail,
                               `Place4U Payment Release Advice: ${record.id}`,
                               `Hi ${record.beneficiary},\n\nPayment release confirmation for reference ${record.id}:\nType: ${record.type}\nAmount: R${record.amount.toLocaleString()}\nMethod: ${record.method}\n\nPlace4U Administration`

@@ -8,7 +8,7 @@ import {
   getApplicationsNeedingReassignment,
   formatCurrency,
   formatDate,
-  openGmail
+  openEmailClient
 } from './db/queries'
 import {
   subscribeToApplicationUpdates,
@@ -186,7 +186,7 @@ export default function ApplicationsPage() {
         <div>
           <h2 className="text-lg font-bold text-slate-900">Tenant Applications Management</h2>
           <p className="text-xs text-slate-400 mt-0.5">
-            Process tenant search applications, assign licensed agents, and communicate via Gmail
+            Process tenant search applications, assign licensed agents, and communicate by email
           </p>
         </div>
         <button
@@ -509,14 +509,14 @@ export default function ApplicationsPage() {
                           {tenantEmail && (
                             <button
                               onClick={() =>
-                                openGmail(
+                                openEmailClient(
                                   tenantEmail,
                                   `Place4U Application Status [${app.id.slice(0, 8)}]`,
                                   `Hi ${tenantName},\n\nWe are processing your rental application for ${areas}.\nYour assigned agent: ${agentName}.\n\nBest regards,\nPlace4U Team`
                                 )
                               }
                               className="px-2 py-1 rounded bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-[11px] inline-flex items-center gap-1"
-                              title="Email Tenant via Gmail"
+                              title="Email tenant"
                             >
                               <Mail size={12} className="text-red-500" />
                               Tenant
@@ -526,14 +526,14 @@ export default function ApplicationsPage() {
                           {agentEmail && (
                             <button
                               onClick={() =>
-                                openGmail(
+                                openEmailClient(
                                   agentEmail,
                                   `Assigned Application: ${tenantName} [${app.id.slice(0, 8)}]`,
                                   `Hi ${agentName},\n\nPlease review application ${app.id}.\nTenant: ${tenantName} (${tenantPhone})\nRequirements: ${app.special_requirements || 'None'}\n\nPlace4U Admin`
                                 )
                               }
                               className="px-2 py-1 rounded bg-blue-50 hover:bg-blue-100 text-blue-700 font-semibold text-[11px] inline-flex items-center gap-1"
-                              title="Email Agent via Gmail"
+                              title="Email agent"
                             >
                               <Mail size={12} className="text-blue-600" />
                               Agent

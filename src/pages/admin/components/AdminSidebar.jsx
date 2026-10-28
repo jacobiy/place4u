@@ -17,7 +17,7 @@ import {
   Mail,
   GitBranch
 } from 'lucide-react'
-import { openGmail, getAdminAgentApplications, getAdminLandlordApplications, getPropertySubmissionCount } from '../db/queries'
+import { openEmailClient, getAdminAgentApplications, getAdminLandlordApplications, getPropertySubmissionCount } from '../db/queries'
 import { subscribeToApplicationUpdates } from '../../../services/applicationSync'
 import { listPipelineMatches } from '../../../services/matchWorkflowService'
 
@@ -123,7 +123,7 @@ export default function AdminSidebar({ isOpen, onClose }) {
     navigate('/')
   }
 
-  const email = user?.email || 'admin@place4u.co.za'
+  const email = user?.email || 'support@place4u.xyz'
   const initials = adminName
     .split(' ')
     .map((n) => n[0])
@@ -305,14 +305,14 @@ export default function AdminSidebar({ isOpen, onClose }) {
             Settings
           </NavLink>
 
-          {/* Quick Gmail Button */}
+          {/* Quick email compose */}
           <div className="pt-4 px-1">
             <button
-              onClick={() => openGmail('admin@place4u.co.za', 'Place4U Admin Update', 'Hello team,')}
-              className="w-full flex items-center justify-center gap-2 py-2 px-3 rounded-lg bg-red-600/20 hover:bg-red-600/30 text-red-300 border border-red-500/30 text-xs font-semibold transition-colors"
+              onClick={() => openEmailClient('support@place4u.xyz', 'Place4U Admin Update', 'Hello team,')}
+              className="w-full flex items-center justify-center gap-2 py-2 px-3 rounded-lg bg-blue-600/20 hover:bg-blue-600/30 text-blue-300 border border-blue-500/30 text-xs font-semibold transition-colors"
             >
-              <Mail size={14} className="text-red-400" />
-              Open Gmail Web
+              <Mail size={14} className="text-blue-400" />
+              Compose Email
             </button>
           </div>
         </nav>

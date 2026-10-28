@@ -9,7 +9,7 @@ import {
 } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { supabase } from '../../../utils/Supabase'
-import { openGmail } from '../db/queries'
+import { openEmailClient } from '../db/queries'
 import { subscribeToApplicationUpdates } from '../../../services/applicationSync'
 
 export default function AdminTopbar({
@@ -116,14 +116,14 @@ export default function AdminTopbar({
       </div>
 
       <div className="flex items-center gap-3">
-        {/* Quick Gmail Button */}
+        {/* Quick email compose */}
         <button
-          onClick={() => openGmail('admin@place4u.co.za', 'Place4U Operations', 'Hi team,')}
-          className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-red-50 hover:bg-red-100 text-red-600 border border-red-200/60 text-xs font-semibold transition-colors"
-          title="Compose Email via Gmail"
+          onClick={() => openEmailClient('support@place4u.xyz', 'Place4U Operations', 'Hi team,')}
+          className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-50 hover:bg-slate-100 text-slate-600 border border-slate-200/60 text-xs font-semibold transition-colors"
+          title="Compose email"
         >
-          <Mail size={13} className="text-red-500" />
-          Gmail
+          <Mail size={13} className="text-slate-500" />
+          Email
         </button>
 
         {/* Notifications Popover for Unassigned Applications */}

@@ -4,7 +4,7 @@ import {
   updateAgentApplicationStatus,
   scheduleAgentInterview,
   formatDate,
-  openGmail
+  openEmailClient
 } from './db/queries'
 import {
   ShieldCheck,
@@ -243,8 +243,8 @@ export default function AgentApplicationsPage() {
       }))
       showToast(`Interview scheduled for ${formatDate(interviewDate)} (${interviewSlot}).`)
 
-      // Open Gmail notification
-      openGmail(
+      // Open a prefilled email to the applicant
+      openEmailClient(
         selectedApp.email,
         'Place4U Agent Onboarding Interview Scheduled',
         `Dear ${selectedApp.full_name},\n\nThank you for submitting your leasing agent application and FICA documents.\n\nWe have scheduled your introductory onboarding interview for:\n\n• Date: ${formatDate(interviewDate)}\n• Time Slot: ${interviewSlot.toUpperCase()} (South Africa Standard Time)\n• Contact: Telephonic / WhatsApp (${selectedApp.phone})\n\nPlease reply if you need to reschedule.\n\nKind regards,\nPlace4U Administration`
@@ -686,14 +686,14 @@ export default function AgentApplicationsPage() {
                           <button
                             type="button"
                             onClick={() =>
-                              openGmail(
+                              openEmailClient(
                                 app.email,
                                 `Place4U Agent Application — ${app.full_name}`,
                                 `Hi ${app.full_name},\n\nRegarding your leasing agent application with Place4U:\n\n`
                               )
                             }
                             className="p-1.5 text-slate-500 hover:text-red-600 hover:bg-red-50 border border-slate-200 rounded-lg transition"
-                            title="Send email via Gmail"
+                            title="Send email"
                           >
                             <Mail size={13} />
                           </button>
@@ -1014,7 +1014,7 @@ export default function AgentApplicationsPage() {
                 <button
                   type="button"
                   onClick={() =>
-                    openGmail(
+                    openEmailClient(
                       selectedApp.email,
                       `FICA Document Clarification — Place4U Application`,
                       `Dear ${selectedApp.full_name},\n\nWe are reviewing your leasing agent application for Place4U.\n\nPlease provide clearer / updated copies of the following documents to complete verification:\n\n• Proof of residence (must be within last 3 months)\n• Certified ID / Passport\n\nKind regards,\nPlace4U Compliance Team`

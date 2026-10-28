@@ -5,10 +5,10 @@ import {
   Mail,
   FileCheck2
 } from 'lucide-react'
-import { openGmail } from './db/queries'
+import { openEmailClient } from './db/queries'
 
 export default function SettingsPage() {
-  const [adminEmail, setAdminEmail] = useState('admin@place4u.co.za')
+  const [adminEmail, setAdminEmail] = useState('support@place4u.xyz')
   const [appFee, setAppFee] = useState('100')
   const [notifyOnNewApp, setNotifyOnNewApp] = useState(true)
   const [toast, setToast] = useState(null)
@@ -32,7 +32,7 @@ export default function SettingsPage() {
         <div>
           <h2 className="text-base font-bold text-slate-900">Application & Dispatch Settings</h2>
           <p className="text-slate-400 text-xs mt-0.5">
-            Configure application processing rules and Gmail communication defaults
+            Configure application processing rules and email communication defaults
           </p>
         </div>
         <button
@@ -71,7 +71,7 @@ export default function SettingsPage() {
 
             <div>
               <label className="block text-slate-700 font-semibold mb-1">
-                Primary Operations Gmail
+                Operations Email
               </label>
               <input
                 type="email"
@@ -84,28 +84,29 @@ export default function SettingsPage() {
           </div>
         </div>
 
-        {/* Section 2: Gmail Communication Channels */}
+        {/* Section 2: Email Communication Channels */}
         <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-xs space-y-4">
           <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
-            <Mail size={16} className="text-red-500" />
-            Gmail Communications
+            <Mail size={16} className="text-blue-600" />
+            Email Communications
           </h3>
 
           <div className="space-y-3 text-xs">
-            <div className="p-3.5 rounded-lg border border-slate-100 bg-slate-50/70 flex items-center justify-between">
+            <div className="p-3.5 rounded-lg border border-slate-100 bg-slate-50/70 flex items-center justify-between gap-4">
               <div>
-                <p className="font-semibold text-slate-800">Launch Google Mail Directly</p>
+                <p className="font-semibold text-slate-800">Open your mail client</p>
                 <p className="text-slate-400 text-[11px] mt-0.5">
-                  Open Gmail web composer pre-filled with tenant applicant and agent metadata
+                  Composes a prefilled email — with tenant applicant and agent details — in whichever mail app the
+                  operator already uses. No webmail provider is assumed.
                 </p>
               </div>
               <button
                 type="button"
-                onClick={() => openGmail('admin@place4u.co.za', 'Place4U Admin Test', 'Testing Gmail integration.')}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-red-50 text-red-600 hover:bg-red-100 font-semibold text-xs transition-colors"
+                onClick={() => openEmailClient(adminEmail, 'Place4U Admin Test', 'Testing the email link.')}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-100 font-semibold text-xs transition-colors flex-shrink-0"
               >
                 <Mail size={13} />
-                Test Gmail Link
+                Test Email Link
               </button>
             </div>
           </div>

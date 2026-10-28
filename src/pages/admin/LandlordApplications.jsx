@@ -4,7 +4,7 @@ import {
   updateLandlordApplicationStatus,
   formatCurrency,
   formatDate,
-  openGmail
+  openEmailClient
 } from './db/queries'
 import {
   Building2,
@@ -625,14 +625,14 @@ export default function LandlordApplicationsPage() {
                           <button
                             type="button"
                             onClick={() =>
-                              openGmail(
+                              openEmailClient(
                                 app.email,
                                 `Place4U Property Ownership Verification — ${app.full_name}`,
                                 `Hi ${app.full_name},\n\nRegarding your property owner verification on Place4U:\n\n`
                               )
                             }
                             className="p-1.5 text-slate-500 hover:text-red-600 hover:bg-red-50 border border-slate-200 rounded-lg transition cursor-pointer"
-                            title="Send email via Gmail"
+                            title="Send email"
                           >
                             <Mail size={13} />
                           </button>
@@ -892,7 +892,7 @@ export default function LandlordApplicationsPage() {
                 <button
                   type="button"
                   onClick={() =>
-                    openGmail(
+                    openEmailClient(
                       selectedApp.email,
                       `Proof of Ownership Clarification — Place4U Landlord Verification`,
                       `Dear ${selectedApp.full_name},\n\nWe are reviewing your landlord verification application for Place4U.\n\nPlease provide updated/clearer copies of the following property documents:\n\n• Certified Deeds Office Title Deed or Conveyancer Transfer Letter\n• Municipal assessment rates and services bill (under 3 months old)\n\nKind regards,\nPlace4U Property Operations`

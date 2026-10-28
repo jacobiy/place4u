@@ -55,7 +55,7 @@ const metaForPath = (pathname) => {
   }
   if (pathname.startsWith('/admin/settings')) {
     return {
-      title: 'Settings & Gmail Dispatch',
+      title: 'Settings & Communications',
       subtitle: 'Configure application assistance fees and operations communication defaults'
     }
   }

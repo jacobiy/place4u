@@ -11,7 +11,7 @@ import {
   toggleUserVerification,
   formatDate,
   initialsFromName,
-  openGmail
+  openEmailClient
 } from './db/queries'
 
 const rolePill = (role) => {
@@ -247,14 +247,14 @@ export default function UsersPage() {
                         {u.email && (
                           <button
                             onClick={() =>
-                              openGmail(
+                              openEmailClient(
                                 u.email,
                                 `Place4U: Notice for ${u.full_name || 'User'}`,
                                 `Hi ${u.full_name || 'there'},\n\nRegarding your Place4U account:\n\nBest regards,\nPlace4U Admin`
                               )
                             }
                             className="inline-flex items-center gap-1 px-2 py-1 rounded bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-[11px] transition-colors"
-                            title="Email via Gmail"
+                            title="Email user"
                           >
                             <Mail size={12} className="text-red-500" />
                             Email
@@ -332,13 +332,13 @@ export default function UsersPage() {
               {selectedUser.email && (
                 <button
                   onClick={() => {
-                    openGmail(selectedUser.email, `Place4U Account Update`, `Hi ${selectedUser.full_name},\n\n`)
+                    openEmailClient(selectedUser.email, `Place4U Account Update`, `Hi ${selectedUser.full_name},\n\n`)
                     setSelectedUser(null)
                   }}
                   className="px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white font-semibold text-xs flex items-center gap-1.5"
                 >
                   <Mail size={13} />
-                  Email via Gmail
+                  Email
                 </button>
               )}
               <button

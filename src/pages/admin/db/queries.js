@@ -21,13 +21,32 @@ export const formatCurrency = (amount) => {
   return `R${Number(amount ?? 0).toLocaleString('en-ZA')}`
 }
 
-// Gmail Helper: opens Gmail with prefilled recipient, subject, and body
-export const openGmail = (email, subject = '', body = '') => {
-  if (!email || email === '—') return
-  const encSubject = encodeURIComponent(subject)
-  const encBody = encodeURIComponent(body)
-  const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(email)}&su=${encSubject}&body=${encBody}`
-  window.open(gmailUrl, '_blank')
+// Email Helper: opens the operator's own mail client with a prefilled recipient,
+// subject, and body.
+//
+// Deliberately provider-agnostic — a plain `mailto:` URL — so admin comms never
+// assume the operator has a particular webmail account. Do not reintroduce a
+// hard-coded webmail host (e.g. mail.google.com) here: the platform does not
+// promise, or depend on, any specific email provider.
+export const openEmailClient = (email, subject = '', body = '') => {
+  const address = String(email ?? '').trim()
+  if (!address || address === '—') return
+
+  const params = []
+  // encodeURIComponent keeps spaces as %20; URLSearchParams would emit '+' which
+  // some mail clients render literally inside the body.
+  if (subject) params.push(`subject=${encodeURIComponent(subject)}`)
+  if (body) params.push(`body=${encodeURIComponent(body)}`)
+  const mailtoUrl = params.length ? `mailto:${address}?${params.join('&')}` : `mailto:${address}`
+
+  // Clicking a synthesized anchor is more reliable than assigning
+  // window.location.href, which some browsers treat as a page navigation.
+  const link = document.createElement('a')
+  link.href = mailtoUrl
+  link.rel = 'noopener'
+  document.body.appendChild(link)
+  link.click()
+  link.remove()
 }
 
 // Real Dashboard Data fetched directly from Supabase tables

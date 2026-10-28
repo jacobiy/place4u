@@ -21,7 +21,7 @@ import {
   updateApplicationStatus,
   formatCurrency,
   formatDate,
-  openGmail
+  openEmailClient
 } from './db/queries'
 import {
   subscribeToApplicationUpdates,
@@ -173,7 +173,7 @@ export default function Dashboard() {
             </div>
             <h1 className="text-2xl font-bold tracking-tight text-white">Application & Placement Management</h1>
             <p className="text-slate-300 text-xs mt-1 max-w-2xl leading-relaxed">
-              Process incoming tenant applications, delegate files to licensed agents, and manage communication directly via Gmail.
+              Process incoming tenant applications, delegate files to licensed agents, and manage communication by email.
             </p>
           </div>
 
@@ -212,11 +212,11 @@ export default function Dashboard() {
             </Link>
 
             <button
-              onClick={() => openGmail('admin@place4u.co.za', 'Place4U Operations Notice', 'Team, please review the latest tenant applications.')}
+              onClick={() => openEmailClient('support@place4u.xyz', 'Place4U Operations Notice', 'Team, please review the latest tenant applications.')}
               className="inline-flex items-center gap-2 px-3.5 py-2 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold shadow-xs transition-colors"
             >
               <Mail size={13} />
-              Open Gmail
+              Compose Email
             </button>
           </div>
         </div>
@@ -422,7 +422,7 @@ export default function Dashboard() {
                 <th className="text-left px-4 py-3">Submitted</th>
                 <th className="text-left px-4 py-3">Assigned Agent</th>
                 <th className="text-left px-4 py-3">Status</th>
-                <th className="text-right px-5 py-3">Gmail Action</th>
+                <th className="text-right px-5 py-3">Contact</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
@@ -521,14 +521,14 @@ export default function Dashboard() {
                           {tenantEmail && (
                             <button
                               onClick={() =>
-                                openGmail(
+                                openEmailClient(
                                   tenantEmail,
                                   `Place4U Application Update [${app.id.slice(0, 8)}]`,
                                   `Hi ${tenantName},\n\nRegarding your rental search application in ${areas} (Budget: R${app.min_budget} - R${app.max_budget}):\n\nYour assigned agent is ${agentName}.\n\nBest regards,\nPlace4U Admin`
                                 )
                               }
                               className="inline-flex items-center gap-1 px-2.5 py-1 rounded bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-[11px] transition-colors"
-                              title="Email Tenant via Gmail"
+                              title="Email tenant"
                             >
                               <Mail size={12} className="text-red-500" />
                               Tenant
@@ -538,14 +538,14 @@ export default function Dashboard() {
                           {agentEmail && (
                             <button
                               onClick={() =>
-                                openGmail(
+                                openEmailClient(
                                   agentEmail,
                                   `Place4U Application Assignment: ${tenantName} [${app.id.slice(0, 8)}]`,
                                   `Hi ${agentName},\n\nYou have been assigned tenant application ${app.id}.\nApplicant: ${tenantName} (${tenantPhone})\nPreferred Areas: ${areas}\nBudget: R${app.min_budget} - R${app.max_budget}\nSpecial requirements: ${app.special_requirements || 'None'}\n\nPlease proceed with placement.\n\nPlace4U Admin`
                                 )
                               }
                               className="inline-flex items-center gap-1 px-2.5 py-1 rounded bg-blue-50 hover:bg-blue-100 text-blue-700 font-semibold text-[11px] transition-colors"
-                              title="Email Agent via Gmail"
+                              title="Email agent"
                             >
                               <Mail size={12} className="text-blue-600" />
                               Agent
@@ -601,9 +601,9 @@ export default function Dashboard() {
                         {assignedCount} Assigned {assignedCount === 1 ? 'App' : 'Apps'}
                       </span>
                       <button
-                        onClick={() => openGmail(ag.email, 'Place4U Agent Operations Check-in', `Hi ${ag.full_name},\n\nPlease provide an update on your assigned applications.`)}
+                        onClick={() => openEmailClient(ag.email, 'Place4U Agent Operations Check-in', `Hi ${ag.full_name},\n\nPlease provide an update on your assigned applications.`)}
                         className="p-1.5 rounded-lg bg-white border border-slate-200 text-slate-600 hover:text-red-600 hover:border-red-200 transition-colors"
-                        title="Email agent via Gmail"
+                        title="Email agent"
                       >
                         <Mail size={13} />
                       </button>
@@ -697,9 +697,9 @@ export default function Dashboard() {
                 </span>
               </div>
               <button
-                onClick={() => openGmail(u.email, 'Place4U Account Notice', `Hi ${u.full_name},\n\nRegarding your Place4U account:`)}
+                onClick={() => openEmailClient(u.email, 'Place4U Account Notice', `Hi ${u.full_name},\n\nRegarding your Place4U account:`)}
                 className="p-1.5 rounded-lg bg-white border border-slate-200 text-slate-600 hover:text-red-600 transition-colors flex-shrink-0"
-                title="Email via Gmail"
+                title="Email user"
               >
                 <Mail size={13} />
               </button>

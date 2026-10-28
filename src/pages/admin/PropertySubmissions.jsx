@@ -5,7 +5,7 @@ import {
   reviewPropertySubmission,
   formatCurrency,
   formatDate,
-  openGmail
+  openEmailClient
 } from './db/queries'
 import {
   Building2,
@@ -797,7 +797,7 @@ function SubmissionDossier({ sub, isSubmitting, onClose, onApprove, onReject, on
                 <button
                   type="button"
                   onClick={() =>
-                    openGmail(
+                    openEmailClient(
                       landlord.email,
                       `Place4U Listing Review — ${sub.address || 'Your property'}`,
                       `Hi ${landlord.full_name || 'there'},\n\nWe are reviewing the listing you submitted on Place4U:\n\n${
