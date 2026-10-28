@@ -143,8 +143,10 @@ own portal.
 
 ### 5.4 Admin
 - Central operations console: applications, users, properties, submissions,
-  payments, leases, messages, notifications, reports, analytics, compliance,
+  payments, leases, notifications, reports, analytics, compliance,
   and settings.
+- Communication is out-of-band: email (`mailto:` — no specific webmail provider
+  is assumed) or WhatsApp. The platform deliberately ships **no in-app inbox**.
 - **Assigns tenant applications to agents**, monitors the **needs-reassignment
   queue** when an agent rejects a job, and re-assigns.
 - Reviews and approves **agent applications**, **landlord applications**, and

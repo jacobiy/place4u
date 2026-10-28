@@ -169,24 +169,6 @@
   transform: translateY(1px);
 }
 
-/* Messaging Hub UI styling */
-.chat-bubble-sent {
-  border-radius: 16px 4px 16px 16px !important;
-}
-.chat-bubble-received {
-  border-radius: 4px 16px 16px 16px !important;
-}
-.chat-sidebar-active {
-  border-left: 4px solid #2563eb;
-  background-color: rgba(37, 99, 235, 0.12);
-}
-.custom-shadow-l2 {
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-}
-.custom-shadow-l3 {
-  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.35);
-}
-
 /* Design System Typography Utilities (maintained for backward compatibility) */
 .font-body-sm, .font-headline-lg, .font-body-md, .font-label-xs, .font-headline-lg-mobile, .font-headline-xl, .font-label-md {
   font-family: var(--font-sans) !important;
