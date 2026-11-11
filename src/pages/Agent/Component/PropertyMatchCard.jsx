@@ -10,7 +10,7 @@ import {
   Eye,
   RotateCcw,
   Info,
-  Sparkles,
+  MessageSquare,
   CheckCircle2
 } from 'lucide-react';
 import { describeProperty } from '../../../utils/propertyLabel';
@@ -197,7 +197,7 @@ export default function PropertyMatchCard({
         {variant === 'draft' && onNoteChange && (
           <div className="apm-note-field">
             <label htmlFor={`note-${p.id}`}>
-              <Sparkles size={12} /> Why this is a good fit (optional)
+              <MessageSquare size={12} /> Why this is a good fit (optional)
             </label>
             <textarea
               id={`note-${p.id}`}

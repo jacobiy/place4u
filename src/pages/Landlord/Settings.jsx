@@ -14,23 +14,15 @@ import Loading from '../../component/loading';
 const EYEBROW = { fontSize: "0.68rem", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: T.textMuted, margin: 0 };
 
 const SettingsSection = ({ title, subtitle, icon: Icon, accent = T.accent, children }) => (
-  <div style={{
-    background: "#ffffff", border: `1px solid ${T.border}`, borderRadius: T.radiusLg,
-    overflow: "hidden", marginBottom: "1.5rem", boxShadow: T.shadowSm
-  }}>
-    <div style={{
-      padding: "1rem 1.5rem", borderBottom: `1px solid ${T.border}`, display: "flex",
-      alignItems: "center", gap: "0.75rem", background: "linear-gradient(135deg, #ffffff 0%, #f3f9ff 100%)"
-    }}>
-      <div style={{ width: 38, height: 38, borderRadius: "0.75rem", background: `${accent}1a`, border: `1px solid ${accent}33`, display: "flex", alignItems: "center", justifyContent: "center" }}>
-        <Icon size={18} color={accent} />
-      </div>
+  <div style={{ borderTop: `1px solid ${T.border}`, paddingTop: "1.1rem", marginBottom: "1.5rem" }}>
+    <div style={{ display: "flex", alignItems: "center", gap: "0.7rem", marginBottom: "0.9rem" }}>
+      <Icon size={18} color={accent} style={{ flexShrink: 0 }} />
       <div>
         <h2 style={{ fontFamily: SERIF, fontSize: "1.15rem", color: T.textPrimary, letterSpacing: "-0.01em" }}>{title}</h2>
         {subtitle && <p style={{ fontSize: "0.75rem", color: T.textMuted, marginTop: 1 }}>{subtitle}</p>}
       </div>
     </div>
-    <div style={{ padding: "1.5rem" }}>
+    <div style={{ borderTop: `1px solid ${T.border}` }}>
       {children}
     </div>
   </div>
@@ -59,15 +51,12 @@ const Toggle = ({ checked, onChange, disabled }) => (
 const ToggleRow = ({ icon: Icon, title, description, checked, onChange }) => (
   <div style={{
     display: "flex", justifyContent: "space-between", alignItems: "center", gap: "1rem",
-    background: T.surfaceAlt, border: `1px solid ${T.border}`, borderRadius: "0.875rem",
-    padding: "0.95rem 1.1rem", flexWrap: "wrap"
+    borderBottom: `1px solid ${T.border}`, padding: "0.85rem 0", flexWrap: "wrap"
   }}>
-    <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-      <div style={{ width: 38, height: 38, borderRadius: 12, background: "#ffffff", border: `1px solid ${T.border}`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-        <Icon size={17} color={T.accent} />
-      </div>
-      <div>
-        <p style={{ fontSize: "0.88rem", fontWeight: 700, color: T.textPrimary }}>{title}</p>
+    <div style={{ display: "flex", alignItems: "flex-start", gap: 10, minWidth: 0 }}>
+      <Icon size={16} color={T.accent} style={{ marginTop: 3, flexShrink: 0 }} />
+      <div style={{ minWidth: 0 }}>
+        <p style={{ fontSize: "0.88rem", fontWeight: 650, color: T.textPrimary }}>{title}</p>
         <p style={{ fontSize: "0.74rem", color: T.textMuted, marginTop: 2 }}>{description}</p>
       </div>
     </div>
@@ -241,40 +230,35 @@ export const Settings = () => {
         </div>
       )}
 
-      {/* ACCOUNT OVERVIEW HERO */}
+      {/* ACCOUNT OVERVIEW */}
       <div className="ll-anim-up" style={{
-        background: "linear-gradient(135deg, #ffffff 0%, #f3f9ff 60%, #eef6ff 100%)",
-        border: `1px solid ${T.border}`, borderRadius: T.radiusXl, padding: "clamp(1.4rem, 3.5vw, 2rem)",
-        marginBottom: "1.75rem", position: "relative", overflow: "hidden", boxShadow: T.shadow
+        display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "1.5rem", flexWrap: "wrap",
+        borderBottom: `1px solid ${T.border}`, paddingBottom: "1.4rem", marginBottom: "1.75rem"
       }}>
-        <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 5, background: "linear-gradient(90deg,#7dd3fc,#0ea5e9,#2563eb)" }} />
-        <div aria-hidden style={{ position: "absolute", top: -60, right: -50, width: 240, height: 240, borderRadius: "9999px", background: "radial-gradient(circle, rgba(56,189,248,0.16) 0%, transparent 70%)" }} />
-
-        <div style={{ position: "relative", zIndex: 1 }}>
-          <h1 style={{ fontFamily: SERIF, fontSize: "clamp(1.6rem, 4vw, 2.3rem)", color: T.textPrimary, letterSpacing: "-0.02em", lineHeight: 1.1, marginBottom: 6 }}>
-            Account & preferences
+        <div style={{ flex: "1 1 380px", minWidth: 0 }}>
+          <p style={{ ...EYEBROW, marginBottom: 6 }}>Landlord account</p>
+          <h1 style={{ fontFamily: SERIF, fontSize: "clamp(1.6rem, 4vw, 2.3rem)", color: T.textPrimary, letterSpacing: "-0.02em", lineHeight: 1.1 }}>
+            Account &amp; preferences
           </h1>
-          <p style={{ color: T.textSecondary, fontSize: "0.9rem", maxWidth: 640, lineHeight: 1.6 }}>
+          <p style={{ color: T.textSecondary, fontSize: "0.9rem", maxWidth: 640, lineHeight: 1.6, marginTop: 8 }}>
             Manage how your portfolio account is secured and how Place4U keeps you informed about leases, payments and maintenance.
           </p>
+        </div>
 
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: "1rem", marginTop: "1.5rem" }}>
-            {[
-              { icon: Shield, label: "Account", value: (profile?.account_status || "active").replace(/^\w/, (c) => c.toUpperCase()), color: T.emerald },
-              { icon: KeyRound, label: "Landlord code", value: profile?.landlord_code || "—", color: T.accent },
-              { icon: ShieldCheck, label: "Two-factor", value: twoFA ? "Enabled" : "Disabled", color: twoFA ? T.emerald : T.amber },
-            ].map(({ icon: Icon, label, value, color }) => (
-              <div key={label} style={{ background: "#ffffff", border: `1px solid ${T.border}`, borderRadius: "1rem", padding: "1rem 1.1rem", display: "flex", alignItems: "center", gap: 12, boxShadow: T.shadowSm }}>
-                <div style={{ width: 40, height: 40, borderRadius: 12, background: `${color}1a`, border: `1px solid ${color}33`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                  <Icon size={18} color={color} />
-                </div>
-                <div style={{ minWidth: 0 }}>
-                  <p style={EYEBROW}>{label}</p>
-                  <p style={{ fontSize: "0.95rem", fontWeight: 700, color: T.textPrimary, fontFamily: SERIF, marginTop: 2, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{value}</p>
-                </div>
+        <div style={{ display: "flex", gap: "1.75rem", flexWrap: "wrap", paddingTop: 4 }}>
+          {[
+            { icon: Shield, label: "Account", value: (profile?.account_status || "active").replace(/^\w/, (c) => c.toUpperCase()), color: T.emerald },
+            { icon: KeyRound, label: "Landlord code", value: profile?.landlord_code || "—", color: T.accent },
+            { icon: ShieldCheck, label: "Two-factor", value: twoFA ? "Enabled" : "Disabled", color: twoFA ? T.emerald : T.amber },
+          ].map(({ icon: Icon, label, value, color }) => (
+            <div key={label} style={{ display: "flex", alignItems: "flex-start", gap: 9, minWidth: 0 }}>
+              <Icon size={15} color={color} style={{ marginTop: 3, flexShrink: 0 }} />
+              <div style={{ minWidth: 0 }}>
+                <p style={EYEBROW}>{label}</p>
+                <p style={{ fontSize: "0.9rem", fontWeight: 650, color: T.textPrimary, marginTop: 3, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{value}</p>
               </div>
-            ))}
-          </div>
+            </div>
+          ))}
         </div>
       </div>
 
@@ -282,14 +266,12 @@ export const Settings = () => {
       <SettingsSection title="Security" subtitle="Passwords and account protection" icon={Lock}>
         <div style={{
           display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "1rem",
-          background: T.surfaceAlt, border: `1px solid ${T.border}`, borderRadius: "0.875rem", padding: "0.95rem 1.1rem"
+          borderBottom: `1px solid ${T.border}`, padding: "0.85rem 0"
         }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-            <div style={{ width: 38, height: 38, borderRadius: 12, background: "#ffffff", border: `1px solid ${T.border}`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-              <KeyRound size={17} color={T.accent} />
-            </div>
-            <div>
-              <p style={{ fontSize: "0.88rem", fontWeight: 700, color: T.textPrimary }}>Account password</p>
+          <div style={{ display: "flex", alignItems: "flex-start", gap: 10, minWidth: 0 }}>
+            <KeyRound size={16} color={T.accent} style={{ marginTop: 3, flexShrink: 0 }} />
+            <div style={{ minWidth: 0 }}>
+              <p style={{ fontSize: "0.88rem", fontWeight: 650, color: T.textPrimary }}>Account password</p>
               <p style={{ fontSize: "0.74rem", color: T.textMuted, marginTop: 2 }}>Update your password regularly to keep your account secure.</p>
             </div>
           </div>
@@ -298,37 +280,32 @@ export const Settings = () => {
           </SecondaryBtn>
         </div>
 
-        <div style={{ marginTop: "1rem" }}>
-          <div style={{
-            display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "1rem",
-            background: T.surfaceAlt, border: `1px solid ${twoFA ? T.emeraldBorder : T.border}`, borderRadius: "0.875rem", padding: "0.95rem 1.1rem"
-          }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-              <div style={{ width: 38, height: 38, borderRadius: 12, background: "#ffffff", border: `1px solid ${T.border}`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                <ShieldCheck size={17} color={twoFA ? T.emerald : T.amber} />
-              </div>
-              <div>
-                <p style={{ fontSize: "0.88rem", fontWeight: 700, color: T.textPrimary }}>Two-factor authentication</p>
-                <p style={{ fontSize: "0.74rem", color: T.textMuted, marginTop: 2 }}>Add an extra layer of security to your account.</p>
-              </div>
+        <div style={{
+          display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "1rem",
+          borderBottom: `1px solid ${T.border}`, padding: "0.85rem 0"
+        }}>
+          <div style={{ display: "flex", alignItems: "flex-start", gap: 10, minWidth: 0 }}>
+            <ShieldCheck size={16} color={twoFA ? T.emerald : T.amber} style={{ marginTop: 3, flexShrink: 0 }} />
+            <div style={{ minWidth: 0 }}>
+              <p style={{ fontSize: "0.88rem", fontWeight: 650, color: T.textPrimary }}>Two-factor authentication</p>
+              <p style={{ fontSize: "0.74rem", color: T.textMuted, marginTop: 2 }}>Add an extra layer of security to your account.</p>
             </div>
-            <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-              <span style={{
-                fontSize: "0.68rem", fontWeight: 800, letterSpacing: "0.04em", padding: "4px 10px", borderRadius: 9999,
-                background: twoFA ? T.emeraldSoft : T.amberSoft, color: twoFA ? T.emerald : T.amber,
-                border: `1px solid ${twoFA ? T.emeraldBorder : T.amberBorder}`
-              }}>
-                {twoFA ? "ACTIVE" : "OFF"}
-              </span>
-              <Toggle checked={twoFA} onChange={handleTwoFactorToggle} disabled={isSaving} />
-            </div>
+          </div>
+          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+            <span style={{
+              fontSize: "0.68rem", fontWeight: 700, letterSpacing: "0.04em",
+              color: twoFA ? T.emerald : T.amber
+            }}>
+              {twoFA ? "Active" : "Off"}
+            </span>
+            <Toggle checked={twoFA} onChange={handleTwoFactorToggle} disabled={isSaving} />
           </div>
         </div>
       </SettingsSection>
 
       {/* Notification Preferences */}
       <SettingsSection title="Notifications" subtitle="Choose how we keep you updated" icon={Bell} accent={T.purple}>
-        <div style={{ display: "flex", flexDirection: "column", gap: "0.85rem" }}>
+        <div>
           <ToggleRow
             icon={Mail}
             title="Email notifications"

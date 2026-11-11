@@ -408,3 +408,61 @@
   .agent-tier-progress-box { width: 100%; max-width: 100%; }
   .agent-section-body { padding: 18px; }
 }
+
+/* Earnings should read like a ledger with supporting analysis, not a card wall. */
+.agent-main-content.is-workspace .agent-wallet-container { background: #fff; color: #111827; padding: 28px 36px 56px; }
+.agent-main-content.is-workspace .agent-wallet-header { border-bottom-color: #e2e8f0; }
+.agent-main-content.is-workspace .agent-wallet-title { color: #111827; font-family: inherit; font-size: 1.75rem; font-weight: 650; }
+.agent-main-content.is-workspace .agent-wallet-subtitle { color: #475569; }
+.agent-main-content.is-workspace .agent-wallet-policy { margin: 0; padding: 0 0 16px; color: #475569; border-bottom: 1px solid #e2e8f0; font-size: 0.86rem; line-height: 1.5; }
+.agent-main-content.is-workspace .agent-wallet-secondary-action { background: #fff !important; color: #334155 !important; border-color: #cbd5e1 !important; border-radius: 4px !important; box-shadow: none !important; }
+.agent-main-content.is-workspace .agent-wallet-secondary-action:hover { background: #f8fafc !important; }
+.agent-main-content.is-workspace .agent-wallet-hero-grid {
+  grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0; border-top: 1px solid #e2e8f0; border-bottom: 1px solid #e2e8f0;
+}
+.agent-main-content.is-workspace .agent-wallet-card,
+.agent-main-content.is-workspace .agent-wallet-balance-card {
+  min-height: 0; padding: 16px 18px 16px 0; margin-right: 18px; background: transparent; border: 0;
+  border-radius: 0; box-shadow: none; transform: none; overflow: visible;
+}
+.agent-main-content.is-workspace .agent-wallet-card:not(:first-child) { border-left: 1px solid #e2e8f0; padding-left: 18px; }
+.agent-main-content.is-workspace .agent-wallet-card:hover { transform: none; border-color: #e2e8f0; }
+.agent-main-content.is-workspace .agent-wallet-card-header { display: block; margin-bottom: 8px; }
+.agent-main-content.is-workspace .agent-wallet-icon-box { display: none; }
+.agent-main-content.is-workspace .agent-wallet-pill { padding: 0; border-radius: 0; background: transparent !important; color: #64748b !important; font-size: 0.68rem; font-weight: 600; }
+.agent-main-content.is-workspace .agent-wallet-card-label { color: #475569; letter-spacing: 0.04em; }
+.agent-main-content.is-workspace .agent-wallet-card-value { color: #111827; font-family: inherit; font-size: 1.6rem; font-weight: 650; }
+.agent-main-content.is-workspace .agent-wallet-card-sub { color: #64748b; line-height: 1.45; }
+.agent-main-content.is-workspace .agent-tier-card {
+  background: transparent; border: 0; border-top: 1px solid #e2e8f0; border-bottom: 1px solid #e2e8f0;
+  border-radius: 0; padding: 18px 0; box-shadow: none;
+}
+.agent-main-content.is-workspace .agent-tier-badge { width: 38px; height: 38px; border-radius: 50%; background: #eff6ff; color: #1d4ed8; box-shadow: none; }
+.agent-main-content.is-workspace .agent-tier-title { color: #111827; font-family: inherit; }
+.agent-main-content.is-workspace .agent-tier-desc,
+.agent-main-content.is-workspace .agent-tier-progress-labels { color: #475569; }
+.agent-main-content.is-workspace .agent-tier-progress-bar-bg { background: #e2e8f0; }
+.agent-main-content.is-workspace .agent-wallet-charts-grid { gap: 28px; }
+.agent-main-content.is-workspace .agent-section-card { background: transparent; border: 0; border-radius: 0; box-shadow: none; overflow: visible; }
+.agent-main-content.is-workspace .agent-section-header { background: transparent; padding: 0 0 12px; border-bottom-color: #e2e8f0; }
+.agent-main-content.is-workspace .agent-section-title { color: #111827; font-family: inherit; }
+.agent-main-content.is-workspace .agent-section-body { padding: 16px 0; }
+.agent-main-content.is-workspace .agent-ledger-table-wrap { border: 0; border-radius: 0; border-top: 1px solid #e2e8f0; }
+.agent-main-content.is-workspace .agent-ledger-table thead { background: #f8fafc; border-bottom-color: #e2e8f0; }
+.agent-main-content.is-workspace .agent-ledger-table td { color: #334155; border-bottom-color: #e2e8f0; }
+.agent-main-content.is-workspace .agent-ledger-table tbody tr:hover { background: #f8fafc; }
+.agent-main-content.is-workspace .agent-banking-card { background: transparent; border: 0; border-top: 1px solid #e2e8f0; border-radius: 0; padding: 16px 0; }
+.agent-main-content.is-workspace .agent-wallet-title svg { width: 22px; height: 22px; }
+
+@media (max-width: 900px) {
+  .agent-main-content.is-workspace .agent-wallet-hero-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .agent-main-content.is-workspace .agent-wallet-card:nth-child(3) { border-left: 0; padding-left: 0; }
+  .agent-main-content.is-workspace .agent-wallet-card:nth-child(n + 3) { border-top: 1px solid #e2e8f0; }
+}
+@media (max-width: 640px) {
+  .agent-main-content.is-workspace .agent-wallet-container { padding: 22px 18px 44px; }
+  .agent-main-content.is-workspace .agent-wallet-hero-grid { grid-template-columns: 1fr; }
+  .agent-main-content.is-workspace .agent-wallet-card,
+  .agent-main-content.is-workspace .agent-wallet-card:not(:first-child) { border-left: 0; border-top: 1px solid #e2e8f0; padding: 14px 0; margin: 0; }
+  .agent-main-content.is-workspace .agent-wallet-card:first-child { border-top: 0; }
+}

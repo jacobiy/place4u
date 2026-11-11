@@ -10,7 +10,6 @@ import {
   ArrowUpRight,
   ShieldCheck,
   Clock,
-  Sparkles,
   CheckCircle2,
   ChevronRight,
   Wrench,
@@ -112,20 +111,19 @@ function buildPipelineSteps(match) {
 /*  Primary  sky-600 / blue-600   Soft  sky-50 / sky-100               */
 /*  Ink      slate-900            Muted slate-500                      */
 /* ------------------------------------------------------------------ */
-const CARD = 'bg-white border border-sky-100 shadow-[0_12px_40px_-18px_rgba(2,132,199,0.22)]';
 const BTN_PRIMARY =
-  'bg-sky-600 hover:bg-sky-700 text-white shadow-[0_8px_20px_-8px_rgba(2,132,199,0.55)] transition-colors duration-200 cursor-pointer';
+  'bg-sky-700 hover:bg-sky-800 text-white transition-colors duration-200 cursor-pointer';
 const BTN_OUTLINE =
   'border border-sky-200 bg-white hover:bg-sky-50 hover:border-sky-300 text-slate-700 transition-colors duration-200 cursor-pointer';
 
 const Eyebrow = ({ children, className = '' }) => (
-  <p className={`text-[10px] font-semibold uppercase tracking-[0.22em] text-slate-400 ${className}`}>{children}</p>
+  <p className={`text-xs font-semibold tracking-wide text-slate-500 ${className}`}>{children}</p>
 );
 
 const SectionTitle = ({ eyebrow, title, subtitle }) => (
   <div>
     {eyebrow && <Eyebrow className="!text-sky-600 mb-2">{eyebrow}</Eyebrow>}
-    <h2 className="font-serif text-2xl sm:text-[32px] leading-tight tracking-tight text-slate-900">{title}</h2>
+    <h2 className="font-sans text-xl sm:text-2xl font-semibold leading-tight tracking-tight text-slate-900">{title}</h2>
     {subtitle && <p className="text-sm text-slate-500 mt-1.5">{subtitle}</p>}
   </div>
 );
@@ -273,13 +271,13 @@ const ReceiptVoucherModal = ({ receipt, onClose }) => {
         </div>
 
         <div className="px-7 pb-6 space-y-6 overflow-y-auto">
-          <div className="text-center py-6 rounded-2xl bg-gradient-to-b from-sky-50 to-white border border-sky-100">
+          <div className="text-center py-6 border-y border-slate-200">
             <Eyebrow>Application vetting fee</Eyebrow>
             <div className="font-serif text-5xl text-slate-900 mt-2 tracking-tight">
               <span className="text-2xl text-slate-400 mr-1">R</span>
               {Number(receipt.amount || 100).toLocaleString('en-ZA', { minimumFractionDigits: 2 })}
             </div>
-            <div className="inline-flex items-center gap-1.5 mt-4 px-3 py-1 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-700 text-[11px] font-semibold">
+            <div className="inline-flex items-center gap-1.5 mt-4 text-emerald-700 text-[11px] font-semibold">
               <CheckCircle2 size={12} />
               Paid &amp; settled
             </div>
@@ -730,7 +728,7 @@ export default function DashboardView({
   ];
 
   return (
-    <div className="max-w-[1360px] mx-auto space-y-10 sm:space-y-14 pb-20 text-slate-900">
+    <div className="max-w-[1320px] mx-auto space-y-8 sm:space-y-10 pb-16 text-slate-900">
       <AlertToast toast={toast} onClose={() => setToast(null)} />
 
       {activeReceiptModal && (
@@ -738,34 +736,16 @@ export default function DashboardView({
       )}
 
       {/* ============================ HERO ============================ */}
-      <section className="relative overflow-hidden rounded-[32px] border border-sky-100 px-6 py-10 sm:px-12 sm:py-14 bg-white/80 backdrop-blur-md shadow-[0_24px_60px_-28px_rgba(2,132,199,0.35)]">
-        <div aria-hidden className="absolute -top-32 -right-24 w-[420px] h-[420px] rounded-full bg-sky-300/30 blur-3xl" />
-        <div aria-hidden className="absolute -bottom-40 left-1/3 w-[360px] h-[360px] rounded-full bg-blue-200/30 blur-3xl" />
-
-        <div className="relative z-10 flex flex-col lg:flex-row lg:items-end lg:justify-between gap-10">
+      <section className="px-0 py-2 sm:py-3">
+        <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-8">
           <div className="max-w-2xl">
-            <div className="flex items-center gap-3 mb-6">
-              {profile?.is_verified ? (
-                <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-50 border border-emerald-200 text-[11px] font-semibold tracking-wide text-emerald-700 shadow-sm">
-                  <ShieldCheck size={13} />
-                  Verified resident
-                </span>
-              ) : (
-                <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white border border-sky-200 text-[11px] font-semibold tracking-wide text-sky-700 shadow-sm">
-                  <ShieldCheck size={13} />
-                  Verification pending
-                </span>
-              )}
-              <span className="text-[11px] text-slate-500 tracking-wide hidden sm:inline">{todayLabel}</span>
-            </div>
+            <p className="text-[11px] font-medium tracking-wide text-slate-500 mb-3">{todayLabel}</p>
 
-            <h1 className="font-serif text-4xl sm:text-5xl lg:text-[64px] leading-[1.05] tracking-tight text-slate-900">
-              {timeGreeting},
-              <br />
-              <span className="italic text-sky-600">{firstName}</span>
+            <h1 className="font-sans text-3xl sm:text-4xl lg:text-[44px] font-semibold leading-tight tracking-tight text-slate-900">
+              {timeGreeting}, <span className="text-sky-700">{firstName}</span>
             </h1>
 
-            <p className="mt-6 text-sm sm:text-base text-slate-600 leading-relaxed max-w-lg">
+            <p className="mt-4 text-sm sm:text-base text-slate-600 leading-relaxed max-w-xl">
               Track applications and verified documents, keep your receipts at hand, manage your tenancy, and discover
               vetted homes across South Africa.
             </p>
@@ -775,16 +755,16 @@ export default function DashboardView({
             <button
               type="button"
               onClick={onOpenCustomApplication}
-              className={`group h-12 px-6 rounded-full font-bold text-sm flex items-center gap-2.5 ${BTN_PRIMARY}`}
+              className={`group h-11 px-5 rounded-lg font-semibold text-sm flex items-center gap-2.5 ${BTN_PRIMARY}`}
             >
-              <Sparkles size={16} />
+              <FileText size={16} />
               Submit application
               <ArrowUpRight size={16} className="transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
             </button>
             <button
               type="button"
               onClick={scrollToListings}
-              className={`h-12 px-6 rounded-full font-semibold text-sm flex items-center gap-2 ${BTN_OUTLINE}`}
+              className={`h-11 px-5 rounded-lg font-medium text-sm flex items-center gap-2 ${BTN_OUTLINE}`}
             >
               <Search size={15} className="text-sky-600" />
               Browse properties
@@ -797,17 +777,17 @@ export default function DashboardView({
       {matchBanner && (
         <section
           onClick={go('matches')}
-          className="group cursor-pointer rounded-[24px] border border-sky-200 hover:border-sky-400 bg-gradient-to-r from-sky-50 to-white px-6 py-5 transition-colors duration-300 shadow-[0_12px_40px_-22px_rgba(2,132,199,0.4)] flex flex-col sm:flex-row sm:items-center justify-between gap-5"
+          className="group cursor-pointer border-l-[3px] border-sky-700 bg-white/70 px-5 py-4 transition-colors duration-200 hover:bg-white flex flex-col sm:flex-row sm:items-center justify-between gap-5"
         >
           <div className="flex items-center gap-5 min-w-0">
-            <div className="w-12 h-12 rounded-full bg-sky-600 flex items-center justify-center text-white shrink-0 shadow-[0_8px_20px_-8px_rgba(2,132,199,0.7)]">
-              <Sparkles size={20} />
+            <div className="w-11 h-11 rounded-xl bg-sky-50 border border-sky-100 flex items-center justify-center text-sky-700 shrink-0">
+              <Home size={19} />
             </div>
             <div className="min-w-0">
               <Eyebrow className="!text-sky-600">
                 {matchBanner.shipped ? 'New agent match · Verified' : `Agent match · ${matchBanner.stateLabel}`}
               </Eyebrow>
-              <h4 className="font-serif text-lg sm:text-xl text-slate-900 mt-1">
+              <h4 className="font-sans text-base sm:text-lg font-semibold text-slate-900 mt-1">
                 {matchBanner.shipped
                   ? 'Your agent has matched a property to your application'
                   : `Match progress: ${matchBanner.stateLabel}`}
@@ -827,32 +807,24 @@ export default function DashboardView({
       )}
 
       {/* =========================== KPIs ============================= */}
-      <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <section className="grid grid-cols-2 lg:grid-cols-4 border-y border-slate-200 divide-x divide-slate-200">
         {kpis.map(({ key, icon: Icon, value, label, note, onClick, active, mono }) => (
           <button
             key={key}
             type="button"
             onClick={onClick}
-            className={`group text-left p-6 rounded-[24px] border transition-all duration-300 cursor-pointer flex flex-col justify-between min-h-[190px] hover:-translate-y-0.5 ${
+            className={`group text-left px-3 py-5 sm:px-5 border-b border-slate-200 lg:border-b-0 last:border-b-0 transition-colors duration-200 cursor-pointer min-w-0 ${
               active
-                ? 'border-sky-500 bg-sky-50 shadow-[0_16px_40px_-18px_rgba(2,132,199,0.5)]'
-                : `${CARD} hover:border-sky-300`
+                ? 'bg-sky-50/70'
+                : 'hover:bg-white/70'
             }`}
           >
-            <div className="flex items-center justify-between">
-              <div className="w-10 h-10 rounded-full bg-sky-50 border border-sky-100 flex items-center justify-center text-sky-600">
-                <Icon size={18} fill={key === 'saved' && savedPropertyIds.length > 0 ? '#0284c7' : 'none'} />
-              </div>
-              <ArrowUpRight
-                size={16}
-                className="text-slate-300 group-hover:text-sky-600 transition-all group-hover:translate-x-0.5 group-hover:-translate-y-0.5"
-              />
+            <div className="flex items-center justify-between gap-2">
+              <span className="text-[11px] font-semibold text-slate-500 leading-tight">{label}</span>
+              <Icon size={15} className="text-slate-400 shrink-0" fill={key === 'saved' && savedPropertyIds.length > 0 ? '#94a3b8' : 'none'} />
             </div>
-            <div className="mt-8">
-              <div className="font-serif text-4xl text-slate-900 tracking-tight leading-none">{value}</div>
-              <div className="text-sm font-medium text-slate-700 mt-3">{label}</div>
-              <div className={`text-xs text-slate-400 mt-1 truncate ${mono ? 'font-mono' : ''}`}>{note}</div>
-            </div>
+            <div className={`mt-3 font-sans text-2xl sm:text-3xl font-semibold text-slate-900 tracking-tight leading-none ${mono ? 'tabular-nums' : ''}`}>{value}</div>
+            <div className="text-[11px] text-slate-500 mt-2 truncate">{note}</div>
           </button>
         ))}
       </section>
@@ -860,12 +832,12 @@ export default function DashboardView({
       {/* ================= STEPPER + CONCIERGE ======================== */}
       <section className="grid grid-cols-1 lg:grid-cols-12 gap-5">
         {/* Stepper */}
-        <div className={`lg:col-span-7 ${CARD} rounded-[28px] p-7 sm:p-9 flex flex-col justify-between`}>
+        <div className="lg:col-span-7 border-t border-slate-200 pt-6 sm:pt-8 flex flex-col justify-between">
           <div>
             <div className="flex flex-wrap items-start justify-between gap-3 mb-8">
               <div>
                 <Eyebrow className="!text-sky-600 mb-2">Live progress</Eyebrow>
-                <h3 className="font-serif text-2xl text-slate-900">Application status</h3>
+                <h3 className="font-sans text-xl font-semibold text-slate-900">Application status</h3>
               </div>
               {latestApplication && (
                 <div className="flex flex-col items-end gap-2">
@@ -890,11 +862,11 @@ export default function DashboardView({
             </div>
 
             {!latestApplication ? (
-              <div className="py-10 px-6 rounded-2xl bg-sky-50/60 border border-dashed border-sky-200 text-center flex flex-col items-center">
+              <div className="py-8 px-2 border-y border-slate-200 text-center flex flex-col items-center">
                 <div className="w-14 h-14 rounded-full bg-white border border-sky-100 flex items-center justify-center text-sky-600 mb-4">
                   <FileText size={24} />
                 </div>
-                <h4 className="font-serif text-xl text-slate-900">No application yet</h4>
+                <h4 className="font-sans text-lg font-semibold text-slate-900">No application yet</h4>
                 <p className="text-sm text-slate-500 mt-2 max-w-sm">
                   Start an application and this tracker will follow it from the vetting fee through to your signed
                   lease.
@@ -904,17 +876,17 @@ export default function DashboardView({
                   onClick={onOpenCustomApplication}
                   className={`mt-5 h-11 px-6 rounded-full text-sm font-bold flex items-center gap-2 ${BTN_PRIMARY}`}
                 >
-                  <Sparkles size={15} />
+                  <FileText size={15} />
                   Submit application
                 </button>
               </div>
             ) : (
               <>
-            <div className="p-5 rounded-2xl bg-sky-50/70 border border-sky-100 mb-9">
+            <div className="pl-4 py-1 border-l-2 border-sky-700 mb-8">
               <div className="flex items-start justify-between gap-4">
                 <div className="min-w-0">
                   <Eyebrow>{latestTarget.kind === 'general' ? 'Application scope' : 'Latest target property'}</Eyebrow>
-                  <h4 className="font-serif text-xl text-slate-900 mt-1.5 truncate">
+                  <h4 className="font-sans text-lg font-semibold text-slate-900 mt-1.5 truncate">
                     {latestTarget.label ||
                       (latestTarget.kind === 'linked-unresolved'
                         ? 'Linked listing'
@@ -1065,16 +1037,14 @@ export default function DashboardView({
         </div>
 
         {/* Concierge */}
-        <div
-          className={`lg:col-span-5 ${CARD} rounded-[28px] p-7 sm:p-9 flex flex-col justify-between bg-gradient-to-b from-white to-sky-50/60`}
-        >
+        <div className="lg:col-span-5 border-t border-slate-200 pt-6 sm:pt-8 flex flex-col justify-between">
           {activeLease ? (
             <>
               <div>
                 <div className="flex items-start justify-between mb-8">
                   <div>
                     <Eyebrow className="!text-sky-600 mb-2">Your tenancy</Eyebrow>
-                    <h3 className="font-serif text-2xl text-slate-900">Concierge</h3>
+                <h3 className="font-sans text-xl font-semibold text-slate-900">Tenancy support</h3>
                   </div>
                   <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-semibold border border-emerald-200 bg-emerald-50 text-emerald-700">
                     <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
@@ -1085,23 +1055,23 @@ export default function DashboardView({
                 <div className="space-y-5 mb-7">
                   <div>
                     <Eyebrow>Allocated unit</Eyebrow>
-                    <h4 className="font-serif text-xl text-slate-900 mt-1.5">{activeLease.property_title}</h4>
+                    <h4 className="font-sans text-lg font-semibold text-slate-900 mt-1.5">{activeLease.property_title}</h4>
                     <p className="text-xs text-slate-500 mt-1.5 flex items-center gap-1.5">
                       <MapPin size={12} className="text-sky-500" />
                       {activeLease.address || 'Address on file'}
                     </p>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-px rounded-2xl overflow-hidden bg-sky-100 border border-sky-100">
-                    <div className="bg-white p-4">
+                  <div className="grid grid-cols-2 divide-x divide-slate-200 border-y border-slate-200 py-4">
+                    <div className="pr-4">
                       <Eyebrow>Monthly rent</Eyebrow>
-                      <p className="font-serif text-2xl text-sky-700 mt-1.5">
+                      <p className="font-sans text-xl font-semibold text-slate-900 mt-1.5 tabular-nums">
                         {activeLease.monthly_rent != null
                           ? `R ${Number(activeLease.monthly_rent).toLocaleString('en-ZA')}`
                           : '—'}
                       </p>
                     </div>
-                    <div className="bg-white p-4">
+                    <div className="pl-4">
                       <Eyebrow>Next due</Eyebrow>
                       <p className="text-sm font-semibold text-slate-900 mt-2.5">
                         {activeLease.next_due_date || '—'}
@@ -1159,7 +1129,7 @@ export default function DashboardView({
           ) : (
             <div className="flex flex-1 flex-col items-center justify-center text-center py-8">
               <Eyebrow className="!text-sky-600 mb-2">Your tenancy</Eyebrow>
-              <h3 className="font-serif text-2xl text-slate-900">Concierge</h3>
+              <h3 className="font-sans text-xl font-semibold text-slate-900">Tenancy support</h3>
               <p className="text-sm text-slate-500 mt-3 max-w-xs leading-relaxed">
                 You don't have an active tenancy yet. Once a landlord approves your application and a lease is issued, your unit details, rent schedule, and property manager will appear here.
               </p>
@@ -1263,9 +1233,9 @@ export default function DashboardView({
         </div>
 
         {filteredProperties.length === 0 ? (
-          <div className="py-20 px-6 rounded-[28px] border border-dashed border-sky-200 bg-sky-50/50 text-center space-y-4">
+          <div className="py-14 px-3 border-y border-slate-200 text-center space-y-4">
             <Home size={36} className="mx-auto text-sky-300" />
-            <h3 className="font-serif text-2xl text-slate-900">No properties match your criteria</h3>
+            <h3 className="font-sans text-xl font-semibold text-slate-900">No properties match your criteria</h3>
             <p className="text-sm text-slate-500 max-w-sm mx-auto">
               Try clearing a filter or broadening your search to see more accommodation.
             </p>
@@ -1278,7 +1248,7 @@ export default function DashboardView({
             </button>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="border-y border-slate-200">
             {filteredProperties.map((p) => {
               const isSaved = savedPropertyIds.includes(p.id);
               const isStudent =
@@ -1295,16 +1265,15 @@ export default function DashboardView({
                 <article
                   key={p.id}
                   onClick={() => (onPropertyClick ? onPropertyClick(p) : null)}
-                  className={`group ${CARD} hover:border-sky-300 rounded-[28px] overflow-hidden transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_30px_60px_-24px_rgba(2,132,199,0.4)] flex flex-col cursor-pointer`}
+                  className="group flex flex-col sm:flex-row gap-4 sm:gap-6 py-5 border-b border-slate-200 last:border-b-0 cursor-pointer transition-colors duration-150 hover:bg-white/70"
                 >
-                  <div className="relative h-60 overflow-hidden">
+                  <div className="relative h-48 sm:h-36 sm:w-56 shrink-0 overflow-hidden rounded-lg">
                     <img
                       src={imgUrl}
                       alt={p.title || 'Property'}
                       loading="lazy"
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
+                      className="w-full h-full object-cover group-hover:scale-[1.02] transition-transform duration-200"
                     />
-                    <div className="absolute inset-0 bg-gradient-to-t from-slate-900/70 via-transparent to-slate-900/10" />
 
                     <span className="absolute top-4 left-4 px-3 py-1.5 rounded-full text-[11px] font-semibold flex items-center gap-1.5 bg-white/90 backdrop-blur-md text-sky-800 shadow-sm">
                       {isStudent ? <GraduationCap size={13} /> : <Home size={13} />}
@@ -1315,26 +1284,25 @@ export default function DashboardView({
                       type="button"
                       aria-label={isSaved ? 'Remove from wishlist' : 'Save to wishlist'}
                       onClick={(e) => handleToggleSave(p, e)}
-                      className={`absolute top-4 right-4 w-10 h-10 rounded-full backdrop-blur-md flex items-center justify-center transition-colors cursor-pointer shadow-sm ${
+                      className={`absolute top-2 right-2 w-9 h-9 rounded-lg flex items-center justify-center transition-colors cursor-pointer ${
                         isSaved ? 'bg-sky-600 text-white' : 'bg-white/90 text-slate-600 hover:text-sky-600'
                       }`}
                     >
                       <Heart size={16} fill={isSaved ? 'currentColor' : 'none'} />
                     </button>
 
-                    <div className="absolute bottom-4 left-5 right-5">
-                      <div className="font-serif text-3xl text-white leading-none">
-                        R {Number(p.price || 0).toLocaleString('en-ZA')}
-                        <span className="font-sans text-xs text-white/80 ml-1.5">/ month</span>
-                      </div>
-                    </div>
                   </div>
 
-                  <div className="p-6 flex-1 flex flex-col justify-between">
+                  <div className="py-1 flex-1 flex flex-col justify-between min-w-0">
                     <div>
-                      <h4 className="font-serif text-xl text-slate-900 group-hover:text-sky-700 transition-colors truncate">
-                        {p.title || p.name || 'Rental Residence'}
-                      </h4>
+                      <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
+                        <h4 className="font-sans text-lg font-semibold text-slate-900 group-hover:text-sky-800 transition-colors truncate">
+                          {p.title || p.name || 'Rental Residence'}
+                        </h4>
+                        <p className="text-base font-semibold text-slate-900 tabular-nums">
+                          R {Number(p.price || 0).toLocaleString('en-ZA')} <span className="text-xs font-normal text-slate-500">/ month</span>
+                        </p>
+                      </div>
                       <p className="text-xs text-slate-500 mt-1.5 flex items-center gap-1.5 truncate">
                         <MapPin size={13} className="text-sky-500 shrink-0" />
                         <span className="truncate">
@@ -1342,7 +1310,7 @@ export default function DashboardView({
                         </span>
                       </p>
 
-                      <div className="flex items-center gap-5 py-4 my-4 border-y border-sky-100 text-xs text-slate-600">
+                      <div className="flex flex-wrap items-center gap-5 py-3 my-3 border-y border-slate-200 text-xs text-slate-600">
                         <span className="flex items-center gap-1.5">
                           <Bed size={14} className="text-sky-500" />
                           {p.bedrooms || 1} bed
@@ -1363,7 +1331,7 @@ export default function DashboardView({
                           e.stopPropagation();
                           if (onPropertyClick) onPropertyClick(p);
                         }}
-                        className={`h-11 rounded-full text-xs font-semibold ${BTN_OUTLINE}`}
+                        className={`h-10 rounded-lg text-xs font-semibold ${BTN_OUTLINE}`}
                       >
                         View details
                       </button>
@@ -1373,7 +1341,7 @@ export default function DashboardView({
                           e.stopPropagation();
                           if (onApplyClick) onApplyClick(p);
                         }}
-                        className={`h-11 rounded-full text-xs font-bold flex items-center justify-center gap-1.5 ${BTN_PRIMARY}`}
+                        className={`h-10 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 ${BTN_PRIMARY}`}
                       >
                         Apply
                         <ArrowUpRight size={14} />

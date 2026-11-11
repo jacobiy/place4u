@@ -8,7 +8,6 @@ import {
   CheckCircle2,
   AlertCircle,
   ArrowRight,
-  Sparkles,
   Phone
 } from 'lucide-react';
 import { AgentQueries } from '../db/queries';

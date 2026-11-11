@@ -16,8 +16,7 @@ import {
   Check,
   ChevronRight,
   ExternalLink,
-  Clock,
-  Sparkles
+  Clock
 } from 'lucide-react';
 import { Modal } from './Modal';
 import { PrimaryBtn, SecondaryBtn } from './Buttons';

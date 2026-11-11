@@ -1,5 +1,5 @@
 import {
-  Home, Building, Users, Settings, LogOut, ChevronDown, FileText, User, Lock, LifeBuoy, Sparkles, UserCheck
+  Home, Building, Users, Settings, LogOut, ChevronDown, FileText, User, Lock, LifeBuoy, UserCheck
 } from "lucide-react";
 import { CHROME, T } from './Styles/designTokens';
 import { initials } from './Styles/helpers';
@@ -80,7 +80,7 @@ export const Sidebar = ({ activeView, setActiveView, onLogout, profile, user }) 
   return (
     <aside style={{
       width: "260px",
-      background: `linear-gradient(180deg, ${CHROME.bgMid} 0%, ${CHROME.bg} 100%)`,
+      background: CHROME.bg,
       borderRight: `1px solid ${CHROME.border}`,
       height: "100vh",
       position: "fixed",
@@ -96,7 +96,7 @@ export const Sidebar = ({ activeView, setActiveView, onLogout, profile, user }) 
       }}>
         <div style={{
           width: 40, height: 40, borderRadius: 12,
-          background: "linear-gradient(135deg, rgba(79,126,248,0.25), rgba(124,92,246,0.25))",
+          background: CHROME.surface,
           border: `1px solid ${CHROME.border}`,
           display: "flex", alignItems: "center", justifyContent: "center",
           flexShrink: 0,
@@ -129,14 +129,12 @@ export const Sidebar = ({ activeView, setActiveView, onLogout, profile, user }) 
 
         {!isApproved && (
           <div style={{
-            marginTop: "1.25rem", padding: "0.9rem",
-            borderRadius: 14,
-            background: "linear-gradient(135deg, rgba(245,158,11,0.14), rgba(245,158,11,0.05))",
-            border: "1px solid rgba(245,158,11,0.28)",
+            marginTop: "1.25rem", paddingTop: "0.85rem",
+            borderTop: "1px solid rgba(245,158,11,0.28)",
           }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 7, marginBottom: 6 }}>
-              <Sparkles size={14} color="#fbbf24" />
-              <span style={{ fontSize: "0.76rem", fontWeight: 700, color: "#fcd34d" }}>Unlock full access</span>
+            <div style={{ display: "flex", alignItems: "center", gap: 7, marginBottom: 5 }}>
+              <Lock size={13} color="#fbbf24" />
+              <span style={{ fontSize: "0.75rem", fontWeight: 600, color: "#fcd34d" }}>Unlock full access</span>
             </div>
             <p style={{ fontSize: "0.7rem", color: CHROME.textMuted, lineHeight: 1.5, margin: 0 }}>
               Complete accreditation to list properties and manage tenants.
@@ -180,7 +178,7 @@ export const Sidebar = ({ activeView, setActiveView, onLogout, profile, user }) 
           >
             <div style={{
               width: 38, height: 38, borderRadius: "50%", flexShrink: 0,
-              background: "linear-gradient(135deg, #4f7ef8 0%, #8b5cf6 100%)",
+              background: CHROME.accent,
               display: "flex", alignItems: "center", justifyContent: "center",
               fontSize: "0.85rem", fontWeight: 700, color: "#fff", overflow: "hidden",
             }}>

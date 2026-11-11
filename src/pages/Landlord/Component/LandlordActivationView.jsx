@@ -3,7 +3,8 @@ import {
   ShieldCheck,
   Clock,
   CheckCircle2,
-  Sparkles,
+  Building,
+  FileText,
   ArrowRight
 } from 'lucide-react';
 import { LandlordApplicationModal } from './LandlordApplicationModal';
@@ -90,7 +91,7 @@ export const LandlordActivationView = ({
                 flexShrink: 0
               }}
             >
-              {isPending ? <Clock size={26} /> : isRejected ? <ShieldCheck size={26} /> : <Sparkles size={26} />}
+              {isPending ? <Clock size={26} /> : isRejected ? <ShieldCheck size={26} /> : <Building size={26} />}
             </div>
 
             <div style={{ flex: 1, minWidth: 0 }}>
@@ -128,7 +129,7 @@ export const LandlordActivationView = ({
           <div style={{ flexShrink: 0 }}>
             {!isPending && (
               <PrimaryBtn onClick={() => setIsModalOpen(true)}>
-                <Sparkles size={16} />
+                <FileText size={16} />
                 {isRejected ? 'Resubmit Application' : 'Start Landlord Application'}
                 <ArrowRight size={16} />
               </PrimaryBtn>

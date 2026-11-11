@@ -13,7 +13,6 @@ import {
   Banknote,
   Heart,
   Building2,
-  Sparkles,
   Camera,
   Loader2
 } from 'lucide-react';
@@ -25,7 +24,6 @@ import { AlertToast } from '../../component/AlertModal';
 /*  Palette: matches the tenant dashboard — white surfaces, light-blue */
 /*  washes, one confident sky-blue accent.                             */
 /* ------------------------------------------------------------------ */
-const CARD = 'bg-white border border-sky-100 shadow-[0_12px_40px_-18px_rgba(2,132,199,0.22)]';
 const BTN_PRIMARY =
   'bg-sky-600 hover:bg-sky-700 text-white shadow-[0_8px_20px_-8px_rgba(2,132,199,0.55)] transition-colors duration-200 cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed';
 const BTN_OUTLINE =
@@ -118,14 +116,12 @@ const SelectField = ({ label, value, isEditing, onChange, fieldName, options, ic
 /*  Section card with inline edit / save / cancel                      */
 /* ------------------------------------------------------------------ */
 const SectionCard = ({ title, eyebrow, icon: Icon, isEditing, onEdit, onCancel, saving, children }) => (
-  <section className={`${CARD} rounded-[28px] overflow-hidden`}>
-    <header className="flex flex-wrap items-center justify-between gap-3 px-6 sm:px-8 py-5 border-b border-sky-100">
-      <div className="flex items-center gap-3.5">
-        <span className="w-10 h-10 rounded-full bg-sky-50 border border-sky-100 flex items-center justify-center text-sky-600 shrink-0">
-          <Icon size={18} />
-        </span>
+  <section className="border-t border-slate-200 pt-7">
+    <header className="flex flex-wrap items-start justify-between gap-3 mb-5">
+      <div className="flex items-start gap-3 min-w-0">
+        <Icon size={17} className="text-sky-600 shrink-0 mt-1" />
         <div className="min-w-0">
-          {eyebrow && <Eyebrow className="!text-sky-600 mb-1">{eyebrow}</Eyebrow>}
+          {eyebrow && <Eyebrow className="!text-sky-700 mb-1">{eyebrow}</Eyebrow>}
           <h2 className="font-serif text-xl text-slate-900 leading-tight">{title}</h2>
         </div>
       </div>
@@ -133,10 +129,10 @@ const SectionCard = ({ title, eyebrow, icon: Icon, isEditing, onEdit, onCancel, 
       <button
         type="button"
         onClick={onEdit}
-        className={`inline-flex items-center gap-2 h-10 px-4 rounded-full text-xs font-semibold transition-colors ${
+        className={`inline-flex items-center gap-2 h-9 px-4 rounded-lg text-xs font-semibold transition-colors cursor-pointer ${
           isEditing
-            ? 'bg-sky-600 text-white hover:bg-sky-700 border border-sky-600'
-            : 'bg-white border border-sky-200 text-slate-700 hover:bg-sky-50 hover:border-sky-300'
+            ? 'bg-sky-700 text-white hover:bg-sky-800'
+            : 'bg-white border border-slate-300 text-slate-700 hover:border-slate-400 hover:bg-slate-50'
         }`}
       >
         {isEditing ? <Save size={14} /> : <Pencil size={14} />}
@@ -144,19 +140,19 @@ const SectionCard = ({ title, eyebrow, icon: Icon, isEditing, onEdit, onCancel, 
       </button>
     </header>
 
-    <div className="px-6 sm:px-8 py-6 sm:py-7">
+    <div>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">{children}</div>
 
       {isEditing && (
-        <div className="flex flex-wrap items-center justify-end gap-3 pt-6 mt-6 border-t border-sky-100">
-          <button type="button" onClick={onCancel} className={`h-10 px-5 rounded-full text-xs font-semibold ${BTN_OUTLINE}`}>
+        <div className="flex flex-wrap items-center justify-end gap-3 pt-6 mt-6 border-t border-slate-200">
+          <button type="button" onClick={onCancel} className={`h-10 px-5 rounded-lg text-xs font-semibold ${BTN_OUTLINE}`}>
             Cancel
           </button>
           <button
             type="button"
             onClick={onEdit}
             disabled={saving}
-            className={`h-10 px-6 rounded-full text-xs font-bold flex items-center gap-2 ${BTN_PRIMARY}`}
+            className={`h-10 px-6 rounded-lg text-xs font-bold flex items-center gap-2 ${BTN_PRIMARY}`}
           >
             {saving ? (
               'Saving…'
@@ -391,14 +387,11 @@ export const Profile = ({ profile: initialProfile, user }) => {
       <AlertToast toast={toast} onClose={() => setToast(null)} />
 
       {/* ============================ HERO ============================ */}
-      <section className="relative overflow-hidden rounded-[32px] border border-sky-100 px-6 py-9 sm:px-10 sm:py-11 bg-white/80 backdrop-blur-md shadow-[0_24px_60px_-28px_rgba(2,132,199,0.35)]">
-        <div aria-hidden className="absolute -top-32 -right-24 w-[400px] h-[400px] rounded-full bg-sky-300/30 blur-3xl" />
-        <div aria-hidden className="absolute -bottom-40 left-1/4 w-[320px] h-[320px] rounded-full bg-blue-200/30 blur-3xl" />
-
-        <div className="relative z-10 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-9">
-          <div className="flex items-center gap-6 min-w-0">
+      <section className="border-b border-slate-200 pb-8">
+        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-8">
+          <div className="flex items-center gap-5 sm:gap-6 min-w-0">
             <div className="relative shrink-0">
-              <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-full overflow-hidden bg-gradient-to-br from-sky-500 to-blue-700 flex items-center justify-center text-white font-serif text-3xl shadow-[0_16px_36px_-14px_rgba(2,132,199,0.7)]">
+              <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-full overflow-hidden bg-slate-800 flex items-center justify-center text-white font-serif text-3xl">
                 {editedData?.profile_image_url || profile?.profile_image_url ? (
                   <img
                     src={editedData?.profile_image_url || profile?.profile_image_url}
@@ -423,10 +416,10 @@ export const Profile = ({ profile: initialProfile, user }) => {
               </button>
 
               <span
-                className="absolute -bottom-1 -right-1 w-8 h-8 rounded-full bg-white border border-sky-100 flex items-center justify-center text-emerald-600 shadow-sm pointer-events-none"
+                className="absolute -bottom-1 -right-1 w-7 h-7 rounded-full bg-white border border-slate-200 flex items-center justify-center text-emerald-600 pointer-events-none"
                 title="Verified resident"
               >
-                <ShieldCheck size={16} />
+                <ShieldCheck size={15} />
               </span>
 
               <input
@@ -439,51 +432,42 @@ export const Profile = ({ profile: initialProfile, user }) => {
             </div>
 
             <div className="min-w-0">
-              <div className="flex flex-wrap items-center gap-3 mb-3">
-                <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white border border-sky-200 text-[11px] font-semibold tracking-wide text-sky-700 shadow-sm">
-                  <ShieldCheck size={13} />
-                  {tier}
-                </span>
-              </div>
+              <Eyebrow className="!text-sky-700 mb-2">{tier}</Eyebrow>
               <h1 className="font-serif text-3xl sm:text-4xl leading-tight tracking-tight text-slate-900 truncate">
                 {displayName}
               </h1>
               {email && (
                 <p className="mt-2 text-sm text-slate-500 flex items-center gap-2 truncate">
-                  <Mail size={14} className="text-sky-500 shrink-0" />
+                  <Mail size={14} className="text-slate-400 shrink-0" />
                   <span className="truncate">{email}</span>
                 </p>
               )}
             </div>
           </div>
 
-          <div className="w-full lg:w-[300px] shrink-0">
-            <div className="p-5 rounded-[24px] bg-sky-50/70 border border-sky-100">
-              <div className="flex items-end justify-between mb-3">
-                <Eyebrow>Profile completeness</Eyebrow>
-                <span className="font-serif text-2xl text-sky-700 leading-none">{completeness}%</span>
-              </div>
-              <div className="h-2 rounded-full bg-sky-100 overflow-hidden">
-                <div
-                  className="h-full rounded-full bg-gradient-to-r from-sky-400 to-blue-600 transition-all duration-500"
-                  style={{ width: `${completeness}%` }}
-                />
-              </div>
-              <p className="mt-3 text-[11px] text-slate-500 leading-relaxed">
-                A complete profile lets landlords pre-approve you faster — no repeated paperwork.
-              </p>
+          <div className="w-full lg:w-[280px] shrink-0 lg:border-l lg:border-slate-200 lg:pl-6">
+            <div className="flex items-end justify-between mb-2.5">
+              <Eyebrow>Profile completeness</Eyebrow>
+              <span className="font-serif text-xl text-slate-900 leading-none">{completeness}%</span>
             </div>
+            <div className="h-1.5 rounded-full bg-slate-200 overflow-hidden">
+              <div
+                className="h-full rounded-full bg-slate-700 transition-all duration-500"
+                style={{ width: `${completeness}%` }}
+              />
+            </div>
+            <p className="mt-3 text-[11px] text-slate-500 leading-relaxed">
+              A complete profile lets landlords pre-approve you faster — no repeated paperwork.
+            </p>
           </div>
         </div>
       </section>
 
       {/* ============================ STATS =========================== */}
-      <section className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <section className="grid grid-cols-1 sm:grid-cols-3 border-y border-slate-200 divide-y sm:divide-y-0 sm:divide-x divide-slate-200">
         {statItems.map(({ icon: Icon, label, value, accent }) => (
-          <div key={label} className={`${CARD} rounded-[24px] p-5 flex items-center gap-4`}>
-            <span className="w-11 h-11 rounded-full bg-sky-50 border border-sky-100 flex items-center justify-center text-sky-600 shrink-0">
-              <Icon size={18} />
-            </span>
+          <div key={label} className="py-4 sm:px-5 sm:first:pl-0 flex items-center gap-3.5">
+            <Icon size={17} className="text-slate-400 shrink-0" />
             <div className="min-w-0">
               <Eyebrow>{label}</Eyebrow>
               <p className={`text-sm font-semibold mt-1 truncate ${accent}`}>{value}</p>
@@ -654,7 +638,7 @@ export const Profile = ({ profile: initialProfile, user }) => {
 
       {/* ============================ NOTE ============================ */}
       <div className="flex items-start gap-3 px-5 py-4 rounded-[20px] bg-sky-50/60 border border-sky-100">
-        <Sparkles size={16} className="text-sky-500 mt-0.5 shrink-0" />
+        <ShieldCheck size={16} className="text-sky-500 mt-0.5 shrink-0" />
         <p className="text-xs text-slate-500 leading-relaxed">
           Your information is encrypted and POPIA-compliant. It is only ever shared with a landlord when you submit an
           application — never sold or used for marketing.

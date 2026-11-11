@@ -31,7 +31,6 @@ import {
 /* ------------------------------------------------------------------ */
 /*  Palette: white surfaces, light-blue washes, one confident blue.    */
 /* ------------------------------------------------------------------ */
-const CARD = 'bg-white border border-sky-100 shadow-[0_12px_40px_-18px_rgba(2,132,199,0.22)]';
 const BTN_PRIMARY =
   'bg-sky-600 hover:bg-sky-700 text-white shadow-[0_8px_20px_-8px_rgba(2,132,199,0.55)] transition-colors duration-200 cursor-pointer';
 const BTN_OUTLINE =
@@ -303,7 +302,7 @@ export default function ApplicationsView({
   const activeCount = applications.filter(isActiveApplication).length;
 
   return (
-    <div className="max-w-6xl mx-auto pb-16 text-slate-900">
+    <div className="max-w-6xl mx-auto pb-16 text-slate-900 px-5 sm:px-8">
       <AlertToast toast={toast} onClose={() => setToast(null)} />
 
       <ConfirmModal
@@ -321,13 +320,12 @@ export default function ApplicationsView({
       {previewDoc && <PdfPreviewModal doc={previewDoc} onClose={() => setPreviewDoc(null)} />}
 
       {/* ============================ HEADER ============================ */}
-      <header className="relative overflow-hidden rounded-[32px] border border-sky-100 px-6 py-9 sm:px-10 sm:py-11 mb-10 bg-white/80 backdrop-blur-md shadow-[0_24px_60px_-28px_rgba(2,132,199,0.35)]">
-        <div aria-hidden className="absolute -top-28 -right-20 w-[380px] h-[380px] rounded-full bg-sky-300/30 blur-3xl" />
+      <header className="relative mb-8 border-b border-slate-200 pb-7">
         <div className="relative z-10 flex flex-col sm:flex-row sm:items-end sm:justify-between gap-6">
           <div className="max-w-xl">
-            <Eyebrow className="!text-sky-600 mb-3">Rental inquiries</Eyebrow>
-            <h1 className="font-serif text-4xl sm:text-5xl tracking-tight text-slate-900 leading-[1.05]">
-              My <span className="italic text-sky-600">applications</span>
+            <Eyebrow className="!text-sky-700 mb-2">Rental inquiries</Eyebrow>
+            <h1 className="font-serif text-3xl sm:text-4xl tracking-tight text-slate-900 leading-tight">
+              My applications
             </h1>
             <p className="mt-4 text-sm sm:text-base text-slate-600 leading-relaxed">
               Track your rental inquiries, verified PDF attachments and application status in one place.
@@ -335,9 +333,9 @@ export default function ApplicationsView({
           </div>
 
           <div className="flex items-center gap-4 self-start sm:self-auto">
-            <div className="px-5 py-3 rounded-2xl bg-white/80 backdrop-blur border border-sky-100 shadow-sm">
-              <p className="font-serif text-3xl text-slate-900 leading-none">{activeCount}</p>
-              <p className="text-[11px] text-slate-500 mt-1.5">Active</p>
+            <div className="px-4 py-2 border-l border-slate-200">
+              <p className="font-serif text-2xl text-slate-900 leading-none">{activeCount}</p>
+              <p className="text-[11px] text-slate-500 mt-1">Active</p>
             </div>
             <button
               type="button"
@@ -356,10 +354,8 @@ export default function ApplicationsView({
       )}
 
       {applications.length === 0 ? (
-        <div className="py-20 px-6 rounded-[28px] border border-dashed border-sky-200 bg-sky-50/50 text-center flex flex-col items-center">
-          <div className="w-16 h-16 rounded-full bg-white border border-sky-100 flex items-center justify-center text-sky-500 mb-5">
-            <FileText size={26} />
-          </div>
+        <div className="py-16 px-6 border-y border-slate-200 text-center flex flex-col items-center">
+          <FileText size={24} className="text-slate-300 mb-4" />
           <h2 className="font-serif text-2xl text-slate-900 mb-2">No applications yet</h2>
           <p className="text-sm text-slate-500 max-w-md">
             You haven't submitted any rental applications. Choose "Submit application" above to apply for a student
@@ -367,7 +363,7 @@ export default function ApplicationsView({
           </p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="divide-y divide-slate-200 border-y border-slate-200">
           {applications.map((app) => {
             const isStudent =
               app.accommodation_category === 'student_room' ||
@@ -403,11 +399,11 @@ export default function ApplicationsView({
             return (
               <article
                 key={app.id}
-                className={`${CARD} hover:border-sky-300 rounded-[28px] overflow-hidden transition-colors duration-300 flex flex-col justify-between ${
+                className={`bg-transparent border-0 rounded-none shadow-none overflow-hidden transition-colors duration-300 flex flex-col justify-between ${
                   isClosed ? 'opacity-75' : ''
                 }`}
               >
-                <div className="p-6 sm:p-7">
+                <div className="py-6 sm:py-7">
                   {/* Top bar */}
                   <div className="flex items-center justify-between gap-3 mb-6">
                     <span className="px-3 py-1.5 rounded-full text-[11px] font-semibold flex items-center gap-1.5 bg-sky-50 border border-sky-100 text-sky-700">
@@ -482,29 +478,30 @@ export default function ApplicationsView({
                   )}
 
                   {/* Details */}
-                  <div className="grid grid-cols-2 gap-px rounded-2xl overflow-hidden bg-sky-100 border border-sky-100 mb-6">
-                    <div className="bg-white p-4 col-span-2">
+                  <div className="grid grid-cols-2 gap-x-6 gap-y-4 border-y border-slate-200 py-4 mb-5">
+                    <div className="col-span-2">
                       <Eyebrow className="flex items-center gap-1.5">
                         <MapPin size={12} className="text-sky-500" /> Preferred areas
                       </Eyebrow>
                       <p className="text-sm font-medium text-slate-900 mt-1.5">
-                        {app.preferred_areas?.join(', ') || 'Flexible across Metro'}
+                        {app.preferred_areas?.join(', ') || 'Not specified'}
                       </p>
                     </div>
-                    <div className="bg-white p-4">
+                    <div>
                       <Eyebrow className="flex items-center gap-1.5">
                         <DollarSign size={12} className="text-sky-500" /> Budget
                       </Eyebrow>
                       <p className="font-serif text-lg text-sky-700 mt-1.5">
-                        R{Number(app.min_budget || 0).toLocaleString('en-ZA')} – R
-                        {Number(app.max_budget || 0).toLocaleString('en-ZA')}
+                        {app.min_budget != null || app.max_budget != null
+                          ? `R${Number(app.min_budget || 0).toLocaleString('en-ZA')} – R${Number(app.max_budget || 0).toLocaleString('en-ZA')}`
+                          : 'Not specified'}
                       </p>
                     </div>
-                    <div className="bg-white p-4">
+                    <div>
                       <Eyebrow className="flex items-center gap-1.5">
                         <Calendar size={12} className="text-sky-500" /> Move in
                       </Eyebrow>
-                      <p className="text-sm font-medium text-slate-900 mt-2">{app.move_in_date || 'Flexible'}</p>
+                      <p className="text-sm font-medium text-slate-900 mt-2">{app.move_in_date || 'Not specified'}</p>
                     </div>
                   </div>
 
@@ -637,7 +634,7 @@ export default function ApplicationsView({
 
                 {/* Actions */}
                 {!isClosed && (
-                  <div className="px-6 sm:px-7 py-4 bg-sky-50/50 border-t border-sky-100 flex items-center justify-between gap-3">
+                  <div className="px-0 py-4 bg-transparent border-t border-slate-200 flex items-center justify-between gap-3">
                     <span className="text-[11px] text-slate-400 font-mono">Ref {String(app.id).slice(0, 10)}</span>
                     <div className="flex items-center gap-2">
                       <button

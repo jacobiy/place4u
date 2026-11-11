@@ -222,12 +222,6 @@ export default function PropertyDetailView({ property, onBack, onApplyClick, onS
 
   return (
     <div className="w-full min-h-screen bg-[#faf8ff] text-[#131b2e] font-sans antialiased selection:bg-[#006194]/20">
-      {/* Top Atmospheric Ambient Background Elements */}
-      <div className="relative w-full overflow-hidden pointer-events-none">
-        <div className="absolute top-0 left-1/4 w-[600px] h-[350px] bg-[#c4e7ff]/30 rounded-full blur-3xl transform -translate-y-1/2" />
-        <div className="absolute top-48 right-10 w-[500px] h-[300px] bg-[#cce5ff]/25 rounded-full blur-3xl" />
-      </div>
-
       {/* Sticky Top Header & Breadcrumb Bar */}
       <header className="sticky top-0 z-40 bg-white/90 backdrop-blur-md border-b border-slate-200/80 shadow-[0_1px_8px_rgba(0,0,0,0.04)]">
         <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-12 h-18 flex items-center justify-between gap-4">

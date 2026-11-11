@@ -4,11 +4,11 @@ import {
   Edit2, Save, Camera, Globe,
   CreditCard, FileText, Shield, CheckCircle,
   AlertCircle, Copy, Check,
-  Trash2, Eye, Plus, RefreshCw, Lock, KeyRound
+  Trash2, Eye, Plus, RefreshCw, Lock, KeyRound,
+  Users as UsersIcon
 } from 'lucide-react';
 import { T, SERIF } from './Styles/designTokens';
 import { PrimaryBtn, SecondaryBtn } from './Component/Buttons';
-import { StatCard } from './Component/StatCard';
 import { Modal } from './Component/Modal';
 import { DocumentUploadModal } from './Component/DocumentUploadModal';
 import { DocumentPreviewModal } from './Component/DocumentPreviewModal';
@@ -24,27 +24,20 @@ const EYEBROW = { fontSize: "0.68rem", fontWeight: 700, textTransform: "uppercas
 
 const ProfileSection = ({ title, subtitle, icon: Icon, children, onEdit, isEditing }) => (
   <div style={{
-    background: "#ffffff",
-    border: `1px solid ${T.border}`,
-    borderRadius: T.radiusLg,
-    overflow: "hidden",
-    marginBottom: "1.5rem",
-    boxShadow: T.shadowSm
+    borderTop: `1px solid ${T.border}`,
+    paddingTop: "1.1rem",
+    marginBottom: "1.6rem"
   }}>
     <div style={{
-      padding: "1rem 1.5rem",
-      borderBottom: `1px solid ${T.border}`,
       display: "flex",
       justifyContent: "space-between",
       alignItems: "center",
       gap: "1rem",
       flexWrap: "wrap",
-      background: "linear-gradient(135deg, #ffffff 0%, #f3f9ff 100%)"
+      marginBottom: "0.9rem"
     }}>
-      <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
-        <div style={{ width: 38, height: 38, borderRadius: "0.75rem", background: T.accentSoft, border: `1px solid ${T.accentBorder}`, display: "flex", alignItems: "center", justifyContent: "center" }}>
-          <Icon size={18} color={T.accent} />
-        </div>
+      <div style={{ display: "flex", alignItems: "center", gap: "0.6rem" }}>
+        <Icon size={17} color={T.accent} style={{ flexShrink: 0 }} />
         <div>
           <h2 style={{ fontFamily: SERIF, fontSize: "1.15rem", color: T.textPrimary, letterSpacing: "-0.01em" }}>{title}</h2>
           {subtitle && <p style={{ fontSize: "0.75rem", color: T.textMuted, marginTop: 1 }}>{subtitle}</p>}
@@ -54,28 +47,28 @@ const ProfileSection = ({ title, subtitle, icon: Icon, children, onEdit, isEditi
         <button
           onClick={onEdit}
           style={{
-            padding: "0.5rem 0.9rem",
-            background: isEditing ? T.emeraldSoft : "#ffffff",
-            border: `1px solid ${isEditing ? T.emeraldBorder : T.borderHover}`,
-            borderRadius: 9999,
+            padding: "0.45rem 0.8rem",
+            background: "transparent",
+            border: `1px solid ${isEditing ? T.emeraldBorder : T.border}`,
+            borderRadius: 8,
             cursor: "pointer",
             display: "flex",
             alignItems: "center",
-            gap: "0.45rem",
+            gap: "0.4rem",
             color: isEditing ? T.emerald : T.textSecondary,
-            fontSize: "0.78rem",
+            fontSize: "0.75rem",
             fontWeight: 600,
             transition: "all 0.15s"
           }}
-          onMouseEnter={(e) => { if (!isEditing) { e.currentTarget.style.background = "#f0f9ff"; e.currentTarget.style.color = T.accent; } }}
-          onMouseLeave={(e) => { if (!isEditing) { e.currentTarget.style.background = "#ffffff"; e.currentTarget.style.color = T.textSecondary; } }}
+          onMouseEnter={(e) => { if (!isEditing) { e.currentTarget.style.borderColor = T.borderHover; e.currentTarget.style.color = T.textPrimary; } }}
+          onMouseLeave={(e) => { if (!isEditing) { e.currentTarget.style.borderColor = T.border; e.currentTarget.style.color = T.textSecondary; } }}
         >
-          {isEditing ? <Save size={15} /> : <Edit2 size={15} />}
+          {isEditing ? <Save size={14} /> : <Edit2 size={14} />}
           <span>{isEditing ? "Save" : "Edit"}</span>
         </button>
       )}
     </div>
-    <div style={{ padding: "1.5rem" }}>
+    <div>
       {children}
     </div>
   </div>
@@ -121,17 +114,14 @@ const InfoField = ({ label, value, icon: Icon, isEditing, onChange, fieldName, t
 );
 
 const VerificationBadge = ({ verified, label }) => (
-  <div style={{
-    display: "flex", alignItems: "center", gap: "0.4rem", padding: "0.4rem 0.75rem",
-    background: verified ? T.emeraldSoft : T.redSoft,
-    borderRadius: 9999,
-    border: `1px solid ${verified ? T.emeraldBorder : T.redBorder}`,
-    color: verified ? T.emerald : T.red,
-    fontSize: "0.75rem", fontWeight: 700
+  <span style={{
+    display: "inline-flex", alignItems: "center", gap: "0.35rem",
+    color: verified ? T.emerald : T.amber,
+    fontSize: "0.72rem", fontWeight: 600
   }}>
-    {verified ? <CheckCircle size={13} /> : <AlertCircle size={13} />}
+    {verified ? <CheckCircle size={12} /> : <AlertCircle size={12} />}
     <span>{label}</span>
-  </div>
+  </span>
 );
 
 export const Profile = ({ onClose, isModal = false }) => {
@@ -510,82 +500,71 @@ export const Profile = ({ onClose, isModal = false }) => {
 
       {/* HERO */}
       <div className="ll-anim-up" style={{
-        background: "linear-gradient(135deg, #ffffff 0%, #f3f9ff 55%, #eef6ff 100%)",
-        borderRadius: T.radiusXl,
-        padding: "clamp(1.5rem, 4vw, 2.25rem)",
-        marginBottom: "1.75rem",
-        border: `1px solid ${T.border}`,
-        position: "relative",
-        overflow: "hidden",
-        boxShadow: T.shadow
+        borderBottom: `1px solid ${T.border}`,
+        paddingBottom: "1.5rem",
+        marginBottom: "1.75rem"
       }}>
-        <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 5, background: "linear-gradient(90deg,#7dd3fc,#0ea5e9,#2563eb)" }} />
-        <div style={{ position: "absolute", top: "-40%", right: "-8%", width: "320px", height: "320px", borderRadius: "50%", background: `radial-gradient(circle, rgba(56,189,248,0.16) 0%, transparent 70%)` }} />
-        <div style={{ position: "absolute", bottom: "-50%", left: "30%", width: "260px", height: "260px", borderRadius: "50%", background: `radial-gradient(circle, rgba(129,140,248,0.12) 0%, transparent 70%)` }} />
-
-        <div style={{ display: "flex", alignItems: "center", gap: "2rem", flexWrap: "wrap", position: "relative", zIndex: 1 }}>
-          <div style={{ position: "relative" }}>
+        <div style={{ display: "flex", alignItems: "flex-start", gap: "1.5rem", flexWrap: "wrap" }}>
+          <div style={{ position: "relative", flexShrink: 0 }}>
             <div style={{
-              width: "120px", height: "120px", borderRadius: "50%",
-              background: `linear-gradient(135deg, ${T.accent} 0%, #7c3aed 100%)`,
-              display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden",
-              border: "3px solid #ffffff",
-              boxShadow: "0 14px 34px -12px rgba(2,132,199,0.7)"
+              width: "92px", height: "92px", borderRadius: "50%",
+              background: T.textPrimary,
+              display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden"
             }}>
               {uploadingImage ? (
                 <div style={{ color: "#fff", fontSize: "0.75rem" }}>Uploading…</div>
               ) : profile?.profile_image_url ? (
                 <img src={profile.profile_image_url} alt="Profile" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
               ) : (
-                <span style={{ fontFamily: SERIF, fontSize: "2.6rem", color: "#fff" }}>{initials(displayName)}</span>
+                <span style={{ fontFamily: SERIF, fontSize: "2rem", color: "#fff" }}>{initials(displayName)}</span>
               )}
             </div>
             <label style={{
-              position: "absolute", bottom: "2px", right: "2px",
-              background: T.accent, padding: "9px", borderRadius: "50%", cursor: "pointer",
-              border: "3px solid #ffffff", transition: "transform 0.15s", boxShadow: T.shadowSm
+              position: "absolute", bottom: 0, right: 0,
+              background: T.accent, padding: "7px", borderRadius: "50%", cursor: "pointer",
+              border: `2px solid #ffffff`, transition: "transform 0.15s"
             }}
               onMouseEnter={(e) => e.currentTarget.style.transform = "scale(1.1)"}
               onMouseLeave={(e) => e.currentTarget.style.transform = "scale(1)"}
             >
-              <Camera size={15} color="#fff" />
+              <Camera size={13} color="#fff" />
               <input type="file" accept="image/*" onChange={handleImageUpload} style={{ display: "none" }} disabled={uploadingImage} />
             </label>
           </div>
 
           <div style={{ flex: 1, minWidth: 260 }}>
-            <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", flexWrap: "wrap", marginBottom: "0.6rem" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "0.65rem", flexWrap: "wrap", marginBottom: "0.5rem" }}>
               <h1 style={{ fontFamily: SERIF, fontSize: "clamp(1.7rem, 4vw, 2.4rem)", color: T.textPrimary, letterSpacing: "-0.02em", lineHeight: 1.05 }}>
                 {displayName}
               </h1>
               {profile?.landlord_code && (
-                <span style={{
-                  background: T.accentSoft, color: T.accent, fontSize: "0.7rem", fontWeight: 800,
-                  padding: "4px 11px", borderRadius: 9999, border: `1px solid ${T.accentBorder}`, letterSpacing: "0.04em"
-                }}>
+                <span style={{ color: T.textMuted, fontSize: "0.72rem", fontWeight: 700, letterSpacing: "0.04em" }}>
                   {profile.landlord_code}
                 </span>
               )}
             </div>
-            <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap", marginBottom: "0.9rem" }}>
+
+            <div style={{ display: "flex", alignItems: "center", gap: "0.9rem", color: T.textMuted, marginBottom: "0.75rem", flexWrap: "wrap", fontSize: "0.78rem" }}>
+              <span style={{ display: "flex", alignItems: "center", gap: "0.3rem" }}>
+                <Building size={13} /> {profile?.total_properties || 0} Properties
+              </span>
+              <span style={{ display: "flex", alignItems: "center", gap: "0.3rem" }}>
+                <User size={13} /> {profile?.total_tenants || 0} Tenants
+              </span>
+              <span style={{ display: "flex", alignItems: "center", gap: "0.3rem" }}>
+                <Calendar size={13} /> Joined {profile?.join_date ? new Date(profile.join_date).toLocaleDateString() : 'N/A'}
+              </span>
+            </div>
+
+            <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap", marginBottom: "0.85rem" }}>
               <VerificationBadge verified={profile?.ownership_proof_verified || false} label="Ownership Verified" />
               <VerificationBadge verified={profile?.email_verified || false} label="Email Verified" />
               <VerificationBadge verified={profile?.id_verified || false} label="ID Verified" />
             </div>
-            <div style={{ display: "flex", alignItems: "center", gap: "1.25rem", color: T.textSecondary, marginBottom: "1rem", flexWrap: "wrap", fontSize: "0.82rem" }}>
-              <span style={{ display: "flex", alignItems: "center", gap: "0.35rem" }}>
-                <Building size={14} color={T.accent} /> {profile?.total_properties || 0} Properties
-              </span>
-              <span style={{ display: "flex", alignItems: "center", gap: "0.35rem" }}>
-                <User size={14} color={T.accent} /> {profile?.total_tenants || 0} Tenants
-              </span>
-              <span style={{ display: "flex", alignItems: "center", gap: "0.35rem" }}>
-                <Calendar size={14} color={T.accent} /> Joined {profile?.join_date ? new Date(profile.join_date).toLocaleDateString() : 'N/A'}
-              </span>
-            </div>
-            <div style={{ display: "flex", gap: "1.5rem", flexWrap: "wrap" }}>
+
+            <div style={{ display: "flex", gap: "1.25rem", flexWrap: "wrap" }}>
               <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
-                <Mail size={14} color={T.accent} />
+                <Mail size={14} color={T.textMuted} />
                 <span style={{ fontSize: "0.84rem", color: T.textSecondary }}>{profile?.email}</span>
                 <button
                   onClick={() => copyToClipboard(profile?.email, 'email')}
@@ -595,7 +574,7 @@ export const Profile = ({ onClose, isModal = false }) => {
                 </button>
               </div>
               <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
-                <Phone size={14} color={T.accent} />
+                <Phone size={14} color={T.textMuted} />
                 <span style={{ fontSize: "0.84rem", color: T.textSecondary }}>{profile?.phone || 'Not provided'}</span>
                 <button
                   onClick={() => copyToClipboard(profile?.phone, 'phone')}
@@ -608,16 +587,21 @@ export const Profile = ({ onClose, isModal = false }) => {
           </div>
         </div>
 
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: "1rem", marginTop: "1.75rem", position: "relative", zIndex: 1 }}>
-          <StatCard
-            label="Total Income"
-            value={profile?.total_income ? `R ${Number(profile.total_income).toLocaleString()}` : 'R0'}
-            icon="CreditCard"
-            accent={T.emerald}
-          />
-          <StatCard label="Properties" value={String(profile?.total_properties || 0)} icon="Building" accent={T.accent} />
-          <StatCard label="Tenants" value={String(profile?.total_tenants || 0)} icon="Users" accent={T.purple} />
-          <StatCard label="Trust Rating" value={`${profile?.trust_score || 100}%`} icon="Shield" accent={T.amber} />
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: "1rem", marginTop: "1.5rem", paddingTop: "1.25rem", borderTop: `1px solid ${T.border}` }}>
+          {[
+            { label: "Total Income", value: profile?.total_income ? `R ${Number(profile.total_income).toLocaleString()}` : 'R0', icon: CreditCard },
+            { label: "Properties", value: String(profile?.total_properties || 0), icon: Building },
+            { label: "Tenants", value: String(profile?.total_tenants || 0), icon: UsersIcon },
+            { label: "Trust Rating", value: `${profile?.trust_score || 100}%`, icon: Shield },
+          ].map(({ label, value, icon: Icon }) => (
+            <div key={label} style={{ display: "flex", alignItems: "center", gap: 9, minWidth: 0 }}>
+              <Icon size={15} color={T.textMuted} style={{ flexShrink: 0 }} />
+              <div style={{ minWidth: 0 }}>
+                <p style={EYEBROW}>{label}</p>
+                <p style={{ fontFamily: SERIF, fontSize: "1.25rem", color: T.textPrimary, lineHeight: 1.15, marginTop: 2 }}>{value}</p>
+              </div>
+            </div>
+          ))}
         </div>
       </div>
 
@@ -778,17 +762,15 @@ export const Profile = ({ onClose, isModal = false }) => {
 
       {/* Proof of Ownership & Verification Documents Section */}
       <div style={{
-        background: "#ffffff", border: `1px solid ${T.border}`, borderRadius: T.radiusLg, overflow: "hidden", marginBottom: "1.5rem", boxShadow: T.shadowSm
+        borderTop: `1px solid ${T.border}`, paddingTop: "1.1rem", marginBottom: "1.6rem"
       }}>
         <div style={{
-          padding: "1rem 1.5rem", borderBottom: `1px solid ${T.border}`, display: "flex",
+          display: "flex",
           justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "1rem",
-          background: "linear-gradient(135deg, #ffffff 0%, #f3f9ff 100%)"
+          marginBottom: "0.9rem"
         }}>
-          <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
-            <div style={{ width: 38, height: 38, borderRadius: "0.75rem", background: T.emeraldSoft, border: `1px solid ${T.emeraldBorder}`, display: "flex", alignItems: "center", justifyContent: "center" }}>
-              <Shield size={18} color={T.emerald} />
-            </div>
+          <div style={{ display: "flex", alignItems: "center", gap: "0.6rem" }}>
+            <Shield size={17} color={T.emerald} style={{ flexShrink: 0 }} />
             <div>
               <h2 style={{ fontFamily: SERIF, fontSize: "1.15rem", color: T.textPrimary, letterSpacing: "-0.01em" }}>
                 Proof of Ownership & Verification Documents
@@ -803,42 +785,39 @@ export const Profile = ({ onClose, isModal = false }) => {
           </PrimaryBtn>
         </div>
 
-        <div style={{ padding: "1.5rem" }}>
+        <div>
           {profile?.verification_documents && profile.verification_documents.length > 0 ? (
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: "1rem" }}>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", columnGap: "1.5rem" }}>
               {profile.verification_documents.map((doc, idx) => (
                 <div
                   key={doc.id || idx}
                   className="ll-card-hover"
                   style={{
-                    background: T.surfaceAlt, border: `1px solid ${T.border}`, borderRadius: "1rem",
-                    padding: "1rem", display: "flex", flexDirection: "column", gap: "8px"
+                    borderTop: `1px solid ${T.border}`,
+                    padding: "0.9rem 0", display: "flex", flexDirection: "column", gap: "8px"
                   }}
                 >
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 8 }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: "8px", minWidth: 0 }}>
-                      <div style={{ width: "34px", height: "34px", borderRadius: "0.6rem", background: T.accentSoft, border: `1px solid ${T.accentBorder}`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                        <Shield size={16} color={T.accent} />
-                      </div>
+                    <div style={{ display: "flex", alignItems: "flex-start", gap: "8px", minWidth: 0 }}>
+                      <Shield size={15} color={T.accent} style={{ flexShrink: 0, marginTop: 2 }} />
                       <div style={{ minWidth: 0 }}>
-                        <span style={{ fontSize: "0.64rem", textTransform: "uppercase", color: T.accent, fontWeight: 800, letterSpacing: "0.05em" }}>
+                        <span style={{ fontSize: "0.62rem", textTransform: "uppercase", color: T.textMuted, fontWeight: 700, letterSpacing: "0.05em" }}>
                           {doc.documentType === "ownership" ? "Proof of Ownership" : doc.documentType}
                         </span>
-                        <h4 style={{ fontSize: "0.85rem", fontWeight: 700, color: T.textPrimary, lineHeight: 1.25 }}>
+                        <h4 style={{ fontSize: "0.85rem", fontWeight: 650, color: T.textPrimary, lineHeight: 1.25 }}>
                           {doc.title}
                         </h4>
                       </div>
                     </div>
                     <span style={{
-                      fontSize: "0.62rem", fontWeight: 800, padding: "3px 8px", borderRadius: 9999,
-                      background: T.emeraldSoft, color: T.emerald, border: `1px solid ${T.emeraldBorder}`, flexShrink: 0
+                      fontSize: "0.62rem", fontWeight: 700, color: T.emerald, flexShrink: 0
                     }}>
-                      VERIFIED
+                      Verified
                     </span>
                   </div>
 
                   <p style={{ fontSize: "0.75rem", color: T.textMuted }}>
-                    Property: <strong style={{ color: T.textPrimary }}>{doc.propertyName || "Portfolio-wide"}</strong>
+                    Property: <strong style={{ color: T.textPrimary, fontWeight: 600 }}>{doc.propertyName || "Portfolio-wide"}</strong>
                   </p>
                   <p style={{ fontSize: "0.7rem", color: T.textMuted }}>
                     {doc.fileName} • {doc.uploadedAt ? new Date(doc.uploadedAt).toLocaleDateString() : "Active"}
@@ -848,12 +827,12 @@ export const Profile = ({ onClose, isModal = false }) => {
                     <button
                       onClick={() => { setSelectedPreviewDoc(doc); setIsPreviewOpen(true); }}
                       style={{
-                        flex: 1, padding: "7px", background: T.accentSoft, border: `1px solid ${T.accentBorder}`,
-                        borderRadius: 9999, color: T.accent, fontSize: "0.75rem", fontWeight: 700, cursor: "pointer",
+                        flex: 1, padding: "6px", background: "transparent", border: `1px solid ${T.border}`,
+                        borderRadius: 8, color: T.textPrimary, fontSize: "0.74rem", fontWeight: 600, cursor: "pointer",
                         display: "flex", alignItems: "center", justifyContent: "center", gap: "4px", transition: "all 0.15s"
                       }}
-                      onMouseEnter={(e) => { e.currentTarget.style.background = T.accent; e.currentTarget.style.color = "#fff"; }}
-                      onMouseLeave={(e) => { e.currentTarget.style.background = T.accentSoft; e.currentTarget.style.color = T.accent; }}
+                      onMouseEnter={(e) => { e.currentTarget.style.borderColor = T.borderHover; e.currentTarget.style.color = T.accent; }}
+                      onMouseLeave={(e) => { e.currentTarget.style.borderColor = T.border; e.currentTarget.style.color = T.textPrimary; }}
                     >
                       <Eye size={13} /> Preview
                     </button>
@@ -861,12 +840,12 @@ export const Profile = ({ onClose, isModal = false }) => {
                       onClick={() => setDocToReplace(doc)}
                       title="Replace with new file"
                       style={{
-                        padding: "7px 11px", background: "#ffffff", border: `1px solid ${T.borderStrong}`,
-                        borderRadius: 9999, color: T.textMuted, cursor: "pointer",
-                        display: "flex", alignItems: "center", justifyContent: "center", gap: "4px", fontSize: "0.78rem", fontWeight: 600, transition: "all 0.15s"
+                        padding: "6px 10px", background: "transparent", border: `1px solid ${T.border}`,
+                        borderRadius: 8, color: T.textMuted, cursor: "pointer",
+                        display: "flex", alignItems: "center", justifyContent: "center", gap: "4px", fontSize: "0.74rem", fontWeight: 600, transition: "all 0.15s"
                       }}
-                      onMouseEnter={(e) => { e.currentTarget.style.color = T.accent; e.currentTarget.style.borderColor = T.accentBorder; e.currentTarget.style.background = T.accentSofter; }}
-                      onMouseLeave={(e) => { e.currentTarget.style.color = T.textMuted; e.currentTarget.style.borderColor = T.borderStrong; e.currentTarget.style.background = "#ffffff"; }}
+                      onMouseEnter={(e) => { e.currentTarget.style.color = T.accent; e.currentTarget.style.borderColor = T.borderHover; }}
+                      onMouseLeave={(e) => { e.currentTarget.style.color = T.textMuted; e.currentTarget.style.borderColor = T.border; }}
                     >
                       <RefreshCw size={13} /> Replace
                     </button>
@@ -874,12 +853,12 @@ export const Profile = ({ onClose, isModal = false }) => {
                       onClick={() => setDocToDelete(doc)}
                       title="Remove document"
                       style={{
-                        padding: "7px 11px", background: "#ffffff", border: `1px solid ${T.borderStrong}`,
-                        borderRadius: 9999, color: T.textMuted, cursor: "pointer",
+                        padding: "6px 10px", background: "transparent", border: `1px solid ${T.border}`,
+                        borderRadius: 8, color: T.textMuted, cursor: "pointer",
                         display: "flex", alignItems: "center", justifyContent: "center", transition: "all 0.15s"
                       }}
-                      onMouseEnter={(e) => { e.currentTarget.style.color = T.red; e.currentTarget.style.borderColor = T.redBorder; e.currentTarget.style.background = T.redSoft; }}
-                      onMouseLeave={(e) => { e.currentTarget.style.color = T.textMuted; e.currentTarget.style.borderColor = T.borderStrong; e.currentTarget.style.background = "#ffffff"; }}
+                      onMouseEnter={(e) => { e.currentTarget.style.color = T.red; e.currentTarget.style.borderColor = T.redBorder; }}
+                      onMouseLeave={(e) => { e.currentTarget.style.color = T.textMuted; e.currentTarget.style.borderColor = T.border; }}
                     >
                       <Trash2 size={13} />
                     </button>
@@ -889,13 +868,11 @@ export const Profile = ({ onClose, isModal = false }) => {
             </div>
           ) : (
             <div style={{
-              textAlign: "center", padding: "2.5rem 2rem", background: T.surfaceAlt,
-              borderRadius: "1rem", border: `1px dashed ${T.borderHover}`
+              textAlign: "center", padding: "2.5rem 1rem",
+              borderTop: `1px solid ${T.border}`, borderBottom: `1px solid ${T.border}`
             }}>
-              <div style={{ width: 60, height: 60, borderRadius: 18, background: T.accentSoft, border: `1px solid ${T.accentBorder}`, display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 1rem" }}>
-                <Shield size={26} color={T.accent} />
-              </div>
-              <p style={{ color: T.textPrimary, fontWeight: 700, fontSize: "1rem", fontFamily: SERIF }}>
+              <Shield size={24} color={T.textMuted} style={{ marginBottom: "0.75rem" }} />
+              <p style={{ color: T.textPrimary, fontWeight: 650, fontSize: "1rem", fontFamily: SERIF }}>
                 No verification documents uploaded yet
               </p>
               <p style={{ color: T.textMuted, fontSize: "0.82rem", maxWidth: "420px", margin: "6px auto 1.25rem", lineHeight: 1.6 }}>
@@ -913,14 +890,12 @@ export const Profile = ({ onClose, isModal = false }) => {
 
       {/* Security Section */}
       <ProfileSection title="Security" subtitle="Password and account protection" icon={Lock}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "1rem", flexWrap: "wrap", background: T.surfaceAlt, border: `1px solid ${T.border}`, borderRadius: "0.875rem", padding: "1.1rem 1.25rem" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-            <div style={{ width: 40, height: 40, borderRadius: 12, background: T.accentSoft, border: `1px solid ${T.accentBorder}`, display: "flex", alignItems: "center", justifyContent: "center" }}>
-              <KeyRound size={18} color={T.accent} />
-            </div>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "1rem", flexWrap: "wrap", borderBottom: `1px solid ${T.border}`, padding: "0.85rem 0" }}>
+          <div style={{ display: "flex", alignItems: "flex-start", gap: 10 }}>
+            <KeyRound size={16} color={T.accent} style={{ marginTop: 3, flexShrink: 0 }} />
             <div>
-              <p style={{ fontSize: "0.9rem", fontWeight: 700, color: T.textPrimary }}>Account password</p>
-              <p style={{ fontSize: "0.76rem", color: T.textMuted, marginTop: 2 }}>Use a strong password you don't reuse elsewhere.</p>
+              <p style={{ fontSize: "0.88rem", fontWeight: 650, color: T.textPrimary }}>Account password</p>
+              <p style={{ fontSize: "0.74rem", color: T.textMuted, marginTop: 2 }}>Use a strong password you don't reuse elsewhere.</p>
             </div>
           </div>
           <SecondaryBtn onClick={() => setShowPasswordModal(true)}><Lock size={15} /> Change Password</SecondaryBtn>

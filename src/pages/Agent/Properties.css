@@ -154,3 +154,46 @@
   .properties-search-input-wrapper { max-width: none; }
   .properties-grid { grid-template-columns: 1fr; gap: 14px; }
 }
+
+/* Inventory is a working list: keep the listing image secondary and details scanable. */
+.agent-main-content.is-workspace .properties-page { max-width: 1320px; padding: 28px 36px 56px; }
+.agent-main-content.is-workspace .properties-header { border-bottom-color: #e2e8f0; }
+.agent-main-content.is-workspace .properties-title { color: #111827; font-family: inherit; font-size: 1.75rem; font-weight: 650; letter-spacing: -0.03em; }
+.agent-main-content.is-workspace .properties-subtitle { color: #64748b; }
+.agent-main-content.is-workspace .properties-search-input {
+  background: #fff; border-color: #cbd5e1; border-radius: 4px; color: #111827 !important;
+}
+.agent-main-content.is-workspace .properties-search-input::placeholder { color: #64748b; }
+.agent-main-content.is-workspace .properties-empty-container { background: transparent; border: 0; border-top: 1px solid #e2e8f0; border-radius: 0; }
+.agent-main-content.is-workspace .properties-empty-title { color: #334155; }
+.agent-main-content.is-workspace .properties-empty-subtitle { color: #64748b; }
+.agent-main-content.is-workspace .properties-grid { display: block; border-bottom: 1px solid #e2e8f0; }
+.agent-main-content.is-workspace .property-card {
+  display: flex; align-items: center; gap: 18px; padding: 16px 0; background: transparent;
+  border: 0; border-top: 1px solid #e2e8f0; border-radius: 0; box-shadow: none;
+}
+.agent-main-content.is-workspace .property-card:hover { transform: none; border-color: #e2e8f0; }
+.agent-main-content.is-workspace .property-card-image-wrapper { width: 112px; height: 82px; flex: 0 0 112px; }
+.agent-main-content.is-workspace .property-card-image { transition: none; }
+.agent-main-content.is-workspace .property-card:hover .property-card-image { transform: none; }
+.agent-main-content.is-workspace .property-card-content { flex: 1; min-width: 0; padding: 0; display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 5px 16px; }
+.agent-main-content.is-workspace .property-card-type { color: #111827; font-family: inherit; font-weight: 650; }
+.agent-main-content.is-workspace .property-card-location { color: #475569; margin-top: 3px; }
+.agent-main-content.is-workspace .property-card-address { color: #64748b; margin: 2px 0 0; }
+.agent-main-content.is-workspace .property-card-tags { grid-column: 1; margin-top: 5px; gap: 10px; }
+.agent-main-content.is-workspace .property-card-tag { color: #475569; background: transparent; border: 0; padding: 0; border-radius: 0; font-family: inherit; }
+.agent-main-content.is-workspace .property-card-tag:first-child { color: #0f766e; background: transparent; border: 0; }
+.agent-main-content.is-workspace .property-view-details-btn {
+  grid-column: 2; grid-row: 1 / span 3; width: auto; margin: 0; padding: 8px 12px; color: #334155;
+  background: transparent; border: 1px solid #cbd5e1; border-radius: 4px;
+}
+.agent-main-content.is-workspace .property-view-details-btn:hover { color: #111827; background: #f8fafc; border-color: #94a3b8; transform: none; }
+@media (max-width: 768px) {
+  .agent-main-content.is-workspace .properties-page { padding: 22px 18px 44px; }
+}
+@media (max-width: 520px) {
+  .agent-main-content.is-workspace .property-card { align-items: flex-start; gap: 12px; }
+  .agent-main-content.is-workspace .property-card-image-wrapper { width: 80px; height: 72px; flex-basis: 80px; }
+  .agent-main-content.is-workspace .property-card-content { display: block; }
+  .agent-main-content.is-workspace .property-view-details-btn { margin-top: 8px; }
+}

@@ -645,6 +645,63 @@
 
 @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
+/* Light, compact application worklist inside the redesigned portal workspace. */
+.agent-main-content.is-workspace .applications-wrapper { max-width: 1320px; padding: 28px 36px 56px; }
+.agent-main-content.is-workspace .applications-header { border-bottom-color: #e2e8f0; margin-bottom: 18px; }
+.agent-main-content.is-workspace .applications-title { color: #111827; font-family: inherit; font-size: 1.75rem; font-weight: 650; }
+.agent-main-content.is-workspace .applications-subtitle { color: #64748b; }
+.agent-main-content.is-workspace .refresh-button,
+.agent-main-content.is-workspace .search-input,
+.agent-main-content.is-workspace .cat-btn { color: #334155; background: #fff; border-color: #cbd5e1; border-radius: 4px; }
+.agent-main-content.is-workspace .search-input { color: #111827; }
+.agent-main-content.is-workspace .search-input::placeholder { color: #64748b; }
+.agent-main-content.is-workspace .cat-btn.active { color: #1d4ed8; background: #eff6ff; border-color: #bfdbfe; }
+.agent-main-content.is-workspace .cat-btn:hover,
+.agent-main-content.is-workspace .refresh-button:hover:not(:disabled) { color: #111827; background: #f8fafc; }
+.agent-main-content.is-workspace .applications-grid { display: block; border-top: 1px solid #e2e8f0; }
+.agent-main-content.is-workspace .application-card {
+  background: transparent; border: 0; border-bottom: 1px solid #e2e8f0; border-radius: 0; box-shadow: none;
+  animation: none; transition: background 0.15s ease;
+}
+.agent-main-content.is-workspace .application-card:hover { transform: none; border-color: #e2e8f0; box-shadow: none; background: #f8fafc; }
+.agent-main-content.is-workspace .card-accent { display: none; }
+.agent-main-content.is-workspace .card-body { padding: 20px 12px; }
+.agent-main-content.is-workspace .applicant-name,
+.agent-main-content.is-workspace .job-snippet-title,
+.agent-main-content.is-workspace .applied-property-banner .banner-title,
+.agent-main-content.is-workspace .fact-value { color: #111827; }
+.agent-main-content.is-workspace .applicant-email,
+.agent-main-content.is-workspace .card-meta,
+.agent-main-content.is-workspace .applied-property-meta,
+.agent-main-content.is-workspace .job-employer-line,
+.agent-main-content.is-workspace .match-ratio,
+.agent-main-content.is-workspace .fact-notes,
+.agent-main-content.is-workspace .completion-prompt,
+.agent-main-content.is-workspace .completion-note,
+.agent-main-content.is-workspace .assignment-response-reason { color: #475569; }
+.agent-main-content.is-workspace .applied-property-banner,
+.agent-main-content.is-workspace .job-profile-snippet,
+.agent-main-content.is-workspace .fact,
+.agent-main-content.is-workspace .completion-box,
+.agent-main-content.is-workspace .assignment-response-box {
+  background: transparent; border: 0; border-top: 1px solid #e2e8f0; border-radius: 0; padding: 12px 0;
+}
+.agent-main-content.is-workspace .applied-property-banner { border-top: 0; padding: 10px 0 0; }
+.agent-main-content.is-workspace .match-widget { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 4px; }
+.agent-main-content.is-workspace .match-widget:hover { background: #eff6ff; border-color: #bfdbfe; transform: none; }
+.agent-main-content.is-workspace .facts { gap: 0 16px; }
+.agent-main-content.is-workspace .fact { padding: 9px 0; }
+.agent-main-content.is-workspace .status-select { color: #111827; background: #fff; border-color: #cbd5e1; border-radius: 4px; }
+.agent-main-content.is-workspace .status-select:hover { background: #f8fafc; }
+.agent-main-content.is-workspace .status-block { border-top-color: #e2e8f0; }
+.agent-main-content.is-workspace .assignment-response-prompt { color: #334155; }
+.agent-main-content.is-workspace .resp-btn.reject { color: #b91c1c; }
+.agent-main-content.is-workspace .results-count { border-top-color: #e2e8f0; color: #64748b; }
+
+@media (max-width: 768px) {
+  .agent-main-content.is-workspace .applications-wrapper { padding: 22px 18px 44px; }
+}
+
 /* ------------------------------------------------- Assignment response box */
 .assignment-response-box {
   margin-top: 14px;

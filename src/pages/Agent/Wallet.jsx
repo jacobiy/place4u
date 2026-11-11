@@ -20,7 +20,6 @@ import {
   ChevronRight,
   ExternalLink,
   Award,
-  Sparkles,
   MapPin,
   Calendar,
   Check,
@@ -29,7 +28,6 @@ import {
   FileCheck,
   Printer,
   Lock,
-  Percent
 } from 'lucide-react';
 import {
   ResponsiveContainer,
@@ -496,7 +494,8 @@ export const Wallet = ({
             </button>
 
             <button
-              onClick={handleExportCSV}
+            onClick={handleExportCSV}
+            className="agent-wallet-secondary-action"
               style={{
                 display: 'inline-flex',
                 alignItems: 'center',
@@ -517,7 +516,8 @@ export const Wallet = ({
             </button>
 
             <button
-              onClick={() => setIsBankModalOpen(true)}
+            onClick={() => setIsBankModalOpen(true)}
+            className="agent-wallet-secondary-action"
               style={{
                 display: 'inline-flex',
                 alignItems: 'center',
@@ -558,63 +558,9 @@ export const Wallet = ({
           </div>
         </header>
 
-        {/* 50% Fee Split Policy Explanatory Banner */}
-        <section style={{
-          background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.12) 0%, rgba(79, 126, 248, 0.08) 100%)',
-          border: '1px solid rgba(16, 185, 129, 0.28)',
-          borderRadius: '1rem',
-          padding: '1.25rem 1.5rem',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          flexWrap: 'wrap',
-          gap: '1rem'
-        }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-            <div style={{
-              width: 44,
-              height: 44,
-              borderRadius: '0.75rem',
-              background: 'rgba(16, 185, 129, 0.2)',
-              border: '1px solid rgba(16, 185, 129, 0.4)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              color: '#10b981',
-              flexShrink: 0
-            }}>
-              <Percent size={22} />
-            </div>
-            <div>
-              <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: 700, color: '#fff' }}>
-                Place4U 50% Payment Split Model
-              </h3>
-              <p style={{ margin: '3px 0 0', fontSize: '0.82rem', color: '#cbd5e1', lineHeight: 1.45 }}>
-                For every tenant application assigned to you, Place4U shares <strong>50% of our R100 payment (R50.00 per processed file)</strong> directly with you. Payouts are released directly via EFT to your verified South African banking account.
-              </p>
-            </div>
-          </div>
-
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '1.25rem',
-            padding: '0.5rem 1rem',
-            background: 'rgba(0, 0, 0, 0.3)',
-            borderRadius: '0.65rem',
-            border: '1px solid rgba(255, 255, 255, 0.08)'
-          }}>
-            <div>
-              <span style={{ fontSize: '0.68rem', color: '#94a3b8', textTransform: 'uppercase', display: 'block' }}>Fee Collected</span>
-              <strong style={{ color: '#fff', fontSize: '0.95rem' }}>R100.00</strong>
-            </div>
-            <div style={{ height: 24, width: 1, background: 'rgba(255, 255, 255, 0.15)' }} />
-            <div>
-              <span style={{ fontSize: '0.68rem', color: '#10b981', textTransform: 'uppercase', display: 'block', fontWeight: 700 }}>Your 50% Share</span>
-              <strong style={{ color: '#10b981', fontSize: '0.95rem' }}>R50.00 / File</strong>
-            </div>
-          </div>
-        </section>
+        <p className="agent-wallet-policy">
+          Earnings are 50% of the R100 application fee (R50 per eligible completed file), paid by EFT. This is a share of the application fee, not rent commission.
+        </p>
 
         {/* 1. Hero Metric Cards Grid */}
         <section className="agent-wallet-hero-grid">
@@ -707,7 +653,7 @@ export const Wallet = ({
                 <TrendingUp size={18} color="var(--wallet-emerald)" />
                 50% Payment Share Trajectory (R50.00 / File)
               </h3>
-              <span style={{ fontSize: '0.75rem', color: '#94a3b8' }}>Cumulative 2026 Volume</span>
+              <span style={{ fontSize: '0.75rem', color: '#64748b' }}>Last five months</span>
             </div>
             <div className="agent-section-body" style={{ height: 240 }}>
               <ResponsiveContainer width="100%" height="100%">
@@ -718,7 +664,7 @@ export const Wallet = ({
                       <stop offset="95%" stopColor="#10b981" stopOpacity={0.0} />
                     </linearGradient>
                   </defs>
-                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
+                  <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
                   <XAxis dataKey="month" stroke="#64748b" fontSize={11} tickLine={false} />
                   <YAxis
                     stroke="#64748b"
@@ -763,7 +709,7 @@ export const Wallet = ({
                       dataKey="value"
                     >
                       {categoryPieData.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={entry.color} stroke="#101524" strokeWidth={2} />
+                        <Cell key={`cell-${index}`} fill={entry.color} stroke="#ffffff" strokeWidth={2} />
                       ))}
                     </Pie>
                   </PieChart>
@@ -774,8 +720,8 @@ export const Wallet = ({
                 {categoryPieData.map((item, idx) => (
                   <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.8rem' }}>
                     <div style={{ width: 10, height: 10, borderRadius: '50%', background: item.color }} />
-                    <span style={{ color: '#cbd5e1', flex: 1 }}>{item.name}</span>
-                    <strong style={{ color: '#fff' }}>{item.value}%</strong>
+                    <span style={{ color: '#334155', flex: 1 }}>{item.name}</span>
+                    <strong style={{ color: '#111827' }}>{item.value}%</strong>
                   </div>
                 ))}
               </div>
@@ -796,7 +742,7 @@ export const Wallet = ({
                   border: '1px solid',
                   borderColor: activeTab === 'files' ? '#10b981' : 'var(--wallet-border)',
                   background: activeTab === 'files' ? 'rgba(16, 185, 129, 0.15)' : 'rgba(255, 255, 255, 0.03)',
-                  color: activeTab === 'files' ? '#10b981' : '#94a3b8',
+                  color: activeTab === 'files' ? '#10b981' : 'var(--wallet-text-muted)',
                   fontSize: '0.82rem',
                   fontWeight: 700,
                   cursor: 'pointer',
@@ -809,7 +755,7 @@ export const Wallet = ({
                 <span>Application Files (50% Split)</span>
                 <span style={{
                   background: activeTab === 'files' ? '#10b981' : 'rgba(255, 255, 255, 0.1)',
-                  color: activeTab === 'files' ? '#fff' : '#cbd5e1',
+                  color: activeTab === 'files' ? '#fff' : 'var(--wallet-text-muted)',
                   borderRadius: '9999px',
                   padding: '1px 6px',
                   fontSize: '0.7rem'
@@ -826,7 +772,7 @@ export const Wallet = ({
                   border: '1px solid',
                   borderColor: activeTab === 'payouts' ? '#4f7ef8' : 'var(--wallet-border)',
                   background: activeTab === 'payouts' ? 'rgba(79, 126, 248, 0.15)' : 'rgba(255, 255, 255, 0.03)',
-                  color: activeTab === 'payouts' ? '#7c9ffc' : '#94a3b8',
+                  color: activeTab === 'payouts' ? '#1d4ed8' : 'var(--wallet-text-muted)',
                   fontSize: '0.82rem',
                   fontWeight: 700,
                   cursor: 'pointer',
@@ -839,7 +785,7 @@ export const Wallet = ({
                 <span>Disbursements &amp; Remittance Slips</span>
                 <span style={{
                   background: activeTab === 'payouts' ? '#4f7ef8' : 'rgba(255, 255, 255, 0.1)',
-                  color: activeTab === 'payouts' ? '#fff' : '#cbd5e1',
+                  color: activeTab === 'payouts' ? '#fff' : 'var(--wallet-text-muted)',
                   borderRadius: '9999px',
                   padding: '1px 6px',
                   fontSize: '0.7rem'
@@ -864,8 +810,8 @@ export const Wallet = ({
                         fontWeight: 600,
                         border: '1px solid',
                         borderColor: statusFilter === st ? '#4f7ef8' : 'transparent',
-                        background: statusFilter === st ? 'rgba(79, 126, 248, 0.2)' : 'rgba(255, 255, 255, 0.04)',
-                        color: statusFilter === st ? '#fff' : '#94a3b8',
+                        background: statusFilter === st ? '#eff6ff' : '#fff',
+                        color: statusFilter === st ? '#1d4ed8' : 'var(--wallet-text-muted)',
                         cursor: 'pointer'
                       }}
                     >
@@ -885,10 +831,10 @@ export const Wallet = ({
                   style={{
                     width: '100%',
                     padding: '0.45rem 0.75rem 0.45rem 2rem',
-                    background: 'rgba(255, 255, 255, 0.04)',
+                    background: 'var(--wallet-card)',
                     border: '1px solid var(--wallet-border)',
                     borderRadius: '0.5rem',
-                    color: '#fff',
+                    color: 'var(--wallet-text)',
                     fontSize: '0.8rem',
                     outline: 'none'
                   }}
@@ -917,31 +863,31 @@ export const Wallet = ({
                     <tr
                       key={file.id}
                       style={{
-                        borderBottom: '1px solid rgba(255, 255, 255, 0.04)',
+                        borderBottom: '1px solid var(--wallet-border)',
                         transition: 'background 0.15s ease'
                       }}
-                      onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255, 255, 255, 0.02)'}
+                      onMouseEnter={(e) => e.currentTarget.style.background = '#f8fafc'}
                       onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
                     >
                       <td style={{ padding: '0.9rem 1rem' }}>
-                        <div style={{ fontWeight: 700, color: '#fff', fontFamily: 'monospace' }}>#{file.applicationId}</div>
+                        <div style={{ fontWeight: 700, color: 'var(--wallet-text)', fontFamily: 'monospace' }}>#{file.applicationId}</div>
                         <span style={{ fontSize: '0.72rem', color: '#64748b' }}>{file.formattedDate}</span>
                       </td>
 
                       <td style={{ padding: '0.9rem 1rem' }}>
-                        <div style={{ fontWeight: 600, color: '#fff' }}>{file.tenantName}</div>
-                        <span style={{ fontSize: '0.72rem', color: '#94a3b8' }}>{file.tenantEmail}</span>
+                        <div style={{ fontWeight: 600, color: 'var(--wallet-text)' }}>{file.tenantName}</div>
+                        <span style={{ fontSize: '0.72rem', color: 'var(--wallet-text-muted)' }}>{file.tenantEmail}</span>
                       </td>
 
                       <td style={{ padding: '0.9rem 1rem' }}>
-                        <div style={{ color: '#cbd5e1', maxWidth: 220, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                        <div style={{ color: 'var(--wallet-text-muted)', maxWidth: 220, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                           {file.propertyTitle}
                         </div>
                         <span style={{ fontSize: '0.72rem', color: '#64748b' }}>{file.category}</span>
                       </td>
 
                       <td style={{ padding: '0.9rem 1rem' }}>
-                        <strong style={{ color: '#fff' }}>R{file.feeCollected}.00</strong>
+                        <strong style={{ color: 'var(--wallet-text)' }}>R{file.feeCollected}.00</strong>
                         <span style={{ display: 'block', fontSize: '0.7rem', color: '#64748b' }}>Paid by Tenant</span>
                       </td>
 
@@ -1055,27 +1001,27 @@ export const Wallet = ({
                     <tr
                       key={remit.id}
                       style={{
-                        borderBottom: '1px solid rgba(255, 255, 255, 0.04)',
+                        borderBottom: '1px solid var(--wallet-border)',
                         transition: 'background 0.15s ease'
                       }}
-                      onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255, 255, 255, 0.02)'}
+                      onMouseEnter={(e) => e.currentTarget.style.background = '#f8fafc'}
                       onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
                     >
                       <td style={{ padding: '0.9rem 1rem' }}>
-                        <div style={{ fontWeight: 700, color: '#fff', fontFamily: 'monospace' }}>{remit.id}</div>
+                        <div style={{ fontWeight: 700, color: 'var(--wallet-text)', fontFamily: 'monospace' }}>{remit.id}</div>
                         <span style={{ fontSize: '0.72rem', color: '#64748b' }}>{remit.method}</span>
                       </td>
 
-                      <td style={{ padding: '0.9rem 1rem', color: '#cbd5e1' }}>
+                      <td style={{ padding: '0.9rem 1rem', color: 'var(--wallet-text-muted)' }}>
                         {remit.formattedDate}
                       </td>
 
                       <td style={{ padding: '0.9rem 1rem' }}>
-                        <div style={{ fontWeight: 600, color: '#fff' }}>{remit.beneficiary}</div>
-                        <span style={{ fontSize: '0.72rem', color: '#94a3b8' }}>{remit.destination}</span>
+                        <div style={{ fontWeight: 600, color: 'var(--wallet-text)' }}>{remit.beneficiary}</div>
+                        <span style={{ fontSize: '0.72rem', color: 'var(--wallet-text-muted)' }}>{remit.destination}</span>
                       </td>
 
-                      <td style={{ padding: '0.9rem 1rem', color: '#94a3b8', maxWidth: 280 }}>
+                      <td style={{ padding: '0.9rem 1rem', color: 'var(--wallet-text-muted)', maxWidth: 280 }}>
                         {remit.reason}
                       </td>
 

@@ -1,111 +1,83 @@
 import { MapPin, Bed, Bath, Square, BadgeCheck, AlertCircle, Edit, Eye, EyeOff, FileText } from "lucide-react";
-import { T, SERIF } from "../Styles/designTokens";
+import { T } from "../Styles/designTokens";
 import { getApprovalMeta, countDocs } from "../Styles/approval";
 
 export const PropertyCard = ({ property, onEdit, onViewDetails, onUploadDocuments }) => {
   const status = (() => {
     if (typeof property?.occupied === "boolean") {
       return {
-        label: property.occupied ? "OCCUPIED" : "VACANT",
-        color: property.occupied ? "#059669" : "#d97706",
+        label: property.occupied ? "Occupied" : "Vacant",
+        color: property.occupied ? "#047857" : "#b45309",
         icon: property.occupied ? BadgeCheck : AlertCircle,
       };
     }
     if (typeof property?.is_active === "boolean") {
-      return { label: property.is_active ? "ACTIVE" : "INACTIVE", color: property.is_active ? "#059669" : "#dc2626", icon: property.is_active ? Eye : EyeOff };
+      return { label: property.is_active ? "Active" : "Inactive", color: property.is_active ? "#047857" : "#b91c1c", icon: property.is_active ? Eye : EyeOff };
     }
-    return { label: "ACTIVE", color: "#059669", icon: Eye };
+    return { label: "Active", color: "#047857", icon: Eye };
   })();
   const StatusIcon = status.icon;
   const approval = getApprovalMeta(property?.approval_status);
   const docCount = countDocs(property?.documents);
 
   return (
-    <div
+    <article
       onClick={() => onViewDetails(property)}
-      className="ll-card-hover ll-img-zoom"
       style={{
-        background: "#fff",
-        border: `1px solid ${T.border}`,
-        borderRadius: T.radiusLg,
-        overflow: "hidden",
+        display: "grid",
+        gridTemplateColumns: "84px minmax(0, 1fr) auto",
+        alignItems: "center",
+        gap: "1rem",
+        padding: "1rem 0",
+        borderTop: `1px solid ${T.border}`,
         cursor: "pointer",
-        boxShadow: T.shadow,
-        display: "flex",
-        flexDirection: "column",
+      }}
+      role="button"
+      tabIndex={0}
+      onKeyDown={(event) => {
+        if (event.target === event.currentTarget && (event.key === "Enter" || event.key === " ")) {
+          event.preventDefault();
+          onViewDetails(property);
+        }
       }}
     >
-      <div style={{ height: "190px", position: "relative", overflow: "hidden" }}>
-        <img src={property.image} alt={property.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-        <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to top, rgba(15,23,42,0.72) 0%, transparent 55%)" }} />
-        <div style={{ position: "absolute", top: 12, left: 12, display: "flex", flexDirection: "column", alignItems: "flex-start", gap: 6 }}>
-          <span style={{
-            fontSize: "0.64rem", fontWeight: 800, letterSpacing: "0.05em",
-            padding: "4px 11px", borderRadius: 9999, background: approval.color, color: "#fff",
-          }}>
-            {approval.short}
-          </span>
-          <span style={{
-            fontSize: "0.6rem", fontWeight: 800, letterSpacing: "0.05em",
-            padding: "3px 9px", borderRadius: 9999, background: status.color, color: "#fff",
-            display: "flex", alignItems: "center", gap: 4,
-          }}>
-            <StatusIcon size={11} />{status.label}
+      <img
+        src={property.image || "/property-placeholder.svg"}
+        alt={property.name || "Property"}
+        style={{ width: 84, height: 72, objectFit: "cover", background: T.surfaceAlt }}
+      />
+
+      <div style={{ minWidth: 0 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 9, flexWrap: "wrap" }}>
+          <h3 style={{ margin: 0, fontSize: "1rem", fontWeight: 650, color: T.textPrimary }}>{property.name || "Untitled property"}</h3>
+          <span style={{ fontSize: "0.7rem", fontWeight: 700, color: approval.color }}>{approval.short}</span>
+          <span style={{ fontSize: "0.7rem", fontWeight: 700, color: status.color, display: "inline-flex", alignItems: "center", gap: 4 }}>
+            <StatusIcon size={12} />{status.label}
           </span>
         </div>
-        <div style={{ position: "absolute", top: 12, right: 12, display: "flex", flexDirection: "column", gap: 6 }}>
-          <button
-            onClick={(e) => { e.stopPropagation(); onEdit(property); }}
-            aria-label="Edit property"
-            title="Edit property"
-            style={{
-              background: "rgba(255,255,255,0.9)", backdropFilter: "blur(4px)",
-              border: "1px solid rgba(255,255,255,0.6)", borderRadius: 9999, padding: 7,
-              cursor: "pointer", display: "flex",
-            }}
-          >
-            <Edit size={13} color={T.textPrimary} />
+        <p style={{ margin: "4px 0 8px", fontSize: "0.8rem", color: T.textMuted, display: "flex", alignItems: "center", gap: 4 }}>
+          <MapPin size={12} />{property.location || "Location not provided"}
+        </p>
+        <div style={{ display: "flex", alignItems: "center", gap: 14, flexWrap: "wrap", fontSize: "0.74rem", color: T.textSecondary }}>
+          <strong style={{ fontSize: "0.9rem", color: T.textPrimary }}>{property.rent || "Rent not set"}</strong>
+          {property.bedrooms != null && <span><Bed size={12} style={{ verticalAlign: "-2px" }} /> {property.bedrooms} bd</span>}
+          {property.bathrooms != null && <span><Bath size={12} style={{ verticalAlign: "-2px" }} /> {property.bathrooms} ba</span>}
+          {property.size && <span><Square size={12} style={{ verticalAlign: "-2px" }} /> {property.size}</span>}
+          <span><FileText size={12} style={{ verticalAlign: "-2px" }} /> {docCount} document{docCount === 1 ? "" : "s"}</span>
+        </div>
+      </div>
+
+      <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+        <button onClick={(e) => { e.stopPropagation(); onEdit(property); }} aria-label="Edit property" title="Edit property" style={{ background: "transparent", border: `1px solid ${T.border}`, padding: 8, cursor: "pointer", color: T.textSecondary }}>
+          <Edit size={15} />
+        </button>
+        {onUploadDocuments && (
+          <button onClick={(e) => { e.stopPropagation(); onUploadDocuments(property); }} aria-label="Property documents" title="Upload or manage property documents" style={{ background: "transparent", border: `1px solid ${T.border}`, padding: 8, cursor: "pointer", color: docCount > 0 ? T.accent : T.textSecondary }}>
+            <FileText size={15} />
           </button>
-          {onUploadDocuments && (
-            <button
-              onClick={(e) => { e.stopPropagation(); onUploadDocuments(property); }}
-              aria-label="Property documents"
-              title="Upload / manage property documents"
-              style={{
-                background: "rgba(255,255,255,0.9)", backdropFilter: "blur(4px)",
-                border: "1px solid rgba(255,255,255,0.6)", borderRadius: 9999, padding: 7,
-                cursor: "pointer", display: "flex",
-              }}
-            >
-              <FileText size={13} color={docCount > 0 ? T.accent : T.textPrimary} />
-            </button>
-          )}
-        </div>
-        <p style={{ position: "absolute", bottom: 12, left: 14, fontFamily: SERIF, fontSize: "1.2rem", color: "#fff" }}>{property.name}</p>
+        )}
       </div>
-
-      <div style={{ padding: "1rem", flex: 1, display: "flex", flexDirection: "column" }}>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
-          <span style={{ fontSize: "0.75rem", color: T.textMuted, display: "flex", alignItems: "center", gap: 4 }}>
-            <MapPin size={12} color={T.accent} /> {property.location || "—"}
-          </span>
-          <span style={{ fontFamily: SERIF, fontSize: "1.15rem", color: T.accent, letterSpacing: "-0.02em" }}>{property.rent}</span>
-        </div>
-
-        <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: "auto", paddingTop: 12, borderTop: `1px solid ${T.border}` }}>
-          {[
-            { icon: <Bed size={12} color={T.accent} />, val: `${property.bedrooms} bd` },
-            { icon: <Bath size={12} color={T.accent} />, val: `${property.bathrooms} ba` },
-            { icon: <Square size={12} color={T.accent} />, val: property.size },
-            { icon: <FileText size={12} color={docCount > 0 ? T.accent : T.textMuted} />, val: `${docCount} doc${docCount === 1 ? "" : "s"}` },
-          ].map(({ icon, val }, i) => (
-            <span key={i} style={{ display: "flex", alignItems: "center", gap: 4, fontSize: "0.71rem", color: T.textSecondary, background: T.surfaceAlt, border: `1px solid ${T.border}`, padding: "3px 9px", borderRadius: 9999 }}>
-              {icon} {val}
-            </span>
-          ))}
-        </div>
-      </div>
-    </div>
+    </article>
   );
 };
 

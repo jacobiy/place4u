@@ -11,7 +11,7 @@ import {
   CheckCircle2,
   PackageCheck,
   ChevronDown,
-  Sparkles
+  ChevronUp
 } from 'lucide-react';
 import Loading from '../../component/loading';
 import ApplicationSummaryPanel from './Component/ApplicationSummaryPanel';
@@ -487,7 +487,7 @@ export default function ApplicationManager({
 
                 <div className="apm-filter apm-filter-more">
                   <button type="button" className="apm-more-btn" onClick={() => setShowMore((v) => !v)}>
-                    <SlidersHorizontal size={13} /> More {showMore ? '▴' : '▾'}
+                    <SlidersHorizontal size={13} /> More {showMore ? <ChevronUp size={13} /> : <ChevronDown size={13} />}
                   </button>
                 </div>
               </div>
@@ -586,7 +586,7 @@ export default function ApplicationManager({
             <div className="apm-draft-head">
               <div>
                 <h2>
-                  <Sparkles size={17} /> Your draft shortlist
+                  <PackageCheck size={17} /> Your draft shortlist
                 </h2>
                 <p>
                   {flagged.length} flagged · {shipped.length} shipped

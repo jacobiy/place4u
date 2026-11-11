@@ -22,8 +22,7 @@ import {
   X,
   Clock,
   Languages,
-  AlertTriangle,
-  Sliders
+  AlertTriangle
 } from 'lucide-react';
 import { TenantQueries } from './db/queries';
 import { useAuth } from '../../hooks/useAuth';
@@ -34,7 +33,6 @@ import { AlertToast, ConfirmModal } from '../../component/AlertModal';
 /*  Palette: matches the tenant dashboard — white surfaces, sky-blue   */
 /*  accents, DM Serif headings.                                        */
 /* ------------------------------------------------------------------ */
-const CARD = 'bg-white border border-sky-100 shadow-[0_12px_40px_-18px_rgba(2,132,199,0.22)]';
 const BTN_PRIMARY =
   'bg-sky-600 hover:bg-sky-700 text-white shadow-[0_8px_20px_-8px_rgba(2,132,199,0.55)] transition-colors duration-200 cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed';
 const BTN_OUTLINE =
@@ -138,21 +136,19 @@ const SettingRow = ({ icon: Icon, label, hint, children }) => (
 );
 
 const SettingsCard = ({ icon: Icon, eyebrow, title, description, children, footer }) => (
-  <section className={`${CARD} rounded-[28px] overflow-hidden`}>
-    <header className="flex items-start gap-3.5 px-6 sm:px-8 py-5 border-b border-sky-100">
-      <span className="w-10 h-10 rounded-full bg-sky-50 border border-sky-100 flex items-center justify-center text-sky-600 shrink-0">
-        <Icon size={18} />
-      </span>
+  <section className="border-t border-slate-200 pt-7">
+    <header className="flex items-start gap-3 mb-2">
+      <Icon size={17} className="text-sky-600 shrink-0 mt-1" />
       <div className="min-w-0">
-        {eyebrow && <Eyebrow className="!text-sky-600 mb-1">{eyebrow}</Eyebrow>}
+        {eyebrow && <Eyebrow className="!text-sky-700 mb-1">{eyebrow}</Eyebrow>}
         <h2 className="font-serif text-xl text-slate-900 leading-tight">{title}</h2>
         {description && <p className="text-xs text-slate-500 mt-1 leading-relaxed">{description}</p>}
       </div>
     </header>
 
-    <div className="px-6 sm:px-8 divide-y divide-sky-100">{children}</div>
+    <div className="divide-y divide-slate-200">{children}</div>
 
-    {footer && <div className="px-6 sm:px-8 py-4 border-t border-sky-100 bg-sky-50/40">{footer}</div>}
+    {footer && <div className="pt-4 border-t border-slate-200 mt-4">{footer}</div>}
   </section>
 );
 
@@ -358,30 +354,22 @@ export const Settings = ({ profile }) => {
       <AlertToast toast={toast} onClose={() => setToast(null)} />
 
       {/* ============================ HERO ============================ */}
-      <section className="relative overflow-hidden rounded-[32px] border border-sky-100 px-6 py-9 sm:px-10 sm:py-11 bg-white/80 backdrop-blur-md shadow-[0_24px_60px_-28px_rgba(2,132,199,0.35)]">
-        <div aria-hidden className="absolute -top-32 -right-24 w-[400px] h-[400px] rounded-full bg-sky-300/30 blur-3xl" />
-        <div aria-hidden className="absolute -bottom-40 left-1/4 w-[320px] h-[320px] rounded-full bg-blue-200/30 blur-3xl" />
-
-        <div className="relative z-10 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-8">
+      <section className="border-b border-slate-200 pb-7">
+        <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-6">
           <div className="min-w-0">
-            <div className="flex flex-wrap items-center gap-3 mb-4">
-              <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white border border-sky-200 text-[11px] font-semibold tracking-wide text-sky-700 shadow-sm">
-                <Sliders size={13} />
-                Account settings
-              </span>
+            <div className="flex flex-wrap items-center gap-2.5 mb-2">
+              <Eyebrow className="!text-sky-700">Account settings</Eyebrow>
               {isDeactivated && (
-                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-amber-50 border border-amber-200 text-[11px] font-semibold text-amber-700">
+                <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-amber-700">
                   <AlertTriangle size={12} />
                   Deactivated
                 </span>
               )}
               {!canPersist && (
-                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-slate-50 border border-slate-200 text-[11px] font-semibold text-slate-500">
-                  Local only
-                </span>
+                <span className="text-[11px] font-medium text-slate-500">Local only</span>
               )}
             </div>
-            <h1 className="font-serif text-3xl sm:text-4xl lg:text-[44px] leading-tight tracking-tight text-slate-900">
+            <h1 className="font-serif text-3xl sm:text-4xl leading-tight tracking-tight text-slate-900">
               Settings
             </h1>
             <p className="mt-3 text-sm text-slate-600 leading-relaxed max-w-xl">
@@ -390,18 +378,9 @@ export const Settings = ({ profile }) => {
             </p>
           </div>
 
-          <div className="w-full lg:w-[300px] shrink-0">
-            <div className="p-5 rounded-[24px] bg-sky-50/70 border border-sky-100">
-              <div className="flex items-center gap-3">
-                <span className="w-11 h-11 rounded-full bg-white border border-sky-100 flex items-center justify-center text-sky-600 shrink-0">
-                  <Mail size={18} />
-                </span>
-                <div className="min-w-0">
-                  <Eyebrow>Signed in as</Eyebrow>
-                  <p className="text-sm font-semibold text-slate-900 truncate mt-0.5">{email || 'Not available'}</p>
-                </div>
-              </div>
-            </div>
+          <div className="shrink-0 lg:border-l lg:border-slate-200 lg:pl-6">
+            <Eyebrow>Signed in as</Eyebrow>
+            <p className="text-sm font-medium text-slate-900 truncate mt-1.5">{email || 'Not available'}</p>
           </div>
         </div>
       </section>

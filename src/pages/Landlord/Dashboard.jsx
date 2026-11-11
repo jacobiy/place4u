@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from "react";
 import {
   Building, Home, Users, DollarSign, ArrowUpRight, Plus, Search, Download, CheckCircle,
-  Clock, AlertCircle, Eye, Edit, ChevronRight, Check, Shield, Sparkles, MapPin,
+  Clock, AlertCircle, Eye, Edit, ChevronRight, Check, Shield, MapPin,
   Bed, Bath, Square, Activity, CreditCard, FileText, Key, Percent, RefreshCw, TrendingUp
 } from "lucide-react";
 import {
@@ -17,48 +17,30 @@ import { EditPropertyModal } from "./Component/EditPropertyModal";
 import { DocumentUploadModal } from "./Component/DocumentUploadModal";
 import { LandlordActivationView } from "./Component/LandlordActivationView";
 
-const CARD = { background: "#fff", border: `1px solid ${T.border}`, borderRadius: T.radiusLg, boxShadow: T.shadow };
 const EYEBROW = { fontSize: "0.68rem", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.14em", color: T.textMuted, margin: 0 };
 
 const SectionCard = ({ title, subtitle, action, children, style = {} }) => (
-  <div style={{ ...CARD, padding: "1.5rem", display: "flex", flexDirection: "column", ...style }}>
+  <section style={{ borderTop: `1px solid ${T.border}`, padding: "1.35rem 0", display: "flex", flexDirection: "column", ...style }}>
     {(title || action) && (
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "1rem", marginBottom: "1.25rem", flexWrap: "wrap" }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "1rem", marginBottom: "1rem", flexWrap: "wrap" }}>
         <div>
-          {title && <h3 style={{ fontFamily: SERIF, fontSize: "1.25rem", color: T.textPrimary, letterSpacing: "-0.01em", margin: 0 }}>{title}</h3>}
+          {title && <h3 style={{ fontSize: "1.05rem", fontWeight: 650, color: T.textPrimary, letterSpacing: "-0.01em", margin: 0 }}>{title}</h3>}
           {subtitle && <p style={{ fontSize: "0.78rem", color: T.textMuted, marginTop: 3 }}>{subtitle}</p>}
         </div>
         {action}
       </div>
     )}
     {children}
-  </div>
+  </section>
 );
 
-const KpiCard = ({ label, value, numeric, prefix = "", suffix = "", icon: Icon, accent = T.accent, delta, deltaTone = "up", footnote }) => (
-  <div className="ll-card-hover ll-anim-up" style={{ ...CARD, padding: "1.4rem", position: "relative", overflow: "hidden" }}>
-    <div aria-hidden style={{ position: "absolute", top: -34, right: -34, width: 120, height: 120, borderRadius: "9999px", background: `radial-gradient(circle, ${accent}22 0%, transparent 70%)` }} />
-    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "0.9rem", position: "relative" }}>
-      <div style={{ width: 44, height: 44, borderRadius: "0.9rem", background: `${accent}1a`, border: `1px solid ${accent}33`, display: "flex", alignItems: "center", justifyContent: "center" }}>
-        <Icon size={20} color={accent} />
-      </div>
-      {delta && (
-        <span style={{
-          fontSize: "0.72rem", fontWeight: 700,
-          color: deltaTone === "up" ? T.emerald : T.amber,
-          background: deltaTone === "up" ? T.emeraldSoft : T.amberSoft,
-          border: `1px solid ${deltaTone === "up" ? T.emeraldBorder : T.amberBorder}`,
-          padding: "3px 9px", borderRadius: 9999, display: "inline-flex", alignItems: "center", gap: 3,
-        }}>
-          {deltaTone === "up" && <ArrowUpRight size={11} />}{delta}
-        </span>
-      )}
-    </div>
-    <p style={EYEBROW}>{label}</p>
-    <p style={{ fontFamily: SERIF, fontSize: "2.05rem", color: T.textPrimary, letterSpacing: "-0.02em", lineHeight: 1.05, margin: "0.4rem 0 0" }}>
+const KpiCard = ({ label, value, numeric, prefix = "", suffix = "", footnote }) => (
+  <div className="ll-metric" style={{ padding: "1.1rem 1.25rem 1.1rem 0", minWidth: 0 }}>
+    <p style={{ ...EYEBROW, textTransform: "none", letterSpacing: 0, fontSize: "0.78rem", fontWeight: 500 }}>{label}</p>
+    <p style={{ fontSize: "1.9rem", fontWeight: 600, fontVariantNumeric: "tabular-nums", color: T.textPrimary, letterSpacing: "-0.03em", lineHeight: 1.1, margin: "0.45rem 0 0" }}>
       {numeric !== undefined ? <AnimatedNumber value={numeric} prefix={prefix} suffix={suffix} /> : value}
     </p>
-    {footnote && <p style={{ fontSize: "0.75rem", color: T.textMuted, margin: "0.45rem 0 0" }}>{footnote}</p>}
+    {footnote && <p style={{ fontSize: "0.72rem", color: T.textMuted, margin: "0.35rem 0 0" }}>{footnote}</p>}
   </div>
 );
 
@@ -178,19 +160,19 @@ export const Dashboard = ({
 
   const rawName = profile?.full_name?.trim() || "";
   const landlordName = rawName ? rawName.split(" ")[0] : "Landlord";
-  const landlordCode = profile?.landlord_code || "LD-2026-ACTIVE";
+  const landlordCode = profile?.landlord_code;
   const managementTier = profile?.management_tier || (profile?.manage_with_platform === false ? "listing_only" : "full_management");
   const manageWithPlatform = managementTier === "full_management" || managementTier === "full";
   const isApproved = String(profile?.application_status || "").toLowerCase() === "approved" && profile?.account_status !== "suspended";
   const isRejected = profile?.application_status === "rejected";
 
   return (
-    <div style={{ width: "100%", maxWidth: 1400, margin: "0 auto", minWidth: 0 }} className="ll-scope">
+    <div style={{ width: "100%", maxWidth: 1320, margin: "0 auto", minWidth: 0 }} className="ll-scope">
       {toastMessage && (
         <div style={{
           position: "fixed", top: 24, right: 24, zIndex: 9999,
           background: "#0f172a", color: "#fff", padding: "12px 18px", borderRadius: 14,
-          boxShadow: "0 18px 45px -12px rgba(2,132,199,0.6)", display: "flex", alignItems: "center", gap: 8,
+          boxShadow: "0 10px 24px -14px rgba(15,23,42,0.45)", display: "flex", alignItems: "center", gap: 8,
           fontSize: "0.88rem", fontWeight: 500, animation: "llToast 0.25s ease-out",
         }}>
           <CheckCircle size={17} color="#34d399" /> {toastMessage}
@@ -208,14 +190,11 @@ export const Dashboard = ({
       {!isApproved && <LandlordActivationView profile={profile} user={user} onRefresh={onRefresh} />}
 
       {!isApproved ? (
-        <div style={{ ...CARD, borderStyle: "dashed", borderColor: isRejected ? T.redBorder : T.borderHover, padding: "3.5rem 2rem", textAlign: "center", marginTop: "1.5rem" }}>
-          <div style={{
-            width: 60, height: 60, borderRadius: 18,
-            background: isRejected ? T.redSoft : T.accentSoft, color: isRejected ? T.red : T.accent,
-            display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 1.25rem",
-          }}>
-            <Shield size={28} />
-          </div>
+        <div style={{
+          borderTop: `1px solid ${isRejected ? T.redBorder : T.border}`, borderBottom: `1px solid ${isRejected ? T.redBorder : T.border}`,
+          padding: "3rem 1rem", textAlign: "center", marginTop: "1.5rem"
+        }}>
+          <Shield size={26} color={isRejected ? T.red : T.accent} style={{ margin: "0 auto 1rem" }} />
           <h3 style={{ fontFamily: SERIF, fontSize: "1.6rem", color: T.textPrimary, marginBottom: "0.5rem" }}>
             {isRejected ? "Application requires revision" : profile?.application_status === "pending_review" ? "Application under review" : "Operational dashboard locked"}
           </h3>
@@ -226,7 +205,7 @@ export const Dashboard = ({
               ? "Your application credentials and proof of property ownership are being reviewed by the compliance committee. Your dashboard tools unlock automatically once approved."
               : "To safeguard the Place4U ecosystem against fraudulent listings, your rental units matrix, financial analytics, and tenant management tools unlock once your landlord application is submitted and approved."}
           </p>
-          <div style={{ display: "inline-flex", alignItems: "center", gap: 8, padding: "7px 14px", borderRadius: 9999, background: T.surfaceAlt, border: `1px solid ${T.border}`, fontSize: "0.78rem", color: T.textSecondary }}>
+          <div style={{ display: "inline-flex", alignItems: "center", gap: 8, marginTop: "1.25rem", fontSize: "0.78rem", color: T.textSecondary }}>
             <Clock size={14} color={isRejected ? T.red : T.accent} />
             {isRejected ? "Use 'Resubmit Application' above to upload updated documents." : "Application review typically completes within 24 hours."}
           </div>
@@ -234,26 +213,20 @@ export const Dashboard = ({
       ) : (
         <>
           {/* HERO */}
-          <div className="ll-anim-up" style={{
-            background: "linear-gradient(135deg, #ffffff 0%, #f3f9ff 60%, #eef6ff 100%)",
-            border: `1px solid ${T.border}`, borderRadius: T.radiusXl, padding: "clamp(1.4rem, 3.5vw, 2rem)",
-            marginBottom: "1.75rem", position: "relative", overflow: "hidden", boxShadow: T.shadow,
-          }}>
-            <div style={{ height: 5, position: "absolute", top: 0, left: 0, right: 0, background: "linear-gradient(90deg,#7dd3fc,#0ea5e9,#2563eb)" }} />
-            <div aria-hidden style={{ position: "absolute", top: -60, right: -50, width: 260, height: 260, borderRadius: "9999px", background: "radial-gradient(circle, rgba(56,189,248,0.18) 0%, transparent 70%)" }} />
-            <div aria-hidden style={{ position: "absolute", bottom: -80, left: 120, width: 220, height: 220, borderRadius: "9999px", background: "radial-gradient(circle, rgba(129,140,248,0.12) 0%, transparent 70%)" }} />
-
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: "1.4rem", position: "relative", zIndex: 1 }}>
+          <div style={{ padding: "0 0 1.5rem", marginBottom: "1.1rem", borderBottom: `1px solid ${T.border}` }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: "1.4rem" }}>
               <div style={{ flex: "1 1 300px", minWidth: 0 }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12, flexWrap: "wrap" }}>
-                  <span style={{ background: T.accentSoft, color: T.accent, fontSize: "0.72rem", fontWeight: 700, padding: "4px 12px", borderRadius: 9999, letterSpacing: "0.04em", display: "inline-flex", alignItems: "center", gap: 5, border: `1px solid ${T.accentBorder}` }}>
-                    <Shield size={12} /> {landlordCode}
-                  </span>
-                  <span style={{ display: "inline-flex", alignItems: "center", gap: 7, fontSize: "0.75rem", color: T.emerald, fontWeight: 600 }}>
-                    <span className="ll-live-dot" /> Portfolio live · all systems operational
+                  {landlordCode && (
+                    <span style={{ background: T.accentSoft, color: T.accent, fontSize: "0.72rem", fontWeight: 600, padding: "4px 10px", borderRadius: 6, display: "inline-flex", alignItems: "center", gap: 5, border: `1px solid ${T.accentBorder}` }}>
+                      <Shield size={12} /> {landlordCode}
+                    </span>
+                  )}
+                  <span style={{ display: "inline-flex", alignItems: "center", gap: 7, fontSize: "0.75rem", color: T.textMuted, fontWeight: 500 }}>
+                    Portfolio overview
                   </span>
                 </div>
-                <h1 style={{ fontFamily: SERIF, fontSize: "clamp(1.9rem, 5vw, 2.9rem)", color: T.textPrimary, lineHeight: 1.08, letterSpacing: "-0.02em", marginBottom: 8 }}>
+                <h1 style={{ fontSize: "clamp(1.75rem, 4vw, 2.45rem)", fontWeight: 600, color: T.textPrimary, lineHeight: 1.12, letterSpacing: "-0.035em", marginBottom: 8 }}>
                   Welcome back, <span style={{ color: T.accent }}>{landlordName}</span>
                 </h1>
                 <p style={{ color: T.textSecondary, fontSize: "clamp(0.88rem, 2.4vw, 1rem)", maxWidth: 640, lineHeight: 1.65 }}>
@@ -276,33 +249,31 @@ export const Dashboard = ({
 
           {/* KPIs */}
           {manageWithPlatform ? (
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(230px, 1fr))", gap: "1.25rem", marginBottom: "1.75rem" }}>
-              <KpiCard label="Monthly Rent Roll" icon={DollarSign} accent={T.emerald} numeric={Math.round(financials.totalPotentialRent)} prefix="R" delta="+8.4%" footnote={`Across ${financials.totalUnits} ${financials.totalUnits === 1 ? "unit" : "units"}`} />
+            <div className="ll-metrics" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(190px, 1fr))", marginBottom: "1.5rem" }}>
+              <KpiCard label="Monthly Rent Roll" icon={DollarSign} numeric={Math.round(financials.totalPotentialRent)} prefix="R" footnote={`Across ${financials.totalUnits} ${financials.totalUnits === 1 ? "unit" : "units"}`} />
               <KpiCard label="Rent Collected" icon={CreditCard} accent={T.accent} numeric={Math.round(financials.collectedRent)} prefix="R" footnote={`${financials.collectionRate}% collection rate · ${formatZar(financials.pendingRent)} outstanding`} />
-              <KpiCard label="Portfolio Occupancy" icon={Home} accent="#7c3aed" numeric={financials.occupancyRate} suffix="%" footnote={`${financials.occupiedCount} occupied · ${financials.vacantCount} vacant`} />
-              <KpiCard label="Active Leases" icon={Users} accent={T.amber} numeric={financials.totalTenants} footnote="All residents in good standing" />
+              <KpiCard label="Portfolio Occupancy" icon={Home} numeric={financials.occupancyRate} suffix="%" footnote={`${financials.occupiedCount} occupied · ${financials.vacantCount} vacant`} />
+              <KpiCard label="Active Leases" icon={Users} numeric={financials.totalTenants} footnote="Current tenant count" />
             </div>
           ) : (
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(230px, 1fr))", gap: "1.25rem", marginBottom: "1.75rem" }}>
+            <div className="ll-metrics" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(190px, 1fr))", marginBottom: "1.5rem" }}>
               <KpiCard label="Total Listed Units" icon={Building} accent={T.amber} numeric={financials.totalUnits} footnote="Active on the Place4U marketplace" />
-              <KpiCard label="Available for Lease" icon={Home} accent={T.emerald} numeric={financials.vacantCount > 0 ? financials.vacantCount : financials.totalUnits} footnote="Receiving tenant inquiries" />
+              <KpiCard label="Available for Lease" icon={Home} numeric={financials.vacantCount > 0 ? financials.vacantCount : financials.totalUnits} footnote="Receiving tenant inquiries" />
               <KpiCard label="Mode Status" icon={Shield} accent={T.accent} value="Listing Only" footnote="Financial roll & analytics hidden" />
             </div>
           )}
 
-          {/* VACANCY RIBBON */}
+          {/* VACANCY NOTICE */}
           {financials.vacantCount > 0 && (
             <div className="ll-anim-up" style={{
-              background: "linear-gradient(135deg, #fffbeb, #fef3c7)", border: `1px solid ${T.amberBorder}`,
-              borderRadius: T.radiusLg, padding: "1.1rem 1.4rem", marginBottom: "1.75rem",
+              borderTop: `1px solid ${T.amberBorder}`, borderBottom: `1px solid ${T.amberBorder}`,
+              padding: "0.95rem 0", marginBottom: "1.5rem",
               display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "1rem",
             }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 13 }}>
-                <div style={{ width: 42, height: 42, borderRadius: 12, background: "rgba(217,119,6,0.15)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                  <AlertCircle size={21} color={T.amber} />
-                </div>
+              <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                <AlertCircle size={18} color={T.amber} style={{ flexShrink: 0 }} />
                 <div>
-                  <p style={{ fontSize: "0.95rem", fontWeight: 700, color: "#78350f" }}>
+                  <p style={{ fontSize: "0.92rem", fontWeight: 600, color: "#78350f" }}>
                     {financials.vacantCount} vacant {financials.vacantCount === 1 ? "unit requires" : "units require"} tenant placement
                   </p>
                   <p style={{ fontSize: "0.8rem", color: "#92400e", marginTop: 2 }}>
@@ -398,10 +369,10 @@ export const Dashboard = ({
           )}
 
           {/* UNIT MATRIX */}
-          <div id="portfolio-matrix" style={{ ...CARD, padding: "1.5rem", marginBottom: "1.75rem" }}>
+          <section id="portfolio-matrix" style={{ borderTop: `1px solid ${T.border}`, padding: "1.5rem 0", marginBottom: "1.25rem" }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "1rem", marginBottom: "1.5rem" }}>
               <div>
-                <h2 style={{ fontFamily: SERIF, fontSize: "1.5rem", color: T.textPrimary, letterSpacing: "-0.01em" }}>Your rental units</h2>
+                <h2 style={{ fontSize: "1.25rem", fontWeight: 600, color: T.textPrimary, letterSpacing: "-0.02em" }}>Your rental units</h2>
                 <p style={{ fontSize: "0.8rem", color: T.textMuted, marginTop: 3 }}>Monitor occupancy, rent and tenant assignments at a glance</p>
               </div>
               <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
@@ -425,23 +396,24 @@ export const Dashboard = ({
             </div>
 
             {filteredProperties.length > 0 ? (
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))", gap: "1.25rem" }}>
+              <div style={{ display: "flex", flexDirection: "column" }}>
                 {filteredProperties.map((p) => (
-                  <div key={p.id} className="ll-card-hover" style={{ background: "#fff", border: `1px solid ${T.border}`, borderRadius: T.radius, overflow: "hidden", display: "flex", flexDirection: "column" }}>
-                    <div className="ll-img-zoom" style={{ position: "relative", height: 150, overflow: "hidden" }}>
+                  <div key={p.id} className="ll-property-row" style={{ borderBottom: `1px solid ${T.border}` }}>
+                    <div className="ll-img-zoom ll-property-thumb" style={{ position: "relative", overflow: "hidden", borderRadius: 8, flexShrink: 0 }}>
                       <img src={p.image || "https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=800"} alt={p.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-                      <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to top, rgba(15,23,42,0.7) 0%, transparent 55%)" }} />
                       <span style={{
-                        position: "absolute", top: 10, left: 10, fontSize: "0.64rem", fontWeight: 800, letterSpacing: "0.05em",
-                        padding: "4px 10px", borderRadius: 9999, background: p.occupied ? "#059669" : "#d97706", color: "#fff",
+                        position: "absolute", top: 5, left: 5, fontSize: "0.58rem", fontWeight: 700,
+                        padding: "3px 6px", borderRadius: 4, background: p.occupied ? "#047857" : "#b45309", color: "#fff",
                         display: "flex", alignItems: "center", gap: 4,
                       }}>
-                        {p.occupied ? <CheckCircle size={11} /> : <AlertCircle size={11} />}{p.occupied ? "OCCUPIED" : "VACANT"}
+                        {p.occupied ? "Occupied" : "Vacant"}
                       </span>
-                      <p style={{ position: "absolute", bottom: 10, left: 13, fontFamily: SERIF, fontSize: "1.35rem", color: "#fff", letterSpacing: "-0.02em" }}>{p.rent}</p>
                     </div>
-                    <div style={{ padding: "1rem", flex: 1, display: "flex", flexDirection: "column" }}>
-                      <h4 style={{ fontSize: "0.96rem", fontWeight: 700, color: T.textPrimary, marginBottom: 4 }}>{p.name}</h4>
+                    <div className="ll-property-content" style={{ minWidth: 0, flex: 1, display: "flex", flexDirection: "column" }}>
+                      <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
+                        <h4 style={{ fontSize: "0.95rem", fontWeight: 650, color: T.textPrimary }}>{p.name}</h4>
+                        <p style={{ fontSize: "0.9rem", fontWeight: 600, color: T.textPrimary, fontVariantNumeric: "tabular-nums" }}>{p.rent}</p>
+                      </div>
                       <p style={{ fontSize: "0.75rem", color: T.textMuted, display: "flex", alignItems: "center", gap: 4, marginBottom: 12 }}>
                         <MapPin size={12} color={T.accent} /> {p.location || "—"}
                       </p>
@@ -491,20 +463,18 @@ export const Dashboard = ({
                 <p style={{ color: T.textMuted, fontSize: "0.8rem", marginTop: 4 }}>Try clearing search keywords or the status filter.</p>
               </div>
             )}
-          </div>
+          </section>
 
           {/* ACTIVITY + TASKS */}
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(360px, 1fr))", gap: "1.5rem" }}>
             <SectionCard title="Activity & audit log" subtitle="Real-time record of portfolio actions" action={<Activity size={18} color={T.accent} />}>
-              <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
+              <div style={{ display: "flex", flexDirection: "column" }}>
                 {(activities && activities.length > 0
                   ? activities.map((a) => ({ key: a.id, title: a.activity_description, time: formatTimeAgo(a.created_at), type: a.activity_type }))
                   : []
                 ).map((item) => (
-                  <div key={item.key} style={{ display: "flex", alignItems: "center", gap: 12, padding: "0.85rem", background: T.surfaceAlt, borderRadius: 12, border: `1px solid ${T.border}` }}>
-                    <div style={{ width: 36, height: 36, borderRadius: 10, background: item.type === "finance" ? T.emeraldSoft : item.type === "compliance" ? T.purpleSoft : T.accentSoft, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                      {item.type === "finance" ? <DollarSign size={16} color={T.emerald} /> : item.type === "compliance" ? <Shield size={16} color={T.purple} /> : <Building size={16} color={T.accent} />}
-                    </div>
+                  <div key={item.key} style={{ display: "flex", alignItems: "center", gap: 10, padding: "0.7rem 0", borderBottom: `1px solid ${T.border}` }}>
+                    <span aria-hidden style={{ width: 6, height: 6, borderRadius: 9999, background: item.type === "finance" ? T.emerald : item.type === "compliance" ? T.amber : T.accent, flexShrink: 0 }} />
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <p style={{ fontSize: "0.83rem", color: T.textPrimary, fontWeight: 600, lineHeight: 1.35 }}>{item.title}</p>
                       <p style={{ fontSize: "0.7rem", color: T.textMuted, marginTop: 2 }}>{item.time}</p>
@@ -512,10 +482,8 @@ export const Dashboard = ({
                   </div>
                 ))}
                 {(!activities || activities.length === 0) && (
-                  <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "0.95rem", background: T.surfaceAlt, borderRadius: 12, border: `1px dashed ${T.border}` }}>
-                    <div style={{ width: 36, height: 36, borderRadius: 10, background: T.accentSoft, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                      <Activity size={16} color={T.accent} />
-                    </div>
+                  <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "0.75rem 0", borderBottom: `1px solid ${T.border}` }}>
+                    <Activity size={15} color={T.textMuted} />
                     <p style={{ fontSize: "0.83rem", color: T.textMuted }}>
                       No activity recorded yet. Actions you take — publishing listings, updating units or uploading documents — will appear here.
                     </p>
@@ -529,16 +497,15 @@ export const Dashboard = ({
               subtitle="Key responsibilities & compliance deadlines"
               action={<span style={{ fontSize: "0.72rem", color: T.emerald, fontWeight: 700, background: T.emeraldSoft, border: `1px solid ${T.emeraldBorder}`, padding: "4px 11px", borderRadius: 9999 }}>{tasks.filter((t) => t.completed).length} of {tasks.length} done</span>}
             >
-              <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+              <div style={{ display: "flex", flexDirection: "column" }}>
                 {tasks.length === 0 ? (
                   <p style={{ fontSize: "0.78rem", color: T.textMuted, padding: "0.5rem 0" }}>
                     No tasks yet. Operational reminders and compliance deadlines will appear here.
                   </p>
                 ) : tasks.map((task) => (
                   <div key={task.id} onClick={() => toggleTask(task.id)} style={{
-                    display: "flex", alignItems: "center", gap: 12, padding: "0.85rem 1rem",
-                    background: task.completed ? "#f0fdf4" : T.surfaceAlt,
-                    borderRadius: 12, border: `1px solid ${task.completed ? T.emeraldBorder : T.border}`,
+                    display: "flex", alignItems: "center", gap: 12, padding: "0.8rem 0",
+                    borderBottom: `1px solid ${T.border}`,
                     cursor: "pointer", transition: "all 0.15s", opacity: task.completed ? 0.75 : 1,
                   }}>
                     <div style={{ width: 20, height: 20, borderRadius: 6, border: `2px solid ${task.completed ? T.emerald : T.textMuted}`, background: task.completed ? T.emerald : "transparent", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>

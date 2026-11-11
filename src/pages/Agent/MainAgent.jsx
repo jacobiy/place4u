@@ -310,7 +310,7 @@ export default function MainAgent() {
           />
         );
       case "pipeline":
-        return <MatchPipelineView role="agent" currentUserId={user?.id} />;
+        return <MatchPipelineView role="agent" currentUserId={user?.id} theme="light" />;
       case "properties":
         return <Properties properties={properties} onRefresh={refresh} loading={loading} />;
       case "wallet":
@@ -374,7 +374,7 @@ export default function MainAgent() {
           </>
         )}
 
-        <main className={`agent-main-content ${isMobile ? 'is-mobile' : ''} ${activeView === 'dashboard' ? 'is-dashboard' : ''} ${activeView === 'wallet' ? 'is-wallet' : ''} ${activeView === 'application-manager' ? 'is-manager' : ''}`}>
+        <main className={`agent-main-content ${isMobile ? 'is-mobile' : ''} ${activeView === 'dashboard' ? 'is-dashboard' : ''} ${activeView === 'dashboard' && profile?.is_verified === true ? 'is-verified-dashboard' : ''} ${['applications', 'pipeline', 'properties', 'wallet'].includes(activeView) ? 'is-workspace' : ''} ${activeView === 'wallet' ? 'is-wallet' : ''} ${activeView === 'application-manager' ? 'is-manager' : ''}`}>
           {isMobile && (
             <div className="agent-mobile-header">
               <button

@@ -1,4 +1,4 @@
-import { LayoutDashboard, User, Settings, LogOut, ChevronDown, FileText, Menu, X, Sparkles, GitBranch } from "lucide-react";
+import { LayoutDashboard, Home, User, Settings, LogOut, ChevronDown, FileText, Menu, X, ShieldCheck, GitBranch } from "lucide-react";
 import { T } from './Styles/designTokens';
 import { useState, useRef, useEffect } from "react";
 
@@ -35,7 +35,7 @@ export const Sidebar = ({ activeView, setActiveView, applicationsCount, matchesC
 
   const navItems = [
     { id: "dashboard", icon: LayoutDashboard, label: "Dashboard" },
-    { id: "matches", icon: Sparkles, label: "Matched Properties", badge: matchesCount },
+    { id: "matches", icon: Home, label: "Matched Properties", badge: matchesCount },
     { id: "pipeline", icon: GitBranch, label: "Match Pipeline" },
     { id: "applications", icon: FileText, label: "Applications", badge: applicationsCount },
   ];
@@ -187,7 +187,7 @@ export const Sidebar = ({ activeView, setActiveView, applicationsCount, matchesC
             width: "32px",
             height: "32px",
             borderRadius: "50%",
-            background: "linear-gradient(135deg, #4f7ef8 0%, #10b981 100%)",
+            background: T.accent,
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
@@ -198,8 +198,11 @@ export const Sidebar = ({ activeView, setActiveView, applicationsCount, matchesC
             {initials(displayName)}
           </div>
           <div className="hidden sm:block text-left">
-            <p style={{ fontSize: "0.82rem", fontWeight: 600, color: T.textPrimary, lineHeight: 1.2, margin: 0 }}>
-              {displayName}
+            <p style={{ display: "flex", alignItems: "center", gap: 5, fontSize: "0.82rem", fontWeight: 600, color: T.textPrimary, lineHeight: 1.2, margin: 0 }}>
+              <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{displayName}</span>
+              {profile?.is_verified && (
+                <ShieldCheck size={12} color={T.emerald} aria-label="Verified resident" />
+              )}
             </p>
             <p style={{ fontSize: "0.68rem", color: T.textMuted, margin: 0 }}>
               {tier}
@@ -234,7 +237,10 @@ export const Sidebar = ({ activeView, setActiveView, applicationsCount, matchesC
           >
             <div style={{ padding: "8px 12px", borderBottom: `1px solid ${T.border}`, marginBottom: "4px" }}>
               <div style={{ fontSize: "0.85rem", fontWeight: 600, color: T.textPrimary }}>{displayName}</div>
-              <div style={{ fontSize: "0.72rem", color: T.emerald, marginTop: "2px" }}>● {tier}</div>
+              <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: "0.72rem", color: T.emerald, marginTop: "2px" }}>
+                <span style={{ width: 5, height: 5, borderRadius: 9999, background: T.emerald, display: "inline-block" }} />
+                {tier}
+              </div>
             </div>
             <button
               onClick={() => {

@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import {
-  Sparkles, CheckCircle2, Building2, MapPin, Calendar, Clock,
+  Search, CheckCircle2, Building2, MapPin, Calendar, Clock,
   Eye, Check, X, PackageCheck, ChevronRight, ShieldCheck, Key
 } from 'lucide-react';
 import { AlertToast } from '../../../component/AlertModal';
@@ -9,7 +9,6 @@ import { acceptMatchAsTenant } from '../../../services/matchWorkflowService';
 /* ------------------------------------------------------------------ */
 /*  Palette: white surfaces, light-blue washes, one confident blue.    */
 /* ------------------------------------------------------------------ */
-const CARD = 'bg-white border border-sky-100 shadow-[0_12px_40px_-18px_rgba(2,132,199,0.22)]';
 const BTN_PRIMARY =
   'bg-sky-600 hover:bg-sky-700 text-white shadow-[0_8px_20px_-8px_rgba(2,132,199,0.55)] transition-colors duration-200 cursor-pointer';
 const BTN_OUTLINE =
@@ -212,37 +211,26 @@ export default function MatchedPropertiesView({
       <AlertToast toast={toast} onClose={() => setToast(null)} />
 
       {/* ============================ HERO ============================ */}
-      <section className="relative overflow-hidden rounded-[32px] border border-sky-100 px-6 py-10 sm:px-12 sm:py-12 bg-white/80 backdrop-blur-md shadow-[0_24px_60px_-28px_rgba(2,132,199,0.35)]">
-        <div aria-hidden className="absolute -top-32 -right-24 w-[420px] h-[420px] rounded-full bg-sky-300/30 blur-3xl" />
-        <div aria-hidden className="absolute -bottom-40 left-1/3 w-[360px] h-[360px] rounded-full bg-blue-200/30 blur-3xl" />
-
-        <div className="relative z-10 flex flex-col lg:flex-row lg:items-end justify-between gap-8">
+      <section className="border-b border-slate-200 pb-7">
+        <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-6">
           <div className="max-w-2xl">
-            <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white border border-sky-200 text-[11px] font-semibold tracking-wide text-sky-700 shadow-sm mb-6">
-              <Sparkles size={13} />
-              Agent matching desk
-            </span>
+            <Eyebrow className="!text-sky-700 mb-2">Agent matching desk</Eyebrow>
 
-            <h1 className="font-serif text-4xl sm:text-5xl leading-[1.05] tracking-tight text-slate-900">
-              Homes your agent
-              <br />
-              <span className="italic text-sky-600">hand-picked for you</span>
+            <h1 className="font-serif text-3xl sm:text-4xl leading-tight tracking-tight text-slate-900">
+              Homes your agent matched to you
             </h1>
 
-            <p className="mt-5 text-sm sm:text-base text-slate-600 leading-relaxed max-w-xl">
+            <p className="mt-4 text-sm sm:text-base text-slate-600 leading-relaxed max-w-xl">
               Every property your agent has matched to your application, with its live status. Accept a match to request
               a viewing session, then follow it through the pipeline.
             </p>
           </div>
 
-          <div className="flex items-center gap-4 p-5 rounded-2xl bg-white/80 backdrop-blur border border-sky-100 shadow-sm self-start lg:self-auto">
-            <div className="w-12 h-12 rounded-full bg-sky-600 text-white flex items-center justify-center shrink-0">
-              <CheckCircle2 size={22} />
-            </div>
-            <div>
-              <p className="font-serif text-4xl text-slate-900 leading-none">{totalMatchCount}</p>
-              <p className="text-xs text-slate-500 mt-1.5">Pre-approved {totalMatchCount === 1 ? 'match' : 'matches'}</p>
-            </div>
+          <div className="flex items-center gap-2.5 lg:pb-1">
+            <span className="font-serif text-2xl text-slate-900 leading-none">{totalMatchCount}</span>
+            <span className="text-xs text-slate-500">
+              pre-approved {totalMatchCount === 1 ? 'match' : 'matches'}
+            </span>
           </div>
         </div>
       </section>
@@ -251,7 +239,7 @@ export default function MatchedPropertiesView({
       {totalMatchCount > 0 && (
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
           <div className="relative flex-1 max-w-xl">
-            <Sparkles className="absolute left-4 top-1/2 -translate-y-1/2 text-sky-500" size={16} />
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
             <input
               type="text"
               aria-label="Search matches"
@@ -292,10 +280,8 @@ export default function MatchedPropertiesView({
 
       {/* ========================== MATCHES =========================== */}
       {totalMatchCount === 0 ? (
-        <div className="py-20 px-6 text-center rounded-[28px] bg-sky-50/50 border border-dashed border-sky-200 space-y-4">
-          <div className="w-16 h-16 rounded-full bg-white border border-sky-100 flex items-center justify-center text-sky-500 mx-auto">
-            <Building2 size={26} />
-          </div>
+        <div className="py-16 px-6 text-center border-y border-slate-200 space-y-4">
+          <Building2 size={24} className="text-slate-300 mx-auto" />
           <h3 className="font-serif text-2xl text-slate-900">No matches yet</h3>
           <p className="text-sm text-slate-500 max-w-md mx-auto">
             Your assigned Place4U agent is reviewing properties against your application. Every home they ship to you
@@ -311,10 +297,8 @@ export default function MatchedPropertiesView({
           </button>
         </div>
       ) : filtered.length === 0 ? (
-        <div className="py-20 px-6 text-center rounded-[28px] bg-sky-50/50 border border-dashed border-sky-200 space-y-4">
-          <div className="w-16 h-16 rounded-full bg-white border border-sky-100 flex items-center justify-center text-sky-500 mx-auto">
-            <Building2 size={26} />
-          </div>
+        <div className="py-16 px-6 text-center border-y border-slate-200 space-y-4">
+          <Building2 size={24} className="text-slate-300 mx-auto" />
           <h3 className="font-serif text-2xl text-slate-900">No properties found</h3>
           <p className="text-sm text-slate-500 max-w-md mx-auto">
             Nothing matches your search. Try a different term or clear the filters.
@@ -336,7 +320,7 @@ export default function MatchedPropertiesView({
             </span>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="divide-y divide-slate-200 border-y border-slate-200">
             {filtered.map((card) => {
               const p = card.property;
               const meta = stateMeta(card.state);
@@ -349,9 +333,9 @@ export default function MatchedPropertiesView({
               return (
                 <article
                   key={card.id}
-                  className={`${CARD} rounded-[28px] overflow-hidden flex flex-col hover:border-sky-300 transition-colors duration-300`}
+                  className="bg-transparent border-0 rounded-none shadow-none overflow-hidden flex flex-col sm:flex-row gap-4 sm:gap-6 py-5"
                 >
-                  <div className="relative aspect-[16/10] bg-sky-100">
+                  <div className="relative aspect-[16/10] sm:aspect-square sm:w-48 sm:min-h-40 sm:shrink-0 bg-slate-100 overflow-hidden">
                     <img
                       src={cover}
                       alt={p.title || 'Property'}
@@ -363,7 +347,7 @@ export default function MatchedPropertiesView({
                     <span
                       className={`absolute top-4 left-4 px-3 py-1.5 rounded-full text-[11px] font-bold shadow-sm inline-flex items-center gap-1.5 border ${TONE_CLASSES[meta.tone]}`}
                     >
-                      {card.state === 'shipped' && <Sparkles size={12} />}
+                      {card.state === 'shipped' && <PackageCheck size={12} />}
                       {card.state === 'scheduled' && <Calendar size={12} />}
                       {meta.label}
                     </span>
@@ -393,7 +377,7 @@ export default function MatchedPropertiesView({
                     </div>
                   </div>
 
-                  <div className="p-5 flex-1 flex flex-col gap-4">
+                  <div className="p-0 flex-1 flex flex-col gap-3">
                     <div>
                       <h3 className="font-serif text-xl text-slate-900">
                         {p.title || p.property_type || 'Rental unit'}

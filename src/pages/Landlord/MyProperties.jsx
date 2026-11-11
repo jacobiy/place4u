@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { Search, Download, Plus, Building, Edit, Activity, FileText, ShieldCheck, Clock } from "lucide-react";
 import { T, SERIF } from './Styles/designTokens';
-import { StatCard } from './Component/StatCard';
 import { PropertyCard } from './Component/PropertyCard';
 import { PrimaryBtn, SecondaryBtn } from './Component/Buttons';
 import { PropertyDetailsModal } from './Component/PropertyDetailsModal';
@@ -104,11 +103,16 @@ export const MyProperties = ({
       {/* Portfolio performance */}
       <section style={{ marginBottom: "2rem" }}>
         <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", marginBottom: "1rem", flexWrap: "wrap", gap: 10 }}>
-          <h2 style={{ fontFamily: SERIF, fontSize: "1.5rem", color: T.textPrimary, letterSpacing: "-0.01em" }}>Portfolio performance</h2>
+          <h2 style={{ fontFamily: SERIF, fontSize: "1.5rem", color: T.textPrimary, letterSpacing: "-0.01em" }}>Portfolio summary</h2>
           <SecondaryBtn onClick={handleExport}><Download size={14} /> Export CSV</SecondaryBtn>
         </div>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(210px, 1fr))", gap: "1.1rem" }}>
-          {(stats || []).map((s, i) => <StatCard key={i} {...s} />)}
+        <div style={{ display: "flex", gap: 0, flexWrap: "wrap", borderTop: `1px solid ${T.border}`, borderBottom: `1px solid ${T.border}` }}>
+          {(stats || []).map((s, i) => (
+            <div key={i} style={{ minWidth: 150, flex: "1 1 150px", padding: "0.9rem 1rem 0.9rem 0", marginRight: "1rem" }}>
+              <p style={{ margin: 0, fontSize: "0.72rem", color: T.textMuted }}>{s.label}</p>
+              <p style={{ margin: "0.25rem 0 0", fontSize: "1.35rem", fontWeight: 650, color: T.textPrimary }}>{s.value}</p>
+            </div>
+          ))}
         </div>
       </section>
 
@@ -121,9 +125,9 @@ export const MyProperties = ({
               const IconComponent = getActivityIcon(activity.activity_type);
               return (
                 <div key={activity.id} style={{
-                  background: "#fff", border: `1px solid ${T.border}`, padding: "10px 15px", borderRadius: 9999,
-                  fontSize: "0.83rem", fontWeight: 500, display: "flex", alignItems: "center", gap: 8,
-                  color: T.textPrimary, boxShadow: T.shadowSm,
+                  padding: "10px 0", borderTop: `1px solid ${T.border}`,
+                  fontSize: "0.83rem", display: "flex", alignItems: "center", gap: 8,
+                  color: T.textPrimary,
                 }}>
                   <IconComponent size={15} color={T.accent} />
                   {activity.activity_description}
@@ -181,7 +185,7 @@ export const MyProperties = ({
         )}
 
         {filteredProps.length > 0 ? (
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))", gap: "1.25rem" }}>
+          <div style={{ display: "block", borderBottom: `1px solid ${T.border}` }}>
             {filteredProps.map((p) => (
               <PropertyCard key={p.id} property={p} onEdit={handleEdit} onViewDetails={handleViewDetails} onUploadDocuments={handleOpenDocs} />
             ))}

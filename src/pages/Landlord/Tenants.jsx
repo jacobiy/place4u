@@ -372,15 +372,13 @@ export const Tenants = ({ profile, properties = [], user, onNavigate }) => {
         </form>
       </Modal>
 
-      {/* Hero / action band */}
+      {/* Summary band */}
       <div className="ll-anim-up" style={{
-        display: "flex", justifyContent: "space-between", alignItems: "center", gap: "1.2rem", flexWrap: "wrap",
-        background: "linear-gradient(135deg, #ffffff 0%, #f3f9ff 100%)",
-        border: `1px solid ${T.border}`, borderRadius: T.radiusXl, padding: "clamp(1.2rem, 3vw, 1.75rem)",
-        marginBottom: "1.5rem", position: "relative", overflow: "hidden", boxShadow: T.shadow
+        display: "flex", justifyContent: "space-between", alignItems: "flex-end", gap: "1.2rem", flexWrap: "wrap",
+        borderBottom: `1px solid ${T.border}`, paddingBottom: "1.1rem",
+        marginBottom: "1.5rem"
       }}>
-        <div aria-hidden style={{ position: "absolute", top: -50, right: -40, width: 200, height: 200, borderRadius: "9999px", background: "radial-gradient(circle, rgba(56,189,248,0.16) 0%, transparent 70%)" }} />
-        <div style={{ display: "flex", gap: "2rem", flexWrap: "wrap", position: "relative", zIndex: 1 }}>
+        <div style={{ display: "flex", gap: "2rem", flexWrap: "wrap" }}>
           <div>
             <p style={EYEBROW}>Inbound applications</p>
             <p style={{ fontFamily: SERIF, fontSize: "2rem", color: T.textPrimary, lineHeight: 1.05, marginTop: 4 }}>{applications.length}</p>
@@ -391,7 +389,7 @@ export const Tenants = ({ profile, properties = [], user, onNavigate }) => {
             <p style={{ fontFamily: SERIF, fontSize: "2rem", color: T.textPrimary, lineHeight: 1.05, marginTop: 4 }}>{tenants.length}</p>
           </div>
         </div>
-        <div style={{ display: "flex", gap: "8px", position: "relative", zIndex: 1, flexWrap: "wrap" }}>
+        <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
           <SecondaryBtn onClick={handleCopyInviteLink}>
             <Copy size={14} /> {copiedLink ? "Link Copied" : "Copy Invite Link"}
           </SecondaryBtn>
@@ -488,11 +486,11 @@ export const Tenants = ({ profile, properties = [], user, onNavigate }) => {
         </div>
       ) : activeTab === "applications" ? (
         filteredApplications.length > 0 ? (
-          <div className="ll-anim-up" style={{ background: "#ffffff", border: `1px solid ${T.border}`, borderRadius: T.radiusLg, overflow: "hidden", boxShadow: T.shadow }}>
+          <div className="ll-anim-up" style={{ borderTop: `1px solid ${T.border}`, borderBottom: `1px solid ${T.border}` }}>
             <div style={{ overflowX: "auto" }}>
               <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left" }}>
                 <thead>
-                  <tr style={{ background: T.surfaceAlt, borderBottom: `1px solid ${T.border}` }}>
+                  <tr style={{ borderBottom: `1px solid ${T.border}` }}>
                     <th style={thStyle}>Applicant</th>
                     <th style={thStyle}>Property</th>
                     <th style={thStyle}>Budget & Move-In</th>
@@ -589,12 +587,10 @@ export const Tenants = ({ profile, properties = [], user, onNavigate }) => {
           </div>
         ) : (
           <div style={{
-            background: "#ffffff", border: `1px dashed ${T.borderHover}`, borderRadius: T.radiusLg,
-            padding: "4rem 2rem", textAlign: "center", boxShadow: T.shadowSm
+            borderTop: `1px solid ${T.border}`, borderBottom: `1px solid ${T.border}`,
+            padding: "3rem 1rem", textAlign: "center"
           }}>
-            <div style={{ width: 60, height: 60, borderRadius: 18, background: T.accentSoft, border: `1px solid ${T.accentBorder}`, display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 1rem" }}>
-              <Inbox size={26} color={T.accent} />
-            </div>
+            <Inbox size={24} color={T.textMuted} style={{ margin: "0 auto 0.85rem" }} />
             <h2 style={{ fontFamily: SERIF, fontSize: "1.4rem", color: T.textPrimary, marginBottom: "0.5rem" }}>
               No incoming tenant applications yet
             </h2>
@@ -609,11 +605,11 @@ export const Tenants = ({ profile, properties = [], user, onNavigate }) => {
           </div>
         )
       ) : filteredTenants.length > 0 ? (
-        <div className="ll-anim-up" style={{ background: "#ffffff", border: `1px solid ${T.border}`, borderRadius: T.radiusLg, overflow: "hidden", boxShadow: T.shadow }}>
+        <div className="ll-anim-up" style={{ borderTop: `1px solid ${T.border}`, borderBottom: `1px solid ${T.border}` }}>
           <div style={{ overflowX: "auto" }}>
             <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left" }}>
               <thead>
-                <tr style={{ background: T.surfaceAlt, borderBottom: `1px solid ${T.border}` }}>
+                <tr style={{ borderBottom: `1px solid ${T.border}` }}>
                   <th style={thStyle}>Tenant</th>
                   <th style={thStyle}>Property Unit</th>
                   <th style={thStyle}>Contact</th>
@@ -696,13 +692,11 @@ export const Tenants = ({ profile, properties = [], user, onNavigate }) => {
         </div>
       ) : (
         <div style={{
-          background: "#ffffff", border: `1px dashed ${T.borderHover}`, borderRadius: T.radiusLg,
-          padding: "4rem 2rem", display: "flex", flexDirection: "column", alignItems: "center",
-          justifyContent: "center", textAlign: "center", boxShadow: T.shadowSm
+          borderTop: `1px solid ${T.border}`, borderBottom: `1px solid ${T.border}`,
+          padding: "3rem 1rem", display: "flex", flexDirection: "column", alignItems: "center",
+          justifyContent: "center", textAlign: "center"
         }}>
-          <div style={{ width: 60, height: 60, borderRadius: 18, background: T.accentSoft, border: `1px solid ${T.accentBorder}`, display: "flex", alignItems: "center", justifyContent: "center", marginBottom: "1rem" }}>
-            <Users size={26} color={T.accent} />
-          </div>
+          <Users size={24} color={T.textMuted} style={{ marginBottom: "0.85rem" }} />
           <h2 style={{ fontFamily: SERIF, fontSize: "1.4rem", color: T.textPrimary, marginBottom: "0.5rem" }}>
             No tenants matched your search
           </h2>

@@ -1,7 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { 
   FileText, UploadCloud, Eye, Trash2, CheckCircle2, AlertCircle, 
-  Download, X, FileCheck, RefreshCw, ExternalLink 
+  Download, X, RefreshCw, ExternalLink
 } from 'lucide-react';
 
 export const DOCUMENT_CONFIG = {
@@ -290,12 +290,12 @@ const DocumentSlotItem = ({
 
   return (
     <div 
-      className={`rounded-2xl border transition-all p-4 ${
+      className={`border-b border-slate-200 py-4 transition-colors ${
         attachedDoc 
-          ? 'bg-white/[0.04] border-emerald-500/40 hover:border-emerald-500/60' 
+          ? 'bg-emerald-50/40 border-emerald-300'
           : isDragging
-          ? 'bg-blue-600/10 border-blue-500 shadow-lg shadow-blue-500/10'
-          : 'bg-white/[0.02] border-white/10 hover:border-white/20'
+          ? 'bg-blue-50 border-blue-700'
+          : 'bg-transparent border-slate-200'
       }`}
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
@@ -313,24 +313,24 @@ const DocumentSlotItem = ({
       <div className="flex items-start justify-between gap-3 mb-2">
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2 flex-wrap">
-            <h4 className="text-sm font-semibold text-white">
+            <h4 className="text-sm font-semibold text-slate-950">
               {slot.title}
             </h4>
             {slot.required ? (
-              <span className={`text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full ${
+              <span className={`text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 ${
                 attachedDoc 
-                  ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' 
-                  : 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
+                  ? 'bg-emerald-50 text-emerald-800 border border-emerald-200'
+                  : 'bg-amber-50 text-amber-900 border border-amber-200'
               }`}>
                 {attachedDoc ? 'Attached' : 'Required'}
               </span>
             ) : (
-              <span className="text-[10px] uppercase font-semibold tracking-wider px-2 py-0.5 rounded-full bg-white/10 text-white/50">
+              <span className="text-[10px] uppercase font-semibold tracking-wider px-2 py-0.5 border border-slate-200 text-slate-600">
                 Optional
               </span>
             )}
           </div>
-          <p className="text-xs text-white/50 mt-1 leading-relaxed">
+          <p className="text-sm text-slate-600 mt-1 leading-relaxed">
             {slot.description}
           </p>
         </div>
@@ -338,17 +338,17 @@ const DocumentSlotItem = ({
 
       {/* Slot Content: Attached vs Empty */}
       {attachedDoc ? (
-        <div className="mt-3 p-3 rounded-xl bg-white/[0.03] border border-white/10 flex items-center justify-between gap-3">
+        <div className="mt-3 flex items-center justify-between gap-3 border-l-2 border-emerald-600 bg-white py-2 pl-3 pr-2">
           <div className="flex items-center gap-3 min-w-0 flex-1">
-            <div className="w-10 h-10 rounded-xl bg-red-500/20 text-red-400 border border-red-500/30 flex items-center justify-center shrink-0">
+            <div className="w-10 h-10 bg-red-50 text-red-800 border border-red-200 flex items-center justify-center shrink-0">
               <span className="font-mono font-bold text-xs">PDF</span>
             </div>
             <div className="min-w-0 flex-1">
-              <p className="text-sm font-medium text-white truncate">
+              <p className="text-sm font-medium text-slate-900 truncate">
                 {attachedDoc.fileName}
               </p>
-              <div className="flex items-center gap-2 text-[11px] text-white/40 mt-0.5">
-                <span className="text-emerald-400 flex items-center gap-1 font-medium">
+              <div className="flex items-center gap-2 text-xs text-slate-500 mt-0.5">
+                <span className="text-emerald-800 flex items-center gap-1 font-medium">
                   <CheckCircle2 size={12} /> Valid PDF
                 </span>
                 <span>•</span>
@@ -361,7 +361,7 @@ const DocumentSlotItem = ({
             <button
               type="button"
               onClick={onPreview}
-              className="p-2 rounded-xl bg-white/5 hover:bg-white/15 text-white/80 hover:text-white transition-all text-xs font-semibold flex items-center gap-1"
+              className="min-h-10 px-2 text-slate-700 hover:bg-slate-100 transition-colors text-xs font-semibold flex items-center gap-1"
               title="Preview attached PDF"
             >
               <Eye size={15} />
@@ -370,7 +370,7 @@ const DocumentSlotItem = ({
             <button
               type="button"
               onClick={() => fileInputRef.current?.click()}
-              className="p-2 rounded-xl bg-white/5 hover:bg-white/15 text-white/80 hover:text-white transition-all text-xs font-semibold flex items-center gap-1"
+              className="min-h-10 px-2 text-slate-700 hover:bg-slate-100 transition-colors text-xs font-semibold flex items-center gap-1"
               title="Replace file"
             >
               <RefreshCw size={14} />
@@ -379,7 +379,7 @@ const DocumentSlotItem = ({
             <button
               type="button"
               onClick={onRemove}
-              className="p-2 rounded-xl bg-red-500/10 hover:bg-red-500/25 text-red-400 hover:text-red-300 transition-all text-xs"
+              className="min-h-10 min-w-10 text-red-800 hover:bg-red-50 transition-colors text-xs"
               title="Remove document"
             >
               <Trash2 size={15} />
@@ -387,15 +387,15 @@ const DocumentSlotItem = ({
           </div>
         </div>
       ) : (
-        <div className="mt-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 rounded-xl bg-white/[0.02] border border-dashed border-white/15 hover:border-blue-500/50 transition-colors">
-          <div className="flex items-center gap-2 text-xs text-white/50">
-            <UploadCloud size={16} className="text-blue-400 shrink-0" />
+        <div className="mt-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3 border border-dashed border-slate-300 px-3 py-2.5 hover:border-blue-700 transition-colors">
+          <div className="flex items-center gap-2 text-sm text-slate-600">
+            <UploadCloud size={16} className="text-blue-800 shrink-0" />
             <span className="truncate">{slot.acceptedHint} (PDF up to 15MB)</span>
           </div>
           <button
             type="button"
             onClick={() => fileInputRef.current?.click()}
-            className="w-full sm:w-auto px-4 py-2.5 rounded-xl bg-blue-600/25 hover:bg-blue-600/35 active:scale-95 text-blue-300 hover:text-white border border-blue-500/30 text-xs font-bold transition-all flex items-center justify-center gap-2 shrink-0 shadow-sm"
+            className="min-h-11 w-full sm:w-auto px-4 bg-white hover:bg-blue-50 text-blue-800 border border-blue-700 text-sm font-semibold transition-colors flex items-center justify-center gap-2 shrink-0"
           >
             <FileText size={14} />
             <span>Attach PDF</span>
@@ -439,9 +439,9 @@ export default function PdfAttachmentSection({
   return (
     <div className="space-y-4">
       {/* Section Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 px-1">
-        <div className="flex items-center gap-2 text-white/50 uppercase tracking-widest text-xs font-bold">
-          <FileText size={15} className={category === 'student_room' ? 'text-blue-400' : 'text-emerald-400'} />
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-200 pb-3">
+        <div className="flex items-center gap-2 text-slate-800 text-sm font-semibold">
+          <FileText size={16} className="text-blue-800" />
           <span>
             {category === 'student_room' 
               ? 'Required Student Verification Documents' 
@@ -450,10 +450,10 @@ export default function PdfAttachmentSection({
         </div>
 
         <div className="flex items-center gap-2">
-          <span className={`text-xs px-3 py-1 rounded-full font-bold tracking-wide flex items-center gap-1.5 ${
+          <span className={`text-xs px-3 py-1 font-semibold flex items-center gap-1.5 ${
             allRequiredAttached 
-              ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40' 
-              : 'bg-white/10 text-white/70 border border-white/10'
+              ? 'bg-emerald-50 text-emerald-800 border border-emerald-200'
+              : 'bg-white text-slate-700 border border-slate-300'
           }`}>
             {allRequiredAttached && <CheckCircle2 size={13} className="text-emerald-400" />}
             <span>{attachedRequired} of {totalRequired} Required Attached</span>
@@ -462,12 +462,9 @@ export default function PdfAttachmentSection({
       </div>
 
       {/* Informative Guidance Banner */}
-      <div className="glass rounded-2xl p-4 border border-white/5 flex items-start gap-3 text-xs text-white/60">
-        <div className="p-1.5 rounded-lg bg-blue-500/10 text-blue-400 shrink-0 mt-0.5">
-          <FileCheck size={16} />
-        </div>
+      <div className="border-l-2 border-slate-300 pl-3 text-sm text-slate-600">
         <div className="space-y-1">
-          <p className="text-white/80 font-medium">
+          <p className="text-slate-900 font-semibold">
             {category === 'student_room' 
               ? 'Student Room Verification Requirements' 
               : 'Room & Residential Verification Requirements'}

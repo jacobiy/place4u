@@ -22,7 +22,7 @@ export const Properties = ({ properties = [], onRefresh, loading }) => {
     });
   }, [properties, query]);
 
-  const placeholderImage = "https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=900&auto=format&fit=crop&q=60";
+  const placeholderImage = "/property-placeholder.svg";
 
   if (selectedProperty) {
     return <PropertyDetailView property={selectedProperty} onBack={() => setSelectedProperty(null)} />;

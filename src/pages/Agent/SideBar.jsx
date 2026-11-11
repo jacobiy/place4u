@@ -10,7 +10,6 @@ import {
   ChevronsUpDown,
   Lock,
   ShieldCheck,
-  Sparkles,
   GitBranch
 } from "lucide-react";
 import "./SideBar.css";
@@ -106,7 +105,7 @@ export const Sidebar = ({ activeView, setActiveView, onLogout, profile, agentPro
       {!isAgentVerified && (
         <div className="sb-verify">
           <div className="sb-verify-icon">
-            <Sparkles size={14} />
+            <Lock size={14} />
           </div>
           <div className="sb-verify-copy">
             <p className="sb-verify-title">Account inactive</p>

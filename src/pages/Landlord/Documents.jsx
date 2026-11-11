@@ -256,21 +256,16 @@ export const Documents = ({ profile, properties = [], onProfileUpdate, onRefresh
 
   const statusCard = ({ eyebrow, title, caption, icon: Icon, accent, accentSoft, accentBorder, tag }) => (
     <div className="ll-card-hover" style={{
-      background: "#ffffff", border: `1px solid ${T.border}`, borderRadius: T.radiusLg,
-      padding: "1.25rem 1.4rem", display: "flex", alignItems: "center", gap: "1rem", boxShadow: T.shadowSm
+      borderTop: `1px solid ${T.border}`, padding: "1.1rem 0",
+      display: "flex", alignItems: "center", gap: "0.9rem"
     }}>
-      <div style={{
-        width: "50px", height: "50px", borderRadius: "0.9rem", background: accentSoft,
-        border: `1px solid ${accentBorder}`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0
-      }}>
-        <Icon size={23} color={accent} />
-      </div>
+      <Icon size={19} color={accent} style={{ flexShrink: 0 }} />
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8, marginBottom: "3px" }}>
           <span style={EYEBROW}>{eyebrow}</span>
-          <span style={{ fontSize: "0.68rem", color: accent, fontWeight: 800, letterSpacing: "0.04em" }}>{tag}</span>
+          <span style={{ fontSize: "0.68rem", color: accent, fontWeight: 700, letterSpacing: "0.02em" }}>{tag}</span>
         </div>
-        <p style={{ fontSize: "0.95rem", fontWeight: 700, color: T.textPrimary, fontFamily: SERIF }}>{title}</p>
+        <p style={{ fontSize: "0.95rem", fontWeight: 650, color: T.textPrimary }}>{title}</p>
         <p style={{ fontSize: "0.75rem", color: T.textMuted, marginTop: "2px" }}>{caption}</p>
       </div>
     </div>
@@ -336,33 +331,28 @@ export const Documents = ({ profile, properties = [], onProfileUpdate, onRefresh
       {/* HERO */}
       <div className="ll-anim-up" style={{
         display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "1.5rem", flexWrap: "wrap",
-        background: "linear-gradient(135deg, #ffffff 0%, #f3f9ff 60%, #eef6ff 100%)",
-        border: `1px solid ${T.border}`, borderRadius: T.radiusXl, padding: "clamp(1.4rem, 3.5vw, 2rem)",
-        marginBottom: "1.75rem", position: "relative", overflow: "hidden", boxShadow: T.shadow
+        borderBottom: `1px solid ${T.border}`, paddingBottom: "1.4rem",
+        marginBottom: "1.5rem"
       }}>
-        <div aria-hidden style={{ position: "absolute", top: -60, right: -50, width: 240, height: 240, borderRadius: "9999px", background: "radial-gradient(circle, rgba(56,189,248,0.16) 0%, transparent 70%)" }} />
-        <div style={{ position: "relative", zIndex: 1, flex: "1 1 340px", minWidth: 0 }}>
-          <span style={{
-            background: T.emeraldSoft, color: T.emerald, fontSize: "0.7rem", fontWeight: 800, letterSpacing: "0.05em",
-            padding: "4px 12px", borderRadius: 9999, display: "inline-flex", alignItems: "center", gap: 5, border: `1px solid ${T.emeraldBorder}`
-          }}>
-            <Lock size={12} /> ENCRYPTED & SECURE VAULT
+        <div style={{ flex: "1 1 340px", minWidth: 0 }}>
+          <span style={{ display: "inline-flex", alignItems: "center", gap: 5, fontSize: "0.7rem", fontWeight: 700, color: T.emerald }}>
+            <Lock size={12} /> Encrypted and secure vault
           </span>
-          <h1 style={{ fontFamily: SERIF, fontSize: "clamp(1.6rem, 4vw, 2.3rem)", color: T.textPrimary, lineHeight: 1.12, letterSpacing: "-0.02em", margin: "12px 0 6px" }}>
-            Proof of ownership & compliance
+          <h1 style={{ fontFamily: SERIF, fontSize: "clamp(1.6rem, 4vw, 2.3rem)", color: T.textPrimary, lineHeight: 1.12, letterSpacing: "-0.02em", margin: "10px 0 6px" }}>
+            Proof of ownership &amp; compliance
           </h1>
           <p style={{ color: T.textSecondary, fontSize: "0.9rem", maxWidth: "620px", lineHeight: 1.6 }}>
             Upload and manage title deeds, municipal rates certificates, identity verification, and electrical compliance
             documents. Documents attached to a specific listing appear here alongside your profile credentials.
           </p>
 
-          <div style={{ marginTop: "1.25rem", maxWidth: 340 }}>
+          <div style={{ marginTop: "1.1rem", maxWidth: 340 }}>
             <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 6 }}>
               <span style={{ fontSize: "0.72rem", color: T.textMuted, fontWeight: 600 }}>Vault verification health</span>
-              <span style={{ fontSize: "0.72rem", color: T.emerald, fontWeight: 800 }}>{vaultHealth}%</span>
+              <span style={{ fontSize: "0.72rem", color: T.textPrimary, fontWeight: 700 }}>{vaultHealth}%</span>
             </div>
-            <div style={{ height: 8, borderRadius: 9999, background: T.surface, overflow: "hidden" }}>
-              <div style={{ width: `${vaultHealth}%`, height: "100%", borderRadius: 9999, background: "linear-gradient(90deg, #34d399, #059669)", transition: "width 0.6s ease" }} />
+            <div style={{ height: 6, borderRadius: 9999, background: T.surface, overflow: "hidden" }}>
+              <div style={{ width: `${vaultHealth}%`, height: "100%", borderRadius: 9999, background: T.emerald, transition: "width 0.6s ease" }} />
             </div>
             <p style={{ fontSize: "0.72rem", color: T.textMuted, marginTop: 6 }}>
               {verifiedCount} of {allDocs.length} documents verified
@@ -371,7 +361,7 @@ export const Documents = ({ profile, properties = [], onProfileUpdate, onRefresh
           </div>
         </div>
 
-        <div style={{ position: "relative", zIndex: 1 }}>
+        <div>
           <PrimaryBtn onClick={() => setIsUploadModalOpen(true)}>
             <Upload size={16} /> Upload New Document
           </PrimaryBtn>
@@ -387,9 +377,9 @@ export const Documents = ({ profile, properties = [], onProfileUpdate, onRefresh
 
       {/* TOOLBAR */}
       <div style={{
-        background: "#ffffff", border: `1px solid ${T.border}`, borderRadius: T.radiusLg, padding: "1.1rem 1.3rem",
-        marginBottom: "1.5rem", display: "flex", justifyContent: "space-between", alignItems: "center",
-        flexWrap: "wrap", gap: "1rem", boxShadow: T.shadowSm
+        borderTop: `1px solid ${T.border}`, borderBottom: `1px solid ${T.border}`, padding: "0.9rem 0",
+        marginBottom: "1.25rem", display: "flex", justifyContent: "space-between", alignItems: "center",
+        flexWrap: "wrap", gap: "1rem"
       }}>
         <div style={{ position: "relative", minWidth: "240px", flex: "1 1 280px" }}>
           <Search size={15} color={T.textMuted} style={{ position: "absolute", left: "14px", top: "50%", transform: "translateY(-50%)" }} />
@@ -447,7 +437,7 @@ export const Documents = ({ profile, properties = [], onProfileUpdate, onRefresh
 
       {/* DOCUMENT CARDS GRID */}
       {filteredDocs.length > 0 ? (
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(min(100%, 330px), 1fr))", gap: "1.25rem" }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(min(100%, 330px), 1fr))", columnGap: "1.75rem" }}>
           {filteredDocs.map((doc, idx) => {
             const IconComponent = getCategoryIcon(doc.documentType);
             const isOwnership = doc.documentType === "ownership";
@@ -460,8 +450,8 @@ export const Documents = ({ profile, properties = [], onProfileUpdate, onRefresh
                 key={doc.id || idx}
                 className="ll-card-hover ll-anim-up"
                 style={{
-                  background: "#ffffff", border: `1px solid ${T.border}`, borderRadius: T.radiusLg,
-                  padding: "1.4rem", display: "flex", flexDirection: "column", boxShadow: T.shadowSm
+                  borderTop: `1px solid ${T.border}`,
+                  padding: "1.1rem 0", display: "flex", flexDirection: "column"
                 }}
               >
                 {/* Header Row */}
@@ -616,12 +606,10 @@ export const Documents = ({ profile, properties = [], onProfileUpdate, onRefresh
         </div>
       ) : (
         <div style={{
-          background: "#ffffff", border: `1px dashed ${T.borderHover}`, borderRadius: T.radiusLg, padding: "4rem 2rem",
-          textAlign: "center", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", boxShadow: T.shadowSm
+          borderTop: `1px solid ${T.border}`, borderBottom: `1px solid ${T.border}`, padding: "3rem 1rem",
+          textAlign: "center", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center"
         }}>
-          <div style={{ width: 64, height: 64, borderRadius: 20, background: T.accentSoft, border: `1px solid ${T.accentBorder}`, display: "flex", alignItems: "center", justifyContent: "center", marginBottom: "1rem" }}>
-            <Shield size={28} color={T.accent} />
-          </div>
+          <Shield size={24} color={T.textMuted} style={{ marginBottom: "0.85rem" }} />
           <h3 style={{ fontFamily: SERIF, fontSize: "1.4rem", color: T.textPrimary, marginBottom: "0.5rem" }}>
             No documents matched your criteria
           </h3>

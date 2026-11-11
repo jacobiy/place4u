@@ -32,7 +32,7 @@ export const T = {
   navy: "#faf8ff",            // page wash (kept for compatibility)
   navyMid: "#ffffff",         // card / panel surface (kept for compatibility)
   navyLight: "#f1f5f9",
-  page: "#faf8ff",
+  page: "#f5f6f7",
   cardBg: "#ffffff",
   cardBgHover: "#f8fbff",
   surface: "#f1f5f9",
@@ -51,8 +51,8 @@ export const T = {
 
   /* Elevation */
   shadowSm: "0 1px 2px rgba(15,23,42,0.05)",
-  shadow: "0 12px 40px -18px rgba(2,132,199,0.22)",
-  shadowLg: "0 24px 60px -20px rgba(2,132,199,0.30)",
+  shadow: "0 1px 3px rgba(15,23,42,0.06)",
+  shadowLg: "0 12px 28px -16px rgba(15,23,42,0.18)",
 
   /* Radii */
   radiusSm: "0.75rem",
@@ -166,8 +166,20 @@ export const globalStyle = `
     box-shadow: 0 0 0 3px rgba(16,185,129,0.18);
     animation: llPulse 2s infinite ease-in-out;
   }
-  .ll-card-hover { transition: transform 0.25s cubic-bezier(0.16,1,0.3,1), box-shadow 0.25s, border-color 0.25s; }
-  .ll-card-hover:hover { transform: translateY(-4px); box-shadow: 0 26px 60px -22px rgba(2,132,199,0.38); border-color: #bae6fd; }
-  .ll-img-zoom img { transition: transform 0.7s cubic-bezier(0.16,1,0.3,1); }
-  .ll-img-zoom:hover img { transform: scale(1.06); }
+  .ll-card-hover { transition: box-shadow 0.18s ease, border-color 0.18s ease; }
+  .ll-card-hover:hover { box-shadow: 0 8px 20px -14px rgba(15,23,42,0.24); border-color: #cbd5e1; }
+  .ll-img-zoom img { transition: transform 0.25s ease; }
+  .ll-img-zoom:hover img { transform: scale(1.02); }
+  .ll-metrics { border-block: 1px solid ${T.border}; }
+  .ll-metric + .ll-metric { border-left: 1px solid ${T.border}; padding-left: 1.25rem !important; }
+  .ll-property-row { display: flex; align-items: center; gap: 1rem; padding: 1rem 0; }
+  .ll-property-thumb { width: 112px; height: 84px; }
+  @media (max-width: 640px) {
+    .ll-metrics { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
+    .ll-metric { padding: 0.85rem 0.75rem 0.85rem 0 !important; }
+    .ll-metric + .ll-metric { padding-left: 0.75rem !important; }
+    .ll-metric:nth-child(odd) { border-left: 0; }
+    .ll-property-row { align-items: flex-start; gap: 0.75rem; }
+    .ll-property-thumb { width: 76px; height: 68px; }
+  }
 `;

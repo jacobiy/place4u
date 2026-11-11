@@ -328,7 +328,7 @@ export const Dashboard = ({
   }, []);
 
   return (
-    <div className="agent-dashboard">
+    <div className={`agent-dashboard ${isAgentVerified ? 'is-verified' : 'is-onboarding'}`}>
       {toastMessage && (
         <div className="ag-toast">
           <CheckCircle2 size={16} color="#10b981" />
@@ -503,13 +503,9 @@ export const Dashboard = ({
             {/* KPI strip */}
             <section className="ag-kpi">
               {kpis.map(kpi => {
-                const Icon = kpi.icon;
                 return (
                   <div key={kpi.key} className={`ag-kpi-cell is-${kpi.tone}`}>
-                    <div className="ag-kpi-head">
-                      <span className="ag-kpi-label">{kpi.label}</span>
-                      <span className="ag-kpi-icon"><Icon size={16} /></span>
-                    </div>
+                    <span className="ag-kpi-label">{kpi.label}</span>
                     <p className="ag-kpi-value">{kpi.value}</p>
                     <p className="ag-kpi-meta">{kpi.meta}</p>
                   </div>
@@ -1003,8 +999,9 @@ export const Dashboard = ({
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                     <span style={{ fontSize: '0.8rem', color: 'var(--ag-muted)' }}>Status</span>
                     {selectedApp.status === 'completed' ? (
-                      <span style={{ fontSize: '0.8rem', color: '#10b981', fontWeight: 700, padding: '5px 10px', background: 'rgba(16,185,129,0.15)', borderRadius: 8, border: '1px solid rgba(16,185,129,0.35)' }}>
-                        ✓ Completed (Admin Approved)
+                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: '0.8rem', color: '#10b981', fontWeight: 700, padding: '5px 10px', background: 'rgba(16,185,129,0.15)', borderRadius: 8, border: '1px solid rgba(16,185,129,0.35)' }}>
+                        <Check size={13} />
+                        Completed (Admin Approved)
                       </span>
                     ) : (
                       <select

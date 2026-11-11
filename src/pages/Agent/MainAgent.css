@@ -5,7 +5,7 @@
   isolation: isolate;
   display: flex;
   min-height: 100dvh;
-  background: var(--ag-ink, #070b14);
+  background: #101827;
 }
 
 .agent-sidebar-overlay {
@@ -31,35 +31,41 @@
   height: 100dvh;
   overflow-y: auto;
   position: relative;
-  background:
-    radial-gradient(900px 520px at 12% -6%, rgba(79, 126, 248, 0.09) 0%, transparent 62%),
-    radial-gradient(760px 520px at 108% 8%, rgba(16, 185, 129, 0.045) 0%, transparent 60%);
-}
-
-/* Faint engineering grid, kept well below the content contrast floor.
-   Drawn on the shell behind the content column so it does not create a
-   stacking context that would trap modals/overlays under the nav rail. */
-.agent-layout-wrapper::before {
-  content: "";
-  position: fixed;
-  inset: 0 0 0 264px;
-  pointer-events: none;
-  z-index: 0;
-  background-image:
-    linear-gradient(to right, rgba(148, 163, 184, 0.05) 1px, transparent 1px),
-    linear-gradient(to bottom, rgba(148, 163, 184, 0.05) 1px, transparent 1px);
-  background-size: 64px 64px;
-  mask-image: radial-gradient(120% 90% at 50% 0%, #000 30%, transparent 100%);
-  -webkit-mask-image: radial-gradient(120% 90% at 50% 0%, #000 30%, transparent 100%);
-}
-
-@media (max-width: 767px) {
-  .agent-layout-wrapper::before { inset: 0; }
+  background: #101827;
 }
 
 .agent-main-content.is-mobile {
   margin-left: 0;
   width: 100%;
+}
+
+.agent-main-content.is-verified-dashboard {
+  background: #f5f6f7;
+}
+
+.agent-main-content.is-workspace {
+  background: #ffffff;
+  color: #111827;
+  --ag-ink: #ffffff;
+  --ag-ink-2: #f8fafc;
+  --ag-panel: #ffffff;
+  --ag-line: #e2e8f0;
+  --ag-line-2: #cbd5e1;
+  --ag-text: #111827;
+  --ag-muted: #475569;
+  --ag-dim: #64748b;
+  --ag-accent: #2563eb;
+  --ag-accent-2: #1d4ed8;
+  --ag-accent-soft: #eff6ff;
+  --ag-accent-line: #bfdbfe;
+  --ag-shadow: none;
+  --wallet-bg: #ffffff;
+  --wallet-card: #ffffff;
+  --wallet-card-hover: #f8fafc;
+  --wallet-border: #e2e8f0;
+  --wallet-text: #111827;
+  --wallet-text-muted: #475569;
+  --wallet-text-dim: #64748b;
 }
 
 .agent-main-content.is-dashboard,
@@ -80,6 +86,26 @@
   padding: 0.75rem 1.25rem;
   background: var(--ag-ink-2, #0b1120);
   border-bottom: 1px solid var(--ag-line, rgba(148,163,184,0.14));
+}
+
+.agent-main-content.is-verified-dashboard .agent-mobile-header {
+  background: #ffffff;
+  border-bottom-color: #e2e8f0;
+}
+
+.agent-main-content.is-verified-dashboard .agent-mobile-menu-btn {
+  background: #ffffff;
+  border-color: #d8e0e9;
+}
+
+.agent-main-content.is-workspace .agent-mobile-header {
+  background: #ffffff;
+  border-bottom-color: #e2e8f0;
+}
+
+.agent-main-content.is-workspace .agent-mobile-menu-btn {
+  background: #ffffff;
+  border-color: #cbd5e1;
 }
 
 .agent-mobile-header {

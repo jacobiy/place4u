@@ -8,12 +8,12 @@ import {
   CheckCircle2,
   AlertCircle,
   ArrowRight,
-  Sparkles,
   Building,
   BarChart3,
   Check,
   Layers,
-  HelpCircle
+  HelpCircle,
+  Send
 } from 'lucide-react';
 import { LandlordQueries } from '../db/queries';
 import { T } from '../Styles/designTokens';
@@ -496,15 +496,18 @@ export const LandlordApplicationModal = ({
 
               <div
                 style={{
-                  background: T.surfaceAlt,
-                  padding: '1rem',
-                  borderRadius: '10px',
-                  border: `1px solid ${T.border}`,
+                  display: 'flex',
+                  alignItems: 'flex-start',
+                  gap: 8,
+                  paddingTop: '0.85rem',
+                  borderTop: `1px solid ${T.border}`,
                   fontSize: '0.8rem',
-                  color: T.textMuted
+                  color: T.textMuted,
+                  lineHeight: 1.55
                 }}
               >
-                💡 You can switch modes anytime from your Landlord Dashboard header or Settings tab.
+                <HelpCircle size={14} style={{ flexShrink: 0, marginTop: 2 }} />
+                <span>You can switch modes anytime from your Landlord Dashboard header or Settings tab.</span>
               </div>
             </div>
           )}
@@ -957,15 +960,17 @@ export const LandlordApplicationModal = ({
 
                 <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: `1px solid ${T.border}`, paddingBottom: '8px' }}>
                   <span style={{ fontSize: '0.82rem', color: T.textMuted }}>ID Document:</span>
-                  <span style={{ fontSize: '0.82rem', color: formData.idDocUrl ? T.emerald : T.red }}>
-                    {formData.idDocUrl ? '✓ Attached' : '✗ Missing'}
+                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: '0.82rem', color: formData.idDocUrl ? T.emerald : T.red }}>
+                    {formData.idDocUrl ? <Check size={13} /> : <X size={13} />}
+                    {formData.idDocUrl ? 'Attached' : 'Missing'}
                   </span>
                 </div>
 
                 <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                   <span style={{ fontSize: '0.82rem', color: T.textMuted }}>Proof of Ownership:</span>
-                  <span style={{ fontSize: '0.82rem', color: formData.ownershipDocUrl ? T.emerald : T.red }}>
-                    {formData.ownershipDocUrl ? '✓ Attached' : '✗ Missing'}
+                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: '0.82rem', color: formData.ownershipDocUrl ? T.emerald : T.red }}>
+                    {formData.ownershipDocUrl ? <Check size={13} /> : <X size={13} />}
+                    {formData.ownershipDocUrl ? 'Attached' : 'Missing'}
                   </span>
                 </div>
               </div>
@@ -1104,7 +1109,7 @@ export const LandlordApplicationModal = ({
                   'Submitting Dossier...'
                 ) : (
                   <>
-                    <Sparkles size={16} />
+                    <Send size={16} />
                     Submit Application
                   </>
                 )}

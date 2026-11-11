@@ -1,8 +1,7 @@
-import React, { useState } from 'react'
+import React, { useRef, useState } from 'react'
 import { 
-  X, MapPin, Home, DollarSign, Calendar, Clock, FileText, 
-  CheckCircle, AlertCircle, GraduationCap, Building, ShieldCheck, 
-  AlertTriangle, ArrowRight, CreditCard, Lock, CheckCircle2 
+  ArrowLeft, Home, CheckCircle, AlertCircle, GraduationCap,
+  ArrowRight, CreditCard, Lock, CheckCircle2
 } from 'lucide-react'
 import { TenantQueries } from '../db/queries'
 import PdfAttachmentSection, { DOCUMENT_CONFIG } from './PdfAttachmentSection'
@@ -15,6 +14,7 @@ const CustomApplication = ({ onCancel, property, user, profile, application, onS
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [success, setSuccess] = useState(false)
   const [error, setError] = useState(null)
+  const errorSummaryRef = useRef(null)
 
   // Auto-detect whether this is a Student Room application or a Standard Room application
   const detectCategory = () => {
@@ -104,6 +104,7 @@ const CustomApplication = ({ onCancel, property, user, profile, application, onS
     if (missingDocs.length > 0) {
       setError(`Please attach all required PDF documents before submitting: ${missingDocs.join(', ')}.`);
       setIsSubmitting(false);
+      setTimeout(() => errorSummaryRef.current?.focus(), 0);
       return;
     }
 
@@ -112,6 +113,7 @@ const CustomApplication = ({ onCancel, property, user, profile, application, onS
       setError('Please settle the mandatory R100 Card Application Fee before final submission.');
       setShowPaymentModal(true);
       setIsSubmitting(false);
+      setTimeout(() => errorSummaryRef.current?.focus(), 0);
       return;
     }
 
@@ -242,7 +244,6 @@ const CustomApplication = ({ onCancel, property, user, profile, application, onS
     }
 
     setSuccess(true);
-    if (onSuccess) onSuccess(finalizedApp);
     // Fan the new/updated application out to the agent, admin and landlord
     // dashboards so they do not have to wait for a manual refresh.
     try {
@@ -257,84 +258,65 @@ const CustomApplication = ({ onCancel, property, user, profile, application, onS
       console.warn('Application broadcast notice:', e);
     }
     setTimeout(() => {
-      onCancel();
+      if (onSuccess) onSuccess(finalizedApp);
+      else onCancel();
     }, 1500);
   }
 
   return (
-    <div className="fixed inset-0 bg-black/85 flex items-center justify-center z-50 p-2 sm:p-4 backdrop-blur-md">
-      <div className="bg-[#0b0e14] border border-white/10 rounded-2xl sm:rounded-3xl w-full max-w-3xl max-h-[94dvh] sm:max-h-[88vh] overflow-y-auto shadow-2xl custom-scrollbar text-white">
-        
-        {/* Sticky Header */}
-        <div className='sticky top-0 bg-[#0b0e14]/95 backdrop-blur-md p-4 sm:p-6 border-b border-white/5 z-20 flex items-center justify-between'>
-          <div className="min-w-0 pr-3">
-            <h2 className="text-xl sm:text-2xl font-bold font-serif text-white truncate">
-              {application ? 'Edit Rental Application' : 'Submit Rental Application'}
-            </h2>
-            {property ? (
-              <p className="text-xs sm:text-sm text-white/50 mt-1 flex flex-wrap items-center gap-1.5">
-                <span>Applying for:</span>
-                <span className="text-blue-400 font-semibold truncate">{property.title || 'Property'}</span>
-                {property.property_type && (
-                  <span className="text-[10px] sm:text-[11px] px-2 py-0.5 rounded-full bg-white/10 text-white/60">
-                    {property.property_type}
-                  </span>
-                )}
-              </p>
-            ) : (
-              <p className="text-xs sm:text-sm text-white/50 mt-1">
-                Attach your certified PDF verification documents to submit an official application.
-              </p>
-            )}
+    <div className="tenant-application-page mx-auto w-full max-w-5xl py-2 text-slate-900">
+      <button type="button" onClick={onCancel} className="mb-5 inline-flex min-h-11 items-center gap-2 text-sm font-semibold text-slate-600 hover:text-slate-950 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-700">
+        <ArrowLeft size={17} aria-hidden="true" /> Back
+      </button>
+
+      <header className="mb-8 border-b border-slate-200 pb-6">
+        <p className="mb-2 text-xs font-semibold uppercase tracking-[0.12em] text-blue-800">Tenant application</p>
+        <h1 className="text-3xl font-semibold tracking-tight text-slate-950 sm:text-4xl">
+          {application ? 'Edit rental application' : 'Submit rental application'}
+        </h1>
+        <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600">
+          Share your rental preferences and attach the documents needed for review.
+        </p>
+        {property && (
+          <div className="mt-5 flex flex-wrap items-baseline gap-x-3 gap-y-1 border-l-2 border-blue-700 pl-3">
+            <span className="text-xs font-medium text-slate-500">Applying for</span>
+            <span className="font-semibold text-slate-900">{describeProperty(property) || property.title || 'Selected property'}</span>
+            {property.property_type && <span className="text-sm text-slate-600">{property.property_type}</span>}
           </div>
-          <button 
-            type="button" 
-            onClick={onCancel} 
-            className="p-2 hover:bg-white/10 rounded-full transition-colors text-white/60 hover:text-white shrink-0"
-            aria-label="Close"
-          >
-            <X size={22} />
-          </button>
-        </div>
+        )}
+      </header>
         
         {success ? (
-          <div className="p-12 flex flex-col items-center justify-center text-center space-y-4 animate-in fade-in zoom-in">
-            <div className="w-20 h-20 bg-green-500/20 text-green-500 rounded-full flex items-center justify-center border-2 border-green-500 shadow-xl shadow-green-500/10">
-              <CheckCircle size={40} />
+          <div className="py-16 text-center">
+            <div className="mx-auto mb-5 flex h-12 w-12 items-center justify-center rounded-full bg-emerald-100 text-emerald-800">
+              <CheckCircle size={25} />
             </div>
-            <h3 className="text-2xl font-bold text-white">
-              {application ? 'Application Updated!' : 'Application Submitted Successfully!'}
-            </h3>
-            <p className="text-white/60 max-w-md">
-              Your rental application and attached PDF verification documents have been received and recorded for landlord/agent review.
+            <h2 className="text-2xl font-semibold text-slate-950">
+              {application ? 'Application updated' : 'Application submitted'}
+            </h2>
+            <p className="mx-auto mt-3 max-w-xl text-sm leading-6 text-slate-600">
+              Your application and attached documents have been received. You can track its status from Applications.
             </p>
-            <div className="flex items-center gap-2 text-xs text-emerald-400 font-semibold bg-emerald-500/10 px-3 py-1.5 rounded-full border border-emerald-500/20">
-              <ShieldCheck size={16} />
-              <span>{Object.keys(documents).length} Official Documents Verified</span>
-            </div>
           </div>
         ) : (
-          <form onSubmit={handleSubmit} className="p-6 space-y-8">
+          <form onSubmit={handleSubmit} className="space-y-8 pb-8">
             
             {/* Top Error Alert */}
             {error && (
-              <div className="p-4 bg-red-500/15 border border-red-500/30 rounded-2xl text-red-300 flex items-start gap-3 text-sm animate-in fade-in">
-                <AlertCircle size={20} className="shrink-0 mt-0.5 text-red-400" />
+              <div ref={errorSummaryRef} tabIndex={-1} role="alert" className="border-l-4 border-red-700 bg-red-50 px-4 py-3 text-red-950 flex items-start gap-3 text-sm focus:outline focus:outline-2 focus:outline-offset-2 focus:outline-red-700">
+                <AlertCircle size={19} aria-hidden="true" className="shrink-0 mt-0.5 text-red-700" />
                 <div className="flex-1">
-                  <p className="font-semibold text-red-200">Required Document Submission Incomplete</p>
-                  <p className="text-xs text-red-300/90 mt-0.5">{error}</p>
+                  <p className="font-semibold">Please review before submitting</p>
+                  <p className="mt-1 text-sm text-red-900">{error}</p>
                 </div>
               </div>
             )}
 
             {/* Accommodation Category Switcher */}
             <div className="space-y-3">
-              <div className="flex items-center justify-between px-1">
-                <label className="text-xs uppercase tracking-wider text-white/50 font-bold flex items-center gap-2">
-                  <Building size={14} className="text-blue-400" />
-                  <span>Choose Accommodation Category</span>
-                </label>
-                <span className="text-[11px] text-white/40">Sets the exact PDF requirements</span>
+              <div className="flex flex-col gap-1">
+                <h2 className="text-base font-semibold text-slate-950">What type of accommodation do you need?</h2>
+                <p className="text-sm text-slate-600">This sets the required documents for your application.</p>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -342,38 +324,22 @@ const CustomApplication = ({ onCancel, property, user, profile, application, onS
                 <button
                   type="button"
                   onClick={() => handleCategorySwitch('student_room')}
-                  className={`p-4 rounded-2xl border text-left transition-all relative flex items-start gap-3.5 ${
+                  aria-pressed={category === 'student_room'}
+                  className={`min-h-28 p-4 border text-left transition-colors flex items-start gap-3 ${
                     category === 'student_room'
-                      ? 'bg-blue-600/15 border-blue-500/80 shadow-lg shadow-blue-500/10'
-                      : 'bg-white/[0.02] border-white/10 hover:border-white/20 hover:bg-white/[0.04]'
+                      ? 'bg-blue-50 border-blue-700'
+                      : 'bg-white border-slate-300 hover:border-slate-500'
                   }`}
                 >
-                  <div className={`p-2.5 rounded-xl shrink-0 ${
-                    category === 'student_room' ? 'bg-blue-600 text-white' : 'bg-white/10 text-white/60'
-                  }`}>
-                    <GraduationCap size={22} />
+                  <div className="mt-0.5 shrink-0 text-blue-800">
+                    <GraduationCap size={19} aria-hidden="true" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center justify-between">
-                      <p className="font-bold text-sm text-white">Student Accommodation</p>
-                      {category === 'student_room' && (
-                        <span className="w-2.5 h-2.5 rounded-full bg-blue-400 shadow-[0_0_8px_#60a5fa]" />
-                      )}
-                    </div>
-                    <p className="text-xs text-white/50 mt-1 leading-relaxed">
-                      For student rooms, residences, NSFAS & university bursary applicants.
+                    <p className="font-semibold text-sm text-slate-950">Student accommodation</p>
+                    <p className="text-sm text-slate-600 mt-1 leading-relaxed">
+                      For university, college, TVET, NSFAS, or bursary applicants.
                     </p>
-                    <div className="mt-2.5 flex items-center gap-1.5 flex-wrap">
-                      <span className="text-[10px] font-bold tracking-wider px-2 py-0.5 rounded-md bg-blue-500/20 text-blue-300 border border-blue-500/30">
-                        Acceptance Letter
-                      </span>
-                      <span className="text-[10px] font-bold tracking-wider px-2 py-0.5 rounded-md bg-blue-500/20 text-blue-300 border border-blue-500/30">
-                        NSFAS / Bursary
-                      </span>
-                      <span className="text-[10px] font-bold tracking-wider px-2 py-0.5 rounded-md bg-blue-500/20 text-blue-300 border border-blue-500/30">
-                        ID
-                      </span>
-                    </div>
+                    <p className="mt-2 text-xs font-medium text-slate-500">Acceptance letter, funding proof, and ID</p>
                   </div>
                 </button>
 
@@ -381,45 +347,29 @@ const CustomApplication = ({ onCancel, property, user, profile, application, onS
                 <button
                   type="button"
                   onClick={() => handleCategorySwitch('standard_room')}
-                  className={`p-4 rounded-2xl border text-left transition-all relative flex items-start gap-3.5 ${
+                  aria-pressed={category === 'standard_room'}
+                  className={`min-h-28 p-4 border text-left transition-colors flex items-start gap-3 ${
                     category === 'standard_room'
-                      ? 'bg-emerald-600/15 border-emerald-500/80 shadow-lg shadow-emerald-500/10'
-                      : 'bg-white/[0.02] border-white/10 hover:border-white/20 hover:bg-white/[0.04]'
+                      ? 'bg-blue-50 border-blue-700'
+                      : 'bg-white border-slate-300 hover:border-slate-500'
                   }`}
                 >
-                  <div className={`p-2.5 rounded-xl shrink-0 ${
-                    category === 'standard_room' ? 'bg-emerald-600 text-white' : 'bg-white/10 text-white/60'
-                  }`}>
-                    <Home size={22} />
+                  <div className="mt-0.5 shrink-0 text-blue-800">
+                    <Home size={19} aria-hidden="true" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center justify-between">
-                      <p className="font-bold text-sm text-white">Standard Room / Residential</p>
-                      {category === 'standard_room' && (
-                        <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 shadow-[0_0_8px_#34d399]" />
-                      )}
-                    </div>
-                    <p className="text-xs text-white/50 mt-1 leading-relaxed">
+                    <p className="font-semibold text-sm text-slate-950">Residential rental</p>
+                    <p className="text-sm text-slate-600 mt-1 leading-relaxed">
                       For private rooms, apartments, cottages, and working professionals.
                     </p>
-                    <div className="mt-2.5 flex items-center gap-1.5 flex-wrap">
-                      <span className="text-[10px] font-bold tracking-wider px-2 py-0.5 rounded-md bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
-                        Bank Statements
-                      </span>
-                      <span className="text-[10px] font-bold tracking-wider px-2 py-0.5 rounded-md bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
-                        Certified ID
-                      </span>
-                      <span className="text-[10px] font-bold tracking-wider px-2 py-0.5 rounded-md bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
-                        Payslip
-                      </span>
-                    </div>
+                    <p className="mt-2 text-xs font-medium text-slate-500">Bank statements, proof of income, and ID</p>
                   </div>
                 </button>
               </div>
             </div>
 
             {/* Dynamic PDF Attachment Feature */}
-            <div className="pt-2 border-t border-white/5">
+            <div className="border-t border-slate-200 pt-6">
               <PdfAttachmentSection
                 category={category}
                 documents={documents}
@@ -427,44 +377,49 @@ const CustomApplication = ({ onCancel, property, user, profile, application, onS
                   setDocuments(updated);
                   setError(null);
                 }}
-                onError={(errText) => setError(errText)}
+                onError={(errText) => {
+                  setError(errText);
+                  setTimeout(() => errorSummaryRef.current?.focus(), 0);
+                }}
               />
             </div>
 
             {/* Application Preference Fields */}
-            <div className="space-y-6 pt-4 border-t border-white/10">
+            <div className="space-y-8 border-t border-slate-200 pt-6">
               
               {/* Location & Property Type */}
               <div className="space-y-4">
-                <div className="flex items-center gap-2 text-white/40 uppercase tracking-widest text-xs font-bold px-1">
-                  <MapPin size={14} />
-                  <span>Rental Preferences</span>
+                <div>
+                  <h2 className="text-base font-semibold text-slate-950">Where would you like to live?</h2>
+                  <p className="mt-1 text-sm text-slate-600">Separate multiple areas with commas.</p>
                 </div>
-                <div className="glass rounded-2xl p-5 space-y-4 border border-white/5">
-                  <div>
-                    <label className="text-[11px] uppercase tracking-wider text-white/40 mb-2 block font-semibold">
-                      Preferred Areas / Suburbs (Comma Separated)
+                <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
+                  <div className="space-y-2">
+                    <label htmlFor="preferred-areas" className="block text-sm font-medium text-slate-800">
+                      Preferred areas or suburbs
                     </label>
                     <input 
+                      id="preferred-areas"
                       type="text" 
                       name="preferred_areas" 
                       value={formData.preferred_areas} 
                       onChange={handleChange}
                       placeholder={category === 'student_room' ? "e.g. Braamfontein, Auckland Park, Hatfield" : "e.g. Rosebank, Sea Point, Sandton"}
-                      className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white outline-none focus:border-blue-500 transition-colors"
+                      className="min-h-11 w-full border border-slate-300 bg-white px-3 text-sm text-slate-950 placeholder:text-slate-500 outline-none focus:border-blue-700 focus:ring-2 focus:ring-blue-100"
                     />
                   </div>
-                  <div>
-                    <label className="text-[11px] uppercase tracking-wider text-white/40 mb-2 block font-semibold">
-                      Preferred Accommodation Type
+                  <div className="space-y-2">
+                    <label htmlFor="preferred-types" className="block text-sm font-medium text-slate-800">
+                      Preferred accommodation type
                     </label>
                     <input 
+                      id="preferred-types"
                       type="text" 
                       name="preferred_types" 
                       value={formData.preferred_types} 
                       onChange={handleChange}
                       placeholder={category === 'student_room' ? "e.g. Single Room, Ensuite, Sharing" : "e.g. Room, Apartment, Studio"}
-                      className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white outline-none focus:border-blue-500 transition-colors"
+                      className="min-h-11 w-full border border-slate-300 bg-white px-3 text-sm text-slate-950 placeholder:text-slate-500 outline-none focus:border-blue-700 focus:ring-2 focus:ring-blue-100"
                     />
                   </div>
                 </div>
@@ -472,35 +427,41 @@ const CustomApplication = ({ onCancel, property, user, profile, application, onS
 
               {/* Budget Section */}
               <div className="space-y-4">
-                <div className="flex items-center gap-2 text-white/40 uppercase tracking-widest text-xs font-bold px-1">
-                  <DollarSign size={14} />
-                  <span>Monthly Rental Budget (ZAR)</span>
+                <div>
+                  <h2 className="text-base font-semibold text-slate-950">Monthly rental budget</h2>
+                  <p className="mt-1 text-sm text-slate-600">Enter amounts in South African rand. These fields are optional.</p>
                 </div>
-                <div className="glass rounded-2xl p-5 border border-white/5 grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div>
-                    <label className="text-[11px] uppercase tracking-wider text-white/40 mb-2 block font-semibold">
-                      Minimum Budget (R)
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                  <div className="space-y-2">
+                    <label htmlFor="min-budget" className="block text-sm font-medium text-slate-800">
+                      Minimum (R)
                     </label>
                     <input 
+                      id="min-budget"
                       type="number" 
                       name="min_budget" 
                       value={formData.min_budget} 
                       onChange={handleChange} 
                       placeholder="0"
-                      className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white outline-none focus:border-blue-500 transition-colors"
+                      min="0"
+                      step="100"
+                      className="min-h-11 w-full border border-slate-300 bg-white px-3 text-sm text-slate-950 placeholder:text-slate-500 outline-none focus:border-blue-700 focus:ring-2 focus:ring-blue-100"
                     />
                   </div>
-                  <div>
-                    <label className="text-[11px] uppercase tracking-wider text-white/40 mb-2 block font-semibold">
-                      Maximum Budget (R)
+                  <div className="space-y-2">
+                    <label htmlFor="max-budget" className="block text-sm font-medium text-slate-800">
+                      Maximum (R)
                     </label>
                     <input 
+                      id="max-budget"
                       type="number" 
                       name="max_budget" 
                       value={formData.max_budget} 
                       onChange={handleChange} 
                       placeholder={category === 'student_room' ? "6500" : "18000"}
-                      className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white outline-none focus:border-blue-500 transition-colors"
+                      min="0"
+                      step="100"
+                      className="min-h-11 w-full border border-slate-300 bg-white px-3 text-sm text-slate-950 placeholder:text-slate-500 outline-none focus:border-blue-700 focus:ring-2 focus:ring-blue-100"
                     />
                   </div>
                 </div>
@@ -508,83 +469,82 @@ const CustomApplication = ({ onCancel, property, user, profile, application, onS
 
               {/* Lease Timing Section */}
               <div className="space-y-4">
-                <div className="flex items-center gap-2 text-white/40 uppercase tracking-widest text-xs font-bold px-1">
-                  <Calendar size={14} />
-                  <span>Move-in Timing & Lease Period</span>
+                <div>
+                  <h2 className="text-base font-semibold text-slate-950">Move-in and lease</h2>
+                  <p className="mt-1 text-sm text-slate-600">Tell us when you plan to move and your preferred lease length.</p>
                 </div>
-                <div className="glass rounded-2xl p-5 border border-white/5 grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div>
-                    <label className="text-[11px] uppercase tracking-wider text-white/40 mb-2 block font-semibold">
-                      Target Move-in Date
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                  <div className="space-y-2">
+                    <label htmlFor="move-in-date" className="block text-sm font-medium text-slate-800">
+                      Target move-in date <span className="font-normal text-slate-500">(optional)</span>
                     </label>
                     <input 
+                      id="move-in-date"
                       type="date" 
                       name="move_in_date" 
                       value={formData.move_in_date} 
                       onChange={handleChange}
-                      className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white outline-none focus:border-blue-500 transition-colors"
-                      style={{ colorScheme: 'dark' }}
+                      className="min-h-11 w-full border border-slate-300 bg-white px-3 text-sm text-slate-950 outline-none focus:border-blue-700 focus:ring-2 focus:ring-blue-100"
                     />
                   </div>
-                  <div>
-                    <label className="text-[11px] uppercase tracking-wider text-white/40 mb-2 block font-semibold">
-                      Lease Duration (Months)
+                  <div className="space-y-2">
+                    <label htmlFor="lease-duration" className="block text-sm font-medium text-slate-800">
+                      Lease duration (months)
                     </label>
                     <input 
+                      id="lease-duration"
                       type="number" 
                       name="lease_duration_months" 
                       value={formData.lease_duration_months} 
                       onChange={handleChange} 
                       placeholder={category === 'student_room' ? "10" : "12"}
-                      className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white outline-none focus:border-blue-500 transition-colors"
+                      min="1"
+                      max="60"
+                      className="min-h-11 w-full border border-slate-300 bg-white px-3 text-sm text-slate-950 placeholder:text-slate-500 outline-none focus:border-blue-700 focus:ring-2 focus:ring-blue-100"
                     />
                   </div>
                 </div>
               </div>
 
               {/* Application Fee Section (R100 - Card Only powered by PayPal) */}
-              <div className="space-y-4 pt-4 border-t border-white/10">
-                <div className="flex items-center justify-between px-1">
-                  <div className="flex items-center gap-2 text-white/40 uppercase tracking-widest text-xs font-bold">
-                    <CreditCard size={14} className="text-blue-400" />
-                    <span>Application Vetting Fee (Card Only)</span>
+              <div className="space-y-4 border-t border-slate-200 pt-6">
+                <div className="flex flex-wrap items-baseline justify-between gap-2">
+                  <div>
+                    <h2 className="text-base font-semibold text-slate-950">Application fee</h2>
+                    <p className="mt-1 text-sm text-slate-600">A one-time assistance and vetting fee is required to submit.</p>
                   </div>
-                  <span className="text-[11px] font-mono text-blue-400 bg-blue-500/10 px-2 py-0.5 rounded border border-blue-500/20">
-                    R100.00 ZAR
-                  </span>
+                  <span className="text-sm font-semibold text-slate-900">R100.00</span>
                 </div>
 
-                <div className={`p-4 rounded-2xl border transition-all ${
+                <div className={`border-l-2 px-4 py-3 ${
                   feePaid 
-                    ? 'bg-emerald-500/10 border-emerald-500/40 text-emerald-200' 
-                    : 'bg-white/[0.02] border-white/10 hover:border-white/20'
+                    ? 'bg-emerald-50 border-emerald-700'
+                    : 'bg-white border-slate-300'
                 }`}>
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                     <div className="flex items-start gap-3">
-                      <div className={`p-2.5 rounded-xl shrink-0 ${
-                        feePaid ? 'bg-emerald-500 text-white' : 'bg-white/10 text-white/60'
-                      }`}>
-                        {feePaid ? <CheckCircle2 size={20} /> : <CreditCard size={20} />}
+                      <div className={feePaid ? 'mt-0.5 text-emerald-800' : 'mt-0.5 text-slate-600'}>
+                        {feePaid ? <CheckCircle2 size={18} aria-hidden="true" /> : <CreditCard size={18} aria-hidden="true" />}
                       </div>
                       <div>
                         <div className="flex items-center gap-2 flex-wrap">
-                          <h4 className="text-sm font-bold text-white">
-                            {feePaid ? 'R100 Application Fee Settled' : 'Mandatory Vetting Fee (R100.00)'}
-                          </h4>
+                          <h3 className="text-sm font-semibold text-slate-950">
+                            {feePaid ? 'Application fee paid' : 'Payment required'}
+                          </h3>
                           {feePaid ? (
-                            <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
-                              Paid & Verified
+                            <span className="text-xs font-medium text-emerald-800">
+                              Paid
                             </span>
                           ) : (
-                            <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30">
-                              Payment Required
+                            <span className="text-xs font-medium text-amber-900">
+                              Card payment
                             </span>
                           )}
                         </div>
-                        <p className="text-xs text-white/50 mt-1 leading-relaxed">
+                        <p className="text-sm text-slate-600 mt-1 leading-relaxed">
                           {feePaid 
-                            ? `Receipt Ref: ${feeReceipt?.receiptNumber || feeReceipt || 'REC-P4U-891042'} · Cleared via Debit/Credit Card (PayPal)`
-                            : 'Covers automated ID check, credit bureau assessment, and document validation. Payable using card only.'}
+                            ? (feeReceipt?.receiptNumber || (typeof feeReceipt === 'string' ? `Receipt reference: ${feeReceipt}` : 'Payment recorded.'))
+                            : 'Pay by card to complete your application. The fee is non-refundable.'}
                         </p>
                       </div>
                     </div>
@@ -594,7 +554,7 @@ const CustomApplication = ({ onCancel, property, user, profile, application, onS
                         <button
                           type="button"
                           onClick={() => setShowPaymentModal(true)}
-                          className="px-3.5 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 text-xs font-semibold text-white/80 hover:text-white border border-white/10 transition-colors"
+                          className="min-h-11 border border-slate-300 bg-white px-4 text-sm font-semibold text-slate-800 hover:bg-slate-50 transition-colors"
                         >
                           View Receipt
                         </button>
@@ -602,7 +562,7 @@ const CustomApplication = ({ onCancel, property, user, profile, application, onS
                         <button
                           type="button"
                           onClick={() => setShowPaymentModal(true)}
-                          className="px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-xs font-bold text-white transition-all shadow-md shadow-blue-500/20 flex items-center gap-2"
+                          className="min-h-11 bg-blue-800 hover:bg-blue-900 px-4 text-sm font-semibold text-white transition-colors flex items-center gap-2"
                         >
                           <Lock size={13} />
                           <span>Pay R100 with Card</span>
@@ -615,12 +575,14 @@ const CustomApplication = ({ onCancel, property, user, profile, application, onS
 
               {/* Special Requirements */}
               <div className="space-y-4">
-                <div className="flex items-center gap-2 text-white/40 uppercase tracking-widest text-xs font-bold px-1">
-                  <FileText size={14} />
-                  <span>Additional Notes & Sponsor Details</span>
+                <div>
+                  <h2 className="text-base font-semibold text-slate-950">Additional details <span className="font-normal text-slate-500">(optional)</span></h2>
+                  <p className="mt-1 text-sm text-slate-600">Add information that may help reviewers understand your needs.</p>
                 </div>
-                <div className="glass rounded-2xl p-5 border border-white/5">
+                <div>
+                  <label htmlFor="special-requirements" className="mb-2 block text-sm font-medium text-slate-800">Notes for reviewers</label>
                   <textarea 
+                    id="special-requirements"
                     name="special_requirements" 
                     value={formData.special_requirements} 
                     onChange={handleChange}
@@ -629,40 +591,39 @@ const CustomApplication = ({ onCancel, property, user, profile, application, onS
                         ? "Specify your university, student number, NSFAS application reference, or room sharing preferences..."
                         : "Any specific parking requirements, pet approval, guarantor context, or move-in notes?"
                     }
-                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white outline-none focus:border-blue-500 transition-colors min-h-[90px] resize-none"
+                    className="min-h-28 w-full border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-950 placeholder:text-slate-500 outline-none focus:border-blue-700 focus:ring-2 focus:ring-blue-100"
                   />
                 </div>
               </div>
             </div>
 
             {/* Submit Action Bar */}
-            <div className="pt-6 border-t border-white/10 flex flex-col sm:flex-row items-center justify-between gap-4">
-              <div className="text-xs text-white/50 flex items-center gap-2 self-start sm:self-auto">
-                <ShieldCheck size={16} className="text-emerald-400 shrink-0" />
-                <span>POPIA compliant & SSL secured file upload</span>
+            <div className="border-t border-slate-200 pt-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+              <div className="text-sm text-slate-600 max-w-md">
+                Attach only documents relevant to this rental application.
               </div>
 
               <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center gap-3 w-full sm:w-auto justify-end">
                 <button
                   type="button"
                   onClick={onCancel}
-                  className="w-full sm:w-auto px-5 py-3 rounded-xl text-sm font-semibold text-white/60 hover:text-white hover:bg-white/5 transition-colors text-center"
+                  className="min-h-11 w-full sm:w-auto border border-slate-300 bg-white px-4 text-sm font-semibold text-slate-800 hover:bg-slate-50 transition-colors text-center"
                   disabled={isSubmitting}
                 >
-                  Cancel
+                  Back
                 </button>
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className="w-full sm:w-auto bg-blue-600 hover:bg-blue-500 text-white font-bold px-7 py-3 rounded-xl transition-all shadow-lg shadow-blue-500/25 active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2 text-center"
+                  className="min-h-11 w-full sm:w-auto bg-blue-800 hover:bg-blue-900 text-white font-semibold px-5 transition-colors disabled:opacity-60 flex items-center justify-center gap-2 text-center"
                 >
                   {isSubmitting ? (
-                    <span>Submitting Application...</span>
+                    <span>Submitting application…</span>
                   ) : application ? (
                     <span>Update Application</span>
                   ) : (
                     <>
-                      <span>Submit Application</span>
+                      <span>Submit rental application</span>
                       <ArrowRight size={16} />
                     </>
                   )}
@@ -721,7 +682,6 @@ const CustomApplication = ({ onCancel, property, user, profile, application, onS
           propertyTitle={property?.title || 'Rental Application'}
           amountZar={100}
         />
-      </div>
     </div>
   )
 }

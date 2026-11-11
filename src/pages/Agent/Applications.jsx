@@ -9,7 +9,6 @@ import {
   Mail,
   ChevronDown,
   Briefcase,
-  Sparkles,
   FileCheck,
   CheckCircle2,
   XCircle,
@@ -393,7 +392,7 @@ export const Applications = ({
                         title="View full job linking & commute proximity analysis"
                       >
                         <span className="match-score">
-                          <Sparkles size={14} aria-hidden="true" />
+                          <Briefcase size={14} aria-hidden="true" />
                           <strong className="ag-num">{matchAnalysis.compositeScore}%</strong>
                           <span className="match-score-label">match</span>
                         </span>
@@ -463,7 +462,7 @@ export const Applications = ({
                           className="btn btn-primary"
                           title="Filter the inventory, flag potential matches, and build a shortlist to ship to the tenant"
                         >
-                          <Sparkles size={16} aria-hidden="true" />
+                          <Building size={16} aria-hidden="true" />
                           <span>Manage Application</span>
                         </button>
                       </div>

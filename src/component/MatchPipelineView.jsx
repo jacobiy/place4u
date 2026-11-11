@@ -413,7 +413,9 @@ export default function MatchPipelineView({
       ['landlord_accepted', 'admin_approved', 'scheduled', 'schedule_accepted', 'lease_uploaded', 'lease_signed'].includes(m.state);
 
     return (
-      <div key={m.id} style={{ background: t.card, border: `1px solid ${t.border}`, borderRadius: 18, padding: 18, boxShadow: t.shadow }}>
+      <div key={m.id} style={role === 'admin'
+        ? { background: t.card, border: `1px solid ${t.border}`, borderRadius: 18, padding: 18, boxShadow: t.shadow }
+        : { background: 'transparent', border: 'none', borderTop: `1px solid ${t.border}`, borderRadius: 0, padding: '18px 0', boxShadow: 'none' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
           <div style={{ minWidth: 0 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>

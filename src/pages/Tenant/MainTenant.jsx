@@ -22,8 +22,9 @@ import { isActiveApplication } from '../../services/applicationStatus';
 export default function MainTenant() {
   const [activeView, setActiveView] = useState("dashboard");
   const [activeProperty, setActiveProperty] = useState(null);
-  const [showApplication, setShowApplication] = useState(false);
   const [applicationProperty, setApplicationProperty] = useState(null);
+  const [applicationReturnView, setApplicationReturnView] = useState("applications");
+  const [applicationReturnProperty, setApplicationReturnProperty] = useState(null);
   
   // Data States
   const [profile, setProfile] = useState(null);
@@ -262,7 +263,25 @@ export default function MainTenant() {
 
   const onApplyClick = (property) => {
     setApplicationProperty(property ?? null);
-    setShowApplication(true);
+    setApplicationReturnView(activeView);
+    setApplicationReturnProperty(activeProperty);
+    setActiveProperty(null);
+    setActiveView("application");
+  };
+
+  const openCustomApplication = () => {
+    setApplicationProperty(null);
+    setApplicationReturnView(activeView);
+    setApplicationReturnProperty(null);
+    setActiveProperty(null);
+    setActiveView("application");
+  };
+
+  const cancelApplication = () => {
+    setActiveView(applicationReturnView);
+    setActiveProperty(applicationReturnProperty);
+    setApplicationProperty(null);
+    setApplicationReturnProperty(null);
   };
 
   const handleApplicationSuccess = (newApp) => {
@@ -275,32 +294,22 @@ export default function MainTenant() {
         }).catch(() => {});
       }
     }
-    setShowApplication(false);
     setApplicationProperty(null);
+    setApplicationReturnProperty(null);
+    setActiveProperty(null);
+    setActiveView("applications");
   };
 
   // If viewing a single property, take over screen
   if (activeProperty) {
     return (
-      <div className="w-full min-h-screen bg-[#faf8ff]">
+      <div className="w-full min-h-screen bg-[#f5f6f7]">
         <PropertyDetailView
           property={activeProperty}
           onBack={() => setActiveProperty(null)}
           onApplyClick={onApplyClick}
           onSelectProperty={setActiveProperty}
         />
-        {showApplication && (
-          <CustomApplication
-            property={applicationProperty ?? activeProperty}
-            user={user}
-            profile={profile}
-            onSuccess={handleApplicationSuccess}
-            onCancel={() => {
-              setShowApplication(false);
-              setApplicationProperty(null);
-            }}
-          />
-        )}
       </div>
     );
   }
@@ -328,10 +337,7 @@ export default function MainTenant() {
             onToggleSaveProperty={toggleSaveProperty}
             onPropertyClick={onPropertyClick}
             onApplyClick={onApplyClick}
-            onOpenCustomApplication={() => {
-              setApplicationProperty(null);
-              setShowApplication(true);
-            }}
+            onOpenCustomApplication={openCustomApplication}
             onNavigateTab={(tab) => setActiveView(tab === 'browse' ? 'dashboard' : tab)}
           />
         );
@@ -357,10 +363,17 @@ export default function MainTenant() {
             setApplicationsCount={setApplicationsCount} 
             properties={properties}
             onViewProperty={onPropertyClick}
-            onOpenCustomApplication={() => {
-              setApplicationProperty(null);
-              setShowApplication(true);
-            }}
+            onOpenCustomApplication={openCustomApplication}
+          />
+        );
+      case "application":
+        return (
+          <CustomApplication
+            property={applicationProperty}
+            user={user}
+            profile={profile}
+            onSuccess={handleApplicationSuccess}
+            onCancel={cancelApplication}
           />
         );
       case "profile":
@@ -378,10 +391,10 @@ export default function MainTenant() {
   };
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", minHeight: "100vh", background: "#faf8ff" }}>
+    <div style={{ display: "flex", flexDirection: "column", minHeight: "100vh", background: "#f5f6f7" }}>
       <style dangerouslySetInnerHTML={{ __html: globalStyle }} />
       <Sidebar 
-        activeView={activeView} 
+        activeView={activeView === "application" ? applicationReturnView : activeView}
         setActiveView={setActiveView} 
         applicationsCount={applicationsCount}
         matchesCount={matchesCount}
@@ -394,22 +407,10 @@ export default function MainTenant() {
         marginTop: "70px",
         padding: "1.75rem clamp(1rem, 3.5vw, 2.5rem)",
         minHeight: "calc(100vh - 70px)",
-        background: "linear-gradient(180deg, rgba(204,229,255,0.3) 0%, #faf8ff 220px, #faf8ff 100%)"
+        background: "#f5f6f7"
       }}>
         {renderContent()}
 
-        {showApplication && (
-          <CustomApplication
-            property={applicationProperty}
-            profile={profile}
-            user={user}
-            onSuccess={handleApplicationSuccess}
-            onCancel={() => {
-              setShowApplication(false);
-              setApplicationProperty(null);
-            }}
-          />
-        )}
       </main>
     </div>
   );

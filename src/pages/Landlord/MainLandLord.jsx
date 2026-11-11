@@ -449,9 +449,6 @@ export default function MainLandlord() {
       />
 
       <div className="ll-scope" style={{ display: "flex", minHeight: "100vh", width: "100%", maxWidth: "100vw", background: T.page, position: "relative" }}>
-        {/* Ambient glows */}
-        <div aria-hidden style={{ position: "fixed", top: -140, right: -120, width: 460, height: 460, borderRadius: "9999px", background: "radial-gradient(circle, rgba(56,189,248,0.16) 0%, transparent 70%)", pointerEvents: "none", zIndex: 0 }} />
-        <div aria-hidden style={{ position: "fixed", bottom: -160, left: 200, width: 420, height: 420, borderRadius: "9999px", background: "radial-gradient(circle, rgba(129,140,248,0.12) 0%, transparent 70%)", pointerEvents: "none", zIndex: 0 }} />
 
         {!isMobile && (
           <Sidebar activeView={activeView} setActiveView={setActiveView} onLogout={handleLogout} profile={profile} user={user} />
@@ -485,9 +482,7 @@ export default function MainLandlord() {
           <header style={{
             position: "sticky", top: 0, zIndex: 40,
             padding: isMobile ? "0.85rem 1rem" : "1.1rem 2rem",
-            background: "rgba(250,248,255,0.82)",
-            backdropFilter: "blur(14px)",
-            WebkitBackdropFilter: "blur(14px)",
+            background: "#ffffff",
             borderBottom: `1px solid ${T.border}`,
             display: "flex", alignItems: "center", gap: "1rem",
           }}>

@@ -38,6 +38,12 @@ __pycache__/
 # Local-only SQL (applied by hand in the Supabase SQL editor) - never commit
 database/
 
+# Dev-only schema + seed data (throwaway @mailinator accounts) - never commit
+dev_database/
+
+# Dev login cheat-sheet (test passwords + Mailinator inboxes) - never commit
+dev_users.md
+
 # Local-only film.html and related scratch files - never commit
 film.html
 film-*.html

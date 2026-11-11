@@ -14,8 +14,7 @@ import {
   Clock,
   ArrowRight,
   ExternalLink,
-  ChevronDown,
-  Sparkles
+  ChevronDown
 } from 'lucide-react';
 import { evaluateJobApplicationMatch } from '../../../utils/jobAffordabilityMatcher';
 import { resolveApplicationProperty, describeProperty } from '../../../utils/propertyLabel';
@@ -115,8 +114,8 @@ export const JobLinkApproximationModal = ({
         <div className="job-link-modal-header">
           <div className="job-link-header-left">
             <div className="job-link-header-badge">
-              <Sparkles size={14} />
-              <span>Place4U Underwriting Engine</span>
+              <Briefcase size={14} />
+              <span>Place4U Affordability Analysis</span>
             </div>
             <h2 className="job-link-modal-title">
               Job & Commute Compatibility Analysis
