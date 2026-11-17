@@ -33,6 +33,9 @@ import {
   isGenericPropertyTitle
 } from '../../../utils/propertyLabel';
 import { PIPELINE_STAGES, stateLabel, stageIndex, isDeclined } from '../../../services/matchWorkflowService';
+import FeeAmount from '../../../component/FeeAmount';
+import { useFeeQuote } from '../../../hooks/useFeeQuote';
+import { formatZarAmount } from '../../../services/promotionService';
 
 /* One-line explanation per pipeline stage, shown under each step title in the
    "Live progress" tracker on the tenant dashboard. */
@@ -241,6 +244,10 @@ const ReceiptVoucherModal = ({ receipt, onClose }) => {
     ['Date', formattedDate]
   ];
 
+  if (receipt.promotion_code || receipt.is_free) {
+    rows.push(['Promotion', receipt.promotion_code || 'Application fee waiver']);
+  }
+
   return (
     <div
       className="fixed inset-0 bg-slate-900/40 flex items-center justify-center z-[140] p-4 backdrop-blur-sm"
@@ -273,13 +280,29 @@ const ReceiptVoucherModal = ({ receipt, onClose }) => {
         <div className="px-7 pb-6 space-y-6 overflow-y-auto">
           <div className="text-center py-6 border-y border-slate-200">
             <Eyebrow>Application vetting fee</Eyebrow>
-            <div className="font-serif text-5xl text-slate-900 mt-2 tracking-tight">
-              <span className="text-2xl text-slate-400 mr-1">R</span>
-              {Number(receipt.amount || 100).toLocaleString('en-ZA', { minimumFractionDigits: 2 })}
+            <div className="mt-2 flex justify-center">
+              <FeeAmount
+                amount={receipt.amount ?? 100}
+                quote={{
+                  originalAmount: receipt.original_amount ?? 100,
+                  finalAmount: receipt.amount ?? 100,
+                  discountAmount: Math.max(
+                    (receipt.original_amount ?? 100) - (receipt.amount ?? 100),
+                    0
+                  ),
+                  promotionApplied:
+                    Boolean(receipt.is_free) ||
+                    Number(receipt.amount ?? 100) < Number(receipt.original_amount ?? 100),
+                  isFree: Boolean(receipt.is_free) || Number(receipt.amount) === 0,
+                  lineItems: []
+                }}
+                size="xl"
+                className="justify-center"
+              />
             </div>
             <div className="inline-flex items-center gap-1.5 mt-4 text-emerald-700 text-[11px] font-semibold">
               <CheckCircle2 size={12} />
-              Paid &amp; settled
+              {receipt.is_free || Number(receipt.amount) === 0 ? 'Fee waived' : 'Paid & settled'}
             </div>
           </div>
 
@@ -359,6 +382,7 @@ export default function DashboardView({
   const [maintenancePriority, setMaintenancePriority] = useState('Normal');
   const [toast, setToast] = useState(null);
   const [activeReceiptModal, setActiveReceiptModal] = useState(null);
+  const { quote: feeQuote } = useFeeQuote();
   const [contactModal, setContactModal] = useState({
     isOpen: false,
     contact: null,
@@ -567,7 +591,10 @@ export default function DashboardView({
       const paidProperty = properties.find((p) => String(p.id) === String(paidApp.property_id));
       return {
         receipt_number: paidApp.fee_receipt,
-        amount: paidApp.fee_amount || 100,
+        amount: paidApp.fee_amount ?? 100,
+        original_amount: paidApp.fee_original_amount ?? 100,
+        is_free: Boolean(paidApp.fee_is_free),
+        promotion_code: paidApp.promotion_code || null,
         currency: paidApp.fee_currency || 'ZAR',
         payer_name: displayName,
         property_title:
@@ -637,7 +664,13 @@ export default function DashboardView({
     }
   };
 
-  const feeSettled = Boolean(latestApplication?.fee_paid || latestApplication?.fee_receipt || latestPayment);
+  const feeSettled = Boolean(
+    latestApplication?.fee_paid ||
+    latestApplication?.fee_receipt ||
+    latestApplication?.fee_is_free ||
+    latestPayment
+  );
+  const feeWaived = Boolean(latestApplication?.fee_is_free || feeQuote?.isFree);
 
   /* Real document/state facts for the fallback tracker. Nothing is assumed:
      "Documents attached" only reads as complete when files actually exist. */
@@ -650,82 +683,27 @@ export default function DashboardView({
     appStatus === APPLICATION_STATUS.MATCHES_FOUND ||
     appStatus === APPLICATION_STATUS.COMPLETED;
 
-  const lifecycleSteps = [
-    {
-      title: 'Application fee settled',
-      note: feeSettled
-        ? 'Cleared via card payment. Receipt issued.'
-        : 'Awaiting your R100 vetting fee to begin processing.',
-      tag: feeSettled ? 'Complete' : 'Action needed',
-      state: feeSettled ? 'done' : 'active'
-    },
-    {
-      title: 'Documents attached',
-      note: docsAttached
-        ? isStudentApp
-          ? 'University acceptance letter and bursary confirmation recorded.'
-          : 'Bank statements and ID documentation on file.'
-        : isStudentApp
-          ? 'Upload your university acceptance letter, bursary/NSFAS proof and ID.'
-          : 'Upload 3 months bank statements, your ID and latest payslip.',
-      tag: docsAttached ? `${appDocs.length} file${appDocs.length === 1 ? '' : 's'}` : 'Pending',
-      state: docsAttached ? 'done' : feeSettled ? 'active' : 'todo'
-    },
-    {
-      title: 'Landlord & agent review',
-      note: 'The property manager is reviewing your criteria and unit availability.',
-      tag: reviewStarted ? 'In review' : 'Upcoming',
-      state: reviewStarted ? 'active' : 'todo'
-    },
-    { title: 'Lease & keys', note: 'Digital lease dispatch upon landlord approval.', tag: 'Upcoming', state: 'todo' }
+  const MILESTONES = [
+    { key: 'submitted', label: 'Submitted' },
+    { key: 'review', label: 'Vetting & Review' },
+    { key: 'viewing', label: 'Match & Viewing' },
+    { key: 'lease', label: 'Lease & Handover' }
   ];
 
-  /* Once a match enters the acceptance pipeline, the tracker mirrors that real
-     pipeline (shipped → … → move-in confirmed). Until then it falls back to the
-     generic application lifecycle above. */
-  const steps = buildPipelineSteps(pipelineMatch) || lifecycleSteps;
-
-  const kpis = [
-    {
-      key: 'apps',
-      icon: FileText,
-      value: activeApplications.length,
-      label: 'Active applications',
-      note: activeApplications.length > 0 ? `${activeApplications.length} in progress with landlords` : 'Ready to submit',
-      onClick: go('applications')
-    },
-    {
-      key: 'docs',
-      icon: ShieldCheck,
-      value: totalVerifiedDocs,
-      label: 'Documents in vault',
-      note:
-        totalVerifiedDocs > 0
-          ? hasStudentApplication
-            ? 'Acceptance, NSFAS & ID documents'
-            : 'Bank statements, ID & payslips'
-          : 'No documents uploaded yet',
-      onClick: go('applications')
-    },
-    {
-      key: 'receipts',
-      icon: Receipt,
-      value: latestPayment ? `R ${Number(latestPayment.amount || 100).toLocaleString('en-ZA')}` : 'R 0',
-      label: 'Fees settled',
-      note: latestPayment ? latestPayment.receipt_number || 'Fee settled' : 'R100 card fee per application',
-      onClick: openLatestReceipt,
-      mono: true
-    },
-    {
-      key: 'saved',
-      icon: Heart,
-      value: savedPropertyIds.length,
-      label: 'Saved properties',
-      note: showSavedOnly ? 'Filter on · click to show all' : 'Click to filter your wishlist',
-      onClick: () => setShowSavedOnly(!showSavedOnly),
-      active: showSavedOnly
+  const currentMilestoneIndex = useMemo(() => {
+    if (!latestApplication) return -1;
+    if (pipelineMatch) {
+      const s = pipelineMatch.state || '';
+      if (['lease_uploaded', 'lease_signed', 'move_in_confirmed'].includes(s)) return 3;
+      if (['shipped', 'tenant_accepted', 'agent_forwarded', 'landlord_accepted', 'admin_approved', 'scheduled', 'schedule_accepted'].includes(s)) return 2;
+      return 1;
     }
-  ];
+    const status = normalizeApplicationStatus(latestApplication.status);
+    if (status === 'completed') return 3;
+    if (status === 'matches_found') return 2;
+    if (status === 'under_review' || reviewStarted || feeSettled) return 1;
+    return 0;
+  }, [latestApplication, pipelineMatch, reviewStarted, feeSettled]);
 
   return (
     <div className="max-w-[1320px] mx-auto space-y-8 sm:space-y-10 pb-16 text-slate-900">
@@ -806,353 +784,296 @@ export default function DashboardView({
         </section>
       )}
 
-      {/* =========================== KPIs ============================= */}
-      <section className="grid grid-cols-2 lg:grid-cols-4 border-y border-slate-200 divide-x divide-slate-200">
-        {kpis.map(({ key, icon: Icon, value, label, note, onClick, active, mono }) => (
-          <button
-            key={key}
-            type="button"
-            onClick={onClick}
-            className={`group text-left px-3 py-5 sm:px-5 border-b border-slate-200 lg:border-b-0 last:border-b-0 transition-colors duration-200 cursor-pointer min-w-0 ${
-              active
-                ? 'bg-sky-50/70'
-                : 'hover:bg-white/70'
-            }`}
-          >
-            <div className="flex items-center justify-between gap-2">
-              <span className="text-[11px] font-semibold text-slate-500 leading-tight">{label}</span>
-              <Icon size={15} className="text-slate-400 shrink-0" fill={key === 'saved' && savedPropertyIds.length > 0 ? '#94a3b8' : 'none'} />
-            </div>
-            <div className={`mt-3 font-sans text-2xl sm:text-3xl font-semibold text-slate-900 tracking-tight leading-none ${mono ? 'tabular-nums' : ''}`}>{value}</div>
-            <div className="text-[11px] text-slate-500 mt-2 truncate">{note}</div>
-          </button>
-        ))}
+      {/* ======================= QUICK STATUS PILLS ========================== */}
+      <section className="flex flex-wrap items-center gap-2.5 pt-1">
+        <button
+          type="button"
+          onClick={go('applications')}
+          className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-white border border-slate-200 hover:border-sky-300 hover:bg-sky-50/40 text-xs font-medium text-slate-700 transition-colors cursor-pointer shadow-xs"
+        >
+          <FileText size={14} className="text-sky-600" />
+          <span><strong>{activeApplications.length}</strong> Active {activeApplications.length === 1 ? 'application' : 'applications'}</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={go('applications')}
+          className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-white border border-slate-200 hover:border-sky-300 hover:bg-sky-50/40 text-xs font-medium text-slate-700 transition-colors cursor-pointer shadow-xs"
+        >
+          <ShieldCheck size={14} className="text-emerald-600" />
+          <span><strong>{totalVerifiedDocs}</strong> Documents on file</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={openLatestReceipt}
+          className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-white border border-slate-200 hover:border-sky-300 hover:bg-sky-50/40 text-xs font-medium text-slate-700 transition-colors cursor-pointer shadow-xs"
+        >
+          <Receipt size={14} className="text-slate-400" />
+          <span>Fee:{' '}
+            <strong className={feeWaived || feeQuote?.isFree ? 'text-emerald-700 font-bold' : 'text-slate-900'}>
+              {feeWaived || feeQuote?.isFree ? 'FREE (Waived)' : latestPayment ? `R ${Number(latestPayment.amount).toLocaleString('en-ZA')}` : 'R100'}
+            </strong>
+          </span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setShowSavedOnly(!showSavedOnly)}
+          className={`inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-medium transition-colors cursor-pointer shadow-xs ${
+            showSavedOnly
+              ? 'bg-sky-100 text-sky-800 border border-sky-300 font-semibold'
+              : 'bg-white border border-slate-200 hover:border-sky-300 hover:bg-sky-50/40 text-slate-700'
+          }`}
+        >
+          <Heart size={14} className={savedPropertyIds.length > 0 ? 'text-rose-500 fill-rose-500' : 'text-slate-400'} />
+          <span><strong>{savedPropertyIds.length}</strong> Saved</span>
+          {showSavedOnly && <span className="text-[10px] bg-sky-200 text-sky-900 px-1.5 py-0.5 rounded-md font-bold">Active Filter</span>}
+        </button>
       </section>
 
-      {/* ================= STEPPER + CONCIERGE ======================== */}
-      <section className="grid grid-cols-1 lg:grid-cols-12 gap-5">
-        {/* Stepper */}
-        <div className="lg:col-span-7 border-t border-slate-200 pt-6 sm:pt-8 flex flex-col justify-between">
-          <div>
-            <div className="flex flex-wrap items-start justify-between gap-3 mb-8">
-              <div>
-                <Eyebrow className="!text-sky-600 mb-2">Live progress</Eyebrow>
-                <h3 className="font-sans text-xl font-semibold text-slate-900">Application status</h3>
-              </div>
-              {latestApplication && (
-                <div className="flex flex-col items-end gap-2">
-                  <span className="px-3 py-1.5 rounded-full text-[11px] font-semibold bg-sky-50 border border-sky-100 text-sky-700">
-                    {latestApplication.accommodation_category === 'student_room'
-                      ? 'Student accommodation'
-                      : 'Residential lease'}
-                  </span>
-                  {pipelineMatch && (
-                    <span
-                      className={`px-3 py-1.5 rounded-full text-[11px] font-semibold border ${
-                        isDeclined(pipelineMatch.state)
-                          ? 'bg-rose-50 border-rose-200 text-rose-600'
-                          : 'bg-white border-sky-200 text-sky-700'
-                      }`}
-                    >
-                      {stateLabel(pipelineMatch.state)}
-                    </span>
-                  )}
-                </div>
-              )}
-            </div>
-
-            {!latestApplication ? (
-              <div className="py-8 px-2 border-y border-slate-200 text-center flex flex-col items-center">
-                <div className="w-14 h-14 rounded-full bg-white border border-sky-100 flex items-center justify-center text-sky-600 mb-4">
-                  <FileText size={24} />
-                </div>
-                <h4 className="font-sans text-lg font-semibold text-slate-900">No application yet</h4>
-                <p className="text-sm text-slate-500 mt-2 max-w-sm">
-                  Start an application and this tracker will follow it from the vetting fee through to your signed
-                  lease.
-                </p>
-                <button
-                  type="button"
-                  onClick={onOpenCustomApplication}
-                  className={`mt-5 h-11 px-6 rounded-full text-sm font-bold flex items-center gap-2 ${BTN_PRIMARY}`}
-                >
-                  <FileText size={15} />
-                  Submit application
-                </button>
-              </div>
-            ) : (
-              <>
-            <div className="pl-4 py-1 border-l-2 border-sky-700 mb-8">
-              <div className="flex items-start justify-between gap-4">
-                <div className="min-w-0">
-                  <Eyebrow>{latestTarget.kind === 'general' ? 'Application scope' : 'Latest target property'}</Eyebrow>
-                  <h4 className="font-sans text-lg font-semibold text-slate-900 mt-1.5 truncate">
-                    {latestTarget.label ||
-                      (latestTarget.kind === 'linked-unresolved'
-                        ? 'Linked listing'
-                        : latestApplication
-                          ? 'General application'
-                          : 'No application yet')}
-                  </h4>
-                  <p className="text-xs text-slate-500 mt-1.5 flex items-center gap-1.5">
-                    <MapPin size={13} className="text-sky-500 shrink-0" />
-                    <span className="truncate">
-                      {latestTarget.location || 'Preferred areas not specified'}
-                    </span>
-                  </p>
-                  {latestTarget.kind === 'general' && latestTarget.location && (
-                    <p className="text-[11px] text-slate-400 mt-1.5 leading-relaxed">
-                      No specific unit chosen — your agent will shortlist matching listings from these areas.
-                    </p>
-                  )}
-                  {latestTarget.kind === 'linked-unresolved' && (
-                    <p className="text-[11px] text-slate-400 mt-1.5 leading-relaxed">
-                      This listing is no longer in your feed, but it is still attached to your application.
-                    </p>
-                  )}
-                  {latestTarget.property && onPropertyClick && (
-                    <button
-                      type="button"
-                      onClick={() => onPropertyClick(latestTarget.property)}
-                      className="mt-2 inline-flex items-center gap-1.5 text-[11px] font-semibold text-sky-700 hover:text-sky-900 underline underline-offset-4 cursor-pointer"
-                    >
-                      <Building2 size={12} />
-                      View property
-                    </button>
-                  )}
-                </div>
-                {latestApplication?.fee_receipt && (
-                  <button
-                    type="button"
-                    onClick={() =>
-                      setActiveReceiptModal({
-                        receipt_number: latestApplication.fee_receipt,
-                        amount: latestApplication.fee_amount || 100,
-                        payer_name: displayName,
-                        property_title: latestTarget.label || 'Rental Application Screening',
-                        paidAt: latestApplication.submitted_at
-                      })
-                    }
-                    className="shrink-0 h-9 px-4 rounded-full bg-white border border-sky-200 hover:border-sky-400 text-sky-700 text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer"
+      {/* ================= ACTIVE APPLICATION ACTION HUB ================= */}
+      {latestApplication ? (
+        <section className="bg-white rounded-2xl border border-slate-200 p-5 sm:p-6 shadow-xs">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-5 border-b border-slate-100">
+            <div>
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="text-[11px] font-bold tracking-wider uppercase text-sky-700">
+                  Application Status
+                </span>
+                <span className="px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-sky-50 border border-sky-100 text-sky-800">
+                  {latestApplication.accommodation_category === 'student_room'
+                    ? 'Student Accommodation'
+                    : 'Residential Lease'}
+                </span>
+                {pipelineMatch && (
+                  <span
+                    className={`px-2.5 py-0.5 rounded-full text-[11px] font-semibold border ${
+                      isDeclined(pipelineMatch.state)
+                        ? 'bg-rose-50 border-rose-200 text-rose-600'
+                        : 'bg-emerald-50 border-emerald-200 text-emerald-700'
+                    }`}
                   >
-                    <Receipt size={13} />
-                    Receipt
-                  </button>
+                    {stateLabel(pipelineMatch.state)}
+                  </span>
                 )}
               </div>
+              <h3 className="font-sans text-lg sm:text-xl font-semibold text-slate-900 mt-1">
+                {latestTarget.label || (latestApplication ? 'General Application' : 'Rental Application')}
+              </h3>
+              <p className="text-xs text-slate-500 mt-1 flex items-center gap-1.5">
+                <MapPin size={13} className="text-sky-500 shrink-0" />
+                <span>{latestTarget.location || 'Preferred areas not specified'}</span>
+              </p>
             </div>
 
-            <ol className="relative">
-              {steps.map((s, i) => {
-                const isLast = i === steps.length - 1;
-                const declined = s.state === 'declined';
-                const circle =
-                  s.state === 'done'
-                    ? 'bg-sky-600 text-white border-sky-600'
-                    : s.state === 'active'
-                      ? 'border-sky-500 text-sky-600 bg-sky-50'
-                      : declined
-                        ? 'border-rose-200 text-rose-600 bg-rose-50'
-                        : 'border-sky-100 text-slate-300 bg-white';
+            <div className="flex items-center gap-2 self-start sm:self-auto shrink-0 flex-wrap">
+              {latestApplication?.fee_receipt && (
+                <button
+                  type="button"
+                  onClick={() =>
+                    setActiveReceiptModal({
+                      receipt_number: latestApplication.fee_receipt,
+                      amount: latestApplication.fee_amount ?? 100,
+                      original_amount: latestApplication.fee_original_amount ?? 100,
+                      is_free: Boolean(latestApplication.fee_is_free),
+                      promotion_code: latestApplication.promotion_code || null,
+                      payer_name: displayName,
+                      property_title: latestTarget.label || 'Rental Application Screening',
+                      paidAt: latestApplication.submitted_at
+                    })
+                  }
+                  className="h-9 px-3.5 rounded-lg bg-white border border-slate-200 hover:border-slate-300 text-slate-700 text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer"
+                >
+                  <Receipt size={13} className="text-slate-500" />
+                  <span>Receipt</span>
+                </button>
+              )}
+              {latestTarget.property && onPropertyClick && (
+                <button
+                  type="button"
+                  onClick={() => onPropertyClick(latestTarget.property)}
+                  className="h-9 px-3.5 rounded-lg bg-white border border-slate-200 hover:border-slate-300 text-slate-700 text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer"
+                >
+                  <Building2 size={13} className="text-sky-600" />
+                  <span>View unit</span>
+                </button>
+              )}
+              <button
+                type="button"
+                onClick={pipelineMatch ? go('pipeline') : go('applications')}
+                className={`h-9 px-4 rounded-lg text-xs font-semibold flex items-center gap-1.5 cursor-pointer ${BTN_PRIMARY}`}
+              >
+                <span>{pipelineMatch ? 'Track pipeline' : 'Manage application'}</span>
+                <ArrowUpRight size={13} />
+              </button>
+            </div>
+          </div>
+
+          {/* Horizontal 4-Milestone Progress Track */}
+          <div className="pt-5">
+            <div className="grid grid-cols-4 gap-2 relative">
+              {MILESTONES.map((m, idx) => {
+                const isDone = currentMilestoneIndex > idx;
+                const isCurrent = currentMilestoneIndex === idx;
                 return (
-                  <li key={s.title} className="relative flex gap-5 pb-8 last:pb-0">
-                    {!isLast && (
-                      <span
-                        aria-hidden
-                        className={`absolute left-[15px] top-9 bottom-0 w-px ${
-                          s.state === 'done' ? 'bg-sky-400' : declined ? 'bg-rose-200' : 'bg-sky-100'
-                        }`}
-                      />
-                    )}
-                    <div className={`relative w-8 h-8 rounded-full border flex items-center justify-center shrink-0 ${circle}`}>
-                      {s.state === 'done' ? (
-                        <Check size={15} strokeWidth={3} />
-                      ) : s.state === 'active' ? (
-                        <Clock size={14} />
-                      ) : declined ? (
-                        <X size={14} />
-                      ) : (
-                        <Home size={14} />
-                      )}
-                      {s.state === 'active' && (
-                        <span className="absolute inset-0 rounded-full border border-sky-400 animate-ping opacity-40" />
-                      )}
-                    </div>
-                    <div className="flex-1 min-w-0 pt-0.5">
-                      <div className="flex items-center justify-between gap-3">
-                        <p
-                          className={`text-sm font-semibold ${
-                            s.state === 'todo' ? 'text-slate-400' : declined ? 'text-rose-600' : 'text-slate-900'
-                          }`}
-                        >
-                          {s.title}
-                        </p>
-                        <span
-                          className={`text-[10px] font-semibold uppercase tracking-wider ${
-                            s.state === 'done'
-                              ? 'text-sky-600'
-                              : s.state === 'active'
-                                ? 'text-amber-500'
-                                : declined
-                                  ? 'text-rose-500'
-                                  : 'text-slate-300'
-                          }`}
-                        >
-                          {s.tag}
-                        </span>
-                      </div>
-                      <p
-                        className={`text-xs mt-1 leading-relaxed ${
-                          s.state === 'todo' ? 'text-slate-300' : declined ? 'text-rose-500' : 'text-slate-500'
+                  <div key={m.key} className="flex flex-col">
+                    <div className="flex items-center mb-2">
+                      <div
+                        className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold transition-all ${
+                          isDone
+                            ? 'bg-sky-600 text-white'
+                            : isCurrent
+                              ? 'bg-sky-50 text-sky-700 border-2 border-sky-600 ring-2 ring-sky-100'
+                              : 'bg-slate-100 text-slate-400 border border-slate-200'
                         }`}
                       >
-                        {s.note}
-                      </p>
+                        {isDone ? <Check size={12} strokeWidth={3} /> : idx + 1}
+                      </div>
+                      {idx < 3 && (
+                        <div
+                          className={`flex-1 h-1 mx-2 rounded-full ${
+                            isDone ? 'bg-sky-600' : 'bg-slate-100'
+                          }`}
+                        />
+                      )}
                     </div>
-                  </li>
+                    <span
+                      className={`text-[11px] sm:text-xs font-medium leading-tight ${
+                        isCurrent
+                          ? 'text-sky-900 font-semibold'
+                          : isDone
+                            ? 'text-slate-700'
+                            : 'text-slate-400'
+                      }`}
+                    >
+                      {m.label}
+                    </span>
+                  </div>
                 );
               })}
-            </ol>
-              </>
-            )}
+            </div>
+
+            {/* Current Stage Note Callout */}
+            <div className="mt-4 p-3 rounded-xl bg-slate-50 border border-slate-100 text-xs text-slate-600 flex items-center justify-between gap-3">
+              <span className="flex items-center gap-2 min-w-0">
+                <Clock size={13} className="text-sky-600 shrink-0" />
+                <span className="truncate">
+                  {pipelineMatch
+                    ? PIPELINE_STAGE_NOTES[pipelineMatch.state] || 'Match processing in pipeline.'
+                    : reviewStarted
+                      ? 'The property manager is reviewing your criteria and unit availability.'
+                      : feeSettled
+                        ? 'Application fee settled. Background vetting in progress.'
+                        : 'Awaiting vetting fee settlement to begin application processing.'}
+                </span>
+              </span>
+              <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-400 shrink-0 hidden sm:inline">
+                Live Status
+              </span>
+            </div>
+          </div>
+        </section>
+      ) : (
+        /* Empty State Prompt: Clean single-strip banner instead of big empty boxes */
+        <section className="rounded-2xl border border-sky-100 bg-gradient-to-r from-sky-50/40 via-white to-sky-50/20 p-5 sm:p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="flex items-center gap-4">
+            <div className="w-10 h-10 rounded-xl bg-sky-50 border border-sky-100 flex items-center justify-center text-sky-600 shrink-0">
+              <Home size={18} />
+            </div>
+            <div>
+              <h3 className="text-base font-semibold text-slate-900">Find your ideal home</h3>
+              <p className="text-xs text-slate-500 mt-0.5">
+                Browse reviewed listings below and submit one verified application covering all your target homes.
+              </p>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={onOpenCustomApplication}
+            className={`h-10 px-5 rounded-lg text-xs font-semibold flex items-center gap-2 shrink-0 cursor-pointer ${BTN_PRIMARY}`}
+          >
+            <FileText size={14} />
+            <span>Start application</span>
+            <ArrowUpRight size={14} />
+          </button>
+        </section>
+      )}
+
+      {/* ===================== ACTIVE TENANCY (ONLY WHEN LEASE EXISTS) ===================== */}
+      {activeLease && (
+        <section className="bg-white rounded-2xl border border-slate-200 p-5 sm:p-6 shadow-xs">
+          <div className="flex items-start justify-between mb-4">
+            <div>
+              <Eyebrow className="!text-sky-600 mb-1">Your tenancy</Eyebrow>
+              <h3 className="font-sans text-xl font-semibold text-slate-900">{activeLease.property_title}</h3>
+              <p className="text-xs text-slate-500 mt-1 flex items-center gap-1.5">
+                <MapPin size={12} className="text-sky-500" />
+                {activeLease.address || 'Address on file'}
+              </p>
+            </div>
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold border border-emerald-200 bg-emerald-50 text-emerald-700">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+              {activeLease.status || 'Active Tenancy'}
+            </span>
           </div>
 
-          <div className="pt-6 mt-9 border-t border-sky-100 flex items-center justify-between gap-3">
-            <span className="text-xs text-slate-400">
-              {pipelineMatch
-                ? 'Follow every hand-off through to your signed lease.'
-                : latestApplication
-                  ? 'Need to update your application details?'
-                  : 'Ready to get started?'}
-            </span>
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 py-4 border-y border-slate-100 my-4">
+            <div>
+              <Eyebrow>Monthly rent</Eyebrow>
+              <p className="text-lg font-semibold text-slate-900 mt-1 tabular-nums">
+                {activeLease.monthly_rent != null
+                  ? `R ${Number(activeLease.monthly_rent).toLocaleString('en-ZA')}`
+                  : '—'}
+              </p>
+            </div>
+            <div>
+              <Eyebrow>Next due</Eyebrow>
+              <p className="text-sm font-semibold text-slate-900 mt-1.5">
+                {activeLease.next_due_date || '—'}
+              </p>
+            </div>
+            <div className="col-span-2 sm:col-span-1">
+              <Eyebrow>Property manager</Eyebrow>
+              <p className="text-sm font-semibold text-slate-900 mt-1.5">
+                {activeLease.landlord_name || 'Unassigned'}
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-3">
             <button
               type="button"
-              onClick={pipelineMatch ? go('pipeline') : latestApplication ? go('applications') : onOpenCustomApplication}
-              className="shrink-0 text-xs font-semibold text-sky-700 hover:text-sky-900 flex items-center gap-1 transition-colors cursor-pointer"
+              onClick={() =>
+                setContactModal({
+                  isOpen: true,
+                  contact: {
+                    name: activeLease.landlord_name || 'Property Manager',
+                    role: 'Property Manager',
+                    email: activeLease.landlord_email || 'support@place4u.xyz',
+                    phone: activeLease.landlord_phone || '',
+                    unit: activeLease.property_title || 'Your unit'
+                  },
+                  defaultSubject: `Tenancy Inquiry for ${activeLease.property_title || 'my unit'}`,
+                  defaultMessage: `Hello ${(activeLease.landlord_name || 'there').split(' ')[0]}, this is ${displayName} regarding my tenancy.`
+                })
+              }
+              className={`h-9 px-4 rounded-lg text-xs font-semibold flex items-center justify-center gap-2 cursor-pointer ${BTN_PRIMARY}`}
             >
-              {pipelineMatch ? 'Track match pipeline' : latestApplication ? 'Manage applications' : 'Submit application'}
-              <ArrowUpRight size={14} />
+              <Phone size={13} />
+              <span>Contact desk</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setShowMaintenanceModal(true)}
+              className={`h-9 px-4 rounded-lg text-xs font-semibold flex items-center justify-center gap-2 cursor-pointer ${BTN_OUTLINE}`}
+            >
+              <Wrench size={13} className="text-sky-600" />
+              <span>Log repair</span>
             </button>
           </div>
-        </div>
-
-        {/* Concierge */}
-        <div className="lg:col-span-5 border-t border-slate-200 pt-6 sm:pt-8 flex flex-col justify-between">
-          {activeLease ? (
-            <>
-              <div>
-                <div className="flex items-start justify-between mb-8">
-                  <div>
-                    <Eyebrow className="!text-sky-600 mb-2">Your tenancy</Eyebrow>
-                <h3 className="font-sans text-xl font-semibold text-slate-900">Tenancy support</h3>
-                  </div>
-                  <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-semibold border border-emerald-200 bg-emerald-50 text-emerald-700">
-                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                    {activeLease.status}
-                  </span>
-                </div>
-
-                <div className="space-y-5 mb-7">
-                  <div>
-                    <Eyebrow>Allocated unit</Eyebrow>
-                    <h4 className="font-sans text-lg font-semibold text-slate-900 mt-1.5">{activeLease.property_title}</h4>
-                    <p className="text-xs text-slate-500 mt-1.5 flex items-center gap-1.5">
-                      <MapPin size={12} className="text-sky-500" />
-                      {activeLease.address || 'Address on file'}
-                    </p>
-                  </div>
-
-                  <div className="grid grid-cols-2 divide-x divide-slate-200 border-y border-slate-200 py-4">
-                    <div className="pr-4">
-                      <Eyebrow>Monthly rent</Eyebrow>
-                      <p className="font-sans text-xl font-semibold text-slate-900 mt-1.5 tabular-nums">
-                        {activeLease.monthly_rent != null
-                          ? `R ${Number(activeLease.monthly_rent).toLocaleString('en-ZA')}`
-                          : '—'}
-                      </p>
-                    </div>
-                    <div className="pl-4">
-                      <Eyebrow>Next due</Eyebrow>
-                      <p className="text-sm font-semibold text-slate-900 mt-2.5">
-                        {activeLease.next_due_date || '—'}
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center justify-between text-xs">
-                    <span className="text-slate-500 flex items-center gap-1.5">
-                      <Building2 size={13} className="text-sky-500" /> Property manager
-                    </span>
-                    <span className="font-semibold text-slate-900">{activeLease.landlord_name || 'Unassigned'}</span>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-3">
-                  <button
-                    type="button"
-                    onClick={() =>
-                      setContactModal({
-                        isOpen: true,
-                        contact: {
-                          name: activeLease.landlord_name || 'Property Manager',
-                          role: 'Property Manager',
-                          email: activeLease.landlord_email || 'support@place4u.xyz',
-                          phone: activeLease.landlord_phone || '',
-                          unit: activeLease.property_title || 'Your unit'
-                        },
-                        defaultSubject: `Tenancy Inquiry for ${activeLease.property_title || 'my unit'}`,
-                        defaultMessage: `Hello ${(activeLease.landlord_name || 'there').split(' ')[0]}, this is ${displayName} regarding my tenancy.`
-                      })
-                    }
-                    className={`h-11 rounded-full text-xs font-bold flex items-center justify-center gap-2 ${BTN_PRIMARY}`}
-                  >
-                    <Phone size={14} />
-                    Contact desk
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setShowMaintenanceModal(true)}
-                    className={`h-11 rounded-full text-xs font-semibold flex items-center justify-center gap-2 ${BTN_OUTLINE}`}
-                  >
-                    <Wrench size={14} className="text-sky-600" />
-                    Log repair
-                  </button>
-                </div>
-              </div>
-
-              {activeLease.landlord_phone && (
-                <p className="pt-6 mt-8 border-t border-sky-100 text-center text-xs text-slate-400">
-                  Property manager: <strong className="text-slate-700 font-semibold">{activeLease.landlord_phone}</strong>
-                </p>
-              )}
-            </>
-          ) : (
-            <div className="flex flex-1 flex-col items-center justify-center text-center py-8">
-              <Eyebrow className="!text-sky-600 mb-2">Your tenancy</Eyebrow>
-              <h3 className="font-sans text-xl font-semibold text-slate-900">Tenancy support</h3>
-              <p className="text-sm text-slate-500 mt-3 max-w-xs leading-relaxed">
-                You don't have an active tenancy yet. Once a landlord approves your application and a lease is issued, your unit details, rent schedule, and property manager will appear here.
-              </p>
-              <div className="flex flex-wrap items-center justify-center gap-3 mt-7">
-                <button
-                  type="button"
-                  onClick={go('applications')}
-                  className={`h-11 px-6 rounded-full text-xs font-bold flex items-center justify-center gap-2 ${BTN_PRIMARY}`}
-                >
-                  View applications
-                </button>
-                <button
-                  type="button"
-                  onClick={scrollToListings}
-                  className={`h-11 px-6 rounded-full text-xs font-semibold flex items-center justify-center gap-2 ${BTN_OUTLINE}`}
-                >
-                  Browse properties
-                </button>
-              </div>
-            </div>
-          )}
-        </div>
-      </section>
+        </section>
+      )}
 
       {/* ========================= LISTINGS =========================== */}
       <section id="verified-listings" ref={listingsRef} className="space-y-8 scroll-mt-24">
@@ -1320,31 +1241,33 @@ export default function DashboardView({
                           {p.bathrooms || 1} bath
                         </span>
                         {p.size && <span className="text-slate-400">{p.size}</span>}
-                        <span className="ml-auto text-[10px] uppercase tracking-wider text-slate-400">R100 vetting</span>
+                        <span className="ml-auto text-[10px] uppercase tracking-wider text-slate-400 flex items-center gap-1">
+                          <FeeAmount
+                            quote={feeQuote}
+                            amount={feeQuote?.originalAmount ?? 100}
+                            size="xs"
+                            tone="muted"
+                          />
+                          vetting
+                        </span>
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-3">
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          if (onPropertyClick) onPropertyClick(p);
-                        }}
-                        className={`h-10 rounded-lg text-xs font-semibold ${BTN_OUTLINE}`}
-                      >
+                    <div className="flex items-center justify-between pt-1">
+                      <span className="text-xs font-semibold text-sky-700 group-hover:text-sky-800 flex items-center gap-1 transition-colors">
                         View details
-                      </button>
+                        <ChevronRight size={14} className="group-hover:translate-x-0.5 transition-transform" />
+                      </span>
                       <button
                         type="button"
                         onClick={(e) => {
                           e.stopPropagation();
                           if (onApplyClick) onApplyClick(p);
                         }}
-                        className={`h-10 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 ${BTN_PRIMARY}`}
+                        className={`h-9 px-4 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 ${BTN_PRIMARY}`}
                       >
                         Apply
-                        <ArrowUpRight size={14} />
+                        <ArrowUpRight size={13} />
                       </button>
                     </div>
                   </div>

@@ -5,10 +5,16 @@ import { HiX, HiArrowRight } from 'react-icons/hi'
 import OutsideClickHandler from 'react-outside-click-handler'
 import { Link, useLocation } from 'react-router-dom'
 import { openAuthModal } from '../utils/authModal'
+import { useFeeQuote } from '../hooks/useFeeQuote'
+import { formatZarAmount } from '../services/promotionService'
 
 const Navbar = () => {
 	const [menuOpened, setMenuOpened] = useState(false)
 	const { pathname } = useLocation()
+	const { quote: feeQuote } = useFeeQuote()
+
+	const hasPromotion = Boolean(feeQuote?.promotionApplied)
+	const isFree = Boolean(feeQuote?.isFree)
 
 	// The navbar is shared by every public page, but its items are landing-page
 	// anchors. Rendered as a bare `#id` on any other route they change only the
@@ -25,6 +31,34 @@ const Navbar = () => {
 
 	return (
 		<nav className="fixed top-0 left-0 w-full z-50 bg-[#f7f8f5]/95 backdrop-blur-xl border-b border-[#d5e0df] shadow-[0_8px_24px_-22px_rgba(24,55,65,0.55)]">
+			{/* Full-width Top Promotion Announcement Bar */}
+			{hasPromotion && (
+				<aside
+					aria-label="Active promotion"
+					className="w-full bg-[#18262d] text-white text-[11px] sm:text-xs py-2 px-4 border-b border-white/10 flex items-center justify-center gap-2 sm:gap-3 text-center tracking-normal font-sans"
+				>
+					<span className="text-white/85">
+						<strong className="font-semibold text-white tracking-tight">
+							{feeQuote.promotion?.name || 'Promotion'}
+						</strong>
+						<span className="mx-1.5 text-white/30 hidden sm:inline">|</span>
+						<span className="block sm:inline mt-0.5 sm:mt-0">
+							{isFree
+								? 'The standard R100 application fee is currently waived for all new applicants.'
+								: `Application fee reduced to ${formatZarAmount(feeQuote.finalAmount)} (normally ${formatZarAmount(feeQuote.originalAmount)}).`}
+						</span>
+					</span>
+					<button
+						type="button"
+						onClick={() => openAuthModal('signup')}
+						className="inline-flex items-center gap-1 font-semibold text-white underline underline-offset-4 hover:text-[#7bd0ff] transition-colors shrink-0 cursor-pointer ml-1"
+					>
+						<span>{isFree ? 'Apply for free' : 'Claim discount'}</span>
+						<HiArrowRight className="w-3 h-3" />
+					</button>
+				</aside>
+			)}
+
 			<div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-10 min-h-[72px] flex items-center justify-between lg:grid lg:grid-cols-[1fr_auto_1fr]">
 				{/* Brand Logo */}
 				<Link

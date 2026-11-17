@@ -223,7 +223,8 @@ Place4U's persistence lives in Supabase Postgres, defined by the SQL files in
 | `agent_profiles` | Agency, experience, FICA docs, verification status, payout banking. |
 | `properties` | Listings: price, location, type, active/approval state. |
 | `applications` | The tenant "job": budget, category, employment, documents, status, `assigned_to`, and assignment response columns. |
-| `payments` | Application-fee payments, receipts, and refund state. |
+| `payments` | Application-fee payments, receipts, refund state, and the promotion fields (`original_amount`, `discount_amount`, `promotion_id/code`, `is_free`, `line_items`). |
+| `promotions` | Admin-managed fee promotions: `discount_type` (`full`/`percentage`/`fixed`), `auto_apply`, windows, redemption caps, `show_strikethrough`. |
 | `messages` | Direct messaging between users (with `direct_messages` fallback). |
 | `agent_payout_requests` | Withdrawal requests and their approval/payment lifecycle. |
 | `agent_wallet_balances` (view) | Derived per-agent earnings, pipeline, reserved, and available balance. |
@@ -232,15 +233,31 @@ Place4U's persistence lives in Supabase Postgres, defined by the SQL files in
 `landlord_schema`, `landlord_application_schema`, `landlord_documents_bucket`,
 `agent_schema`, `agent_application`, `agent_profile_settings`,
 `agent_job_acceptance`, `agent_wallet_ledger`, `payments_and_applications_schema`,
-`property_approval_schema`, `public_listings_read`, `storage_buckets`,
-`profile_pictures_bucket`, and `fix_landlord_profiles_rls`.
+`payment_promotions_schema`, `property_approval_schema`, `public_listings_read`,
+`storage_buckets`, `profile_pictures_bucket`, and `fix_landlord_profiles_rls`.
 
 ---
 
 ## 8. Money Flow
 
-- **Application fee:** `R100` (`VITE_APPLICATION_FEE_ZAR`, default `100`),
-  collected through PayPal via `paypalService.js`.
+- **Application fee:** `R100` base (`platform_base_application_fee()`, mirrored
+  client-side as `BASE_APPLICATION_FEE`), collected through PayPal via
+  `paypalService.js`.
+- **Promotions / waivers:** `database/payment_promotions_schema.sql` adds
+  `public.promotions` (full / percentage / fixed discounts, windows, redemption
+  caps, one live auto-applied no-code promotion per target). Admins manage them at
+  `/admin/promotions`. `quote_application_fee()` is the authoritative quote and a
+  `BEFORE INSERT` trigger recomputes the discount on every payment row, so a
+  tampered client cannot record a discounted or free fee on its own.
+  `src/services/promotionService.js` + `src/hooks/useFeeQuote.js` wrap the quote,
+  and `src/component/FeeAmount.jsx` renders the struck-through original price in
+  red with `FREE`. Payments store `original_amount`, `discount_amount`,
+  `promotion_id/code`, `is_free`, `line_items`; applications mirror them as
+  `fee_*`. Waived files are recorded as `amount = 0`, so the agent share follows
+  the amount actually collected. **Run order:**
+  `payments_and_applications_schema.sql` → `agent_wallet_ledger.sql` →
+  `payment_promotions_schema.sql`. The fee UI degrades to plain R100 when the
+  promotion SQL has not been applied.
 - **Agent split:** 50% of the fee (`AGENT_SPLIT_RATE = 0.5`) — currently
   `R50` per completed file (`walletService.js`).
 - **Wallet ledger:** `agent_wallet_balances` view + SQL RPCs

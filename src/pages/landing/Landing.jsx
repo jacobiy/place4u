@@ -28,6 +28,8 @@ import { getFeaturedProperties } from './db/queries'
 import { setJsonLd, buildItemListJsonLd } from '../../utils/seo'
 import useHashScroll from '../../hooks/useHashScroll'
 import { openAuthModal } from '../../utils/authModal'
+import { useFeeQuote } from '../../hooks/useFeeQuote'
+import { formatZarAmount } from '../../services/promotionService'
 
 // Live listings are loaded from the database only; no sample fallback.
 
@@ -211,6 +213,10 @@ const Landing = () => {
 	const [liveProperties, setLiveProperties] = useState(null)
 	const [loadingProperties, setLoadingProperties] = useState(true)
 
+	const { quote: feeQuote } = useFeeQuote()
+	const hasPromotion = Boolean(feeQuote?.promotionApplied)
+	const isFree = Boolean(feeQuote?.isFree)
+
 	// Load real, approved listings from the database on mount.
 	useEffect(() => {
 		let active = true
@@ -348,7 +354,7 @@ const Landing = () => {
 			<Navbar />
 
 			{/* ===================== HERO SECTION ===================== */}
-			<section id="main" className="relative scroll-mt-24 pt-28 pb-16 md:pt-32 md:pb-20 px-6 lg:px-12 bg-[#f7f8f5]">
+			<section id="main" className="relative scroll-mt-24 pt-32 pb-16 md:pt-36 md:pb-20 px-6 lg:px-12 bg-[#f7f8f5]">
 				<div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-14 items-center">
 					<div className="lg:col-span-6 flex flex-col items-start gap-6">
 						<p className="text-[11px] sm:text-xs font-semibold tracking-[0.16em] text-[#006194] uppercase">
@@ -415,7 +421,21 @@ const Landing = () => {
 						<li className="pt-5 border-t border-[#c3cecd]">
 							<p className="text-xs font-semibold tracking-[0.12em] text-[#006194]">02</p>
 							<h3 className="font-['Space_Grotesk'] text-lg font-semibold text-[#18262d] mt-3 mb-2">We review your application</h3>
-							<p className="text-sm text-[#47545a] leading-relaxed">A small assistance fee covers application checks, document review and introductions. It is fully refundable if no placement is made.</p>
+							<p className="text-sm text-[#47545a] leading-relaxed">
+								{hasPromotion && isFree ? (
+									<>
+										<strong className="text-emerald-700 font-semibold">{feeQuote.promotion?.name || 'Free Application Week'}: </strong>
+										The standard {formatZarAmount(feeQuote.originalAmount)} screening and document review fee is currently 100% waived. Zero card charge to submit your application.
+									</>
+								) : hasPromotion ? (
+									<>
+										<strong className="text-emerald-700 font-semibold">{feeQuote.promotion?.name || 'Promotion'}: </strong>
+										Application screening fee discounted to {formatZarAmount(feeQuote.finalAmount)} (normally {formatZarAmount(feeQuote.originalAmount)}). Fully refundable if no placement is made.
+									</>
+								) : (
+									'A small assistance fee covers application checks, document review and introductions. It is fully refundable if no placement is made.'
+								)}
+							</p>
 						</li>
 						<li className="pt-5 border-t border-[#c3cecd]">
 							<p className="text-xs font-semibold tracking-[0.12em] text-[#006194]">03</p>
@@ -928,9 +948,14 @@ const Landing = () => {
 											setSelectedProperty(null)
 											openAuthModal('signup')
 										}}
-										className="flex-1 bg-[#006194] hover:bg-[#004b73] text-white py-3 rounded-xl font-['Space_Grotesk'] font-bold text-sm shadow-md"
+										className="flex-1 bg-[#006194] hover:bg-[#004b73] text-white py-3 rounded-xl font-['Space_Grotesk'] font-bold text-sm shadow-md flex items-center justify-center gap-2"
 									>
-										Start Application
+										<span>Start Application</span>
+										{hasPromotion && (
+											<span className="px-2 py-0.5 rounded-md bg-emerald-500 text-white text-[10px] font-extrabold uppercase tracking-wider">
+												{isFree ? 'FREE' : 'DISCOUNT'}
+											</span>
+										)}
 									</button>
 									<a
 										href={`https://wa.me/27824822611?text=Hello%2C%20I%20am%20interested%20in%20${encodeURIComponent(selectedProperty.title)}%20(${selectedProperty.area})`}

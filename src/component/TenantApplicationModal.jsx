@@ -5,6 +5,7 @@ import {
   Clock, AlertCircle, Home
 } from 'lucide-react';
 import { resolveDocumentUrl, openDocumentSafely } from '../utils/documentUrls';
+import { formatZarAmount } from '../services/promotionService';
 
 export default function TenantApplicationModal({
   isOpen,
@@ -289,7 +290,13 @@ export default function TenantApplicationModal({
               <p style={{ margin: '6px 0 0', fontSize: 13, color: application.fee_paid ? colors.ok : colors.muted, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 6 }}>
                 {application.fee_paid ? (
                   <>
-                    <CheckCircle2 size={14} color={colors.ok} /> Paid {application.fee_receipt ? `(${application.fee_receipt})` : '(R100)'}
+                    <CheckCircle2 size={14} color={colors.ok} />{' '}
+                    {application.fee_is_free ? 'Waived' : 'Paid'}{' '}
+                    {application.fee_receipt
+                      ? `(${application.fee_receipt})`
+                      : application.fee_is_free
+                        ? '(promotion)'
+                        : `(${formatZarAmount(application.fee_amount ?? application.fee_original_amount ?? 100)})`}
                   </>
                 ) : (
                   'Pending payment'

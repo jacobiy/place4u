@@ -174,6 +174,7 @@ const SCHEMA_APPLICATION_COLUMNS = [
   'tenant_id',
   'property_id',
   'property_title',
+  'shortlisted_properties',
   'accommodation_category',
   'preferred_areas',
   'preferred_types',
@@ -189,6 +190,14 @@ const SCHEMA_APPLICATION_COLUMNS = [
   'fee_receipt',
   'payment_method',
   'payment_id',
+  // Promotion columns (database/payment_promotions_schema.sql). Only present in a
+  // payload when a promotion actually applied, so an unmigrated database never
+  // sees them and the PGRST204 fallback below keeps working.
+  'fee_original_amount',
+  'fee_discount_amount',
+  'fee_is_free',
+  'promotion_id',
+  'promotion_code',
   'status',
   'submitted_at',
   'expires_at',
@@ -464,7 +473,8 @@ export const TenantQueries = {
         documents: cleanDocs,
         accommodation_category: applicationData.accommodation_category || applicationData.category || 'standard_room',
         fee_paid: isFeePaid,
-        fee_amount: applicationData.fee_amount || 100,
+        // `??` not `||`: a waived fee is R0, and `||` would book it as R100.
+        fee_amount: applicationData.fee_amount ?? 100,
         fee_currency: applicationData.fee_currency || 'ZAR',
         fee_receipt: applicationData.fee_receipt || (isFeePaid ? `REC-P4U-${Date.now().toString().slice(-6)}` : null),
         payment_method: applicationData.payment_method || 'Card (PayPal)',
@@ -497,6 +507,7 @@ export const TenantQueries = {
           category: fullPayload.accommodation_category,
           property_id: fullPayload.property_id,
           property_title: fullPayload.property_title,
+          shortlisted_properties: fullPayload.shortlisted_properties || [],
           fee_paid: fullPayload.fee_paid,
           fee_amount: fullPayload.fee_amount,
           fee_currency: fullPayload.fee_currency,
@@ -568,18 +579,40 @@ export const TenantQueries = {
 
       // 6. Record payment in public.payments and mirror in local storage
       if (fullPayload.fee_receipt || fullPayload.payment_id) {
+        // A waived fee is a real R0 payment, not a missing one — `||` would turn
+        // 0 into 100 and book a free application as fully paid.
+        const recordedFree =
+          fullPayload.fee_is_free === true || Number(fullPayload.fee_amount ?? -1) === 0;
+        const recordedOriginal = Number(
+          fullPayload.fee_original_amount ?? fullPayload.fee_amount ?? 100
+        );
         const payRes = await this.recordPayment({
           id: fullPayload.payment_id,
           payer_id: fullPayload.tenant_id,
           application_id: data?.id || null,
           property_id: fullPayload.property_id,
-          amount: fullPayload.fee_amount || 100,
+          amount: Number(fullPayload.fee_amount ?? recordedOriginal),
           currency: fullPayload.fee_currency || 'ZAR',
           payment_type: 'application_fee',
-          payment_method: 'card',
+          payment_method: recordedFree ? 'promotion' : 'card',
+          gateway: recordedFree ? 'promotion' : 'paypal',
           receipt_number: fullPayload.fee_receipt || `REC-P4U-${Date.now().toString().slice(-6)}`,
           status: 'completed',
-          description: `Place4U Application Screening Fee (R${fullPayload.fee_amount || 100}) - ${fullPayload.property_title || 'Rental Unit'}`
+          description: recordedFree
+            ? `Place4U Application Fee (waived${fullPayload.promotion_code ? ` · ${fullPayload.promotion_code}` : ''}) - ${fullPayload.property_title || 'Rental Unit'}`
+            : `Place4U Application Screening Fee (R${Number(fullPayload.fee_amount ?? 100)}) - ${fullPayload.property_title || 'Rental Unit'}`,
+          ...(fullPayload.promotion_code || fullPayload.promotion_id || recordedFree
+            ? {
+                original_amount: recordedOriginal,
+                discount_amount: Number(
+                  fullPayload.fee_discount_amount ?? Math.max(recordedOriginal - Number(fullPayload.fee_amount ?? 0), 0)
+                ),
+                promotion_code: fullPayload.promotion_code ?? null,
+                promotion_id: fullPayload.promotion_id ?? null,
+                promotion_applied: true,
+                is_free: recordedFree
+              }
+            : {})
         });
 
         if (payRes?.data?.id && data) {
@@ -767,8 +800,15 @@ export const TenantQueries = {
           category: row.accommodation_category || meta.accommodation_category || meta.category || 'standard_room',
           property_id: row.property_id || meta.property_id || null,
           property_title: row.property_title || meta.property_title || (meta.category === 'student_room' ? 'Student Accommodation Application' : 'Residential Rental Application'),
+          shortlisted_properties: row.shortlisted_properties || meta.shortlisted_properties || [],
           fee_paid: feePaid,
-          fee_amount: row.fee_amount || meta.fee_amount || 100,
+          // `??` throughout: a waived fee is R0, and `||` would render it as R100.
+          fee_amount: row.fee_amount ?? meta.fee_amount ?? 100,
+          fee_original_amount: row.fee_original_amount ?? meta.fee_original_amount ?? null,
+          fee_discount_amount: row.fee_discount_amount ?? meta.fee_discount_amount ?? 0,
+          fee_is_free: row.fee_is_free ?? meta.fee_is_free ?? false,
+          promotion_code: row.promotion_code ?? meta.promotion_code ?? null,
+          promotion_id: row.promotion_id ?? meta.promotion_id ?? null,
           fee_currency: row.fee_currency || meta.fee_currency || 'ZAR',
           fee_receipt: feeReceipt,
           payment_method: row.payment_method || meta.payment_method || 'Card (PayPal)',
@@ -836,8 +876,9 @@ export const TenantQueries = {
           category: data.accommodation_category || data.category || 'standard_room',
           property_id: data.property_id || null,
           property_title: data.property_title || null,
+          shortlisted_properties: data.shortlisted_properties || [],
           fee_paid: data.fee_paid ?? true,
-          fee_amount: data.fee_amount || 100,
+          fee_amount: data.fee_amount ?? 100,
           fee_currency: data.fee_currency || 'ZAR',
           fee_receipt: data.fee_receipt || null,
           payment_method: data.payment_method || 'Card (PayPal)',
@@ -1056,7 +1097,7 @@ export const TenantQueries = {
         payer_id: paymentData.payer_id || paymentData.tenant_id || paymentData.userId || null,
         application_id: paymentData.application_id || null,
         property_id: paymentData.property_id ? String(paymentData.property_id) : null,
-        amount: Number(paymentData.amount || paymentData.amountZar || 100.00),
+        amount: Number(paymentData.amount ?? paymentData.amountZar ?? 100.00),
         currency: paymentData.currency || 'ZAR',
         payment_type: paymentData.payment_type || 'application_fee',
         payment_method: paymentData.payment_method || 'card',
@@ -1069,7 +1110,28 @@ export const TenantQueries = {
         status: paymentData.status || 'completed',
         payer_name: paymentData.payer_name || paymentData.applicantName || null,
         payer_email: paymentData.payer_email || null,
-        description: paymentData.description || `Place4U Tenant Application Screening Fee (R${paymentData.amount || 100})`,
+        description: paymentData.description || `Place4U Tenant Application Screening Fee (R${paymentData.amount ?? 100})`,
+        ...(paymentData.promotion_code || paymentData.promotion_id ||
+        paymentData.promotion_applied || paymentData.promotionApplied
+          ? {
+              original_amount: Number(
+                paymentData.original_amount ?? paymentData.originalAmount ?? paymentData.amount ?? 100
+              ),
+              discount_amount: Number(
+                paymentData.discount_amount ?? paymentData.discountAmount ?? 0
+              ),
+              promotion_id: paymentData.promotion_id ?? paymentData.promotionId ?? null,
+              promotion_code: paymentData.promotion_code ?? paymentData.promotionCode ?? null,
+              promotion_applied:
+                paymentData.promotion_applied === true ||
+                paymentData.promotionApplied === true ||
+                paymentData.is_free === true ||
+                paymentData.isFree === true ||
+                Number(paymentData.discount_amount ?? paymentData.discountAmount ?? 0) > 0,
+              is_free: paymentData.is_free === true || paymentData.isFree === true,
+              line_items: paymentData.line_items || paymentData.lineItems || []
+            }
+          : {}),
         metadata: paymentData.metadata || {
           propertyTitle: paymentData.propertyTitle || paymentData.property_title || '',
           paidAt: new Date().toISOString()
@@ -1094,8 +1156,13 @@ export const TenantQueries = {
                   fee_paid: true,
                   fee_receipt: record.receipt_number,
                   fee_amount: record.amount,
+                  fee_original_amount: record.original_amount ?? record.amount,
+                  fee_discount_amount: record.discount_amount ?? 0,
+                  fee_is_free: record.is_free === true,
+                  promotion_code: record.promotion_code ?? null,
+                  promotion_id: record.promotion_id ?? null,
                   fee_currency: record.currency,
-                  payment_method: 'Card (PayPal)'
+                  payment_method: record.is_free ? 'Promotion waiver' : 'Card (PayPal)'
                 };
               }
               return a;
@@ -1110,16 +1177,26 @@ export const TenantQueries = {
       // If application_id is provided, link payment_id into public.applications table
       if (record.application_id && !record.application_id.startsWith('app-')) {
         try {
+          const applicationFeePatch = {
+            payment_id: record.id,
+            fee_paid: true,
+            fee_receipt: record.receipt_number,
+            fee_amount: record.amount,
+            fee_currency: record.currency,
+            payment_method: record.is_free ? 'Promotion waiver' : 'Card (PayPal)'
+          };
+          // Promotion columns only exist after payment_promotions_schema.sql.
+          if (record.promotion_code || record.promotion_id) {
+            applicationFeePatch.fee_original_amount = record.original_amount ?? record.amount;
+            applicationFeePatch.fee_discount_amount = record.discount_amount ?? 0;
+            applicationFeePatch.fee_is_free = record.is_free === true;
+            applicationFeePatch.promotion_code = record.promotion_code ?? null;
+            applicationFeePatch.promotion_id = record.promotion_id ?? null;
+          }
+
           await supabase
             .from('applications')
-            .update({
-              payment_id: record.id,
-              fee_paid: true,
-              fee_receipt: record.receipt_number,
-              fee_amount: record.amount,
-              fee_currency: record.currency,
-              payment_method: 'Card (PayPal)'
-            })
+            .update(applicationFeePatch)
             .eq('id', record.application_id);
         } catch (appUpdateErr) {
           console.warn('Notice updating application with payment_id:', appUpdateErr);

@@ -9,6 +9,9 @@ import CustomApplication from './CustomApplication';
 import { ConfirmModal, AlertToast } from '../../../component/AlertModal';
 import { PdfPreviewModal } from './PdfAttachmentSection';
 import ApplicationFeeCardModal from '../../../component/ApplicationFeeCardModal';
+import FeeAmount from '../../../component/FeeAmount';
+import { useFeeQuote } from '../../../hooks/useFeeQuote';
+import { formatZarAmount } from '../../../services/promotionService';
 import Loading from '../../../component/loading';
 import {
   subscribeToApplicationUpdates,
@@ -64,6 +67,7 @@ export default function ApplicationsView({
   const [editingApp, setEditingApp] = useState(null);
   const [previewDoc, setPreviewDoc] = useState(null);
   const [payingApp, setPayingApp] = useState(null);
+  const { quote: feeQuote } = useFeeQuote();
 
   const [cancellingApp, setCancellingApp] = useState(null);
   const [isCancelling, setIsCancelling] = useState(false);
@@ -176,8 +180,21 @@ export default function ApplicationsView({
     }
   };
 
-  const handleFeePaymentSuccess = async (receipt) => {
-    if (!payingApp) return;
+  const handleFeePaymentSuccess = async (receipt, targetApp = null) => {
+    const appToSettle = targetApp || payingApp;
+    if (!appToSettle) return;
+
+    const paidAmount = Number(receipt?.amountZar ?? feeQuote?.finalAmount ?? 100);
+    const paidFree = Boolean(feeQuote?.promotionApplied) && paidAmount === 0;
+    const promotionFields = feeQuote?.promotionApplied
+      ? {
+          fee_original_amount: feeQuote.originalAmount,
+          fee_discount_amount: feeQuote.discountAmount,
+          fee_is_free: Boolean(feeQuote.isFree),
+          promotion_code: feeQuote.promotion?.code || null,
+          promotion_id: feeQuote.promotion?.id || null
+        }
+      : {};
 
     const receiptNum = receipt?.receiptNumber || receipt?.orderId || `REC-P4U-${Date.now().toString().slice(-6)}`;
     const paymentId =
@@ -190,19 +207,33 @@ export default function ApplicationsView({
       const payRes = await TenantQueries.recordPayment({
         id: paymentId,
         payer_id: user?.id,
-        application_id: payingApp.id,
-        property_id: payingApp.property_id || null,
-        amount: 100,
+        application_id: appToSettle.id,
+        property_id: appToSettle.property_id || null,
+        amount: paidAmount,
         currency: 'ZAR',
         payment_type: 'application_fee',
-        payment_method: 'card',
+        payment_method: paidFree ? 'promotion' : 'card',
+        gateway: paidFree ? 'promotion' : 'paypal',
         receipt_number: receiptNum,
-        card_brand: receipt?.cardBrand || 'Card',
+        card_brand: receipt?.cardBrand || (paidFree ? 'Promotion' : 'Card'),
         card_last4: receipt?.cardLast4 || null,
         status: 'completed',
         payer_name: user?.user_metadata?.full_name || 'Resident Tenant',
         payer_email: user?.email || null,
-        description: `Application Fee (R100) - ${payingApp.property_title || 'Rental Unit'}`
+        description: paidFree
+          ? `Application Fee (waived${feeQuote?.promotion?.name ? ` by ${feeQuote.promotion.name}` : ''}) - ${appToSettle.property_title || 'Rental Unit'}`
+          : `Application Fee (${formatZarAmount(paidAmount)}) - ${appToSettle.property_title || 'Rental Unit'}`,
+        ...(feeQuote?.promotionApplied
+          ? {
+              promotion_code: feeQuote.promotion?.code || null,
+              promotion_id: feeQuote.promotion?.id || null,
+              original_amount: feeQuote.originalAmount,
+              discount_amount: feeQuote.discountAmount,
+              promotion_applied: true,
+              is_free: Boolean(feeQuote.isFree),
+              line_items: feeQuote.lineItems
+            }
+          : {})
       });
       if (payRes?.data?.id) {
         finalPaymentId = payRes.data.id;
@@ -211,53 +242,36 @@ export default function ApplicationsView({
       console.warn('Fee payment persistence notice:', err);
     }
 
+    const settledPatch = {
+      fee_paid: true,
+      fee_amount: paidAmount,
+      fee_currency: 'ZAR',
+      ...promotionFields,
+      fee_receipt: receiptNum,
+      payment_method: paidFree ? 'Promotion waiver' : 'Card (PayPal)',
+      payment_id: finalPaymentId
+    };
+
     // Update state immediately for instant responsive UI
     const updated = applications.map((a) =>
-      a.id === payingApp.id
-        ? {
-            ...a,
-            fee_paid: true,
-            fee_amount: 100,
-            fee_currency: 'ZAR',
-            fee_receipt: receiptNum,
-            payment_method: 'Card (PayPal)',
-            payment_id: finalPaymentId
-          }
-        : a
+      a.id === appToSettle.id ? { ...a, ...settledPatch } : a
     );
     setApplications(updated);
 
     try {
       const localSaved = JSON.parse(localStorage.getItem('place4u_tenant_applications') || '[]');
       const updatedLocal = localSaved.map((a) =>
-        a.id === payingApp.id
-          ? {
-              ...a,
-              fee_paid: true,
-              fee_amount: 100,
-              fee_currency: 'ZAR',
-              fee_receipt: receiptNum,
-              payment_method: 'Card (PayPal)',
-              payment_id: finalPaymentId
-            }
-          : a
+        a.id === appToSettle.id ? { ...a, ...settledPatch } : a
       );
       localStorage.setItem('place4u_tenant_applications', JSON.stringify(updatedLocal));
     } catch {}
 
     // Persist to Supabase Database
     try {
-      if (payingApp.id && !payingApp.id.startsWith('app-demo')) {
-        await TenantQueries.updateApplication(payingApp.id, {
-          fee_paid: true,
-          fee_amount: 100,
-          fee_currency: 'ZAR',
-          fee_receipt: receiptNum,
-          payment_method: 'Card (PayPal)',
-          payment_id: finalPaymentId
-        });
+      if (appToSettle.id && !appToSettle.id.startsWith('app-demo')) {
+        await TenantQueries.updateApplication(appToSettle.id, settledPatch);
 
-        await TenantQueries.linkPaymentToApplication(finalPaymentId, payingApp.id, {
+        await TenantQueries.linkPaymentToApplication(finalPaymentId, appToSettle.id, {
           receipt_number: receiptNum
         });
       }
@@ -267,25 +281,40 @@ export default function ApplicationsView({
 
     setToast({
       type: 'success',
-      title: 'Fee Paid Successfully',
-      message: `R100.00 Application Fee settled for "${payingApp.property_title || 'Application'}" (Receipt: ${receiptNum}).`
+      title: paidFree ? 'Fee Waived' : 'Fee Paid Successfully',
+      message: paidFree
+        ? `Application fee waived${feeQuote?.promotion?.name ? ` by ${feeQuote.promotion.name}` : ''} for "${appToSettle.property_title || 'Application'}" (Ref: ${receiptNum}).`
+        : `${formatZarAmount(paidAmount)} Application Fee settled for "${appToSettle.property_title || 'Application'}" (Receipt: ${receiptNum}).`
     });
     setPayingApp(null);
 
     // Let the agent wallet, admin payments desk and landlord view reflect the
     // settled fee immediately.
     try {
-      broadcastApplicationUpdate(payingApp.id, payingApp.status || APPLICATION_STATUS.SUBMITTED, {
-        fee_paid: true,
-        fee_amount: 100,
-        fee_currency: 'ZAR',
-        fee_receipt: receiptNum,
-        payment_method: 'Card (PayPal)',
-        payment_id: finalPaymentId
-      });
+      broadcastApplicationUpdate(appToSettle.id, appToSettle.status || APPLICATION_STATUS.SUBMITTED, settledPatch);
     } catch (e) {
       console.warn('Fee payment broadcast notice:', e);
     }
+  };
+
+  const handleClaimFreeFee = async (targetApp = null) => {
+    const appToClaim = targetApp || payingApp;
+    if (!appToClaim) return;
+    const receipt = {
+      receiptNumber: `FREE-P4U-${Date.now().toString().slice(-6)}`,
+      paymentId:
+        typeof crypto !== 'undefined' && crypto.randomUUID
+          ? crypto.randomUUID()
+          : `free-${Date.now()}`,
+      orderId: `FREE-${Date.now()}`,
+      amountZar: 0,
+      applicantName: user?.user_metadata?.full_name || 'Resident Tenant',
+      cardBrand: 'Promotion',
+      cardLast4: '----',
+      paymentMethod: 'Promotion waiver',
+      timestamp: new Date().toISOString()
+    };
+    await handleFeePaymentSuccess(receipt, appToClaim);
   };
 
   const getStatusStyle = (status) =>
@@ -396,6 +425,21 @@ export default function ApplicationsView({
                 ? `R${resolvedPrice.toLocaleString('en-ZA')}/mo`
                 : null;
 
+            // Other homes the tenant bundled into the same application
+            // ("add to application"). The primary listing is already shown above,
+            // so filter it out by id or by the label snapshot.
+            const primaryKeys = new Set(
+              [app.property_id, propertyLabel].filter(Boolean).map((value) => String(value))
+            );
+            const bundledHomes = Array.isArray(app.shortlisted_properties)
+              ? app.shortlisted_properties.filter((entry) => {
+                  if (!entry || (!entry.label && entry.id == null)) return false;
+                  const idKey = entry.id == null ? null : String(entry.id);
+                  const labelKey = entry.label == null ? null : String(entry.label);
+                  return !(idKey && primaryKeys.has(idKey)) && !(labelKey && primaryKeys.has(labelKey));
+                })
+              : [];
+
             return (
               <article
                 key={app.id}
@@ -454,6 +498,27 @@ export default function ApplicationsView({
                           </button>
                         )}
                       </div>
+
+                      {bundledHomes.length > 0 && (
+                        <div className="mt-4 border-l-2 border-sky-200 pl-3">
+                          <Eyebrow className="!text-sky-600">
+                            Also in this application ({bundledHomes.length})
+                          </Eyebrow>
+                          <ul className="mt-2 space-y-1.5">
+                            {bundledHomes.map((entry, index) => (
+                              <li
+                                key={`${entry.id ?? entry.label}-${index}`}
+                                className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5 text-[13px] text-slate-700"
+                              >
+                                <span className="font-medium text-slate-900">{entry.label || 'Property'}</span>
+                                {entry.location && (
+                                  <span className="text-[11px] text-slate-500">{entry.location}</span>
+                                )}
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
                     </div>
                   )}
 
@@ -588,8 +653,14 @@ export default function ApplicationsView({
                             <Check size={15} strokeWidth={3} />
                           </div>
                           <div>
-                            <p className="text-xs font-semibold text-emerald-800">Vetting fee paid</p>
-                            <p className="text-[11px] text-emerald-700/70">R100 · card payment</p>
+                            <p className="text-xs font-semibold text-emerald-800">
+                              {app.fee_is_free ? 'Vetting fee waived' : 'Vetting fee paid'}
+                            </p>
+                            <p className="text-[11px] text-emerald-700/70">
+                              {app.fee_is_free
+                                ? 'Free · promotion'
+                                : `${formatZarAmount(app.fee_amount ?? 100)} · card payment`}
+                            </p>
                           </div>
                         </div>
                         <div className="flex items-center gap-2 min-w-0">
@@ -615,17 +686,22 @@ export default function ApplicationsView({
                             <CreditCard size={14} />
                           </div>
                           <div>
-                            <p className="text-xs font-semibold text-amber-800">Vetting fee pending</p>
-                            <p className="text-[11px] text-amber-700/70">R100 · required to process</p>
+                            <p className="text-xs font-semibold text-amber-800">
+                              {feeQuote?.isFree ? 'Free application available' : 'Vetting fee pending'}
+                            </p>
+                            <p className="text-[11px] text-amber-700/70 flex items-center gap-1 flex-wrap">
+                              <FeeAmount quote={feeQuote} amount={feeQuote?.originalAmount ?? 100} size="xs" />
+                              <span>{feeQuote?.isFree ? '· no card required' : '· required to process'}</span>
+                            </p>
                           </div>
                         </div>
                         <button
                           type="button"
-                          onClick={() => setPayingApp(app)}
+                          onClick={() => (feeQuote?.isFree ? handleClaimFreeFee(app) : setPayingApp(app))}
                           className={`h-9 px-4 rounded-full text-[11px] font-bold flex items-center gap-1.5 shrink-0 ${BTN_PRIMARY}`}
                         >
-                          <Lock size={11} />
-                          Pay R100
+                          {feeQuote?.isFree ? <Check size={11} /> : <Lock size={11} />}
+                          {feeQuote?.isFree ? 'Claim free' : `Pay ${formatZarAmount(feeQuote?.finalAmount ?? 100)}`}
                         </button>
                       </div>
                     )}
@@ -685,7 +761,9 @@ export default function ApplicationsView({
           onPaymentSuccess={handleFeePaymentSuccess}
           applicantName={user?.user_metadata?.full_name || 'Resident Tenant'}
           propertyTitle={payingApp?.property_title || 'Rental Application'}
-          amountZar={100}
+          amountZar={feeQuote?.originalAmount ?? 100}
+          feeQuote={feeQuote}
+          onClaimFree={handleClaimFreeFee}
         />
       )}
     </div>

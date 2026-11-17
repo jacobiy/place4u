@@ -15,7 +15,8 @@ import {
   LogOut,
   X,
   Mail,
-  GitBranch
+  GitBranch,
+  Tag
 } from 'lucide-react'
 import { getAdminAgentApplications, getAdminLandlordApplications, getPropertySubmissionCount } from '../db/queries'
 import { subscribeToApplicationUpdates } from '../../../services/applicationSync'
@@ -283,6 +284,15 @@ export default function AdminSidebar({ isOpen, onClose }) {
           >
             <CreditCard size={15} />
             Payments & Releases
+          </NavLink>
+
+          <NavLink
+            to="/admin/promotions"
+            onClick={onClose}
+            className={({ isActive }) => `${navLinkClass} ${isActive ? navLinkActiveClass : 'hover:bg-white/5'}`}
+          >
+            <Tag size={15} />
+            Promotions & Waivers
           </NavLink>
 
           <SectionTitle>Intelligence & Tools</SectionTitle>

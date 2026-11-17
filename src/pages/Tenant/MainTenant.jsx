@@ -18,6 +18,11 @@ import { mergeLocalAndDbApplications, subscribeToApplicationUpdates } from '../.
 import { listTenantMatches } from '../../services/applicationMatchService';
 import { listPipelineMatches, subscribeToMatchPipeline } from '../../services/matchWorkflowService';
 import { isActiveApplication } from '../../services/applicationStatus';
+import {
+  loadApplicationProperties,
+  toggleApplicationProperty,
+  clearApplicationProperties
+} from '../../services/applicationPropertyShortlist';
 
 export default function MainTenant() {
   const [activeView, setActiveView] = useState("dashboard");
@@ -50,10 +55,16 @@ export default function MainTenant() {
     }
   });
 
+  // Properties bundled into the tenant's next application ("add to application").
+  // Persisted by applicationPropertyShortlist so the detail view and the
+  // application form share one basket.
+  const [applicationProperties, setApplicationProperties] = useState(() => loadApplicationProperties());
+
   const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
 
   const toggleSaveProperty = (propId) => {
+    if (propId == null) return;
     setSavedPropertyIds((prev) => {
       const updated = prev.includes(propId)
         ? prev.filter((id) => id !== propId)
@@ -65,6 +76,10 @@ export default function MainTenant() {
       }
       return updated;
     });
+  };
+
+  const handleToggleApplicationProperty = (property) => {
+    setApplicationProperties(toggleApplicationProperty(property));
   };
 
   useEffect(() => {
@@ -294,6 +309,9 @@ export default function MainTenant() {
         }).catch(() => {});
       }
     }
+    // The basket became an application — start the next one clean.
+    clearApplicationProperties();
+    setApplicationProperties([]);
     setApplicationProperty(null);
     setApplicationReturnProperty(null);
     setActiveProperty(null);
@@ -309,6 +327,11 @@ export default function MainTenant() {
           onBack={() => setActiveProperty(null)}
           onApplyClick={onApplyClick}
           onSelectProperty={setActiveProperty}
+          shortlistIds={savedPropertyIds}
+          onToggleShortlist={(prop) => toggleSaveProperty(prop?.id ?? prop)}
+          applicationProperties={applicationProperties}
+          onToggleApplicationProperty={handleToggleApplicationProperty}
+          onOpenApplication={() => onApplyClick(null)}
         />
       </div>
     );
@@ -372,6 +395,8 @@ export default function MainTenant() {
             property={applicationProperty}
             user={user}
             profile={profile}
+            properties={properties}
+            onApplicationPropertiesChange={setApplicationProperties}
             onSuccess={handleApplicationSuccess}
             onCancel={cancelApplication}
           />

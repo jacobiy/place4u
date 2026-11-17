@@ -55,9 +55,11 @@ import {
 } from '../../services/walletService';
 
 // Business Model (enforced server-side in database/agent_wallet_ledger.sql):
-// Tenant pays R100 -> attached to the application. For every application assigned to this
-// agent that is COMPLETED, PAID and NOT REFUNDED, the agent earns 50% (R50.00).
-// Balance = earned - paid payouts - open withdrawal requests. Refunds remove that file's R50.
+// Tenant pays the application fee (normally R100) -> attached to the application. For every
+// application assigned to this agent that is COMPLETED, PAID and NOT REFUNDED, the agent earns
+// 50% of the amount actually collected. A promotion that waives the fee therefore pays R0,
+// while a partial promotion pays 50% of the reduced fee.
+// Balance = earned - paid payouts - open withdrawal requests. Refunds remove that file's share.
 
 const fmtDate = (d) =>
   new Date(d || Date.now()).toLocaleDateString('en-ZA', { day: 'numeric', month: 'short', year: 'numeric' });
@@ -191,12 +193,16 @@ export const Wallet = ({
       const feePaid = app.fee_paid === true || app.fee_paid === 'true';
       const refunded = app.fee_refunded === true;
       const completed = app.status === 'completed';
+      // A promotion can reduce or waive the fee, so the earning share is derived
+      // from the amount actually collected rather than a fixed R50.
+      const feeAmount = Number(app.fee_amount ?? APPLICATION_FEE);
       return {
         app,
         tenant,
         feePaid,
         refunded,
-        counts: feePaid && !refunded && completed // earns R50
+        feeAmount,
+        counts: feePaid && !refunded && completed && feeAmount > 0
       };
     });
 
@@ -204,13 +210,17 @@ export const Wallet = ({
     const earning = rows
       .filter((r) => r.counts)
       .sort((a, b) => new Date(a.app.submitted_at || 0) - new Date(b.app.submitted_at || 0));
-    let coveredFiles = Math.floor(totalPaidOutReleased / AGENT_SHARE_AMOUNT);
+    let paidOutRemaining = totalPaidOutReleased;
     const releasedIds = new Set();
     earning.forEach((r) => {
-      if (coveredFiles > 0) { releasedIds.add(r.app.id); coveredFiles -= 1; }
+      const share = r.feeAmount * AGENT_SPLIT_RATE;
+      if (share > 0 && paidOutRemaining >= share) {
+        releasedIds.add(r.app.id);
+        paidOutRemaining -= share;
+      }
     });
 
-    return rows.map(({ app, tenant, feePaid, refunded, counts }) => {
+    return rows.map(({ app, tenant, feePaid, refunded, feeAmount, counts }) => {
       const isReleased = releasedIds.has(app.id);
       const isApproved = counts && !isReleased;
       const category = (app.accommodation_category === 'student_room' || app.category === 'Student Housing')
@@ -231,10 +241,10 @@ export const Wallet = ({
         tenantPhone: app.tenantPhone || tenant?.phone || '',
         propertyTitle: app.property_title || app.propertyTitle || (app.preferred_areas?.[0] ? `Unit in ${app.preferred_areas[0]}` : 'Residential Rental'),
         category,
-        feeCollected: feePaid && !refunded ? Number(app.fee_amount) || APPLICATION_FEE : 0,
+        feeCollected: feePaid && !refunded ? feeAmount : 0,
         splitRate: AGENT_SPLIT_RATE,
-        agentShareAmount: counts ? AGENT_SHARE_AMOUNT : 0,
-        potentialShare: AGENT_SHARE_AMOUNT,
+        agentShareAmount: counts ? feeAmount * AGENT_SPLIT_RATE : 0,
+        potentialShare: feePaid ? feeAmount * AGENT_SPLIT_RATE : AGENT_SHARE_AMOUNT,
         appStatus: app.status || 'submitted',
         feePaid,
         refunded,
@@ -278,7 +288,7 @@ export const Wallet = ({
 
   // Balance: prefer the database view (authoritative); fall back to local math until it loads
   const localEarned = useMemo(
-    () => applicationFileItems.filter((f) => f.counts).length * AGENT_SHARE_AMOUNT,
+    () => applicationFileItems.filter((f) => f.counts).reduce((sum, f) => sum + f.agentShareAmount, 0),
     [applicationFileItems]
   );
   const totalAccruedAllTime = serverBalance?.earned ?? localEarned;
@@ -466,7 +476,7 @@ export const Wallet = ({
               Agent Wallet &amp; Payment Shares
             </h1>
             <p className="agent-wallet-subtitle">
-              Place4U pays <strong>50% of our application payment (R50.00 per processed file)</strong> directly to you. It is not a rent commission.
+              Place4U pays <strong>50% of the application payment actually collected (up to R50.00 per processed file)</strong> directly to you. It is not a rent commission.
             </p>
           </div>
 
@@ -559,7 +569,7 @@ export const Wallet = ({
         </header>
 
         <p className="agent-wallet-policy">
-          Earnings are 50% of the R100 application fee (R50 per eligible completed file), paid by EFT. This is a share of the application fee, not rent commission.
+          Earnings are 50% of the application fee actually collected (up to R50 per eligible completed file; a waived fee earns R0), paid by EFT. This is a share of the application fee, not rent commission.
         </p>
 
         {/* 1. Hero Metric Cards Grid */}
@@ -651,7 +661,7 @@ export const Wallet = ({
             <div className="agent-section-header">
               <h3 className="agent-section-title">
                 <TrendingUp size={18} color="var(--wallet-emerald)" />
-                50% Payment Share Trajectory (R50.00 / File)
+                50% Payment Share Trajectory (up to R50.00 / File)
               </h3>
               <span style={{ fontSize: '0.75rem', color: '#64748b' }}>Last five months</span>
             </div>
@@ -1345,7 +1355,7 @@ export const Wallet = ({
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.85rem', paddingTop: '0.75rem', color: '#fff' }}>
                 <div>
                   <strong>{selectedVoucher.reason}</strong>
-                  <span style={{ display: 'block', fontSize: '0.72rem', color: '#64748b' }}>Gross Place4U screening fee collected: R100.00</span>
+                  <span style={{ display: 'block', fontSize: '0.72rem', color: '#64748b' }}>Gross Place4U screening fees are pooled before the 50% split</span>
                 </div>
                 <span style={{ color: '#10b981', fontWeight: 600 }}>50.0%</span>
                 <strong style={{ color: '#10b981', fontSize: '1.1rem' }}>R{selectedVoucher.amount.toLocaleString()}.00</strong>

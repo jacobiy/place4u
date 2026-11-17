@@ -10,6 +10,7 @@ import PropertySubmissionsPage from './PropertySubmissions'
 import PipelinePage from './Pipeline'
 import UsersPage from './Users'
 import PaymentsPage from './Payments'
+import PromotionsPage from './Promotions'
 import AnalyticsPage from './Analytics'
 import SettingsPage from './Settings'
 
@@ -26,6 +27,7 @@ export default function AdminDashboard() {
         <Route path="pipeline" element={<PipelinePage />} />
         <Route path="users" element={<UsersPage />} />
         <Route path="payments" element={<PaymentsPage />} />
+        <Route path="promotions" element={<PromotionsPage />} />
         <Route path="analytics" element={<AnalyticsPage />} />
         <Route path="settings" element={<SettingsPage />} />
         <Route path="*" element={<Navigate to="/admin" replace />} />

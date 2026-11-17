@@ -15,7 +15,6 @@ import {
   Phone,
   Mail,
   MessageCircle,
-  Calendar,
   Sparkles,
   Wifi,
   Waves,
@@ -39,33 +38,50 @@ import { supabase } from '../../../utils/Supabase';
 /**
  * PropertyDetailView
  * Luxury architectural residence detail view for tenants, tailored to Place4U BRD requirements:
- * - Direct "Begin Priority Lease Application" triggers the tenant application workflow.
- * - In-Person / Virtual viewing scheduler coordinates with the verified listing representative.
+ * - Tenants collect the homes they would accept and bundle them into ONE application
+ *   ("add to application"), rather than booking viewings per listing.
+ * - Shortlisting (wishlist) is a separate, lighter action for later consideration.
  * - Authentic data binding for photos, specs, pricing (ZAR), and vetted agent/landlord credentials.
  * - Place4U statutory escrow & POPIA relocation assistance compliance disclaimers.
  */
-export default function PropertyDetailView({ property, onBack, onApplyClick, onSelectProperty }) {
+export default function PropertyDetailView({
+  property,
+  onBack,
+  onApplyClick,
+  onSelectProperty,
+  shortlistIds = [],
+  onToggleShortlist,
+  applicationProperties = [],
+  onToggleApplicationProperty,
+  onOpenApplication
+}) {
   const [activeImage, setActiveImage] = useState(0);
   const [copiedLink, setCopiedLink] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
-  const [viewingPreference, setViewingPreference] = useState('in_person'); // 'in_person' | 'virtual'
-  const [tourDate, setTourDate] = useState(() => {
-    const d = new Date(Date.now() + 3 * 24 * 60 * 60 * 1000);
-    return d.toISOString().split('T')[0];
-  });
-  const [tourSlot, setTourSlot] = useState('10:00 AM - 11:00 AM');
   const [isLightboxOpen, setIsLightboxOpen] = useState(false);
   const [similarProperties, setSimilarProperties] = useState([]);
 
-  // Check saved state from localStorage
+  // Shortlist state is lifted to MainTenant so the dashboard heart and this
+  // page never disagree. Fall back to localStorage only if no handler is wired.
+  const shortlistControlled = typeof onToggleShortlist === 'function';
+  const savedInWishlist = shortlistIds.some(
+    (id) => property?.id != null && String(id) === String(property.id)
+  );
+  const saved = shortlistControlled ? savedInWishlist : isSaved;
+
+  const propertyKey = property?.id ?? property?.title ?? property?.name ?? null;
+  const inApplication = applicationProperties.some(
+    (entry) => propertyKey != null && String(entry.id) === String(propertyKey)
+  );
+  const applicationCount = applicationProperties.length;
+
   useEffect(() => {
+    if (shortlistControlled) return;
     try {
-      const saved = JSON.parse(localStorage.getItem('place4u_saved_properties') || '[]');
-      if (property?.id && saved.includes(property.id)) {
-        setIsSaved(true);
-      }
+      const stored = JSON.parse(localStorage.getItem('place4u_saved_properties') || '[]');
+      setIsSaved(Boolean(property?.id) && stored.includes(property.id));
     } catch {}
-  }, [property?.id]);
+  }, [property?.id, shortlistControlled]);
 
   // Fetch 3 comparable properties from Supabase
   useEffect(() => {
@@ -91,14 +107,26 @@ export default function PropertyDetailView({ property, onBack, onApplyClick, onS
   }, [property?.id]);
 
   const toggleSave = () => {
-    const next = !isSaved;
+    const id = property?.id || property?.title || 'current';
+
+    if (shortlistControlled) {
+      onToggleShortlist(property);
+      return;
+    }
+
+    const next = !saved;
     setIsSaved(next);
     try {
-      const saved = JSON.parse(localStorage.getItem('place4u_saved_properties') || '[]');
-      const id = property?.id || property?.title || 'current';
-      const updated = next ? [...new Set([...saved, id])] : saved.filter((x) => x !== id);
+      const stored = JSON.parse(localStorage.getItem('place4u_saved_properties') || '[]');
+      const updated = next ? [...new Set([...stored, id])] : stored.filter((x) => x !== id);
       localStorage.setItem('place4u_saved_properties', JSON.stringify(updated));
     } catch {}
+  };
+
+  const toggleApplication = () => {
+    if (typeof onToggleApplicationProperty === 'function') {
+      onToggleApplicationProperty(property);
+    }
   };
 
   const handleShare = () => {
@@ -169,12 +197,12 @@ export default function PropertyDetailView({ property, onBack, onApplyClick, onS
     ? property.price.toLocaleString('en-ZA') 
     : (property?.rent || property?.price || '48,500');
 
-  // WhatsApp link generator with preferred schedule
+  // WhatsApp enquiry link — plain message to the verified representative.
+  // No viewing booking: tenants build one application for the homes they want.
   const buildWhatsAppLink = () => {
     const phone = (agentPhone || '+27820000000').replace(/[^0-9]/g, '');
-    const mode = viewingPreference === 'in_person' ? 'In-Person Viewing' : 'Virtual 4K Video Tour';
     const text = encodeURIComponent(
-      `Hello ${agentName || 'Place4U Representative'},\n\nI would like to schedule a ${mode} for "${property?.title || property?.name || 'this property'}" on Place4U.\n\n• Date: ${tourDate}\n• Time Slot: ${tourSlot}\n• Location: ${fullAddress}\n\nCould you please confirm availability? Thank you.`
+      `Hello ${agentName || 'Place4U Representative'},\n\nI'm interested in "${property?.title || property?.name || 'this property'}" on Place4U (${fullAddress}).\n\nCould you share anything I should know before I include it in my application? Thank you.`
     );
     return `https://wa.me/${phone}?text=${text}`;
   };
@@ -253,14 +281,14 @@ export default function PropertyDetailView({ property, onBack, onApplyClick, onS
               onClick={toggleSave}
               type="button"
               className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-full border text-xs font-semibold shadow-xs transition-all cursor-pointer ${
-                isSaved
+                saved
                   ? 'bg-rose-50 border-rose-200 text-rose-600'
                   : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50'
               }`}
-              title={isSaved ? 'Saved in favorites' : 'Save residence'}
+              title={saved ? 'Shortlisted' : 'Add to shortlist'}
             >
-              <Heart size={15} className={isSaved ? 'fill-rose-500 text-rose-500' : 'text-[#006194]'} />
-              <span className="hidden sm:inline">{isSaved ? 'Saved' : 'Save Residence'}</span>
+              <Heart size={15} className={saved ? 'fill-rose-500 text-rose-500' : 'text-[#006194]'} />
+              <span className="hidden sm:inline">{saved ? 'Shortlisted' : 'Shortlist'}</span>
             </button>
 
             <button
@@ -788,90 +816,84 @@ export default function PropertyDetailView({ property, onBack, onApplyClick, onS
                 </div>
               </div>
 
-              {/* Segmented Schedule / Tour Preference Switcher */}
-              <div className="space-y-1.5 pt-1">
-                <span className="text-xs font-bold text-slate-800">Viewing Preference</span>
-                <div className="grid grid-cols-2 p-1 rounded-xl bg-[#eaedff] text-center">
-                  <button
-                    type="button"
-                    onClick={() => setViewingPreference('in_person')}
-                    className={`py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                      viewingPreference === 'in_person'
-                        ? 'bg-white text-[#006194] shadow-xs'
-                        : 'text-slate-600 hover:text-slate-900'
-                    }`}
-                  >
-                    In-Person Tour
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setViewingPreference('virtual')}
-                    className={`py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                      viewingPreference === 'virtual'
-                        ? 'bg-white text-[#006194] shadow-xs'
-                        : 'text-slate-600 hover:text-slate-900'
-                    }`}
-                  >
-                    Virtual 4K Video
-                  </button>
+              {/* One application, several homes — the Place4U collection flow */}
+              <div className="space-y-2 pt-1">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-xs font-bold text-slate-800">Your application</span>
+                  <span className="px-2 py-0.5 rounded-full bg-[#eaedff] text-[#006194] text-[10px] font-bold whitespace-nowrap">
+                    {applicationCount === 1 ? '1 property' : `${applicationCount} properties`}
+                  </span>
                 </div>
-              </div>
+                <p className="text-[11px] text-slate-500 leading-relaxed">
+                  One application can cover every home you would accept. Add this listing, then submit once.
+                </p>
 
-              {/* Interactive Tour Slot Selection */}
-              <div className="space-y-1.5">
-                <label className="text-[11px] font-semibold text-slate-500 block">
-                  Preferred Date &amp; Time Slot
-                </label>
-                <div className="grid grid-cols-2 gap-2">
-                  <input
-                    type="date"
-                    value={tourDate}
-                    onChange={(e) => setTourDate(e.target.value)}
-                    className="w-full bg-[#f2f3ff] text-slate-900 text-xs font-medium px-3 py-2 rounded-xl border border-slate-200 outline-none focus:border-[#006194]"
-                  />
-                  <select
-                    value={tourSlot}
-                    onChange={(e) => setTourSlot(e.target.value)}
-                    className="w-full bg-[#f2f3ff] text-slate-900 text-xs font-medium px-2.5 py-2 rounded-xl border border-slate-200 outline-none focus:border-[#006194]"
-                  >
-                    <option>10:00 AM - 11:00 AM</option>
-                    <option>02:00 PM - 03:00 PM</option>
-                    <option>04:30 PM - 05:30 PM</option>
-                  </select>
-                </div>
-              </div>
-
-              {/* Action Buttons: Apply & Schedule */}
-              <div className="space-y-2 pt-2">
                 <button
                   type="button"
-                  onClick={() => onApplyClick?.(property)}
-                  className="w-full py-3 px-4 rounded-xl bg-[#006194] hover:bg-[#007bb9] text-white font-bold text-xs sm:text-sm shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer hover:shadow-lg active:scale-[0.99]"
+                  onClick={toggleApplication}
+                  aria-pressed={inApplication}
+                  title={inApplication ? 'Remove this property from your application' : 'Add this property to your application'}
+                  className={`w-full py-3 px-4 rounded-xl font-bold text-xs sm:text-sm shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-[0.99] ${
+                    inApplication
+                      ? 'bg-emerald-50 text-emerald-800 border border-emerald-200 hover:bg-emerald-100'
+                      : 'bg-[#006194] hover:bg-[#007bb9] text-white hover:shadow-lg'
+                  }`}
                 >
-                  <FileText size={16} />
-                  <span>Begin Priority Lease Application</span>
+                  {inApplication ? <CheckCircle2 size={16} /> : <FileText size={16} />}
+                  <span>{inApplication ? 'Added — tap to remove' : 'Add this property to application'}</span>
                 </button>
 
-                <a
-                  href={buildWhatsAppLink()}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="w-full py-2.5 px-4 rounded-xl bg-[#c4e7ff] hover:bg-[#7bd0ff]/40 text-[#004c69] font-bold text-xs transition-colors flex items-center justify-center gap-2 cursor-pointer text-decoration-none"
-                  style={{ textDecoration: 'none' }}
-                >
-                  <Calendar size={15} />
-                  <span>
-                    {viewingPreference === 'in_person'
-                      ? 'Schedule In-Person Viewing'
-                      : 'Confirm Virtual 4K Session'}
-                  </span>
-                </a>
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={toggleSave}
+                    aria-pressed={saved}
+                    className={`py-2.5 px-3 rounded-xl text-xs font-bold transition-colors flex items-center justify-center gap-1.5 cursor-pointer border ${
+                      saved
+                        ? 'bg-rose-50 border-rose-200 text-rose-600'
+                        : 'bg-[#f2f3ff] border-transparent text-[#006194] hover:bg-[#eaedff]'
+                    }`}
+                  >
+                    <Heart size={14} className={saved ? 'fill-rose-500 text-rose-500' : ''} />
+                    <span>{saved ? 'Shortlisted' : 'Shortlist'}</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => onOpenApplication?.()}
+                    className="py-2.5 px-3 rounded-xl bg-[#c4e7ff] hover:bg-[#7bd0ff]/40 text-[#004c69] text-xs font-bold transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
+                  >
+                    <ArrowUpRight size={14} />
+                    <span>Continue</span>
+                  </button>
+                </div>
+
+                {applicationCount > 0 && (
+                  <ul className="space-y-1.5 pt-1">
+                    {applicationProperties.map((entry) => (
+                      <li
+                        key={String(entry.id)}
+                        className="flex items-center justify-between gap-2 rounded-lg bg-[#f2f3ff] px-2.5 py-1.5"
+                      >
+                        <span className="truncate text-[11px] font-semibold text-slate-700">{entry.label}</span>
+                        <button
+                          type="button"
+                          onClick={() => onToggleApplicationProperty?.(entry)}
+                          className="shrink-0 text-slate-400 hover:text-rose-600 cursor-pointer"
+                          aria-label={`Remove ${entry.label} from application`}
+                          title="Remove from application"
+                        >
+                          <X size={13} />
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                )}
               </div>
 
               {/* Reassurance Note */}
               <div className="flex items-center justify-center gap-1.5 text-slate-400 text-[11px] text-center pt-1">
                 <Lock size={12} className="shrink-0" />
-                <span>No booking fees • Direct landlord vetted mandate</span>
+                <span>No booking fees • One application, multiple homes</span>
               </div>
             </div>
 

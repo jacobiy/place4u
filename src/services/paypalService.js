@@ -6,13 +6,29 @@
  * the dev, uat and production builds, so silently falling back to live
  * credentials would let a test build charge real cards.
  */
+import {
+  convertZarToUsdSync,
+  convertZarToUsd,
+  getLiveUsdZarRate,
+  getCachedUsdZarRate,
+  FALLBACK_USD_ZAR_RATE
+} from './exchangeRateService';
+
+export {
+  convertZarToUsdSync,
+  convertZarToUsd,
+  getLiveUsdZarRate,
+  getCachedUsdZarRate,
+  FALLBACK_USD_ZAR_RATE
+};
+
 export const PAYPAL_CONFIG = {
   clientId: String(import.meta.env.VITE_PAYPAL_CLIENT_ID || '').trim(),
   // Default to sandbox, never live: a dev / uat build that forgets to set this
   // must not be able to take real payments.
   environment: import.meta.env.VITE_PAYPAL_ENVIRONMENT || 'sandbox',
   applicationFeeZar: Number(import.meta.env.VITE_APPLICATION_FEE_ZAR) || 100,
-  // ZAR to USD conversion for PayPal international processing (~R100 = $5.50 USD)
+  // Approximate fallback USD conversion (~R18 = $1 USD)
   approxUsdAmount: 5.50,
   currencyCode: 'USD',
   displayCurrency: 'ZAR'

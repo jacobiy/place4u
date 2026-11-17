@@ -1,16 +1,34 @@
-import React, { useRef, useState } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import { 
   ArrowLeft, Home, CheckCircle, AlertCircle, GraduationCap,
-  ArrowRight, CreditCard, Lock, CheckCircle2
+  ArrowRight, CreditCard, Lock, CheckCircle2, MapPin, Plus, Search, X
 } from 'lucide-react'
 import { TenantQueries } from '../db/queries'
 import PdfAttachmentSection, { DOCUMENT_CONFIG } from './PdfAttachmentSection'
 import ApplicationFeeCardModal from '../../../component/ApplicationFeeCardModal'
+import FeeAmount, { FeeBreakdown } from '../../../component/FeeAmount'
+import { useFeeQuote } from '../../../hooks/useFeeQuote'
+import { formatZarAmount } from '../../../services/promotionService'
 import { applyApplicationUpdate } from '../../../services/applicationSync'
 import { APPLICATION_STATUS } from '../../../services/applicationStatus'
-import { describeProperty, isGenericPropertyTitle } from '../../../utils/propertyLabel'
+import { describeProperty, describePropertyLocation, isGenericPropertyTitle } from '../../../utils/propertyLabel'
+import {
+  loadApplicationProperties,
+  saveApplicationProperties,
+  clearApplicationProperties,
+  toApplicationPropertyEntry
+} from '../../../services/applicationPropertyShortlist'
 
-const CustomApplication = ({ onCancel, property, user, profile, application, onSuccess }) => {
+const CustomApplication = ({
+  onCancel,
+  property,
+  user,
+  profile,
+  application,
+  onSuccess,
+  properties = [],
+  onApplicationPropertiesChange
+}) => {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [success, setSuccess] = useState(false)
   const [error, setError] = useState(null)
@@ -50,6 +68,21 @@ const CustomApplication = ({ onCancel, property, user, profile, application, onS
   const [paymentId, setPaymentId] = useState(application?.payment_id || null);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
 
+  // Live application-fee quote. A promotion can make this R0; when it does, the
+  // amount is rendered struck through in red with FREE everywhere fee state shows.
+  const { quote: feeQuote } = useFeeQuote();
+  const feeIsFree = Boolean(feeQuote?.isFree);
+  const feeAmountValue = Number(feeQuote?.finalAmount ?? 100);
+  const promotionFeeFields = feeQuote?.promotionApplied
+    ? {
+        fee_original_amount: feeQuote.originalAmount,
+        fee_discount_amount: feeQuote.discountAmount,
+        fee_is_free: Boolean(feeQuote.isFree),
+        promotion_code: feeQuote.promotion?.code || null,
+        promotion_id: feeQuote.promotion?.id || null
+      }
+    : {};
+
   // Initialize attached documents (keyed by slotKey)
   const [documents, setDocuments] = useState(() => {
     const initialDocs = {};
@@ -74,6 +107,64 @@ const CustomApplication = ({ onCancel, property, user, profile, application, onS
     special_requirements: application?.special_requirements || ''
   })
 
+  // Homes bundled into this application. Place4U's premise is one application
+  // covering every property a tenant would accept, so the basket seeded from
+  // "add to application" lives here rather than on a single property row.
+  const [selectedProperties, setSelectedProperties] = useState(() => {
+    const existing = loadApplicationProperties();
+    const current = toApplicationPropertyEntry(property);
+    if (!current) return existing;
+    return existing.some((entry) => String(entry.id) === String(current.id))
+      ? existing
+      : [current, ...existing];
+  });
+  const [showPropertyPicker, setShowPropertyPicker] = useState(false);
+  const [propertyQuery, setPropertyQuery] = useState('');
+
+  const updateSelectedProperties = (next) => {
+    const persisted = saveApplicationProperties(next);
+    setSelectedProperties(persisted);
+    if (onApplicationPropertiesChange) onApplicationPropertiesChange(persisted);
+    return persisted;
+  };
+
+  const addPropertyToSelection = (candidate) => {
+    const entry = toApplicationPropertyEntry(candidate);
+    if (!entry) return;
+    if (selectedProperties.some((existing) => String(existing.id) === String(entry.id))) return;
+    updateSelectedProperties([...selectedProperties, entry]);
+  };
+
+  const removePropertyFromSelection = (entry) => {
+    updateSelectedProperties(
+      selectedProperties.filter((existing) => String(existing.id) !== String(entry.id))
+    );
+  };
+
+  // Arriving from a listing means "I want this one in my application": persist
+  // it so a refresh or back-navigation cannot silently drop the choice.
+  useEffect(() => {
+    if (!property) return;
+    const entry = toApplicationPropertyEntry(property);
+    if (!entry) return;
+    const current = loadApplicationProperties();
+    if (current.some((existing) => String(existing.id) === String(entry.id))) return;
+    const persisted = saveApplicationProperties([...current, entry]);
+    setSelectedProperties(persisted);
+    if (onApplicationPropertiesChange) onApplicationPropertiesChange(persisted);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [property?.id]);
+
+  const selectedPropertyIds = new Set(selectedProperties.map((entry) => String(entry.id)));
+  const addableProperties = properties.filter((candidate) => {
+    if (candidate?.id == null) return false;
+    if (selectedPropertyIds.has(String(candidate.id))) return false;
+    const query = propertyQuery.trim().toLowerCase();
+    if (!query) return true;
+    const haystack = `${describeProperty(candidate) || ''} ${describePropertyLocation(candidate) || ''}`.toLowerCase();
+    return haystack.includes(query);
+  });
+
   const handleChange = (e) => {
     const { name, value } = e.target
     setFormData(prev => ({ ...prev, [name]: value }))
@@ -88,6 +179,40 @@ const CustomApplication = ({ onCancel, property, user, profile, application, onS
     } else if (newCategory === 'standard_room' && formData.preferred_types === 'Student Room') {
       setFormData(prev => ({ ...prev, preferred_types: 'Room, Apartment', lease_duration_months: 12 }));
     }
+  };
+
+  // One readable name for whatever this application covers.
+  const applicationTitle =
+    describeProperty(property) ||
+    (selectedProperties.length > 1
+      ? `${selectedProperties.length} shortlisted properties`
+      : selectedProperties[0]?.label) ||
+    'Rental Application';
+
+  const handleClaimFreeFee = () => {
+    const generatedPaymentId =
+      typeof crypto !== 'undefined' && crypto.randomUUID
+        ? crypto.randomUUID()
+        : `free-${Date.now()}`;
+    const receipt = {
+      receiptNumber: `FREE-P4U-${Date.now().toString().slice(-6)}`,
+      paymentId: generatedPaymentId,
+      orderId: `FREE-${Date.now()}`,
+      amountZar: 0,
+      currency: 'ZAR',
+      applicantName: profile?.full_name || user?.user_metadata?.full_name || 'Resident Tenant',
+      cardBrand: 'Promotion',
+      cardLast4: '----',
+      paymentMethod: 'Promotion waiver',
+      timestamp: new Date().toISOString(),
+      promotion: feeQuote?.promotion || null,
+      lineItems: feeQuote?.lineItems || []
+    };
+    setFeePaid(true);
+    setFeeReceipt(receipt);
+    setPaymentId(generatedPaymentId);
+    setShowPaymentModal(false);
+    setError(null);
   };
 
   const handleSubmit = async (e) => {
@@ -108,13 +233,40 @@ const CustomApplication = ({ onCancel, property, user, profile, application, onS
       return;
     }
 
-    // 2. Enforce Application Fee Payment (R100 via Card Only)
+    // 2. Enforce Application Fee Payment (R100 via Card Only, or a live waiver)
+    let effectiveReceipt = feeReceipt;
+    let effectivePaymentId = paymentId;
+
     if (!feePaid) {
-      setError('Please settle the mandatory R100 Card Application Fee before final submission.');
-      setShowPaymentModal(true);
-      setIsSubmitting(false);
-      setTimeout(() => errorSummaryRef.current?.focus(), 0);
-      return;
+      if (feeIsFree) {
+        effectivePaymentId =
+          typeof crypto !== 'undefined' && crypto.randomUUID
+            ? crypto.randomUUID()
+            : `free-${Date.now()}`;
+        effectiveReceipt = {
+          receiptNumber: `FREE-P4U-${Date.now().toString().slice(-6)}`,
+          paymentId: effectivePaymentId,
+          orderId: `FREE-${Date.now()}`,
+          amountZar: 0,
+          currency: 'ZAR',
+          applicantName: profile?.full_name || user?.user_metadata?.full_name || 'Resident Tenant',
+          cardBrand: 'Promotion',
+          cardLast4: '----',
+          paymentMethod: 'Promotion waiver',
+          timestamp: new Date().toISOString(),
+          promotion: feeQuote?.promotion || null,
+          lineItems: feeQuote?.lineItems || []
+        };
+        setFeePaid(true);
+        setFeeReceipt(effectiveReceipt);
+        setPaymentId(effectivePaymentId);
+      } else {
+        setError(`Please settle the mandatory ${formatZarAmount(feeAmountValue)} Card Application Fee before final submission.`);
+        setShowPaymentModal(true);
+        setIsSubmitting(false);
+        setTimeout(() => errorSummaryRef.current?.focus(), 0);
+        return;
+      }
     }
 
     // Format arrays correctly for Postgres
@@ -134,17 +286,30 @@ const CustomApplication = ({ onCancel, property, user, profile, application, onS
     // table has no `title` column, so resolve the label from its real fields —
     // otherwise every specific-unit application saved a generic placeholder and
     // the tenant, agent and admin views could not tell which property it was.
+    // When several homes are bundled, the bundle is named honestly instead.
+    const bundledLabel =
+      selectedProperties.length > 1
+        ? `${selectedProperties.length} shortlisted properties`
+        : selectedProperties[0]?.label || null;
+
     const targetPropertyTitle =
       describeProperty(property) ||
       (!isGenericPropertyTitle(application?.property_title) ? application.property_title : null) ||
+      bundledLabel ||
       (category === 'student_room' ? 'Student Accommodation Application' : 'Residential Rental Application');
 
-    const assignedPaymentId = paymentId || feeReceipt?.paymentId || application?.payment_id || (typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : null);
+    const assignedPaymentId = effectivePaymentId || paymentId || effectiveReceipt?.paymentId || application?.payment_id || (typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : null);
 
     const payload = {
       tenant_id: user?.id,
       property_id: property?.id || application?.property_id || null,
       property_title: targetPropertyTitle,
+      shortlisted_properties: selectedProperties.map((entry) => ({
+        id: entry.id,
+        label: entry.label,
+        location: entry.location || null,
+        price: entry.price ?? null
+      })),
       accommodation_category: category,
       preferred_areas: preferredAreasArray.length > 0 ? preferredAreasArray : null,
       preferred_types: preferredTypesArray.length > 0 ? preferredTypesArray : null,
@@ -155,10 +320,11 @@ const CustomApplication = ({ onCancel, property, user, profile, application, onS
       special_requirements: formData.special_requirements || null,
       documents: docsList,
       fee_paid: true,
-      fee_amount: 100,
+      fee_amount: feeAmountValue,
       fee_currency: 'ZAR',
-      fee_receipt: feeReceipt?.receiptNumber || (typeof feeReceipt === 'string' ? feeReceipt : `REC-P4U-${Date.now().toString().slice(-6)}`),
-      payment_method: 'Card (PayPal)',
+      ...promotionFeeFields,
+      fee_receipt: effectiveReceipt?.receiptNumber || (typeof effectiveReceipt === 'string' ? effectiveReceipt : `REC-P4U-${Date.now().toString().slice(-6)}`),
+      payment_method: feeIsFree ? 'Promotion waiver' : 'Card (PayPal)',
       payment_id: assignedPaymentId,
       status: APPLICATION_STATUS.SUBMITTED
     }
@@ -185,27 +351,40 @@ const CustomApplication = ({ onCancel, property, user, profile, application, onS
     }
 
     // Ensure payment record exists and is linked to the created application
-    if (feeReceipt) {
+    if (effectiveReceipt) {
       try {
         await TenantQueries.recordPayment({
           id: finalPaymentId,
           payer_id: user?.id,
           application_id: createdAppId.startsWith('app-') ? null : createdAppId,
           property_id: property?.id || null,
-          amount: 100,
+          amount: feeAmountValue,
           currency: 'ZAR',
           payment_type: 'application_fee',
-          payment_method: 'card',
-          gateway: feeReceipt.paymentMethod?.includes('PayPal') ? 'paypal' : 'paypal_direct_card',
-          gateway_order_id: feeReceipt.orderId || null,
-          gateway_capture_id: feeReceipt.orderId || null,
-          receipt_number: feeReceipt.receiptNumber || payload.fee_receipt,
-          card_brand: feeReceipt.cardBrand || 'Card',
-          card_last4: feeReceipt.cardLast4 || null,
+          payment_method: feeIsFree ? 'promotion' : 'card',
+          gateway: feeIsFree ? 'promotion' : effectiveReceipt.paymentMethod?.includes('PayPal') ? 'paypal' : 'paypal_direct_card',
+          gateway_order_id: effectiveReceipt.orderId || null,
+          gateway_capture_id: effectiveReceipt.orderId || null,
+          receipt_number: effectiveReceipt.receiptNumber || payload.fee_receipt,
+          card_brand: effectiveReceipt.cardBrand || 'Card',
+          card_last4: effectiveReceipt.cardLast4 || null,
           status: 'completed',
-          payer_name: feeReceipt.applicantName || profile?.full_name || user?.user_metadata?.full_name || 'Resident Tenant',
+          payer_name: effectiveReceipt.applicantName || profile?.full_name || user?.user_metadata?.full_name || 'Resident Tenant',
           payer_email: user?.email || null,
-          description: `Application Screening Fee (R100) - ${targetPropertyTitle}`,
+          description: feeIsFree
+            ? `Application Fee (waived${feeQuote?.promotion?.name ? ` by ${feeQuote.promotion.name}` : ''}) - ${targetPropertyTitle}`
+            : `Application Screening Fee (${formatZarAmount(feeAmountValue)}) - ${targetPropertyTitle}`,
+          ...(feeQuote?.promotionApplied
+            ? {
+                promotion_code: feeQuote.promotion?.code || null,
+                promotion_id: feeQuote.promotion?.id || null,
+                original_amount: feeQuote.originalAmount,
+                discount_amount: feeQuote.discountAmount,
+                promotion_applied: true,
+                is_free: Boolean(feeQuote.isFree),
+                line_items: feeQuote.lineItems
+              }
+            : {}),
           metadata: {
             propertyTitle: targetPropertyTitle,
             accommodationCategory: category,
@@ -243,6 +422,11 @@ const CustomApplication = ({ onCancel, property, user, profile, application, onS
       console.warn('LocalStorage save fallback:', e);
     }
 
+    // The basket has become an application — start the next one clean.
+    clearApplicationProperties();
+    setSelectedProperties([]);
+    if (onApplicationPropertiesChange) onApplicationPropertiesChange([]);
+
     setSuccess(true);
     // Fan the new/updated application out to the agent, admin and landlord
     // dashboards so they do not have to wait for a manual refresh.
@@ -277,11 +461,16 @@ const CustomApplication = ({ onCancel, property, user, profile, application, onS
         <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600">
           Share your rental preferences and attach the documents needed for review.
         </p>
-        {property && (
+        {(property || selectedProperties.length > 0) && (
           <div className="mt-5 flex flex-wrap items-baseline gap-x-3 gap-y-1 border-l-2 border-blue-700 pl-3">
             <span className="text-xs font-medium text-slate-500">Applying for</span>
-            <span className="font-semibold text-slate-900">{describeProperty(property) || property.title || 'Selected property'}</span>
-            {property.property_type && <span className="text-sm text-slate-600">{property.property_type}</span>}
+            <span className="font-semibold text-slate-900">{applicationTitle}</span>
+            {selectedProperties.length > 1 && (
+              <span className="text-sm text-slate-600">{selectedProperties.length} homes bundled</span>
+            )}
+            {property?.property_type && selectedProperties.length < 2 && (
+              <span className="text-sm text-slate-600">{property.property_type}</span>
+            )}
           </div>
         )}
       </header>
@@ -311,6 +500,119 @@ const CustomApplication = ({ onCancel, property, user, profile, application, onS
                 </div>
               </div>
             )}
+
+            {/* Properties bundled into this application */}
+            <div className="space-y-4 border border-slate-300 bg-white p-4 sm:p-5">
+              <div className="flex flex-wrap items-baseline justify-between gap-2">
+                <div>
+                  <h2 className="text-base font-semibold text-slate-950">Properties in this application</h2>
+                  <p className="mt-1 text-sm text-slate-600">
+                    Add every home you would accept. Your agent reviews them together, so you apply and pay once.
+                  </p>
+                </div>
+                <span className="text-sm font-semibold text-slate-900">
+                  {selectedProperties.length} {selectedProperties.length === 1 ? 'property' : 'properties'}
+                </span>
+              </div>
+
+              {selectedProperties.length === 0 ? (
+                <p className="border-l-2 border-slate-300 px-3 py-2 text-sm text-slate-600">
+                  No property added yet — submit a general application, or add specific homes below.
+                </p>
+              ) : (
+                <ul className="divide-y divide-slate-200 border-y border-slate-200">
+                  {selectedProperties.map((entry) => (
+                    <li key={String(entry.id)} className="flex items-start justify-between gap-3 py-3">
+                      <div className="min-w-0">
+                        <p className="truncate text-sm font-semibold text-slate-950">{entry.label}</p>
+                        <p className="mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate-500">
+                          {entry.location && (
+                            <span className="inline-flex items-center gap-1">
+                              <MapPin size={12} className="text-blue-800" aria-hidden="true" />
+                              {entry.location}
+                            </span>
+                          )}
+                          {entry.price != null && (
+                            <span>R{Number(entry.price).toLocaleString('en-ZA')} / month</span>
+                          )}
+                        </p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => removePropertyFromSelection(entry)}
+                        className="min-h-9 shrink-0 inline-flex items-center gap-1 border border-slate-300 px-2.5 text-xs font-semibold text-slate-700 hover:border-red-300 hover:text-red-700 transition-colors"
+                        aria-label={`Remove ${entry.label} from this application`}
+                      >
+                        <X size={13} aria-hidden="true" /> Remove
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              )}
+
+              <div className="space-y-3">
+                <button
+                  type="button"
+                  onClick={() => setShowPropertyPicker((open) => !open)}
+                  aria-expanded={showPropertyPicker}
+                  className="min-h-11 w-full sm:w-auto inline-flex items-center justify-center gap-2 border border-slate-300 bg-white px-4 text-sm font-semibold text-slate-800 hover:bg-slate-50 transition-colors"
+                >
+                  <Plus size={15} aria-hidden="true" />
+                  {showPropertyPicker ? 'Close property list' : 'Add another property'}
+                </button>
+
+                {showPropertyPicker && (
+                  <div className="space-y-3 border border-slate-200 bg-slate-50 p-3">
+                    <label htmlFor="property-search" className="block text-sm font-medium text-slate-800">
+                      Search available properties
+                    </label>
+                    <div className="relative">
+                      <Search size={15} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" aria-hidden="true" />
+                      <input
+                        id="property-search"
+                        type="text"
+                        value={propertyQuery}
+                        onChange={(event) => setPropertyQuery(event.target.value)}
+                        placeholder="Suburb, city or property type"
+                        className="min-h-11 w-full border border-slate-300 bg-white pl-9 pr-3 text-sm text-slate-950 placeholder:text-slate-500 outline-none focus:border-blue-700 focus:ring-2 focus:ring-blue-100"
+                      />
+                    </div>
+
+                    {addableProperties.length === 0 ? (
+                      <p className="text-sm text-slate-600">No other properties match that search.</p>
+                    ) : (
+                      <ul className="max-h-72 divide-y divide-slate-200 overflow-y-auto border border-slate-200 bg-white">
+                        {addableProperties.slice(0, 25).map((candidate) => (
+                          <li key={String(candidate.id)} className="flex items-center justify-between gap-3 px-3 py-2.5">
+                            <div className="min-w-0">
+                              <p className="truncate text-sm font-semibold text-slate-900">
+                                {describeProperty(candidate) || 'Property'}
+                              </p>
+                              <p className="truncate text-xs text-slate-500">
+                                {describePropertyLocation(candidate) || 'Location not specified'}
+                              </p>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => addPropertyToSelection(candidate)}
+                              className="min-h-9 shrink-0 inline-flex items-center gap-1 bg-blue-800 px-3 text-xs font-semibold text-white hover:bg-blue-900 transition-colors"
+                            >
+                              <Plus size={13} aria-hidden="true" /> Add
+                            </button>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+
+                    {addableProperties.length > 25 && (
+                      <p className="text-xs text-slate-500">
+                        Showing the first 25 matches — refine your search to see more.
+                      </p>
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
 
             {/* Accommodation Category Switcher */}
             <div className="space-y-3">
@@ -506,15 +808,29 @@ const CustomApplication = ({ onCancel, property, user, profile, application, onS
                 </div>
               </div>
 
-              {/* Application Fee Section (R100 - Card Only powered by PayPal) */}
+              {/* Application Fee Section (card via PayPal, or a live promotion waiver) */}
               <div className="space-y-4 border-t border-slate-200 pt-6">
                 <div className="flex flex-wrap items-baseline justify-between gap-2">
                   <div>
                     <h2 className="text-base font-semibold text-slate-950">Application fee</h2>
                     <p className="mt-1 text-sm text-slate-600">A one-time assistance and vetting fee is required to submit.</p>
                   </div>
-                  <span className="text-sm font-semibold text-slate-900">R100.00</span>
+                  <FeeAmount quote={feeQuote} amount={feeQuote?.originalAmount ?? 100} size="md" />
                 </div>
+
+                {feeQuote?.promotionApplied && (
+                  <div className="border-l-2 border-red-200 bg-red-50/40 px-4 py-3">
+                    <FeeBreakdown quote={feeQuote} dense />
+                    {feeQuote?.promotion?.name && (
+                      <p className="mt-2 text-[11px] font-medium text-red-600">
+                        {feeQuote.promotion.name}
+                        {feeQuote.promotion.endsAt
+                          ? ` · ends ${new Date(feeQuote.promotion.endsAt).toLocaleDateString('en-ZA')}`
+                          : ''}
+                      </p>
+                    )}
+                  </div>
+                )}
 
                 <div className={`border-l-2 px-4 py-3 ${
                   feePaid 
@@ -529,22 +845,30 @@ const CustomApplication = ({ onCancel, property, user, profile, application, onS
                       <div>
                         <div className="flex items-center gap-2 flex-wrap">
                           <h3 className="text-sm font-semibold text-slate-950">
-                            {feePaid ? 'Application fee paid' : 'Payment required'}
+                            {feePaid
+                              ? feeIsFree || application?.fee_is_free
+                                ? 'Application fee waived'
+                                : 'Application fee paid'
+                              : feeIsFree
+                                ? 'Promotion available'
+                                : 'Payment required'}
                           </h3>
                           {feePaid ? (
                             <span className="text-xs font-medium text-emerald-800">
-                              Paid
+                              {feeIsFree || application?.fee_is_free ? 'Free' : 'Paid'}
                             </span>
                           ) : (
-                            <span className="text-xs font-medium text-amber-900">
-                              Card payment
+                            <span className={`text-xs font-medium ${feeIsFree ? 'text-red-600' : 'text-amber-900'}`}>
+                              {feeIsFree ? 'Free · no card required' : 'Card payment'}
                             </span>
                           )}
                         </div>
                         <p className="text-sm text-slate-600 mt-1 leading-relaxed">
-                          {feePaid 
+                          {feePaid
                             ? (feeReceipt?.receiptNumber || (typeof feeReceipt === 'string' ? `Receipt reference: ${feeReceipt}` : 'Payment recorded.'))
-                            : 'Pay by card to complete your application. The fee is non-refundable.'}
+                            : feeIsFree
+                              ? 'This promotion waives the fee. Claim it to submit without a card.'
+                              : `Pay ${formatZarAmount(feeAmountValue)} by card to complete your application. The fee is non-refundable.`}
                         </p>
                       </div>
                     </div>
@@ -558,6 +882,15 @@ const CustomApplication = ({ onCancel, property, user, profile, application, onS
                         >
                           View Receipt
                         </button>
+                      ) : feeIsFree ? (
+                        <button
+                          type="button"
+                          onClick={handleClaimFreeFee}
+                          className="min-h-11 bg-emerald-700 hover:bg-emerald-800 px-4 text-sm font-semibold text-white transition-colors flex items-center gap-2"
+                        >
+                          <CheckCircle2 size={13} />
+                          <span>Claim free application</span>
+                        </button>
                       ) : (
                         <button
                           type="button"
@@ -565,7 +898,7 @@ const CustomApplication = ({ onCancel, property, user, profile, application, onS
                           className="min-h-11 bg-blue-800 hover:bg-blue-900 px-4 text-sm font-semibold text-white transition-colors flex items-center gap-2"
                         >
                           <Lock size={13} />
-                          <span>Pay R100 with Card</span>
+                          <span>Pay {formatZarAmount(feeAmountValue)} with Card</span>
                         </button>
                       )}
                     </div>
@@ -651,11 +984,11 @@ const CustomApplication = ({ onCancel, property, user, profile, application, onS
                 payer_id: user?.id,
                 application_id: application?.id || null,
                 property_id: property?.id || null,
-                amount: 100,
+                amount: Number(receipt?.amountZar ?? feeAmountValue),
                 currency: 'ZAR',
                 payment_type: 'application_fee',
-                payment_method: 'card',
-                gateway: receipt.paymentMethod?.includes('PayPal') ? 'paypal' : 'paypal_direct_card',
+                payment_method: receipt?.paymentMethod?.includes('Promotion') ? 'promotion' : 'card',
+                gateway: receipt?.paymentMethod?.includes('Promotion') ? 'promotion' : receipt.paymentMethod?.includes('PayPal') ? 'paypal' : 'paypal_direct_card',
                 gateway_order_id: receipt.orderId || null,
                 gateway_capture_id: receipt.orderId || null,
                 receipt_number: receipt.receiptNumber,
@@ -664,9 +997,22 @@ const CustomApplication = ({ onCancel, property, user, profile, application, onS
                 status: 'completed',
                 payer_name: receipt.applicantName || profile?.full_name || user?.user_metadata?.full_name || 'Resident Tenant',
                 payer_email: user?.email || null,
-                description: `Application Fee (R100) - ${property?.title || 'Rental Application'}`,
+                description: feeIsFree
+                  ? `Application Fee (waived${feeQuote?.promotion?.name ? ` by ${feeQuote.promotion.name}` : ''}) - ${applicationTitle}`
+                  : `Application Fee (${formatZarAmount(Number(receipt?.amountZar ?? feeAmountValue))}) - ${applicationTitle}`,
+                ...(feeQuote?.promotionApplied
+                  ? {
+                      promotion_code: feeQuote.promotion?.code || null,
+                      promotion_id: feeQuote.promotion?.id || null,
+                      original_amount: feeQuote.originalAmount,
+                      discount_amount: feeQuote.discountAmount,
+                      is_free: Boolean(feeQuote.isFree),
+                      line_items: feeQuote.lineItems
+                    }
+                  : {}),
                 metadata: {
-                  propertyTitle: property?.title || 'Rental Application',
+                  propertyTitle: applicationTitle,
+                  propertyCount: selectedProperties.length,
                   category: category,
                   paidAt: receipt.timestamp || new Date().toISOString()
                 }
@@ -679,8 +1025,10 @@ const CustomApplication = ({ onCancel, property, user, profile, application, onS
             }
           }}
           applicantName={profile?.full_name || user?.user_metadata?.full_name || 'Resident Tenant'}
-          propertyTitle={property?.title || 'Rental Application'}
-          amountZar={100}
+          propertyTitle={applicationTitle}
+          amountZar={feeQuote?.originalAmount ?? 100}
+          feeQuote={feeQuote}
+          onClaimFree={handleClaimFreeFee}
         />
     </div>
   )

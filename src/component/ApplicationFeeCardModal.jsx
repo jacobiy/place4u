@@ -1,124 +1,66 @@
 import React, { useState } from 'react';
-import { 
-  X, CreditCard, ShieldCheck, CheckCircle2, Lock, 
-  AlertCircle, ArrowRight, Download, Receipt, Sparkles, Loader2 
+import {
+  X,
+  ShieldCheck,
+  CheckCircle2,
+  Lock,
+  AlertCircle,
+  Receipt,
+  Loader2,
+  ArrowRight
 } from 'lucide-react';
 import { PayPalScriptProvider, PayPalButtons } from '@paypal/react-paypal-js';
-import { PAYPAL_CONFIG, isPayPalConfigured, processCardApplicationFee, generatePaymentReceipt } from '../services/paypalService';
+import {
+  PAYPAL_CONFIG,
+  isPayPalConfigured,
+  generatePaymentReceipt
+} from '../services/paypalService';
+import { useUsdZarRate } from '../services/exchangeRateService';
+import { buildFeeQuote, formatZarAmount } from '../services/promotionService';
+import FeeAmount, { FeeBreakdown } from './FeeAmount';
 
 export default function ApplicationFeeCardModal({
   isOpen,
   onClose,
   onPaymentSuccess,
+  onClaimFree,
   applicantName = 'Resident Tenant',
   propertyTitle = 'Rental Application',
-  amountZar = 100
+  amountZar = 100,
+  feeQuote = null
 }) {
-  const [activeTab, setActiveTab] = useState('card_form'); // 'card_form' | 'paypal_button'
   const [isProcessing, setIsProcessing] = useState(false);
   const [errorMessage, setErrorMessage] = useState(null);
   const [receiptData, setReceiptData] = useState(null);
 
-  // Card Form State
-  const [cardData, setCardData] = useState({
-    cardholderName: applicantName || '',
-    cardNumber: '',
-    expiryDate: '',
-    cvv: ''
-  });
+  const { rate: usdZarRate, convertZarToUsd } = useUsdZarRate();
+
+  const quote = feeQuote || buildFeeQuote({ originalAmount: amountZar });
+  const payableAmount = Number(quote?.finalAmount ?? amountZar);
+  const isFree = Boolean(quote?.isFree);
+  const hasDiscount =
+    Boolean(quote?.promotionApplied) &&
+    payableAmount < Number(quote?.originalAmount ?? amountZar);
+
+  // The PayPal order is denominated in USD; convert using live exchange rate
+  const payableUsd = convertZarToUsd(payableAmount);
 
   if (!isOpen) return null;
 
-  // Format Card Number (adds space every 4 digits)
-  const handleCardNumberChange = (e) => {
-    let val = e.target.value.replace(/\D/g, '').slice(0, 16);
-    val = val.replace(/(\d{4})(?=\d)/g, '$1 ');
-    setCardData(prev => ({ ...prev, cardNumber: val }));
-  };
-
-  // Format Expiry (MM/YY)
-  const handleExpiryChange = (e) => {
-    let val = e.target.value.replace(/\D/g, '').slice(0, 4);
-    if (val.length >= 3) {
-      val = `${val.slice(0, 2)}/${val.slice(2, 4)}`;
-    }
-    setCardData(prev => ({ ...prev, expiryDate: val }));
-  };
-
-  const handleCvvChange = (e) => {
-    const val = e.target.value.replace(/\D/g, '').slice(0, 4);
-    setCardData(prev => ({ ...prev, cvv: val }));
-  };
-
-  // Quick Autofill for testing
-  const handleAutofillDemoCard = () => {
-    setCardData({
-      cardholderName: applicantName || 'Jacob Tenant',
-      cardNumber: '4532 8910 2489 4242',
-      expiryDate: '08/28',
-      cvv: '821'
-    });
-    setErrorMessage(null);
-  };
-
-  // Submit direct card payment
-  const handleDirectCardSubmit = async (e) => {
-    e.preventDefault();
-    setErrorMessage(null);
-
-    const cleanNumber = cardData.cardNumber.replace(/\s+/g, '');
-    if (cleanNumber.length < 13) {
-      setErrorMessage('Please enter a valid debit or credit card number.');
-      return;
-    }
-    if (!cardData.expiryDate || cardData.expiryDate.length < 5) {
-      setErrorMessage('Please enter a valid expiry date (MM/YY).');
-      return;
-    }
-    if (!cardData.cvv || cardData.cvv.length < 3) {
-      setErrorMessage('Please enter a valid CVV (3 digits on the back of your card).');
-      return;
-    }
-
-    setIsProcessing(true);
-    try {
-      const result = await processCardApplicationFee({
-        cardNumber: cardData.cardNumber,
-        expiryDate: cardData.expiryDate,
-        cvv: cardData.cvv,
-        cardholderName: cardData.cardholderName,
-        applicantName,
-        propertyTitle,
-        amountZar
-      });
-
-      if (result.success) {
-        setReceiptData(result.receipt);
-        if (onPaymentSuccess) {
-          onPaymentSuccess(result.receipt);
-        }
-      }
-    } catch (err) {
-      setErrorMessage(err?.message || 'Payment processing failed. Please try again.');
-    } finally {
-      setIsProcessing(false);
-    }
-  };
-
-  // PayPal Card Buttons handlers
+  // PayPal checkout handlers
   const handlePayPalCreateOrder = (data, actions) => {
     return actions.order.create({
       purchase_units: [
         {
-          description: `Place4U Application Fee (R${amountZar}) - ${propertyTitle}`,
+          description: `Place4U Screening Fee (${formatZarAmount(payableAmount)}) - ${propertyTitle}`,
           amount: {
             currency_code: PAYPAL_CONFIG.currencyCode,
-            value: PAYPAL_CONFIG.approxUsdAmount.toFixed(2)
+            value: payableUsd
           }
         }
       ],
       application_context: {
-        brand_name: 'Place4U Real Estate',
+        brand_name: 'Place4U',
         shipping_preference: 'NO_SHIPPING'
       }
     });
@@ -130,14 +72,17 @@ export default function ApplicationFeeCardModal({
     try {
       const details = await actions.order.capture();
       const payer = details?.payer;
-      const captureId = details?.purchase_units?.[0]?.payments?.captures?.[0]?.id || details.id;
+      const captureId =
+        details?.purchase_units?.[0]?.payments?.captures?.[0]?.id || details.id;
 
       const receipt = generatePaymentReceipt({
         orderId: captureId,
         cardLast4: 'Verified',
-        cardBrand: 'PayPal Card',
-        amountZar,
-        applicantName: payer?.name?.given_name ? `${payer.name.given_name} ${payer.name.surname}` : applicantName,
+        cardBrand: 'PayPal',
+        amountZar: payableAmount,
+        applicantName: payer?.name?.given_name
+          ? `${payer.name.given_name} ${payer.name.surname || ''}`.trim()
+          : applicantName,
         propertyTitle
       });
 
@@ -146,278 +91,245 @@ export default function ApplicationFeeCardModal({
         onPaymentSuccess(receipt);
       }
     } catch (err) {
-      console.error('PayPal Card capture error:', err);
-      setErrorMessage('Failed to capture card payment via PayPal. Please try again or use direct card entry.');
+      console.error('PayPal capture error:', err);
+      setErrorMessage(
+        'Failed to complete payment via PayPal. Please try again or check your connection.'
+      );
     } finally {
       setIsProcessing(false);
     }
   };
 
+  const handleClaimFreeWaiver = () => {
+    if (onClaimFree) {
+      onClaimFree();
+      return;
+    }
+    const receipt = generatePaymentReceipt({
+      amountZar: 0,
+      applicantName,
+      propertyTitle
+    });
+    setReceiptData(receipt);
+    if (onPaymentSuccess) {
+      onPaymentSuccess(receipt);
+    }
+  };
+
   return (
-    <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-[130] p-4 backdrop-blur-md animate-in fade-in">
-      <div className="bg-[#0b0e14] border border-white/10 rounded-3xl w-full max-w-lg shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
-        
+    <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center z-[130] p-4 animate-in fade-in">
+      <div className="bg-white border border-slate-200 rounded-2xl w-full max-w-md shadow-xl overflow-hidden flex flex-col max-h-[92vh]">
         {/* Header */}
-        <div className="p-5 px-6 border-b border-white/10 flex items-center justify-between bg-white/[0.02]">
-          <div className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-xl bg-blue-600/20 text-blue-400 border border-blue-500/30 flex items-center justify-center">
-              <CreditCard size={18} />
+        <div className="p-5 px-6 border-b border-slate-100 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-sky-50 text-sky-700 border border-sky-100 flex items-center justify-center shrink-0">
+              <Receipt size={18} />
             </div>
             <div>
-              <h3 className="font-bold text-base text-white">Application Vetting Fee</h3>
-              <p className="text-xs text-white/50">Card Only Payment (Powered by PayPal)</p>
+              <h3 className="font-semibold text-base text-slate-900">
+                Application Screening Fee
+              </h3>
+              <p className="text-xs text-slate-500">PayPal Secure Checkout</p>
             </div>
           </div>
           <button
+            type="button"
             onClick={onClose}
-            className="p-1.5 rounded-xl hover:bg-white/10 text-white/60 hover:text-white transition-colors"
+            aria-label="Close"
+            className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer"
           >
-            <X size={18} />
+            <X size={16} />
           </button>
         </div>
 
         {/* Content */}
-        <div className="p-6 overflow-y-auto space-y-6">
+        <div className="p-6 overflow-y-auto space-y-5">
           {receiptData ? (
             /* Success Receipt View */
-            <div className="text-center space-y-4 py-2 animate-in zoom-in-95">
-              <div className="w-16 h-16 rounded-full bg-emerald-500/20 text-emerald-400 border-2 border-emerald-500 flex items-center justify-center mx-auto shadow-lg shadow-emerald-500/10">
-                <CheckCircle2 size={36} />
+            <div className="space-y-4 py-1 text-center animate-in zoom-in-95">
+              <div className="w-12 h-12 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 flex items-center justify-center mx-auto">
+                <CheckCircle2 size={24} />
               </div>
+
               <div>
-                <h4 className="text-xl font-bold text-white">Payment Received!</h4>
-                <p className="text-xs text-emerald-400 font-semibold mt-0.5">
-                  R{amountZar}.00 Application Fee Settled
+                <h4 className="text-lg font-semibold text-slate-900">
+                  {payableAmount === 0 ? 'Application Fee Waived' : 'Payment Received'}
+                </h4>
+                <p className="text-xs text-emerald-700 font-medium mt-0.5">
+                  {payableAmount === 0
+                    ? 'No fee required for this application'
+                    : `${formatZarAmount(payableAmount)} application fee settled`}
                 </p>
               </div>
 
-              {/* Digital Invoice Slip */}
-              <div className="p-4 rounded-2xl bg-white/[0.03] border border-white/10 text-left text-xs space-y-3">
-                <div className="flex items-center justify-between pb-2 border-b border-white/5">
-                  <span className="text-white/40 uppercase tracking-wider text-[10px] font-bold">Receipt Reference</span>
-                  <span className="font-mono font-bold text-blue-400">{receiptData.receiptNumber}</span>
+              {/* Digital Voucher Slip */}
+              <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 text-left text-xs space-y-2.5">
+                <div className="flex items-center justify-between pb-2 border-b border-slate-200">
+                  <span className="text-slate-500 font-medium">Receipt Reference</span>
+                  <span className="font-mono font-semibold text-slate-900">
+                    {receiptData.receiptNumber}
+                  </span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-white/50">Applicant</span>
-                  <span className="font-medium text-white">{receiptData.applicantName}</span>
+                  <span className="text-slate-500">Applicant</span>
+                  <span className="font-medium text-slate-900">{receiptData.applicantName}</span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-white/50">Payment Gateway</span>
-                  <span className="font-medium text-white">{receiptData.gateway}</span>
+                  <span className="text-slate-500">Property / Application</span>
+                  <span className="font-medium text-slate-900 truncate max-w-[200px]">
+                    {receiptData.propertyTitle}
+                  </span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-white/50">Card Used</span>
-                  <span className="font-medium text-white">{receiptData.cardBrand} •••• {receiptData.cardLast4}</span>
+                  <span className="text-slate-500">Payment Gateway</span>
+                  <span className="font-medium text-slate-900">
+                    {payableAmount === 0 ? 'Promotional Waiver' : 'PayPal Services'}
+                  </span>
                 </div>
-                <div className="flex items-center justify-between pt-2 border-t border-white/5 text-sm font-bold">
-                  <span className="text-white">Total Paid</span>
-                  <span className="text-emerald-400">R{amountZar}.00</span>
+
+                {hasDiscount && (
+                  <FeeBreakdown quote={quote} tone="light" dense className="pt-2 border-t border-slate-200" />
+                )}
+
+                <div className="flex items-center justify-between pt-2 border-t border-slate-200 text-sm font-semibold">
+                  <span className="text-slate-900">Total Settled</span>
+                  <FeeAmount quote={quote} amount={payableAmount} tone="light" size="sm" />
                 </div>
               </div>
 
-              <div className="pt-2 flex gap-3">
+              <div className="pt-2">
                 <button
                   type="button"
                   onClick={onClose}
-                  className="flex-1 py-3 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-sm transition-all shadow-lg shadow-blue-500/20"
+                  className="w-full h-10 rounded-lg bg-sky-700 hover:bg-sky-800 text-white font-semibold text-xs transition-colors flex items-center justify-center gap-2 cursor-pointer"
                 >
-                  Continue with Application
+                  <span>Continue with application</span>
+                  <ArrowRight size={14} />
                 </button>
               </div>
             </div>
           ) : (
-            /* Payment Input View */
-            <div className="space-y-5">
-              
-              {/* Fee Breakdown Card */}
-              <div className="p-4 rounded-2xl bg-gradient-to-r from-blue-900/30 to-indigo-900/20 border border-blue-500/30 flex items-center justify-between">
-                <div>
-                  <p className="text-[11px] uppercase tracking-wider text-blue-300 font-bold">
-                    Official Application Fee
+            /* Checkout View */
+            <div className="space-y-4">
+              {/* Fee Summary Box */}
+              <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-between gap-4">
+                <div className="min-w-0">
+                  <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">
+                    Screening & Vetting
                   </p>
-                  <p className="text-xs text-white/60 mt-0.5">
-                    Tenant identity vetting, credit check & screening
+                  <p className="text-xs text-slate-600 mt-0.5 truncate">
+                    {propertyTitle || 'Rental Application'}
+                  </p>
+                  <p className="text-[11px] text-slate-400 mt-1">
+                    ID verification, FICA check & bureau screening
                   </p>
                 </div>
-                <div className="text-right">
-                  <span className="text-2xl font-bold font-serif text-white">R{amountZar}</span>
-                  <span className="text-[11px] text-white/50 block font-mono">ZAR (Card Only)</span>
+                <div className="text-right shrink-0">
+                  <FeeAmount
+                    quote={quote}
+                    amount={payableAmount}
+                    tone="light"
+                    size="xl"
+                    className="justify-end font-bold"
+                  />
+                  <span className="text-[10px] text-slate-400 block mt-0.5">
+                    {isFree
+                      ? 'Promotion applied'
+                      : `approx. $${payableUsd} USD (1 USD ≈ R${usdZarRate.toFixed(2)})`}
+                  </span>
                 </div>
               </div>
 
-              {/* Mode Toggle: Card Form vs PayPal Card Button */}
-              <div className="grid grid-cols-2 p-1 rounded-xl bg-white/[0.04] border border-white/5 text-xs font-semibold">
-                <button
-                  type="button"
-                  onClick={() => setActiveTab('card_form')}
-                  className={`py-2 rounded-lg transition-all ${
-                    activeTab === 'card_form' 
-                      ? 'bg-blue-600 text-white shadow-md' 
-                      : 'text-white/60 hover:text-white'
-                  }`}
-                >
-                  Debit / Credit Card
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setActiveTab('paypal_button')}
-                  className={`py-2 rounded-lg transition-all ${
-                    activeTab === 'paypal_button' 
-                      ? 'bg-blue-600 text-white shadow-md' 
-                      : 'text-white/60 hover:text-white'
-                  }`}
-                >
-                  PayPal Card Button
-                </button>
-              </div>
-
-              {errorMessage && (
-                <div className="p-3 rounded-xl bg-red-500/15 border border-red-500/30 text-red-300 text-xs flex items-center gap-2">
-                  <AlertCircle size={16} className="shrink-0 text-red-400" />
-                  <span>{errorMessage}</span>
+              {/* Discount / Promotion Breakdown */}
+              {hasDiscount && !isFree && (
+                <div className="p-3.5 rounded-xl bg-emerald-50/70 border border-emerald-200">
+                  <FeeBreakdown quote={quote} tone="light" dense />
                 </div>
               )}
 
-              {/* Tab 1: Direct Card Entry Form */}
-              {activeTab === 'card_form' && (
-                <form onSubmit={handleDirectCardSubmit} className="space-y-4">
-                  <div>
-                    <label className="text-[11px] uppercase tracking-wider text-white/50 block mb-1.5 font-semibold">
-                      Cardholder Full Name
-                    </label>
-                    <input
-                      type="text"
-                      placeholder="e.g. Jacob Molomo"
-                      value={cardData.cardholderName}
-                      onChange={(e) => setCardData({ ...cardData, cardholderName: e.target.value })}
-                      required
-                      className="w-full bg-white/5 border border-white/10 rounded-xl px-3.5 py-2.5 text-xs text-white placeholder-white/30 outline-none focus:border-blue-500 transition-colors"
-                    />
+              {/* Free Promotion State */}
+              {isFree ? (
+                <div className="space-y-3 pt-1">
+                  <div className="p-3.5 rounded-xl bg-emerald-50 border border-emerald-200 text-xs text-emerald-800 leading-relaxed">
+                    Your screening fee has been waived
+                    {quote?.promotion?.name ? ` by the ${quote.promotion.name}` : ''}. No
+                    payment is required to submit this application.
                   </div>
-
-                  <div>
-                    <div className="flex items-center justify-between mb-1.5">
-                      <label className="text-[11px] uppercase tracking-wider text-white/50 font-semibold">
-                        Card Number (Debit or Credit)
-                      </label>
-                      <button
-                        type="button"
-                        onClick={handleAutofillDemoCard}
-                        className="text-[10px] text-blue-400 hover:text-blue-300 flex items-center gap-1 font-semibold"
-                      >
-                        <Sparkles size={11} /> Fill Test Card
-                      </button>
-                    </div>
-                    <div className="relative">
-                      <input
-                        type="text"
-                        placeholder="4532 •••• •••• 4242"
-                        value={cardData.cardNumber}
-                        onChange={handleCardNumberChange}
-                        required
-                        className="w-full bg-white/5 border border-white/10 rounded-xl px-3.5 py-2.5 text-xs text-white placeholder-white/30 outline-none focus:border-blue-500 transition-colors font-mono tracking-wider pl-10"
-                      />
-                      <CreditCard size={16} className="absolute left-3 top-3 text-white/40" />
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <label className="text-[11px] uppercase tracking-wider text-white/50 block mb-1.5 font-semibold">
-                        Expiry Date
-                      </label>
-                      <input
-                        type="text"
-                        placeholder="MM/YY"
-                        value={cardData.expiryDate}
-                        onChange={handleExpiryChange}
-                        required
-                        className="w-full bg-white/5 border border-white/10 rounded-xl px-3.5 py-2.5 text-xs text-white placeholder-white/30 outline-none focus:border-blue-500 transition-colors font-mono"
-                      />
-                    </div>
-                    <div>
-                      <label className="text-[11px] uppercase tracking-wider text-white/50 block mb-1.5 font-semibold">
-                        CVV / CVC
-                      </label>
-                      <input
-                        type="password"
-                        maxLength={4}
-                        placeholder="123"
-                        value={cardData.cvv}
-                        onChange={handleCvvChange}
-                        required
-                        className="w-full bg-white/5 border border-white/10 rounded-xl px-3.5 py-2.5 text-xs text-white placeholder-white/30 outline-none focus:border-blue-500 transition-colors font-mono"
-                      />
-                    </div>
-                  </div>
-
                   <button
-                    type="submit"
-                    disabled={isProcessing}
-                    className="w-full mt-2 py-3.5 rounded-xl bg-blue-600 hover:bg-blue-500 active:scale-[0.99] text-white font-bold text-sm transition-all shadow-lg shadow-blue-500/25 flex items-center justify-center gap-2 disabled:opacity-60"
+                    type="button"
+                    onClick={handleClaimFreeWaiver}
+                    className="w-full h-10 rounded-lg bg-emerald-700 hover:bg-emerald-800 text-white font-semibold text-xs transition-colors flex items-center justify-center gap-2 cursor-pointer shadow-xs"
                   >
-                    {isProcessing ? (
-                      <>
-                        <Loader2 size={16} className="animate-spin" />
-                        <span>Verifying Card & Clearing R100...</span>
-                      </>
-                    ) : (
-                      <>
-                        <Lock size={15} />
-                        <span>Pay R{amountZar}.00 with Card</span>
-                      </>
-                    )}
+                    <CheckCircle2 size={15} />
+                    <span>Claim free application waiver</span>
                   </button>
-                </form>
-              )}
-
-              {/* Tab 2: PayPal Card Button */}
-              {activeTab === 'paypal_button' && (
-                <div className="space-y-3">
-                  <p className="text-xs text-white/60 text-center">
-                    Pay securely using PayPal's verified card processing checkout:
+                </div>
+              ) : (
+                /* PayPal Checkout */
+                <div className="space-y-3 pt-1">
+                  <p className="text-xs text-slate-600">
+                    Pay securely using your PayPal balance or debit/credit card via PayPal:
                   </p>
-                  
-                  <div className="p-2 rounded-2xl bg-white/[0.02] border border-white/5">
-                    <PayPalScriptProvider
-                      options={{
-                        clientId: PAYPAL_CONFIG.clientId,
-                        currency: PAYPAL_CONFIG.currencyCode,
-                        intent: 'capture',
-                        'disable-funding': 'credit,paylater,venmo'
-                      }}
-                    >
-                      <PayPalButtons
-                        fundingSource="card"
-                        style={{
-                          layout: 'vertical',
-                          color: 'black',
-                          shape: 'rect',
-                          label: 'pay',
-                          height: 44
+
+                  {errorMessage && (
+                    <div className="p-3 rounded-lg bg-rose-50 border border-rose-200 text-rose-700 text-xs flex items-center gap-2">
+                      <AlertCircle size={15} className="shrink-0 text-rose-600" />
+                      <span>{errorMessage}</span>
+                    </div>
+                  )}
+
+                  <div className="rounded-xl border border-slate-200 bg-white p-3 min-h-[120px] flex flex-col justify-center">
+                    {isProcessing ? (
+                      <div className="py-8 flex flex-col items-center justify-center gap-2 text-xs text-slate-600">
+                        <Loader2 size={20} className="animate-spin text-sky-700" />
+                        <span>Verifying transaction with PayPal...</span>
+                      </div>
+                    ) : isPayPalConfigured() ? (
+                      <PayPalScriptProvider
+                        options={{
+                          clientId: PAYPAL_CONFIG.clientId,
+                          currency: PAYPAL_CONFIG.currencyCode,
+                          intent: 'capture',
+                          'disable-funding': 'credit,paylater,venmo'
                         }}
-                        createOrder={handlePayPalCreateOrder}
-                        onApprove={handlePayPalApprove}
-                        onError={(err) => {
-                          console.error('PayPal Card error:', err);
-                          setErrorMessage('PayPal card gateway encountered an issue. You can use the direct card entry tab above.');
-                        }}
-                      />
-                    </PayPalScriptProvider>
+                      >
+                        <PayPalButtons
+                          style={{
+                            layout: 'vertical',
+                            color: 'gold',
+                            shape: 'rect',
+                            label: 'checkout',
+                            height: 42
+                          }}
+                          createOrder={handlePayPalCreateOrder}
+                          onApprove={handlePayPalApprove}
+                          onError={(err) => {
+                            console.error('PayPal checkout error:', err);
+                            setErrorMessage(
+                              'PayPal checkout encountered an issue. Please try again.'
+                            );
+                          }}
+                        />
+                      </PayPalScriptProvider>
+                    ) : (
+                      <div className="text-center py-6 text-xs text-slate-500">
+                        PayPal gateway is not configured for this environment.
+                      </div>
+                    )}
                   </div>
                 </div>
               )}
 
-              {/* Security Footer */}
-              <div className="pt-2 border-t border-white/5 flex items-center justify-center gap-3 text-[11px] text-white/40">
+              {/* Security Footnote */}
+              <div className="pt-2 border-t border-slate-100 flex items-center justify-center gap-3 text-[11px] text-slate-400">
                 <span className="flex items-center gap-1">
-                  <ShieldCheck size={13} className="text-emerald-400" />
-                  PCI-DSS Certified
+                  <Lock size={12} className="text-slate-500" />
+                  PayPal 256-bit SSL encryption
                 </span>
                 <span>•</span>
                 <span className="flex items-center gap-1">
-                  <Lock size={12} className="text-blue-400" />
-                  256-Bit SSL Encryption
+                  <ShieldCheck size={13} className="text-emerald-600" />
+                  Place4U verified screening
                 </span>
               </div>
             </div>

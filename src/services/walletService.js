@@ -20,6 +20,7 @@ const normalizeBalance = (row) => ({
   completedCount: num(row.completed_count),
   pipelineCount: num(row.pipeline_count),
   refundedCount: num(row.refunded_count),
+  feeCollected: row.fee_collected == null ? null : num(row.fee_collected),
   earned: num(row.earned),
   pipeline: num(row.pipeline),
   refundedShare: num(row.refunded_share),
@@ -60,7 +61,7 @@ export async function getPayoutRequests(agentId) {
 export async function getApplicationFeePayments(applicationIds) {
   let q = supabase
     .from('payments')
-    .select('id, application_id, payer_id, amount, status, receipt_number, created_at, refund_amount, refund_reference, refund_reason, refund_method, refunded_at')
+    .select('id, application_id, payer_id, amount, original_amount, discount_amount, promotion_id, promotion_code, promotion_applied, is_free, line_items, status, receipt_number, created_at, refund_amount, refund_reference, refund_reason, refund_method, refunded_at')
     .eq('payment_type', 'application_fee');
   if (applicationIds?.length) q = q.in('application_id', applicationIds);
   const { data, error } = await q;

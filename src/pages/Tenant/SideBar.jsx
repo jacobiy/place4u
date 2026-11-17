@@ -224,21 +224,18 @@ export const Sidebar = ({ activeView, setActiveView, applicationsCount, matchesC
               position: "absolute",
               top: "calc(100% + 8px)",
               right: 0,
-              width: "220px",
-              background: "rgba(17, 24, 39, 0.95)",
-              backdropFilter: "blur(16px)",
-              WebkitBackdropFilter: "blur(16px)",
-              border: `1px solid rgba(255, 255, 255, 0.12)`,
-              borderRadius: "14px",
-              padding: "0.5rem",
-              boxShadow: "0 18px 36px -8px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.06)",
+              width: "210px",
+              background: "#ffffff",
+              border: "1px solid #e2e8f0",
+              borderRadius: "12px",
+              padding: "4px",
+              boxShadow: "0 8px 24px -4px rgba(0,0,0,0.12), 0 2px 6px -2px rgba(0,0,0,0.06)",
               zIndex: 60
             }}
           >
-            <div style={{ padding: "8px 12px", borderBottom: `1px solid ${T.border}`, marginBottom: "4px" }}>
-              <div style={{ fontSize: "0.85rem", fontWeight: 600, color: T.textPrimary }}>{displayName}</div>
-              <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: "0.72rem", color: T.emerald, marginTop: "2px" }}>
-                <span style={{ width: 5, height: 5, borderRadius: 9999, background: T.emerald, display: "inline-block" }} />
+            <div style={{ padding: "10px 12px", borderBottom: "1px solid #f1f5f9", marginBottom: "2px" }}>
+              <div style={{ fontSize: "0.82rem", fontWeight: 600, color: "#0f172a" }}>{displayName}</div>
+              <div style={{ fontSize: "0.7rem", color: "#64748b", marginTop: "2px" }}>
                 {tier}
               </div>
             </div>
@@ -252,16 +249,16 @@ export const Sidebar = ({ activeView, setActiveView, applicationsCount, matchesC
                 padding: "8px 12px", width: "100%",
                 background: "transparent", border: "none",
                 borderRadius: "8px", cursor: "pointer",
-                color: T.textSecondary, fontSize: "0.82rem",
+                color: "#475569", fontSize: "0.82rem",
                 transition: "all 0.15s ease", fontFamily: "inherit"
               }}
               onMouseEnter={(e) => {
-                e.currentTarget.style.background = T.surface;
-                e.currentTarget.style.color = T.textPrimary;
+                e.currentTarget.style.background = "#f8fafc";
+                e.currentTarget.style.color = "#0f172a";
               }}
               onMouseLeave={(e) => {
                 e.currentTarget.style.background = "transparent";
-                e.currentTarget.style.color = T.textSecondary;
+                e.currentTarget.style.color = "#475569";
               }}
             >
               <User size={15} /> View Profile
@@ -276,21 +273,21 @@ export const Sidebar = ({ activeView, setActiveView, applicationsCount, matchesC
                 padding: "8px 12px", width: "100%",
                 background: "transparent", border: "none",
                 borderRadius: "8px", cursor: "pointer",
-                color: T.textSecondary, fontSize: "0.82rem",
+                color: "#475569", fontSize: "0.82rem",
                 transition: "all 0.15s ease", fontFamily: "inherit"
               }}
               onMouseEnter={(e) => {
-                e.currentTarget.style.background = T.surface;
-                e.currentTarget.style.color = T.textPrimary;
+                e.currentTarget.style.background = "#f8fafc";
+                e.currentTarget.style.color = "#0f172a";
               }}
               onMouseLeave={(e) => {
                 e.currentTarget.style.background = "transparent";
-                e.currentTarget.style.color = T.textSecondary;
+                e.currentTarget.style.color = "#475569";
               }}
             >
               <Settings size={15} /> Account Settings
             </button>
-            <div style={{ height: "1px", background: T.border, margin: "0.4rem 0" }} />
+            <div style={{ height: "1px", background: "#f1f5f9", margin: "2px 0" }} />
             <button
               onClick={onLogout}
               style={{
@@ -298,17 +295,17 @@ export const Sidebar = ({ activeView, setActiveView, applicationsCount, matchesC
                 padding: "8px 12px", width: "100%",
                 background: "transparent", border: "none",
                 borderRadius: "8px", cursor: "pointer",
-                color: T.red, fontSize: "0.82rem",
+                color: "#dc2626", fontSize: "0.82rem",
                 transition: "all 0.15s ease", fontFamily: "inherit"
               }}
               onMouseEnter={(e) => {
-                e.currentTarget.style.background = "rgba(239,68,68,0.12)";
+                e.currentTarget.style.background = "#fef2f2";
               }}
               onMouseLeave={(e) => {
                 e.currentTarget.style.background = "transparent";
               }}
             >
-              <LogOut size={15} /> Logout
+              <LogOut size={15} /> Sign out
             </button>
           </div>
         )}

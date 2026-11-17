@@ -47,6 +47,12 @@ const metaForPath = (pathname) => {
       subtitle: 'Authorize tenant fee refunds, release agent 50% payment shares, and audit releases'
     }
   }
+  if (pathname.startsWith('/admin/promotions')) {
+    return {
+      title: 'Promotions & Fee Waivers',
+      subtitle: 'Run application-fee promotions, waivers and coded discount campaigns'
+    }
+  }
   if (pathname.startsWith('/admin/analytics')) {
     return {
       title: 'Placement & Operations Analytics',

@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react'
+import { Link } from 'react-router-dom'
 import {
   Wallet,
   ArrowUpRight,
@@ -38,7 +39,8 @@ import {
 } from '../../services/walletService'
 
 // Business Model (enforced server-side in database/agent_wallet_ledger.sql):
-// Tenant pays R100 -> attached to the application. The assigned agent earns 50% (R50.00) per
+// Tenant pays the application fee (normally R100; promotions can reduce or waive it) -> attached
+// to the application. The assigned agent earns 50% of the amount actually collected for every
 // application that is completed, paid and not refunded. Refunds automatically remove the share.
 // Agents request withdrawals; the admin approves / pays / rejects them here.
 
@@ -154,8 +156,8 @@ export default function PaymentsPage() {
         areas,
         budget: `${formatCurrency(app.min_budget)} - ${formatCurrency(app.max_budget)}`,
         appStatus: app.status || 'submitted',
-        feePaid: feePaid ? Number(app.fee_amount) || APPLICATION_FEE : 0,
-        canRefund: feePaid && !isRefunded && pay?.status === 'completed',
+        feePaid: feePaid ? Number(app.fee_amount ?? APPLICATION_FEE) : 0,
+        canRefund: feePaid && !isRefunded && pay?.status === 'completed' && Number(pay?.amount ?? app.fee_amount ?? 0) > 0,
         receipt: pay?.receipt_number || app.fee_receipt || null,
         currency: 'ZAR',
         submittedAt: app.submitted_at,
@@ -163,7 +165,7 @@ export default function PaymentsPage() {
         refundRecord: isRefunded
           ? {
               id: pay?.refund_reference || app.refund_reference || 'REF',
-              amount: Number(pay?.refund_amount) || APPLICATION_FEE,
+              amount: Number(pay?.refund_amount ?? pay?.amount ?? APPLICATION_FEE),
               method: pay?.refund_method || 'Original Card / Electronic Transfer'
             }
           : null,
@@ -185,12 +187,16 @@ export default function PaymentsPage() {
       byAgent.set(a.assigned_to, list)
     })
     byAgent.forEach((list, agentId) => {
-      let covered = Math.floor((balanceByAgent.get(agentId)?.paidOut || 0) / AGENT_SHARE_AMOUNT)
+      let remaining = balanceByAgent.get(agentId)?.paidOut || 0
       list
         .filter((a) => a.fee_paid && !a.fee_refunded && a.status === 'completed')
         .sort((x, y) => new Date(x.submitted_at || 0) - new Date(y.submitted_at || 0))
         .forEach((a) => {
-          if (covered > 0) { releasedIds.add(a.id); covered -= 1 }
+          const share = Number(a.fee_amount ?? APPLICATION_FEE) * 0.5
+          if (share > 0 && remaining >= share) {
+            releasedIds.add(a.id)
+            remaining -= share
+          }
         })
     })
 
@@ -198,7 +204,11 @@ export default function PaymentsPage() {
       const agent = app.agent || agents.find((ag) => ag.id === app.assigned_to)
       const feePaid = app.fee_paid === true
       const refunded = app.fee_refunded === true
-      const earns = feePaid && !refunded && app.status === 'completed'
+      const earns =
+        feePaid &&
+        !refunded &&
+        app.status === 'completed' &&
+        Number(app.fee_amount ?? APPLICATION_FEE) > 0
       const isCompletionRequested = Boolean(app.completion_requested_at && app.status !== 'completed')
 
       let status = 'Pending Placement'
@@ -218,8 +228,8 @@ export default function PaymentsPage() {
         agentPhone: agent?.phone || '',
         tenantName: app.tenant?.full_name || 'Tenant',
         areas: Array.isArray(app.preferred_areas) ? app.preferred_areas.join(', ') : 'Metro',
-        feeCollected: feePaid && !refunded ? Number(app.fee_amount) || APPLICATION_FEE : 0,
-        agentShareAmount: earns ? AGENT_SHARE_AMOUNT : 0,
+        feeCollected: feePaid && !refunded ? Number(app.fee_amount ?? APPLICATION_FEE) : 0,
+        agentShareAmount: earns ? Number(app.fee_amount ?? APPLICATION_FEE) * 0.5 : 0,
         status,
         appStatus: app.status,
         completionRequestedAt: app.completion_requested_at,
@@ -242,7 +252,10 @@ export default function PaymentsPage() {
         assignedCount: b?.assignedCount || 0,
         completedCount: b?.completedCount || 0,
         refundedCount: b?.refundedCount || 0,
-        totalFeeCollected: (b?.paidCount || 0) * APPLICATION_FEE,
+        totalFeeCollected:
+          b?.feeCollected != null
+            ? b.feeCollected
+            : (b?.paidCount || 0) * APPLICATION_FEE,
         totalShareAccrued: b?.earned || 0,
         totalPaid: b?.paidOut || 0,
         reserved: b?.reserved || 0,
@@ -516,11 +529,19 @@ export default function PaymentsPage() {
             </div>
             <h1 className="text-2xl font-bold tracking-tight text-white">Payment Releases & 50% Agent Fee Split</h1>
             <p className="text-slate-300 text-xs mt-1 max-w-2xl leading-relaxed">
-              Place4U collects the R100 tenant application assistance fee and pays <strong>50% (R50.00)</strong> of our payment to the processing agent. Authorize agent payouts, process full tenant refunds, and maintain audit records.
+              Place4U collects the tenant application fee (normally R100; live promotions can reduce or waive it) and pays <strong>50% of the amount collected (up to R50.00)</strong> to the processing agent. Authorize agent payouts, process tenant refunds, and maintain audit records.
             </p>
           </div>
 
           <div className="flex flex-wrap items-center gap-2.5">
+            <Link
+              to="/admin/promotions"
+              className="inline-flex items-center gap-2 px-3.5 py-2 rounded-lg bg-white/10 hover:bg-white/15 text-white text-xs font-semibold backdrop-blur-sm border border-white/10 transition-colors"
+            >
+              <Percent size={13} />
+              Promotions
+            </Link>
+
             <button
               onClick={() => {
                 setCustomAgentId(agents[0]?.id || '')
@@ -736,7 +757,7 @@ export default function PaymentsPage() {
 
               <div className="text-[11px] text-slate-500 flex items-center gap-1.5">
                 <span className="w-2 h-2 rounded-full bg-emerald-500 inline-block" />
-                <span>Application Fee: <strong>R100</strong> → Agent Split (50%): <strong>R50.00</strong></span>
+                <span>Application Fee: <strong>R100</strong> (or promotional amount) → Agent Split (50%): <strong>up to R50.00</strong></span>
               </div>
             </div>
 
@@ -1149,7 +1170,7 @@ export default function PaymentsPage() {
                       </td>
 
                       <td className="px-4 py-3.5 font-mono font-bold text-slate-900">
-                        R{item.feePaid}.00
+                        {formatCurrency(item.feePaid)}
                       </td>
 
                       <td className="px-4 py-3.5">
@@ -1170,7 +1191,7 @@ export default function PaymentsPage() {
                                 openEmailClient(
                                   item.tenantEmail,
                                   `Place4U Application Fee Refund Receipt: ${item.refundRecord?.id || 'REF'}`,
-                                  `Hi ${item.tenantName},\n\nYour application fee refund of R${item.refundRecord?.amount || 100}.00 has been released.\nReference: ${item.refundRecord?.id}\nMethod: ${item.refundRecord?.method}\n\nPlace4U Admin`
+                                  `Hi ${item.tenantName},\n\nYour application fee refund of R${item.refundRecord?.amount ?? 0}.00 has been released.\nReference: ${item.refundRecord?.id}\nMethod: ${item.refundRecord?.method}\n\nPlace4U Admin`
                                 )
                               }
                               className="px-2.5 py-1 rounded bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-[11px] inline-flex items-center gap-1 cursor-pointer"
@@ -1184,12 +1205,12 @@ export default function PaymentsPage() {
                               disabled={!item.canRefund || busy}
                               onClick={() => {
                                 setRefundModalItem(item)
-                                setRefundAmount(String(item.feePaid || 100))
+                                setRefundAmount(String(item.feePaid ?? 100))
                               }}
                               className="px-3 py-1 rounded-lg bg-blue-600 hover:bg-blue-500 text-white font-semibold text-[11px] shadow-xs transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
                               title={item.canRefund ? 'Refund the tenant and remove the agent share for this file' : 'No completed fee payment to refund'}
                             >
-                              Release R100 Refund
+                              Release Fee Refund
                             </button>
                           )}
                         </div>
