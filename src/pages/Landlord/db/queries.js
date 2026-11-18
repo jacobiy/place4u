@@ -552,16 +552,19 @@ export const LandlordQueries = {
   // Add verification document
   async addVerificationDocument(profileId, document) {
     try {
-      // First get current documents
-      const { data: profile, error: fetchError } = await supabase
-        .from('landlord_profiles')
-        .select('verification_documents')
-        .eq('id', profileId)
-        .single();
+      // Look up current profile by id or user_id
+      let query = supabase.from('landlord_profiles').select('id, user_id, verification_documents, application_status');
+      if (String(profileId).startsWith('profile-')) {
+        // May be synthetic ID or user_id
+        query = query.or(`id.eq.${profileId},user_id.eq.${profileId.replace('profile-', '')}`);
+      } else {
+        query = query.or(`id.eq.${profileId},user_id.eq.${profileId}`);
+      }
       
-      if (fetchError) throw fetchError;
+      const { data: profile } = await query.maybeSingle();
       
-      const currentDocs = profile.verification_documents || [];
+      const currentDocs = profile?.verification_documents || [];
+      const docUrl = document.storagePath || document.fileUrl;
       const newDoc = {
         id: document.id || `doc-${Date.now()}-${Math.random().toString(36).substr(2, 6)}`,
         uploadedAt: new Date().toISOString(),
@@ -575,19 +578,30 @@ export const LandlordQueries = {
         updated_at: new Date().toISOString()
       };
 
-      // If document is proof of ownership or ID, update corresponding verified flag if requested
+      if (!profile || profile.application_status === 'not_applied') {
+        updates.application_status = 'pending_review';
+        updates.application_submitted_at = new Date().toISOString();
+      }
+
+      // If document is proof of ownership or ID, update corresponding verified flag and direct URL
       if (document.documentType === 'ownership') {
         updates.ownership_proof_verified = true;
+        updates.ownership_doc_url = docUrl;
       } else if (document.documentType === 'id') {
         updates.id_verified = true;
+        updates.id_document_url = docUrl;
+      } else if (document.documentType === 'rates') {
+        updates.rates_taxes_doc_url = docUrl;
       }
       
-      const { data, error } = await supabase
-        .from('landlord_profiles')
-        .update(updates)
-        .eq('id', profileId)
-        .select()
-        .single();
+      let updateQuery;
+      if (profile?.id) {
+        updateQuery = supabase.from('landlord_profiles').update(updates).eq('id', profile.id);
+      } else {
+        updateQuery = supabase.from('landlord_profiles').upsert({ user_id: profileId, ...updates }, { onConflict: 'user_id' });
+      }
+
+      const { data, error } = await updateQuery.select().single();
       
       if (error) throw error;
       return { success: true, data };
@@ -1440,7 +1454,65 @@ export const LandlordQueries = {
         notes
       } = applicationData;
 
+      // Preserve or initialize verification_documents
+      let existingDocs = [];
+      try {
+        const { data: existingProf } = await supabase
+          .from('landlord_profiles')
+          .select('verification_documents')
+          .eq('user_id', userId)
+          .maybeSingle();
+        if (Array.isArray(existingProf?.verification_documents)) {
+          existingDocs = existingProf.verification_documents;
+        }
+      } catch {}
+
+      const newDocs = [...existingDocs];
+      if (ownershipDocUrl) {
+        const existingIdx = newDocs.findIndex((d) => d.documentType === 'ownership');
+        const docObj = {
+          id: `doc-ownership-${Date.now()}`,
+          title: 'Proof of Ownership / Title Deed',
+          documentType: 'ownership',
+          fileUrl: ownershipDocUrl,
+          storagePath: ownershipDocUrl,
+          uploadedAt: new Date().toISOString(),
+          status: 'under_review'
+        };
+        if (existingIdx >= 0) newDocs[existingIdx] = docObj;
+        else newDocs.push(docObj);
+      }
+      if (idDocUrl) {
+        const existingIdx = newDocs.findIndex((d) => d.documentType === 'id');
+        const docObj = {
+          id: `doc-id-${Date.now()}`,
+          title: 'National Identity / Passport Document',
+          documentType: 'id',
+          fileUrl: idDocUrl,
+          storagePath: idDocUrl,
+          uploadedAt: new Date().toISOString(),
+          status: 'under_review'
+        };
+        if (existingIdx >= 0) newDocs[existingIdx] = docObj;
+        else newDocs.push(docObj);
+      }
+      if (ratesTaxesDocUrl) {
+        const existingIdx = newDocs.findIndex((d) => d.documentType === 'rates');
+        const docObj = {
+          id: `doc-rates-${Date.now()}`,
+          title: 'Municipal Rates & Taxes Statement',
+          documentType: 'rates',
+          fileUrl: ratesTaxesDocUrl,
+          storagePath: ratesTaxesDocUrl,
+          uploadedAt: new Date().toISOString(),
+          status: 'under_review'
+        };
+        if (existingIdx >= 0) newDocs[existingIdx] = docObj;
+        else newDocs.push(docObj);
+      }
+
       const payload = {
+        user_id: userId,
         full_name: fullName,
         company_name: companyName,
         tax_id: taxId,
@@ -1457,14 +1529,14 @@ export const LandlordQueries = {
         id_document_url: idDocUrl || null,
         ownership_doc_url: ownershipDocUrl || null,
         rates_taxes_doc_url: ratesTaxesDocUrl || null,
+        verification_documents: newDocs,
         application_notes: notes || null,
         updated_at: new Date().toISOString()
       };
 
       const { data, error } = await supabase
         .from('landlord_profiles')
-        .update(payload)
-        .eq('user_id', userId)
+        .upsert(payload, { onConflict: 'user_id' })
         .select()
         .single();
 

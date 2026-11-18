@@ -6,6 +6,18 @@ import {
   formatDate,
   openEmailClient
 } from './db/queries'
+import { openDocumentSafely } from '../../utils/documentUrls'
+
+const isPdfUrl = (url) => {
+  if (!url || typeof url !== 'string') return false
+  const clean = url.split('?')[0].toLowerCase()
+  return (
+    clean.endsWith('.pdf') ||
+    url.includes('application/pdf') ||
+    url.includes('.pdf?') ||
+    url.startsWith('data:application/pdf')
+  )
+}
 import {
   Building2,
   ShieldCheck,
@@ -783,11 +795,11 @@ export default function LandlordApplicationsPage() {
                       <span className="text-[10px] text-slate-400 font-normal">Click thumbnail to inspect</span>
                     </h4>
 
-                    <div className="grid grid-cols-2 gap-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                       {/* Title Deed */}
                       <div className="border border-slate-200 rounded-lg p-2.5 bg-white space-y-1.5">
                         <div className="flex items-center justify-between">
-                          <span className="font-semibold text-[11px] text-slate-700">Deeds Office Title Deed</span>
+                          <span className="font-semibold text-[11px] text-slate-700">Title Deed / Ownership</span>
                           {selectedApp.title_deed_url && (
                             <button
                               type="button"
@@ -804,15 +816,67 @@ export default function LandlordApplicationsPage() {
                             onClick={() => setPreviewDoc({ title: `Title Deed — ${selectedApp.full_name}`, url: selectedApp.title_deed_url })}
                             className="aspect-video bg-slate-100 rounded border border-slate-200 overflow-hidden cursor-pointer group relative"
                           >
-                            <img
-                              src={selectedApp.title_deed_url}
-                              alt="Title Deed Document"
-                              loading="eager"
-                              crossOrigin="anonymous"
-                              className="w-full h-full object-cover group-hover:scale-105 transition duration-200"
-                            />
-                            <div className="absolute inset-0 bg-slate-900/30 opacity-0 group-hover:opacity-100 transition flex items-center justify-center text-white font-semibold text-[10px]">
+                            {isPdfUrl(selectedApp.title_deed_url) ? (
+                              <div className="w-full h-full bg-rose-50 border border-rose-100 flex flex-col items-center justify-center p-2 text-rose-600 gap-1">
+                                <FileText size={22} className="text-rose-500" />
+                                <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-rose-700">PDF Title Deed</span>
+                              </div>
+                            ) : (
+                              <img
+                                src={selectedApp.title_deed_url}
+                                alt="Title Deed Document"
+                                loading="eager"
+                                crossOrigin="anonymous"
+                                className="w-full h-full object-cover group-hover:scale-105 transition duration-200"
+                              />
+                            )}
+                            <div className="absolute inset-0 bg-slate-900/40 opacity-0 group-hover:opacity-100 transition flex items-center justify-center text-white font-semibold text-[10px]">
                               Inspect Deed
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="aspect-video bg-slate-50 rounded border border-dashed border-slate-200 flex items-center justify-center text-slate-400 text-[10px]">
+                            Not uploaded
+                          </div>
+                        )}
+                      </div>
+
+                      {/* National ID / Passport */}
+                      <div className="border border-slate-200 rounded-lg p-2.5 bg-white space-y-1.5">
+                        <div className="flex items-center justify-between">
+                          <span className="font-semibold text-[11px] text-slate-700">National ID / FICA</span>
+                          {selectedApp.id_document_url && (
+                            <button
+                              type="button"
+                              onClick={() => setPreviewDoc({ title: `Identity Document — ${selectedApp.full_name}`, url: selectedApp.id_document_url })}
+                              className="text-emerald-600 hover:text-emerald-800"
+                              title="Enlarge"
+                            >
+                              <Maximize2 size={12} />
+                            </button>
+                          )}
+                        </div>
+                        {selectedApp.id_document_url ? (
+                          <div
+                            onClick={() => setPreviewDoc({ title: `Identity Document — ${selectedApp.full_name}`, url: selectedApp.id_document_url })}
+                            className="aspect-video bg-slate-100 rounded border border-slate-200 overflow-hidden cursor-pointer group relative"
+                          >
+                            {isPdfUrl(selectedApp.id_document_url) ? (
+                              <div className="w-full h-full bg-emerald-50 border border-emerald-100 flex flex-col items-center justify-center p-2 text-emerald-600 gap-1">
+                                <FileText size={22} className="text-emerald-500" />
+                                <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-emerald-700">PDF ID Document</span>
+                              </div>
+                            ) : (
+                              <img
+                                src={selectedApp.id_document_url}
+                                alt="ID Document"
+                                loading="eager"
+                                crossOrigin="anonymous"
+                                className="w-full h-full object-cover group-hover:scale-105 transition duration-200"
+                              />
+                            )}
+                            <div className="absolute inset-0 bg-slate-900/40 opacity-0 group-hover:opacity-100 transition flex items-center justify-center text-white font-semibold text-[10px]">
+                              Inspect ID
                             </div>
                           </div>
                         ) : (
@@ -830,7 +894,7 @@ export default function LandlordApplicationsPage() {
                             <button
                               type="button"
                               onClick={() => setPreviewDoc({ title: `Municipal Rates — ${selectedApp.full_name}`, url: selectedApp.rates_taxes_url })}
-                              className="text-blue-600 hover:text-blue-800"
+                              className="text-indigo-600 hover:text-indigo-800"
                               title="Enlarge"
                             >
                               <Maximize2 size={12} />
@@ -842,14 +906,21 @@ export default function LandlordApplicationsPage() {
                             onClick={() => setPreviewDoc({ title: `Municipal Rates — ${selectedApp.full_name}`, url: selectedApp.rates_taxes_url })}
                             className="aspect-video bg-slate-100 rounded border border-slate-200 overflow-hidden cursor-pointer group relative"
                           >
-                            <img
-                              src={selectedApp.rates_taxes_url}
-                              alt="Rates & Taxes Statement"
-                              loading="eager"
-                              crossOrigin="anonymous"
-                              className="w-full h-full object-cover group-hover:scale-105 transition duration-200"
-                            />
-                            <div className="absolute inset-0 bg-slate-900/30 opacity-0 group-hover:opacity-100 transition flex items-center justify-center text-white font-semibold text-[10px]">
+                            {isPdfUrl(selectedApp.rates_taxes_url) ? (
+                              <div className="w-full h-full bg-indigo-50 border border-indigo-100 flex flex-col items-center justify-center p-2 text-indigo-600 gap-1">
+                                <FileText size={22} className="text-indigo-500" />
+                                <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-indigo-700">PDF Rates Bill</span>
+                              </div>
+                            ) : (
+                              <img
+                                src={selectedApp.rates_taxes_url}
+                                alt="Rates & Taxes Statement"
+                                loading="eager"
+                                crossOrigin="anonymous"
+                                className="w-full h-full object-cover group-hover:scale-105 transition duration-200"
+                              />
+                            )}
+                            <div className="absolute inset-0 bg-slate-900/40 opacity-0 group-hover:opacity-100 transition flex items-center justify-center text-white font-semibold text-[10px]">
                               Inspect Statement
                             </div>
                           </div>
@@ -860,6 +931,29 @@ export default function LandlordApplicationsPage() {
                         )}
                       </div>
                     </div>
+
+                    {/* Any additional verification documents on record */}
+                    {Array.isArray(selectedApp.verification_documents) && selectedApp.verification_documents.length > 0 && (
+                      <div className="mt-3 pt-3 border-t border-slate-200">
+                        <span className="text-[10px] uppercase font-bold text-slate-500 tracking-wider block mb-2">
+                          Additional Documents ({selectedApp.verification_documents.length})
+                        </span>
+                        <div className="flex flex-wrap gap-2">
+                          {selectedApp.verification_documents.map((doc, idx) => (
+                            <button
+                              key={doc.id || idx}
+                              type="button"
+                              onClick={() => setPreviewDoc({ title: `${doc.title || doc.documentType} — ${selectedApp.full_name}`, url: doc.resolvedUrl || doc.fileUrl || doc.storagePath })}
+                              className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-white hover:bg-slate-50 border border-slate-200 rounded text-xs text-slate-700 cursor-pointer shadow-2xs"
+                            >
+                              <FileText size={12} className="text-emerald-600" />
+                              <span className="font-medium truncate max-w-[150px]">{doc.title || doc.fileName || doc.documentType}</span>
+                              <Eye size={11} className="text-slate-400" />
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </div>
 
                   {/* Deeds Office Verification Audit Checklist */}
@@ -961,15 +1055,15 @@ export default function LandlordApplicationsPage() {
                 {previewDoc.title}
               </span>
               <div className="flex items-center gap-2">
-                <a
-                  href={previewDoc.url}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="text-xs text-emerald-600 hover:text-emerald-800 font-semibold flex items-center gap-1"
-                >
-                  <ExternalLink size={12} /> Open Full Size
-                </a>
                 <button
+                  type="button"
+                  onClick={() => openDocumentSafely(previewDoc.url, { fileName: `${previewDoc.title || 'document'}.pdf` })}
+                  className="px-2.5 py-1 text-xs text-emerald-600 hover:text-emerald-800 font-semibold flex items-center gap-1 bg-emerald-50 hover:bg-emerald-100 rounded-lg border border-emerald-200 transition cursor-pointer"
+                >
+                  <ExternalLink size={12} /> Open Full Size / Download
+                </button>
+                <button
+                  type="button"
                   onClick={() => setPreviewDoc(null)}
                   className="text-slate-400 hover:text-slate-600 p-1 cursor-pointer"
                 >
@@ -978,11 +1072,30 @@ export default function LandlordApplicationsPage() {
               </div>
             </div>
 
-            <div className="bg-slate-100 rounded-xl overflow-hidden max-h-[70vh] flex items-center justify-center border border-slate-200">
-              <img
+            <div className="bg-slate-100 rounded-xl overflow-hidden min-h-[45vh] max-h-[75vh] flex items-center justify-center border border-slate-200 w-full relative">
+              {isPdfUrl(previewDoc.url) ? (
+                <iframe
+                  src={previewDoc.url}
+                  title={previewDoc.title}
+                  className="w-full h-[70vh] rounded-lg border-0 bg-white"
+                />
+              ) : (
+                <img
+                  src={previewDoc.url}
+                  alt={previewDoc.title || "Document Preview"}
+                  className="max-h-[70vh] w-auto object-contain"
+                  onError={(e) => {
+                    e.currentTarget.style.display = 'none';
+                    if (e.currentTarget.nextSibling) {
+                      e.currentTarget.nextSibling.style.display = 'block';
+                    }
+                  }}
+                />
+              )}
+              <iframe
                 src={previewDoc.url}
-                alt="Document Preview"
-                className="max-h-[70vh] w-auto object-contain"
+                title={previewDoc.title}
+                className="w-full h-[70vh] rounded-lg border-0 bg-white hidden"
               />
             </div>
           </div>

@@ -73,24 +73,44 @@ export const LandlordApplicationModal = ({
 
   if (!isOpen) return null;
 
-  const handleFileUpload = (field, file) => {
+  const handleFileUpload = async (field, file) => {
     if (!file) return;
     setUploadingField(field);
     setError('');
 
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      const dataUrl = e.target.result;
-      setFormData((prev) => ({ ...prev, [field]: dataUrl }));
-      setUploadingField(null);
-    };
+    try {
+      if (user?.id) {
+        const uploadRes = await LandlordQueries.uploadVerificationDocumentFile(user.id, file);
+        if (uploadRes?.success && (uploadRes.storagePath || uploadRes.url)) {
+          const finalRef = uploadRes.storagePath || uploadRes.url;
+          setFormData((prev) => ({ ...prev, [field]: finalRef }));
+          setUploadingField(null);
+          return;
+        }
+      }
 
-    reader.onerror = () => {
-      setError('Could not process file. Please try another image or document.');
-      setUploadingField(null);
-    };
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const dataUrl = e.target.result;
+        setFormData((prev) => ({ ...prev, [field]: dataUrl }));
+        setUploadingField(null);
+      };
 
-    reader.readAsDataURL(file);
+      reader.onerror = () => {
+        setError('Could not process file. Please try another image or document.');
+        setUploadingField(null);
+      };
+
+      reader.readAsDataURL(file);
+    } catch (err) {
+      console.warn('Upload error, falling back to data URL:', err);
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        setFormData((prev) => ({ ...prev, [field]: e.target.result }));
+        setUploadingField(null);
+      };
+      reader.readAsDataURL(file);
+    }
   };
 
   const handleUseDemo = (field, sampleUrl) => {

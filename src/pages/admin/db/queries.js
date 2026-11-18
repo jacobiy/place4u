@@ -750,36 +750,82 @@ export const getAdminLandlordApplications = async () => {
         const ownedProps = props.filter((p) => p.landlord_id === u.id)
         const portfolioValue = ownedProps.reduce((sum, p) => sum + (Number(p.price) || 0), 0)
         const lpRow = landlordProfileRows.find((lp) => lp.user_id === u.id)
-        const vStatus = lpRow?.application_status || 'not_applied'
+        const vStatus = lpRow?.application_status || (u.is_verified ? 'approved' : 'not_applied')
+        const vDocs = Array.isArray(lpRow?.verification_documents) ? lpRow.verification_documents : []
+        const deedDoc = vDocs.find((d) => d.documentType === 'ownership')
+        const idDoc = vDocs.find((d) => d.documentType === 'id')
+        const ratesDoc = vDocs.find((d) => d.documentType === 'rates')
 
         list.push({
           id: u.id,
           user_id: u.id,
-          full_name: u.full_name || 'Landlord Applicant',
+          full_name: u.full_name || lpRow?.full_name || 'Landlord Applicant',
           email: u.email,
-          phone: u.phone || '0710000000',
-          id_number: u.id_number || null,
+          phone: u.phone || lpRow?.phone || '0710000000',
+          id_number: u.id_number || lpRow?.id_number || null,
           entity_type: 'Private Landlord',
-          company_name: 'Direct Property Owner',
-          tax_id: null,
+          company_name: lpRow?.company_name || 'Direct Property Owner',
+          tax_id: lpRow?.tax_id || null,
           address: lpRow?.address || null,
           city: lpRow?.city || null,
           province: lpRow?.province || 'Gauteng',
           postal_code: lpRow?.postal_code || null,
           property_count: ownedProps.length || 1,
           estimated_portfolio_value: portfolioValue || 0,
-          title_deed_url: lpRow?.ownership_doc_url || null,
-          rates_taxes_url: lpRow?.rates_taxes_doc_url || null,
-          id_document_url: lpRow?.id_document_url || null,
+          title_deed_url: lpRow?.ownership_doc_url || deedDoc?.storagePath || deedDoc?.fileUrl || null,
+          rates_taxes_url: lpRow?.rates_taxes_doc_url || ratesDoc?.storagePath || ratesDoc?.fileUrl || null,
+          id_document_url: lpRow?.id_document_url || idDoc?.storagePath || idDoc?.fileUrl || null,
+          verification_documents: vDocs,
           verification_status: vStatus,
           application_status: vStatus,
-          is_verified: Boolean(u.is_verified),
-          id_verified: Boolean(u.is_verified),
-          ownership_proof_verified: Boolean(u.is_verified),
+          is_verified: Boolean(u.is_verified || lpRow?.application_status === 'approved'),
+          id_verified: Boolean(u.is_verified || lpRow?.id_verified),
+          ownership_proof_verified: Boolean(u.is_verified || lpRow?.ownership_proof_verified),
           submitted_at: lpRow?.application_submitted_at || u.created_at || new Date().toISOString(),
-          approved_at: u.is_verified ? u.updated_at || u.created_at : null,
+          approved_at: u.is_verified ? u.updated_at || u.created_at : lpRow?.approved_at || null,
           rejection_reason: lpRow?.rejection_reason || null,
           admin_notes: lpRow?.application_notes || 'Direct landlord registration synced from Supabase.'
+        })
+      }
+    }
+
+    // Also include any landlord_profiles rows whose account is not yet in list
+    for (const lp of landlordProfileRows) {
+      if (!list.some((item) => item.user_id === lp.user_id)) {
+        const vDocs = Array.isArray(lp.verification_documents) ? lp.verification_documents : []
+        const deedDoc = vDocs.find((d) => d.documentType === 'ownership')
+        const idDoc = vDocs.find((d) => d.documentType === 'id')
+        const ratesDoc = vDocs.find((d) => d.documentType === 'rates')
+
+        list.push({
+          id: lp.id || lp.user_id,
+          user_id: lp.user_id,
+          full_name: lp.full_name || 'Landlord Applicant',
+          email: lp.email || '',
+          phone: lp.phone || '',
+          id_number: lp.id_number || null,
+          entity_type: 'Private Landlord',
+          company_name: lp.company_name || 'Direct Property Owner',
+          tax_id: lp.tax_id || null,
+          address: lp.address || null,
+          city: lp.city || null,
+          province: lp.province || 'Gauteng',
+          postal_code: lp.postal_code || null,
+          property_count: 1,
+          estimated_portfolio_value: 0,
+          title_deed_url: lp.ownership_doc_url || deedDoc?.storagePath || deedDoc?.fileUrl || null,
+          rates_taxes_url: lp.rates_taxes_doc_url || ratesDoc?.storagePath || ratesDoc?.fileUrl || null,
+          id_document_url: lp.id_document_url || idDoc?.storagePath || idDoc?.fileUrl || null,
+          verification_documents: vDocs,
+          verification_status: lp.application_status || 'pending_review',
+          application_status: lp.application_status || 'pending_review',
+          is_verified: lp.application_status === 'approved',
+          id_verified: Boolean(lp.id_verified),
+          ownership_proof_verified: Boolean(lp.ownership_proof_verified),
+          submitted_at: lp.application_submitted_at || lp.created_at || new Date().toISOString(),
+          approved_at: lp.approved_at || null,
+          rejection_reason: lp.rejection_reason || null,
+          admin_notes: lp.application_notes || 'Direct landlord registration.'
         })
       }
     }
