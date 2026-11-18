@@ -52,35 +52,11 @@ import { formatZarAmount } from '../../services/promotionService'
 
 // Live listings are loaded from the database only; no sample fallback.
 
-// Curated architectural photos for complete gallery presentation if a listing has only 1 image
-const PROPERTY_TYPE_GALLERY_FALLBACKS = {
-	house: [
-		'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=1200&auto=format&fit=crop&q=80',
-		'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=1200&auto=format&fit=crop&q=80',
-		'https://images.unsplash.com/photo-1600566753376-12c8ab7fb75b?w=1200&auto=format&fit=crop&q=80',
-		'https://images.unsplash.com/photo-1600573472591-ee6b68d14c68?w=1200&auto=format&fit=crop&q=80'
-	],
-	apartment: [
-		'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=1200&auto=format&fit=crop&q=80',
-		'https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=1200&auto=format&fit=crop&q=80',
-		'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=1200&auto=format&fit=crop&q=80',
-		'https://images.unsplash.com/photo-1484154218962-a197022b5858?w=1200&auto=format&fit=crop&q=80'
-	],
-	room: [
-		'https://images.unsplash.com/photo-1555854877-bab0e564b8d5?w=1200&auto=format&fit=crop&q=80',
-		'https://images.unsplash.com/photo-1595526114035-0d45ed16cfbf?w=1200&auto=format&fit=crop&q=80',
-		'https://images.unsplash.com/photo-1513694203232-719a280e022f?w=1200&auto=format&fit=crop&q=80'
-	],
-	backroom: [
-		'https://images.unsplash.com/photo-1598928506311-c55ded91a20c?w=1200&auto=format&fit=crop&q=80',
-		'https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=1200&auto=format&fit=crop&q=80',
-		'https://images.unsplash.com/photo-1513694203232-719a280e022f?w=1200&auto=format&fit=crop&q=80'
-	],
-	commercial: [
-		'https://images.unsplash.com/photo-1497366216548-37526070297c?w=1200&auto=format&fit=crop&q=80',
-		'https://images.unsplash.com/photo-1497215728101-856f4ea42174?w=1200&auto=format&fit=crop&q=80'
-	]
-}
+// A listing's gallery must only ever contain photographs of THAT property.
+// Stock "architectural" images used to be appended to fill the gallery out to
+// 3-4 frames, which made a landlord's own 2 photos appear alongside 2 unrelated
+// Unsplash interiors. Placeholders are now used solely when a listing has no
+// photos at all.
 
 // Real listings come from `public.properties`. These maps turn a DB row into the
 // shape the marketing cards expect.
@@ -125,15 +101,10 @@ const mapDbProperty = (row) => {
 				? [row.image_url]
 				: []
 
-	const fallbackList =
-		PROPERTY_TYPE_GALLERY_FALLBACKS[row.property_type] ||
-		PROPERTY_TYPE_GALLERY_FALLBACKS.apartment
-	const images =
-		rawImages.length >= 2
-			? rawImages
-			: rawImages.length === 1
-				? [rawImages[0], ...fallbackList.slice(1)]
-				: fallbackList
+	// Only this listing's own photos. A single photo stays a single photo rather
+	// than being topped up with unrelated stock imagery; the placeholder image is
+	// reserved for listings with no photos at all.
+	const images = rawImages.length > 0 ? rawImages : [DEFAULT_PROPERTY_IMAGE]
 
 	const typeLabel = PROPERTY_TYPE_LABELS[row.property_type] || 'Residence'
 	const locality =

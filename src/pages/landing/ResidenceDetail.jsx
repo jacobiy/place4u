@@ -41,33 +41,10 @@ import { useFeeQuote } from '../../hooks/useFeeQuote'
 import { formatZarAmount } from '../../services/promotionService'
 import { applySeo } from '../../utils/seo'
 
-// Fallback architectural gallery photos if property has only 1 image
-const PROPERTY_TYPE_GALLERY_FALLBACKS = {
-	house: [
-		'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=1200&auto=format&fit=crop&q=80',
-		'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=1200&auto=format&fit=crop&q=80',
-		'https://images.unsplash.com/photo-1600566753376-12c8ab7fb75b?w=1200&auto=format&fit=crop&q=80',
-		'https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?w=1200&auto=format&fit=crop&q=80'
-	],
-	apartment: [
-		'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?w=1200&auto=format&fit=crop&q=80',
-		'https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=1200&auto=format&fit=crop&q=80',
-		'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=1200&auto=format&fit=crop&q=80',
-		'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=1200&auto=format&fit=crop&q=80'
-	],
-	room: [
-		'https://images.unsplash.com/photo-1555854877-bab0e564b8d5?w=1200&auto=format&fit=crop&q=80',
-		'https://images.unsplash.com/photo-1595526114035-0d45ed16cfbf?w=1200&auto=format&fit=crop&q=80',
-		'https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=1200&auto=format&fit=crop&q=80',
-		'https://images.unsplash.com/photo-1522771739844-6a9f6d5f14af?w=1200&auto=format&fit=crop&q=80'
-	],
-	backroom: [
-		'https://images.unsplash.com/photo-1513694203232-719a280e022f?w=1200&auto=format&fit=crop&q=80',
-		'https://images.unsplash.com/photo-1484154218962-a197022b5858?w=1200&auto=format&fit=crop&q=80',
-		'https://images.unsplash.com/photo-1493809842364-78817add7ffb?w=1200&auto=format&fit=crop&q=80',
-		'https://images.unsplash.com/photo-1505691938895-1758d7feb511?w=1200&auto=format&fit=crop&q=80'
-	]
-}
+// A listing's gallery is built ONLY from that listing's own photographs. An
+// earlier version topped a short gallery up with stock "architectural" images,
+// which showed a landlord's 2 uploads next to 2 unrelated Unsplash interiors.
+// Placeholders are reserved for listings with no photos at all.
 
 const DEFAULT_GALLERY = [
 	'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=1200&auto=format&fit=crop&q=80',
@@ -177,14 +154,10 @@ export default function ResidenceDetail() {
 							? [property.image]
 							: []
 
-		const fallbackList =
-			PROPERTY_TYPE_GALLERY_FALLBACKS[property.property_type] ||
-			PROPERTY_TYPE_GALLERY_FALLBACKS.house ||
-			DEFAULT_GALLERY
-
-		if (rawImages.length >= 3) return rawImages
-		if (rawImages.length > 0) return [...rawImages, ...fallbackList.slice(rawImages.length)]
-		return fallbackList
+		// Only this listing's real photos. Never append stock imagery to a short
+		// gallery — a 2-photo listing shows 2 photos, not 2 photos plus 2 fillers.
+		if (rawImages.length > 0) return rawImages
+		return [DEFAULT_GALLERY[0]]
 	}, [property])
 
 	const nextPhoto = () => setActivePhotoIndex((i) => (i + 1) % gallery.length)
