@@ -164,6 +164,15 @@ export function resolveSeoForPath(pathname) {
     });
   }
 
+  if (path.startsWith('/property/') || path.startsWith('/residence/')) {
+    return buildSeo({
+      title: `Verified Residence Listing | ${SITE_NAME}`,
+      description: 'Explore verified rental accommodation with landlord identity and ownership documents reviewed by Place4U.',
+      canonicalPath: path,
+      robots: DEFAULT_ROBOTS
+    });
+  }
+
   const alias = ROUTE_ALIASES[path];
   const known = ROUTE_SEO[path];
   // An alias renders the same component as its primary, so it adopts the

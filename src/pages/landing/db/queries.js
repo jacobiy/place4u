@@ -3,9 +3,11 @@ import { supabase } from '../../../utils/Supabase'
 // Columns shown on the public landing page. The landlord embed gives us the
 // verified owner's display name for the trust badge.
 const SELECT_WITH_LANDLORD = `
-  id, address, area, city, province, property_type, price,
-  bedrooms, bathrooms, furnished, pet_friendly, available_from,
-  image_urls, image_url, is_active, approval_status, created_at,
+  id, title, description, address, area, city, province, postal_code,
+  property_type, complex_name, price, deposit, deposit_amount, lease_term,
+  bedrooms, bathrooms, size, parking_bays, parking_type, amenities,
+  water_included, electricity_type, max_occupants, furnished, pet_friendly,
+  available_from, image_urls, is_active, approval_status, created_at,
   landlord:users!properties_landlord_id_fkey(full_name)
 `
 
@@ -45,5 +47,32 @@ export const getFeaturedProperties = async ({ limit = 24 } = {}) => {
   console.warn(
     'Could not load live properties for the landing page. Ensure the properties table is publicly readable (see database/public_listings_read.sql).'
   )
+  return null
+}
+
+/**
+ * Fetch a single property by its ID for the residence detail page.
+ *
+ * @param {string} id
+ * @returns {Promise<Object|null>} property row on success, or null
+ */
+export const getPropertyById = async (id) => {
+  if (!id) return null
+
+  const attempts = [
+    { select: SELECT_WITH_LANDLORD },
+    { select: '*' }
+  ]
+
+  for (const { select } of attempts) {
+    const { data, error } = await supabase
+      .from('properties')
+      .select(select)
+      .eq('id', id)
+      .maybeSingle()
+
+    if (!error && data) return data
+  }
+
   return null
 }

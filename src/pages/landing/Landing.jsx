@@ -20,7 +20,26 @@ import {
 	FaBan,
 	FaComments
 } from 'react-icons/fa'
-import { Link } from 'react-router-dom'
+import {
+	BedDouble,
+	Bath,
+	Maximize2,
+	Car,
+	ShieldCheck,
+	CheckCircle2,
+	Share2,
+	Sparkles,
+	ChevronLeft,
+	ChevronRight,
+	MapPin,
+	Building2,
+	Check,
+	Copy,
+	Calendar,
+	Lock,
+	ArrowUpRight
+} from 'lucide-react'
+import { Link, useNavigate } from 'react-router-dom'
 import Navbar from '../../component/Navbar'
 import Footer from '../../component/Footer'
 import TeamSection from '../../component/TeamSection'
@@ -33,14 +52,44 @@ import { formatZarAmount } from '../../services/promotionService'
 
 // Live listings are loaded from the database only; no sample fallback.
 
+// Curated architectural photos for complete gallery presentation if a listing has only 1 image
+const PROPERTY_TYPE_GALLERY_FALLBACKS = {
+	house: [
+		'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=1200&auto=format&fit=crop&q=80',
+		'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=1200&auto=format&fit=crop&q=80',
+		'https://images.unsplash.com/photo-1600566753376-12c8ab7fb75b?w=1200&auto=format&fit=crop&q=80',
+		'https://images.unsplash.com/photo-1600573472591-ee6b68d14c68?w=1200&auto=format&fit=crop&q=80'
+	],
+	apartment: [
+		'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=1200&auto=format&fit=crop&q=80',
+		'https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=1200&auto=format&fit=crop&q=80',
+		'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=1200&auto=format&fit=crop&q=80',
+		'https://images.unsplash.com/photo-1484154218962-a197022b5858?w=1200&auto=format&fit=crop&q=80'
+	],
+	room: [
+		'https://images.unsplash.com/photo-1555854877-bab0e564b8d5?w=1200&auto=format&fit=crop&q=80',
+		'https://images.unsplash.com/photo-1595526114035-0d45ed16cfbf?w=1200&auto=format&fit=crop&q=80',
+		'https://images.unsplash.com/photo-1513694203232-719a280e022f?w=1200&auto=format&fit=crop&q=80'
+	],
+	backroom: [
+		'https://images.unsplash.com/photo-1598928506311-c55ded91a20c?w=1200&auto=format&fit=crop&q=80',
+		'https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=1200&auto=format&fit=crop&q=80',
+		'https://images.unsplash.com/photo-1513694203232-719a280e022f?w=1200&auto=format&fit=crop&q=80'
+	],
+	commercial: [
+		'https://images.unsplash.com/photo-1497366216548-37526070297c?w=1200&auto=format&fit=crop&q=80',
+		'https://images.unsplash.com/photo-1497215728101-856f4ea42174?w=1200&auto=format&fit=crop&q=80'
+	]
+}
+
 // Real listings come from `public.properties`. These maps turn a DB row into the
 // shape the marketing cards expect.
 const PROPERTY_TYPE_LABELS = {
 	house: 'House',
 	apartment: 'Apartment',
-	room: 'Room',
-	backroom: 'Backroom',
-	commercial: 'Commercial'
+	room: 'Student Digs',
+	backroom: 'Cottage / Backroom',
+	commercial: 'Commercial Space'
 }
 
 const PROPERTY_TYPE_CATEGORY = {
@@ -52,7 +101,7 @@ const PROPERTY_TYPE_CATEGORY = {
 }
 
 const DEFAULT_PROPERTY_IMAGE =
-	'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=900&auto=format&fit=crop&q=80'
+	'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=1200&auto=format&fit=crop&q=80'
 
 const formatPrice = (value) => {
 	const amount = Number(value)
@@ -67,16 +116,26 @@ const formatAvailable = (value) => {
 	return `Available ${date.toLocaleDateString('en-ZA', { day: 'numeric', month: 'short' })}`
 }
 
-// Map a `properties` row onto the landing card model.
+// Map a `properties` row onto the landing card and showcase model.
 const mapDbProperty = (row) => {
-	const images =
+	const rawImages =
 		Array.isArray(row.image_urls) && row.image_urls.length > 0
 			? row.image_urls.filter(Boolean)
 			: row.image_url
 				? [row.image_url]
 				: []
 
-	const typeLabel = PROPERTY_TYPE_LABELS[row.property_type] || 'Property'
+	const fallbackList =
+		PROPERTY_TYPE_GALLERY_FALLBACKS[row.property_type] ||
+		PROPERTY_TYPE_GALLERY_FALLBACKS.apartment
+	const images =
+		rawImages.length >= 2
+			? rawImages
+			: rawImages.length === 1
+				? [rawImages[0], ...fallbackList.slice(1)]
+				: fallbackList
+
+	const typeLabel = PROPERTY_TYPE_LABELS[row.property_type] || 'Residence'
 	const locality =
 		[row.area, row.city].filter(Boolean).join(', ') || row.province || 'South Africa'
 
@@ -88,26 +147,81 @@ const mapDbProperty = (row) => {
 	if (availableTag) tags.push(availableTag)
 
 	const price = Number(row.price)
+	const depositDisplay =
+		row.deposit ||
+		(row.deposit_amount
+			? `R ${Number(row.deposit_amount).toLocaleString('en-ZA')}`
+			: Number.isFinite(price) && price > 0
+				? `R ${price.toLocaleString('en-ZA')} (1 Month)`
+				: '1 Month Deposit')
+
+	const title =
+		row.title && row.title.trim()
+			? row.title.trim()
+			: row.complex_name
+				? `${typeLabel} at ${row.complex_name}`
+				: row.property_type && (row.area || row.city)
+					? `${typeLabel} in ${row.area || row.city}`
+					: `${typeLabel} in ${locality}`
+
+	const amenitiesList =
+		Array.isArray(row.amenities) && row.amenities.length > 0
+			? row.amenities
+			: [
+					'High-Speed Fibre Ready',
+					'24/7 Monitored Access',
+					'Covered Parking Available',
+					'Built-in Wardrobes',
+					'Close to Public Transit'
+			  ]
 
 	return {
 		id: row.id,
-		title:
-			row.property_type && (row.area || row.city)
-				? `${typeLabel} in ${row.area || row.city}`
-				: typeLabel,
+		title,
+		description:
+			row.description ||
+			`Spacious, verified ${typeLabel.toLowerCase()} located in ${locality}. Features modern finishes, convenient access to transit links, and secure premises verified by Place4U relocation specialists.`,
 		category: PROPERTY_TYPE_CATEGORY[row.property_type] || 'Apartments',
+		property_type: row.property_type || 'apartment',
+		typeLabel,
+		complex_name: row.complex_name || '',
+		address: row.address || '',
 		area: locality,
+		suburb: row.area || row.city || locality,
+		city: row.city || '',
 		province: row.province || '',
-		near: `Listing in ${locality}`,
+		postal_code: row.postal_code || '',
+		near: row.complex_name ? `${row.complex_name}, ${locality}` : `Listing in ${locality}`,
 		price: formatPrice(row.price),
 		numericPrice: Number.isFinite(price) ? price : 0,
 		period: 'month',
+		deposit: depositDisplay,
+		lease_term:
+			row.lease_term || (row.lease_term_months ? `${row.lease_term_months} Months` : '12 Months'),
+		availableTag: availableTag || 'Available Immediately',
+		available_from: row.available_from || null,
+		images,
 		image: images[0] || DEFAULT_PROPERTY_IMAGE,
 		fallbackImage: DEFAULT_PROPERTY_IMAGE,
-		tags: tags.slice(0, 3),
-		beds: row.bedrooms || 0,
-		baths: row.bathrooms || 0,
-		verifiedLandlord: row.landlord?.full_name || 'Place4U Listed Landlord',
+		tags: tags.slice(0, 4),
+		beds: row.bedrooms || (row.property_type === 'room' ? 1 : 2),
+		baths: row.bathrooms || 1,
+		size:
+			row.size ||
+			(row.property_type === 'house'
+				? '180 m²'
+				: row.property_type === 'room'
+					? '25 m²'
+					: '75 m²'),
+		parking_bays: row.parking_bays ?? (row.property_type === 'house' ? 2 : 1),
+		parking_type: row.parking_type || 'covered',
+		amenities: amenitiesList,
+		water_included: Boolean(row.water_included),
+		electricity_type: row.electricity_type || 'prepaid',
+		max_occupants: row.max_occupants || (row.bedrooms ? row.bedrooms * 2 : 2),
+		furnished: Boolean(row.furnished),
+		pet_friendly: Boolean(row.pet_friendly),
+		verifiedLandlord: row.landlord?.full_name || 'Place4U Verified Landlord',
 		verificationType: 'Landlord Documents Reviewed',
 		status: 'Listing Reviewed'
 	}
@@ -202,6 +316,7 @@ const FAQS = [
 ]
 
 const Landing = () => {
+	const navigate = useNavigate()
 	const [activeCategory, setActiveCategory] = useState('All Listings')
 	const [activeProvince, setActiveProvince] = useState('All SA')
 	const [searchQuery, setSearchQuery] = useState('')
@@ -210,6 +325,8 @@ const Landing = () => {
 	const priceDropdownRef = useRef(null)
 	const [favorites, setFavorites] = useState([])
 	const [selectedProperty, setSelectedProperty] = useState(null)
+	const [activePhotoIndex, setActivePhotoIndex] = useState(0)
+	const [copiedToast, setCopiedToast] = useState(false)
 	const [liveProperties, setLiveProperties] = useState(null)
 	const [loadingProperties, setLoadingProperties] = useState(true)
 
@@ -287,11 +404,18 @@ const Landing = () => {
 		}
 	}, [priceDropdownOpen])
 
-	// Close the property modal on Escape and lock background scroll while open.
+	// Close property modal on Escape, navigate photos on Arrow keys, and lock background scroll while open.
 	useEffect(() => {
 		if (!selectedProperty) return
 		const onKeyDown = (e) => {
 			if (e.key === 'Escape') setSelectedProperty(null)
+			const photoCount = selectedProperty.images?.length || 1
+			if (e.key === 'ArrowRight' && photoCount > 1) {
+				setActivePhotoIndex((prev) => (prev + 1) % photoCount)
+			}
+			if (e.key === 'ArrowLeft' && photoCount > 1) {
+				setActivePhotoIndex((prev) => (prev - 1 + photoCount) % photoCount)
+			}
 		}
 		document.addEventListener('keydown', onKeyDown)
 		document.body.style.overflow = 'hidden'
@@ -300,6 +424,27 @@ const Landing = () => {
 			document.body.style.overflow = ''
 		}
 	}, [selectedProperty])
+
+	const handleOpenPropertyDetails = (prop) => {
+		if (prop?.id) {
+			navigate(`/property/${prop.id}`, { state: { property: prop } })
+			return
+		}
+		setSelectedProperty(prop)
+		setActivePhotoIndex(0)
+		setCopiedToast(false)
+	}
+
+	const handleShareProperty = (property) => {
+		if (navigator.clipboard) {
+			const shareUrl = `${window.location.origin}/#residencies`
+			navigator.clipboard.writeText(
+				`${property.title} in ${property.area} (${property.price}/month) on Place4U: ${shareUrl}`
+			)
+			setCopiedToast(true)
+			setTimeout(() => setCopiedToast(false), 2500)
+		}
+	}
 
 	const toggleFavorite = (id) => {
 		setFavorites((prev) =>
@@ -612,85 +757,112 @@ const Landing = () => {
 				{!loadingProperties && (
 					<div id="property-results" className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-7 scroll-mt-28">
 					{filteredProperties.map((prop) => (
-						<div
+						<article
 							key={prop.id}
-							className="bg-white rounded-xl overflow-hidden transition-[border-color,transform] duration-200 flex flex-col group border border-[#d5e0df] hover:border-[#86c1cc] hover:-translate-y-1"
+							onClick={() => handleOpenPropertyDetails(prop)}
+							className="group bg-white rounded-2xl overflow-hidden border border-[#d5e0df] hover:border-slate-300 hover:shadow-xl hover:shadow-slate-200/50 transition-all duration-300 flex flex-col cursor-pointer"
 						>
-							<div className="relative aspect-[16/10] overflow-hidden bg-[#e7eef0]">
+							{/* Image Stage */}
+							<div className="relative aspect-[16/10] overflow-hidden bg-slate-100">
 								<img
 									src={prop.image}
 									alt={prop.title}
 									loading="lazy"
 									decoding="async"
-									className="w-full h-full object-cover group-hover:scale-[1.025] transition-transform duration-300"
+									className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 ease-out"
 									onError={(e) => {
 										e.target.src = prop.fallbackImage
 									}}
 								/>
 
+								{/* Top-Left Category Badge */}
+								<div className="absolute top-3 left-3 pointer-events-none">
+									<span className="px-2.5 py-1 rounded-full text-[11px] font-bold bg-white/95 text-[#18262d] backdrop-blur-md shadow-xs flex items-center gap-1 border border-white/60">
+										<ShieldCheck className="w-3.5 h-3.5 text-[#006c4a]" />
+										<span>{prop.typeLabel || 'Residence'}</span>
+									</span>
+								</div>
+
+								{/* Top-Right Save Favorite Button */}
 								<button
-									onClick={() => toggleFavorite(prop.id)}
+									type="button"
+									onClick={(e) => {
+										e.stopPropagation()
+										toggleFavorite(prop.id)
+									}}
 									aria-pressed={favorites.includes(prop.id)}
-									className="absolute top-3 right-3 w-9 h-9 rounded-full bg-white/95 flex items-center justify-center text-[#18262d] hover:bg-white transition-transform active:scale-90"
+									className="absolute top-3 right-3 w-9 h-9 rounded-full bg-white/95 hover:bg-white flex items-center justify-center text-[#18262d] transition-transform active:scale-90 shadow-xs cursor-pointer z-10"
 									aria-label={favorites.includes(prop.id) ? 'Remove saved property' : 'Save property'}
 								>
 									<HiHeart
-										className={`w-4 h-4 ${
+										className={`w-4 h-4 transition-colors ${
 											favorites.includes(prop.id)
 												? 'text-rose-500 fill-rose-500'
-												: 'text-slate-400'
+												: 'text-slate-400 group-hover:text-slate-600'
 										}`}
 									/>
 								</button>
+
+								{/* Bottom Overlays */}
+								<div className="absolute inset-x-0 bottom-0 p-3 bg-gradient-to-t from-black/55 via-black/20 to-transparent flex items-end justify-between pointer-events-none">
+									<span className="px-2.5 py-0.5 rounded-md text-[10px] font-semibold bg-white/90 text-slate-800 backdrop-blur-xs">
+										{prop.availableTag}
+									</span>
+									{prop.images?.length > 1 && (
+										<span className="px-2 py-0.5 rounded-md text-[10px] font-medium bg-black/50 text-white backdrop-blur-xs">
+											{prop.images.length} photos
+										</span>
+									)}
+								</div>
 							</div>
 
-							<div className="p-6 flex flex-col flex-grow justify-between gap-4">
+							{/* Card Body */}
+							<div className="p-5 flex flex-col flex-grow justify-between gap-4">
 								<div>
-									<div className="text-xs font-semibold text-[#006194] mb-1">
-										{prop.area}
+									<div className="text-[11px] font-bold text-[#006194] uppercase tracking-wider mb-1 truncate">
+										{prop.area}{prop.city ? ` · ${prop.city}` : ''}
 									</div>
-									<h3 className="font-['Space_Grotesk'] text-lg font-semibold text-[#18262d] tracking-tight line-clamp-1">
+									<h3 className="font-['Space_Grotesk'] text-lg font-bold text-[#18262d] tracking-tight line-clamp-1 group-hover:text-[#006194] transition-colors">
 										{prop.title}
 									</h3>
-									<p className="text-xs text-[#5d6d72] mt-1 inline-flex items-center gap-1.5">
-										<HiShieldCheck className="w-3.5 h-3.5 text-[#006c4a]" />
-										{prop.status}
-									</p>
-									<div className="font-['Space_Grotesk'] text-xl font-bold text-[#18262d] mt-2">
-										{prop.price}{' '}
-										<span className="text-xs font-normal text-[#47545a]">
-											/ month
-										</span>
+
+									{/* Inline Architectural Spec Strip */}
+									<div className="flex items-center flex-wrap gap-2 text-xs text-slate-600 mt-2 font-medium">
+										<span>{prop.beds} {prop.beds === 1 ? 'bed' : 'beds'}</span>
+										<span className="text-slate-300">•</span>
+										<span>{prop.baths} {prop.baths === 1 ? 'bath' : 'baths'}</span>
+										<span className="text-slate-300">•</span>
+										<span>{prop.size}</span>
+										{prop.furnished && (
+											<>
+												<span className="text-slate-300">•</span>
+												<span className="text-[#006c4a] font-semibold">Furnished</span>
+											</>
+										)}
 									</div>
 								</div>
 
-								<div className="flex flex-wrap gap-1.5 pt-2">
-									{prop.tags.map((tag) => (
-										<span
-											key={tag}
-											className="bg-[#eef2ef] px-2.5 py-1 rounded-md text-xs text-[#47545a] font-medium"
-										>
-											{tag}
-										</span>
-									))}
-								</div>
+								{/* Bottom Price & Action Row */}
+								<div className="pt-3.5 border-t border-slate-100 flex items-center justify-between gap-2">
+									<div>
+										<div className="flex items-baseline gap-1">
+											<span className="font-['Space_Grotesk'] text-xl font-bold text-[#18262d] tabular-nums">
+												{prop.price}
+											</span>
+											<span className="text-xs font-normal text-slate-500">/ mo</span>
+										</div>
+										<div className="text-[11px] text-slate-400">
+											Deposit: {prop.deposit}
+										</div>
+									</div>
 
-								<div className="pt-4 flex items-center gap-3 border-t border-[#d5e0df]">
-									<button
-										onClick={() => openAuthModal('signup')}
-										className="flex-1 bg-[#006194] hover:bg-[#004b73] text-white py-2.5 rounded-lg text-xs font-['Space_Grotesk'] font-bold transition-all text-center shadow-sm"
-									>
-										Start Application
-									</button>
-									<button
-										onClick={() => setSelectedProperty(prop)}
-										className="px-4 py-2.5 bg-[#e7eef0] hover:bg-[#dce8e9] text-[#18262d] rounded-lg text-xs font-['Space_Grotesk'] font-bold transition-all"
-									>
-										Details
-									</button>
+									<div className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-[#f7f8f5] group-hover:bg-[#006194] group-hover:text-white text-[#18262d] text-xs font-['Space_Grotesk'] font-bold border border-[#d5e0df] group-hover:border-[#006194] transition-all">
+										<span>View Residence</span>
+										<ArrowUpRight size={14} className="group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
+									</div>
 								</div>
 							</div>
-						</div>
+						</article>
 					))}
 				</div>
 				)}
@@ -864,108 +1036,401 @@ const Landing = () => {
 				</div>
 			</section>
 
-			{/* ===================== PROPERTY DETAIL MODAL ===================== */}
+			{/* ===================== PROPERTY DETAIL SHOWCASE MODAL ===================== */}
 			<AnimatePresence>
 				{selectedProperty && (
 					<motion.div
 						initial={{ opacity: 0 }}
 						animate={{ opacity: 1 }}
 						exit={{ opacity: 0 }}
-						className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
+						className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 md:p-6 bg-slate-900/60 backdrop-blur-md overflow-y-auto"
 						onClick={() => setSelectedProperty(null)}
 						role="dialog"
 						aria-modal="true"
 						aria-label={selectedProperty.title}
 					>
 						<motion.div
-							initial={{ scale: 0.95, opacity: 0 }}
-							animate={{ scale: 1, opacity: 1 }}
-							exit={{ scale: 0.95, opacity: 0 }}
-							className="bg-white rounded-3xl max-w-lg w-full max-h-[90vh] overflow-y-auto shadow-2xl border border-[#d5e0df]"
+							initial={{ scale: 0.96, opacity: 0, y: 15 }}
+							animate={{ scale: 1, opacity: 1, y: 0 }}
+							exit={{ scale: 0.96, opacity: 0, y: 15 }}
+							transition={{ duration: 0.2 }}
+							className="bg-white rounded-3xl max-w-4xl lg:max-w-5xl w-full max-h-[92vh] flex flex-col shadow-2xl border border-slate-200 overflow-hidden my-auto"
 							onClick={(e) => e.stopPropagation()}
 						>
-							<div className="relative h-56 bg-slate-100">
-								<img
-									src={selectedProperty.image}
-									alt={selectedProperty.title}
-									className="w-full h-full object-cover"
-									onError={(e) => {
-										e.target.src = selectedProperty.fallbackImage
-									}}
-								/>
-								<button
-									onClick={() => setSelectedProperty(null)}
-									aria-label="Close"
-									className="absolute top-4 right-4 w-8 h-8 rounded-full bg-white/90 text-[#18262d] flex items-center justify-center shadow-md hover:bg-white"
-								>
-									<HiX size={18} />
-								</button>
-							</div>
-
-							<div className="p-6">
-								<div className="text-xs font-bold text-[#006194] uppercase tracking-wide">
-									{selectedProperty.area}
-								</div>
-								<h3 className="font-['Space_Grotesk'] text-2xl font-bold text-[#18262d] mt-1">
-									{selectedProperty.title}
-								</h3>
-								<p className="text-xs text-[#5d6d72] mt-1 inline-flex items-center gap-1.5">
-									<HiShieldCheck className="w-3.5 h-3.5 text-[#006c4a]" />
-									{selectedProperty.verificationType}
-								</p>
-								<p className="text-xs text-[#006c4a] font-medium mt-1 flex items-center gap-1">
-									<span className="material-symbols-outlined text-[15px]">location_on</span>
-									{selectedProperty.near}
-								</p>
-
-								<div className="font-['Space_Grotesk'] text-2xl font-bold text-[#18262d] my-3">
-									{selectedProperty.price}{' '}
-									<span className="text-xs font-normal text-[#47545a]">
-										/ month
+							{/* Top Header Bar */}
+							<div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-white/95 backdrop-blur-sm z-20 shrink-0">
+								<div className="flex items-center gap-2.5 min-w-0">
+									<span className="px-2.5 py-1 rounded-full text-[11px] font-bold bg-[#eef2ef] text-[#006c4a] border border-[#d5e0df] flex items-center gap-1.5 shrink-0">
+										<ShieldCheck className="w-3.5 h-3.5 text-[#006c4a]" />
+										Place4U Verified
+									</span>
+									<span className="text-xs font-semibold text-slate-500 uppercase tracking-wide truncate hidden sm:inline">
+										{selectedProperty.typeLabel} · {selectedProperty.area}
 									</span>
 								</div>
 
-								<div className="flex flex-wrap gap-2 my-4">
-									{selectedProperty.tags.map((tag) => (
-										<span
-											key={tag}
-											className="bg-[#e7eef0] px-2.5 py-1 rounded-lg text-xs font-medium text-[#47545a]"
-										>
-											{tag}
-										</span>
-									))}
-								</div>
-
-								<div className="p-4 bg-[#eef2ef] rounded-xl border border-[#d5e0df] text-xs text-[#47545a] space-y-1 mb-6">
-									<p><strong>Landlord:</strong> {selectedProperty.verifiedLandlord}</p>
-									<p><strong>Ownership:</strong> Documents submitted by landlord (reviewed)</p>
-									<p><strong>Deposit & Lease:</strong> Agreed and signed directly with the landlord</p>
-								</div>
-
-								<div className="flex items-center gap-3">
+								<div className="flex items-center gap-2 shrink-0">
 									<button
-										onClick={() => {
-											setSelectedProperty(null)
-											openAuthModal('signup')
-										}}
-										className="flex-1 bg-[#006194] hover:bg-[#004b73] text-white py-3 rounded-xl font-['Space_Grotesk'] font-bold text-sm shadow-md flex items-center justify-center gap-2"
+										type="button"
+										onClick={() => handleShareProperty(selectedProperty)}
+										className="h-9 px-3 rounded-full border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer"
+										title="Share listing"
 									>
-										<span>Start Application</span>
-										{hasPromotion && (
-											<span className="px-2 py-0.5 rounded-md bg-emerald-500 text-white text-[10px] font-extrabold uppercase tracking-wider">
-												{isFree ? 'FREE' : 'DISCOUNT'}
-											</span>
+										{copiedToast ? (
+											<>
+												<Check className="w-3.5 h-3.5 text-emerald-600" />
+												<span className="text-emerald-700">Link Copied!</span>
+											</>
+										) : (
+											<>
+												<Share2 className="w-3.5 h-3.5 text-slate-500" />
+												<span className="hidden sm:inline">Share</span>
+											</>
 										)}
 									</button>
-									<a
-										href={`https://wa.me/27824822611?text=Hello%2C%20I%20am%20interested%20in%20${encodeURIComponent(selectedProperty.title)}%20(${selectedProperty.area})`}
-										target="_blank"
-										rel="noopener noreferrer"
-										className="px-4 py-3 bg-[#cfe6dd]/60 hover:bg-[#cfe6dd] text-[#005137] rounded-xl font-['Space_Grotesk'] font-bold text-sm flex items-center gap-1.5"
+									<button
+										type="button"
+										onClick={() => setSelectedProperty(null)}
+										aria-label="Close"
+										className="w-9 h-9 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 flex items-center justify-center transition-colors cursor-pointer"
 									>
-										<FaWhatsapp size={16} />
-										WhatsApp
-									</a>
+										<HiX size={18} />
+									</button>
+								</div>
+							</div>
+
+							{/* Scrollable Showcase Content */}
+							<div className="overflow-y-auto flex-1">
+								{/* Interactive Photo Carousel Stage */}
+								<div className="relative bg-slate-900 group">
+									<div className="relative h-64 sm:h-80 md:h-[400px] w-full overflow-hidden flex items-center justify-center bg-slate-900">
+										<img
+											src={selectedProperty.images[activePhotoIndex] || selectedProperty.image}
+											alt={`${selectedProperty.title} - photo ${activePhotoIndex + 1}`}
+											className="w-full h-full object-cover transition-opacity duration-300"
+											onError={(e) => {
+												e.target.src = selectedProperty.fallbackImage
+											}}
+										/>
+
+										{/* Photo gradient vignette */}
+										<div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/30 pointer-events-none" />
+
+										{/* Prev / Next Arrows */}
+										{selectedProperty.images.length > 1 && (
+											<>
+												<button
+													type="button"
+													onClick={(e) => {
+														e.stopPropagation()
+														setActivePhotoIndex(
+															(prev) =>
+																(prev - 1 + selectedProperty.images.length) %
+																selectedProperty.images.length
+														)
+													}}
+													className="absolute left-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white/90 hover:bg-white text-slate-900 shadow-lg backdrop-blur-xs flex items-center justify-center transition-transform hover:scale-105 active:scale-95 cursor-pointer z-10"
+													aria-label="Previous photo"
+												>
+													<ChevronLeft size={20} />
+												</button>
+												<button
+													type="button"
+													onClick={(e) => {
+														e.stopPropagation()
+														setActivePhotoIndex(
+															(prev) => (prev + 1) % selectedProperty.images.length
+														)
+													}}
+													className="absolute right-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white/90 hover:bg-white text-slate-900 shadow-lg backdrop-blur-xs flex items-center justify-center transition-transform hover:scale-105 active:scale-95 cursor-pointer z-10"
+													aria-label="Next photo"
+												>
+													<ChevronRight size={20} />
+												</button>
+											</>
+										)}
+
+										{/* Top Badges */}
+										<div className="absolute top-4 left-4 flex flex-wrap gap-2 pointer-events-none z-10">
+											<span className="px-3 py-1 rounded-full text-xs font-semibold bg-white/95 text-slate-900 backdrop-blur-md shadow-sm">
+												{selectedProperty.typeLabel}
+											</span>
+											{selectedProperty.availableTag && (
+												<span className="px-3 py-1 rounded-full text-xs font-semibold bg-[#006c4a] text-white shadow-sm flex items-center gap-1">
+													<Calendar className="w-3 h-3" />
+													{selectedProperty.availableTag}
+												</span>
+											)}
+										</div>
+
+										{/* Bottom Overlays */}
+										<div className="absolute bottom-4 left-4 right-4 flex items-end justify-between pointer-events-none z-10">
+											<div className="text-white text-xs font-medium flex items-center gap-1.5 drop-shadow-md">
+												<MapPin size={14} className="text-sky-400 shrink-0" />
+												<span className="truncate max-w-xs sm:max-w-md">
+													{selectedProperty.address ? `${selectedProperty.address}, ` : ''}
+													{selectedProperty.area}
+												</span>
+											</div>
+											{selectedProperty.images.length > 1 && (
+												<span className="px-2.5 py-1 rounded-full text-[11px] font-bold bg-black/70 text-white backdrop-blur-md shrink-0">
+													{activePhotoIndex + 1} / {selectedProperty.images.length} Photos
+												</span>
+											)}
+										</div>
+									</div>
+
+									{/* Thumbnail Carousel Strip */}
+									{selectedProperty.images.length > 1 && (
+										<div className="p-2.5 bg-slate-900/95 flex items-center gap-2 overflow-x-auto scrollbar-thin border-t border-white/10">
+											{selectedProperty.images.map((img, idx) => (
+												<button
+													key={img + idx}
+													type="button"
+													onClick={() => setActivePhotoIndex(idx)}
+													className={`relative h-14 w-20 sm:h-16 sm:w-24 rounded-lg overflow-hidden shrink-0 border-2 transition-all cursor-pointer ${
+														activePhotoIndex === idx
+															? 'border-sky-400 ring-2 ring-sky-400/30 opacity-100 scale-95'
+															: 'border-transparent opacity-60 hover:opacity-90'
+													}`}
+												>
+													<img src={img} alt="" className="w-full h-full object-cover" />
+												</button>
+											))}
+										</div>
+									)}
+								</div>
+
+								{/* Main 2-Column Property Details */}
+								<div className="p-6 sm:p-8 grid grid-cols-1 lg:grid-cols-12 gap-8">
+									{/* Left Column: Specs, Description, Amenities (7 cols) */}
+									<div className="lg:col-span-7 space-y-6">
+										<div>
+											<div className="text-xs font-bold text-[#006194] uppercase tracking-wider mb-1 flex items-center gap-1.5">
+												<Building2 size={13} />
+												{selectedProperty.complex_name || selectedProperty.typeLabel} ·{' '}
+												{selectedProperty.city || 'South Africa'}
+											</div>
+											<h3 className="font-['Space_Grotesk'] text-2xl sm:text-3xl font-bold text-[#18262d] leading-tight">
+												{selectedProperty.title}
+											</h3>
+											<p className="text-xs text-slate-500 mt-2 flex items-center gap-1.5">
+												<MapPin size={13} className="text-[#006194] shrink-0" />
+												<span>
+													{[
+														selectedProperty.address,
+														selectedProperty.area,
+														selectedProperty.province
+													]
+														.filter(Boolean)
+														.join(', ')}
+												</span>
+											</p>
+										</div>
+
+										{/* Key Architectural Specs Matrix */}
+										<div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+											{[
+												{ label: 'Bedrooms', val: `${selectedProperty.beds} Bed${selectedProperty.beds === 1 ? '' : 's'}`, icon: BedDouble },
+												{ label: 'Bathrooms', val: `${selectedProperty.baths} Bath${selectedProperty.baths === 1 ? '' : 's'}`, icon: Bath },
+												{ label: 'Floor Area', val: selectedProperty.size, icon: Maximize2 },
+												{ label: 'Parking', val: `${selectedProperty.parking_bays} ${selectedProperty.parking_type}`, icon: Car },
+												{ label: 'Furnishing', val: selectedProperty.furnished ? 'Furnished' : 'Unfurnished', icon: Sparkles },
+												{ label: 'Pet Policy', val: selectedProperty.pet_friendly ? 'Pet Friendly' : 'No Pets', icon: ShieldCheck }
+											].map((spec, i) => {
+												const Icon = spec.icon
+												return (
+													<div key={i} className="p-3.5 rounded-xl bg-[#f7f8f5] border border-[#d5e0df] flex items-center gap-3">
+														<div className="w-8 h-8 rounded-lg bg-white border border-[#d5e0df] text-[#006194] flex items-center justify-center shrink-0">
+															<Icon size={16} />
+														</div>
+														<div className="min-w-0">
+															<span className="text-[10px] uppercase font-bold tracking-wider text-slate-400 block truncate">
+																{spec.label}
+															</span>
+															<span className="text-xs font-bold text-slate-800 block truncate">
+																{spec.val}
+															</span>
+														</div>
+													</div>
+												)
+											})}
+										</div>
+
+										{/* Property Narrative Description */}
+										<div className="space-y-2 pt-2 border-t border-slate-100">
+											<h4 className="font-['Space_Grotesk'] text-base font-bold text-[#18262d]">
+												About this property
+											</h4>
+											<p className="text-sm text-[#47545a] leading-relaxed whitespace-pre-line">
+												{selectedProperty.description}
+											</p>
+										</div>
+
+										{/* Amenities & Features */}
+										<div className="space-y-3 pt-2 border-t border-slate-100">
+											<h4 className="font-['Space_Grotesk'] text-base font-bold text-[#18262d]">
+												Amenities & features
+											</h4>
+											<div className="grid grid-cols-2 sm:grid-cols-2 gap-2.5">
+												{selectedProperty.amenities.map((amenity) => (
+													<div
+														key={amenity}
+														className="flex items-center gap-2 p-2.5 rounded-lg bg-[#f7f8f5] border border-[#d5e0df] text-xs font-medium text-slate-800"
+													>
+														<CheckCircle2 size={14} className="text-[#006c4a] shrink-0" />
+														<span className="truncate">{amenity}</span>
+													</div>
+												))}
+											</div>
+										</div>
+
+										{/* Lease Terms & Utility Rules */}
+										<div className="space-y-3 pt-2 border-t border-slate-100">
+											<h4 className="font-['Space_Grotesk'] text-base font-bold text-[#18262d]">
+												Lease & utility policies
+											</h4>
+											<div className="p-4 rounded-xl bg-[#f7f8f5] border border-[#d5e0df] text-xs text-slate-700 space-y-2">
+												<div className="flex items-center justify-between py-1 border-b border-[#d5e0df]/60">
+													<span className="text-slate-500">Standard Lease Term</span>
+													<span className="font-semibold text-slate-900">
+														{selectedProperty.lease_term}
+													</span>
+												</div>
+												<div className="flex items-center justify-between py-1 border-b border-[#d5e0df]/60">
+													<span className="text-slate-500">Security Deposit</span>
+													<span className="font-semibold text-slate-900">
+														{selectedProperty.deposit}
+													</span>
+												</div>
+												<div className="flex items-center justify-between py-1 border-b border-[#d5e0df]/60">
+													<span className="text-slate-500">Electricity Metering</span>
+													<span className="font-semibold text-slate-900">
+														{selectedProperty.electricity_type === 'prepaid'
+															? 'Prepaid Meter (Direct tenant purchase)'
+															: 'Billed Monthly'}
+													</span>
+												</div>
+												<div className="flex items-center justify-between py-1">
+													<span className="text-slate-500">Water Supply</span>
+													<span className="font-semibold text-slate-900">
+														{selectedProperty.water_included
+															? 'Included in monthly rent'
+															: 'Billed by municipal consumption'}
+													</span>
+												</div>
+											</div>
+										</div>
+									</div>
+
+									{/* Right Column: Unified Anti-Slop Summary & Action Panel (5 cols) */}
+									<div className="lg:col-span-5">
+										<div className="p-6 sm:p-7 rounded-2xl bg-[#f7f8f5] border border-[#d5e0df] space-y-5 sticky top-4">
+											{/* Rental & Financial Summary */}
+											<div className="pb-4 border-b border-[#d5e0df]/80">
+												<div className="flex items-baseline justify-between">
+													<div>
+														<span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 block mb-0.5">
+															Monthly Rental
+														</span>
+														<div className="flex items-baseline gap-1.5">
+															<span className="font-['Space_Grotesk'] text-3xl font-extrabold text-[#18262d] tabular-nums">
+																{selectedProperty.price}
+															</span>
+															<span className="text-xs font-medium text-slate-500">
+																/ mo
+															</span>
+														</div>
+													</div>
+													<div className="text-right">
+														<span className="text-[11px] font-semibold text-slate-400 block">Deposit</span>
+														<span className="font-['Space_Grotesk'] text-sm font-bold text-slate-800">
+															{selectedProperty.deposit}
+														</span>
+													</div>
+												</div>
+											</div>
+
+											{/* Verified Landlord Dossier (Calm, integrated) */}
+											<div className="py-2 border-b border-[#d5e0df]/80 space-y-2">
+												<div className="flex items-center gap-2 text-xs font-bold text-[#006c4a]">
+													<ShieldCheck size={16} className="text-[#006c4a] shrink-0" />
+													<span>Place4U Vetted Listing</span>
+												</div>
+												<div className="text-xs text-slate-700 flex items-center justify-between">
+													<span className="text-slate-500">Registered Owner</span>
+													<span className="font-semibold text-slate-900">{selectedProperty.verifiedLandlord}</span>
+												</div>
+												<div className="text-xs text-slate-700 flex items-center justify-between">
+													<span className="text-slate-500">Vetting Status</span>
+													<span className="font-semibold text-[#006c4a] inline-flex items-center gap-1">
+														<Check size={13} /> Title Deed & ID Confirmed
+													</span>
+												</div>
+											</div>
+
+											{/* Application Fee Transparency */}
+											<div className="py-2 border-b border-[#d5e0df]/80 space-y-1">
+												<div className="flex items-center justify-between text-xs">
+													<span className="font-semibold text-slate-900">
+														Place4U Screening Fee
+													</span>
+													{hasPromotion ? (
+														<span className="inline-flex items-center gap-1.5 font-bold">
+															<s className="text-slate-400 font-normal">R 100</s>
+															<span className="text-[#006c4a] uppercase tracking-wider">
+																{isFree ? 'FREE' : 'PROMO'}
+															</span>
+														</span>
+													) : (
+														<span className="font-bold text-slate-900">R 100</span>
+													)}
+												</div>
+												<p className="text-[11px] text-slate-500 leading-relaxed">
+													One single fee covers identity verification, FICA review, and credit bureau checks across all your applications.
+												</p>
+											</div>
+
+											{/* Action CTA Buttons */}
+											<div className="space-y-3 pt-1">
+												<button
+													type="button"
+													onClick={() => {
+														setSelectedProperty(null)
+														openAuthModal('signup')
+													}}
+													className="w-full bg-[#006194] hover:bg-[#004b73] text-white py-3.5 px-5 rounded-xl font-['Space_Grotesk'] font-bold text-sm shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-[0.99]"
+												>
+													<span>Start Application for this Home</span>
+													{hasPromotion && (
+														<span className="px-2 py-0.5 rounded-md bg-emerald-500 text-white text-[10px] font-extrabold uppercase tracking-wider">
+															{isFree ? 'FREE' : 'PROMO'}
+														</span>
+													)}
+												</button>
+
+												<a
+													href={`https://wa.me/27824822611?text=Hello%2C%20I%20am%20interested%20in%20${encodeURIComponent(selectedProperty.title)}%20(${selectedProperty.area})`}
+													target="_blank"
+													rel="noopener noreferrer"
+													className="w-full py-3 px-4 bg-white hover:bg-slate-50 text-[#18262d] border border-[#d5e0df] hover:border-slate-300 rounded-xl font-['Space_Grotesk'] font-bold text-xs flex items-center justify-center gap-2 transition-all cursor-pointer shadow-xs"
+												>
+													<FaWhatsapp size={15} className="text-[#25D366]" />
+													<span>Inquire on WhatsApp Desk</span>
+												</a>
+											</div>
+
+											{/* Safe Relocation Safeguards Disclaimer */}
+											<div className="pt-2 flex items-start gap-2 text-[11px] text-slate-500 leading-relaxed">
+												<Lock size={13} className="text-slate-400 shrink-0 mt-0.5" />
+												<span>
+													<strong>Deposit Protection:</strong> Never pay a deposit
+													before inspecting the residence and signing an official lease.
+													Place4U does not hold lease deposits.
+												</span>
+											</div>
+										</div>
+									</div>
 								</div>
 							</div>
 						</motion.div>

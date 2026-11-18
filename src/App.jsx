@@ -23,6 +23,7 @@ const TermsOfService = lazy(() => import("./pages/legal/TermsOfService"));
 const ComplianceNotice = lazy(() => import("./pages/legal/ComplianceNotice"));
 const DisputeResolution = lazy(() => import("./pages/legal/DisputeResolution"));
 const CookiePreferences = lazy(() => import("./pages/legal/StoragePreferences"));
+const ResidenceDetail = lazy(() => import("./pages/landing/ResidenceDetail"));
 
 // OAuth Callback handler component
 function AuthCallback() {
@@ -336,6 +337,8 @@ export default function App() {
         <Routes>
           <Route path="/" element={<Landing />} />
           <Route path="/about" element={<About />} />
+          <Route path="/property/:id" element={<ResidenceDetail />} />
+          <Route path="/residence/:id" element={<ResidenceDetail />} />
           {/* Keep legacy auth URLs working, but show the shared modal over the landing page. */}
           <Route path="/login" element={<Landing />} />
           <Route path="/signup" element={<Landing />} />
