@@ -1,8 +1,9 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { 
   FileText, UploadCloud, Eye, Trash2, CheckCircle2, AlertCircle, 
   Download, X, RefreshCw, ExternalLink
 } from 'lucide-react';
+import { resolveDocumentUrl } from '../../../utils/documentUrls';
 
 export const DOCUMENT_CONFIG = {
   student_room: {
@@ -100,6 +101,60 @@ export const formatFileSize = (bytes) => {
  * Built-in PDF Preview Modal
  */
 export const PdfPreviewModal = ({ doc, onClose }) => {
+  // Resolve a *renderable* URL for the stored reference. After an application is
+  // submitted the bytes live in the private `documents` bucket and the row holds
+  // a storagePath (plus, sometimes, a short-lived signed `fileUrl`). Neither is
+  // a `dataUrl`, which is why this modal previously fell through to the
+  // "Attachment Ready" placeholder instead of showing the PDF.
+  const [documentUrl, setDocumentUrl] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [loadError, setLoadError] = useState(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    setLoadError(null);
+
+    if (!doc) {
+      setDocumentUrl(null);
+      setLoading(false);
+      return undefined;
+    }
+
+    const stored = doc.dataUrl || doc.storagePath || doc.fileUrl || null;
+    if (!stored) {
+      setDocumentUrl(null);
+      setLoading(false);
+      return undefined;
+    }
+
+    // A local data URL is already renderable — skip the round-trip.
+    if (stored.startsWith('data:')) {
+      setDocumentUrl(stored);
+      setLoading(false);
+      return undefined;
+    }
+
+    setLoading(true);
+    resolveDocumentUrl(stored, { bucket: doc.bucket || 'documents' })
+      .then((url) => {
+        if (cancelled) return;
+        setDocumentUrl(url);
+        if (!url) setLoadError('This document could not be opened. It may have been removed from storage.');
+      })
+      .catch((err) => {
+        if (cancelled) return;
+        setDocumentUrl(null);
+        setLoadError(err?.message || 'This document could not be opened.');
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [doc]);
+
   if (!doc) return null;
 
   return (
@@ -120,10 +175,10 @@ export const PdfPreviewModal = ({ doc, onClose }) => {
           </div>
 
           <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
-            {doc.dataUrl && (
+            {documentUrl && (
               <>
                 <a
-                  href={doc.dataUrl}
+                  href={documentUrl}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="px-2.5 sm:px-3 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 text-white/80 hover:text-white text-xs font-semibold flex items-center gap-1.5 transition-colors"
@@ -133,7 +188,7 @@ export const PdfPreviewModal = ({ doc, onClose }) => {
                   <span className="hidden sm:inline">Open Tab</span>
                 </a>
                 <a
-                  href={doc.dataUrl}
+                  href={documentUrl}
                   download={doc.fileName || 'document.pdf'}
                   className="px-2.5 sm:px-3 py-1.5 rounded-xl bg-blue-600/30 hover:bg-blue-600 text-blue-200 hover:text-white text-xs font-semibold flex items-center gap-1.5 transition-colors border border-blue-500/30"
                 >
@@ -155,11 +210,11 @@ export const PdfPreviewModal = ({ doc, onClose }) => {
         {/* PDF Viewer Body */}
         <div className="flex-1 bg-[#070a0f] p-2 sm:p-3 overflow-hidden flex flex-col">
           {/* Mobile view quick action notice */}
-          {doc.dataUrl && (
+          {documentUrl && (
             <div className="sm:hidden flex items-center justify-between gap-2 p-2 bg-slate-900/90 border border-white/10 rounded-xl mb-2 text-xs">
               <span className="text-white/60 text-[11px] truncate">Mobile tap to expand:</span>
               <a
-                href={doc.dataUrl}
+                href={documentUrl}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="px-2.5 py-1 rounded-lg bg-blue-600 text-white text-[11px] font-semibold flex items-center gap-1 shrink-0 shadow-sm"
@@ -170,21 +225,26 @@ export const PdfPreviewModal = ({ doc, onClose }) => {
             </div>
           )}
 
-          {doc.dataUrl ? (
+          {loading ? (
+            <div className="flex-1 flex flex-col items-center justify-center text-center p-6 text-white/60 space-y-3">
+              <RefreshCw size={26} className="text-blue-400 animate-spin" />
+              <p className="text-xs">Loading secure document…</p>
+            </div>
+          ) : documentUrl ? (
             <object
-              data={doc.dataUrl}
+              data={documentUrl}
               type="application/pdf"
               className="w-full flex-1 rounded-xl sm:rounded-2xl border border-white/5 bg-slate-900"
             >
               <iframe
-                src={doc.dataUrl}
+                src={documentUrl}
                 className="w-full h-full rounded-xl sm:rounded-2xl border border-white/5"
                 title={doc.title || 'PDF Preview'}
               >
                 <div className="p-6 text-center text-white/60">
                   <p className="text-sm">Preview not supported on this device's browser.</p>
                   <a
-                    href={doc.dataUrl}
+                    href={documentUrl}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="inline-block mt-3 px-4 py-2 bg-blue-600 text-white rounded-xl text-xs font-semibold shadow-md"
@@ -197,9 +257,11 @@ export const PdfPreviewModal = ({ doc, onClose }) => {
           ) : (
             <div className="flex-1 flex flex-col items-center justify-center text-center p-6 text-white/60 space-y-3">
               <FileText size={40} className="text-white/20" />
-              <p className="font-semibold text-white text-sm">Attachment Ready</p>
+              <p className="font-semibold text-white text-sm">
+                {loadError ? 'Could not open this document' : 'No file attached'}
+              </p>
               <p className="text-xs max-w-sm text-white/40">
-                This document is scheduled for transmission with your application.
+                {loadError || 'This document record has no stored file. Please re-upload it from the application.'}
               </p>
             </div>
           )}
