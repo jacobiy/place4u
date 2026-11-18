@@ -5,9 +5,15 @@
  * public.application_property_matches:
  *
  *   shipped → tenant_accepted → agent_forwarded → landlord_accepted
- *           → admin_approved → scheduled
+ *           → admin_approved → scheduled → schedule_accepted
+ *           → lease_uploaded → lease_signed → move_in_confirmed
  *
  * Off-ramps: tenant_declined | landlord_declined | admin_rejected | cancelled
+ *
+ * Post-viewing rejection loops back instead of ending: a tenant decline from
+ * scheduled / schedule_accepted / lease_uploaded → 'redistribution' (agent
+ * sees the reason and can re-forward to the landlord) → agent_forwarded.
+ * See database/match_redistribution.sql.
  *
  * Reads are RLS-scoped: a plain select returns only the rows the signed-in
  * caller may see (their applications / their listings / their assignments /
@@ -36,6 +42,8 @@ export const MATCH_STATES = {
   LEASE_UPLOADED: 'lease_uploaded',
   LEASE_SIGNED: 'lease_signed',
   MOVE_IN_CONFIRMED: 'move_in_confirmed',
+  /** Tenant saw the property and said no — back with the agent to re-work. */
+  REDISTRIBUTION: 'redistribution',
   CANCELLED: 'cancelled'
 };
 
@@ -58,6 +66,25 @@ export const STAGE_ORDER = PIPELINE_STAGES.map((s) => s.key);
 export const TERMINAL_STATES = ['tenant_declined', 'landlord_declined', 'admin_rejected', 'cancelled'];
 
 export const isDeclined = (state) => TERMINAL_STATES.includes(state);
+
+/**
+ * Viewing-related states where the tenant has already seen (or been offered a
+ * viewing of) the property. A decline here is not terminal: the match goes to
+ * `redistribution` so the agent sees the reason and can re-work it.
+ */
+export const TENANT_VIEWING_STATES = [
+  MATCH_STATES.SCHEDULED,
+  MATCH_STATES.SCHEDULE_ACCEPTED,
+  MATCH_STATES.LEASE_UPLOADED
+];
+
+export const isRedistribution = (state) => state === MATCH_STATES.REDISTRIBUTION;
+
+/** States in which the tenant is allowed to decline the match. */
+export const canTenantDecline = (state) =>
+  state === MATCH_STATES.SHIPPED ||
+  state === MATCH_STATES.TENANT_ACCEPTED ||
+  TENANT_VIEWING_STATES.includes(state);
 export const isScheduled = (state) =>
   state === MATCH_STATES.SCHEDULED ||
   state === MATCH_STATES.SCHEDULE_ACCEPTED ||
@@ -80,6 +107,7 @@ const STATE_LABELS = {
   schedule_accepted: 'Meetup confirmed',
   lease_uploaded: 'Lease ready for signing',
   lease_signed: 'Lease signed & active',
+  redistribution: 'Returned for redistribution',
   cancelled: 'Cancelled'
 };
 
@@ -105,6 +133,8 @@ export function pendingActionForRole(state, role, match = null) {
     case 'agent':
       if (state === MATCH_STATES.TENANT_ACCEPTED) return 'forward';
       if (state === MATCH_STATES.ADMIN_APPROVED) return 'schedule';
+      // Tenant rejected after viewing — the agent must decide what happens next.
+      if (state === MATCH_STATES.REDISTRIBUTION) return 'reforward';
       return null;
     case 'landlord':
       if (state === MATCH_STATES.AGENT_FORWARDED) return 'accept';
@@ -128,6 +158,7 @@ export function actionLabel(action) {
     accept: 'Accept match',
     decline: 'Decline',
     forward: 'Forward to landlord',
+    reforward: 'Re-forward to landlord',
     schedule: 'Schedule meetup',
     approve: 'Approve meetup',
     reject: 'Reject',
@@ -338,7 +369,13 @@ async function callRpc(fn, args, broadcastState, fallbackFn = null) {
     if (!error) {
       const row = Array.isArray(data) ? data[0] : data;
       if (broadcastState && row?.application_id) {
-        broadcastMatchUpdate(row.application_id, row.property_id, broadcastState);
+        // 'auto' = broadcast whatever state the server actually landed on (used
+        // by transitions that resolve to one of two states, e.g. tenant decline).
+        broadcastMatchUpdate(
+          row.application_id,
+          row.property_id,
+          broadcastState === 'auto' ? row.state : broadcastState
+        );
       }
       return { success: true, data: row ? normalizeMatch(row) : null };
     }
@@ -371,10 +408,17 @@ export const acceptMatchAsTenant = (matchId, { optInSession = true, sessionPrefs
   );
 
 export const declineMatchAsTenant = (matchId, reason = null) =>
-  callRpc('match_decline_by_tenant', { p_match_id: matchId, p_reason: reason }, MATCH_STATES.TENANT_DECLINED);
+  callRpc('match_decline_by_tenant', { p_match_id: matchId, p_reason: reason }, 'auto');
 
 export const forwardMatchAsAgent = (matchId, note = null) =>
   callRpc('match_forward_by_agent', { p_match_id: matchId, p_note: note }, MATCH_STATES.AGENT_FORWARDED);
+
+/**
+ * Put a match that came back as 'redistribution' (tenant rejected after the
+ * viewing) back into the pipeline by re-forwarding it to the landlord.
+ */
+export const reforwardMatchAsAgent = (matchId, note = null) =>
+  callRpc('match_reforward_by_agent', { p_match_id: matchId, p_note: note }, MATCH_STATES.AGENT_FORWARDED);
 
 export const acceptMatchAsLandlord = (matchId, note = null) =>
   callRpc('match_accept_by_landlord', { p_match_id: matchId, p_note: note }, MATCH_STATES.LANDLORD_ACCEPTED);

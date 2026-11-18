@@ -72,6 +72,7 @@ const STATE_META = {
   lease_uploaded:     { label: 'Lease ready for signing', hint: 'The landlord uploaded your lease agreement. Review and upload your signed copy to secure your new home.', tone: 'indigo' },
   lease_signed:       { label: 'Lease active', hint: 'Your signed lease agreement has been submitted and your tenancy is active!', tone: 'emerald' },
   move_in_confirmed:  { label: 'Move-in confirmed', hint: 'Your move-in date and key collection schedule has been finalized!', tone: 'emerald' },
+  redistribution:     { label: 'Back with your agent', hint: 'You rejected this property after the viewing — your agent will re-work it or find you another home.', tone: 'amber' },
   tenant_declined:    { label: 'Declined by you', hint: '', tone: 'slate' },
   landlord_declined:  { label: 'Declined by landlord', hint: '', tone: 'slate' },
   admin_rejected:     { label: 'Not approved', hint: '', tone: 'slate' },

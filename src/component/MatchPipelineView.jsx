@@ -2,7 +2,8 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   RefreshCw, CheckCircle2, XCircle, ArrowRight, Send, CalendarClock,
   ShieldCheck, Home, User, Users, MapPin, ChevronDown, ChevronUp, Clock, Sparkles,
-  FileText, Upload, PenTool, Eye, ExternalLink, Calendar, DollarSign, Check, Key
+  FileText, Upload, PenTool, Eye, ExternalLink, Calendar, DollarSign, Check, Key,
+  RotateCcw
 } from 'lucide-react';
 import {
   MATCH_STATES,
@@ -12,6 +13,7 @@ import {
   acceptMatchAsTenant,
   declineMatchAsTenant,
   forwardMatchAsAgent,
+  reforwardMatchAsAgent,
   acceptMatchAsLandlord,
   declineMatchAsLandlord,
   approveMatchAsAdmin,
@@ -24,6 +26,9 @@ import {
   stateLabel,
   isDeclined,
   isScheduled,
+  isRedistribution,
+  canTenantDecline,
+  TENANT_VIEWING_STATES,
   stageIndex,
   subscribeToMatchPipeline
 } from '../services/matchWorkflowService';
@@ -70,10 +75,25 @@ const stateTone = (state) => {
   if (state === MATCH_STATES.LEASE_UPLOADED) return 'accent';
   if (state === MATCH_STATES.SCHEDULE_ACCEPTED) return 'ok';
   if (isScheduled(state)) return 'ok';
+  if (isRedistribution(state)) return 'warn';
   if (isDeclined(state)) return 'danger';
   if (state === MATCH_STATES.ADMIN_APPROVED) return 'ok';
   if (state === MATCH_STATES.LANDLORD_ACCEPTED) return 'accent';
   return 'warn';
+};
+
+/* Timestamp → stage index, used to keep the progress chips honest when a match
+ * ended in an off-ramp (declined states are not in STAGE_ORDER, and a
+ * redistributed match technically sits past `scheduled`). */
+const PROGRESS_TIMESTAMPS = [
+  'shippedAt', 'tenantAcceptedAt', 'agentForwardedAt', 'landlordAcceptedAt',
+  'adminApprovedAt', 'sessionScheduledAt', 'tenantScheduleAcceptedAt',
+  'leaseUploadedAt', 'leaseSignedAt', 'moveInConfirmedAt'
+];
+const progressIndex = (m) => {
+  const direct = stageIndex(m.state);
+  if (direct >= 0) return direct;
+  return PROGRESS_TIMESTAMPS.reduce((best, field, i) => (m[field] ? Math.max(best, i) : best), -1);
 };
 
 export default function MatchPipelineView({
@@ -148,7 +168,7 @@ export default function MatchPipelineView({
   const pendingFor = (m) => pendingActionForRole(m.state, role, m);
 
   const renderStages = (m) => {
-    const current = stageIndex(m.state);
+    const current = progressIndex(m);
     const declined = isDeclined(m.state);
     return (
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 12 }}>
@@ -218,6 +238,43 @@ export default function MatchPipelineView({
               <Send size={14} /> Forward to landlord
             </PrimaryBtn>
             <GhostBtn t={t} onClick={() => setOpenPanel(null)}>Cancel</GhostBtn>
+          </div>
+        </Panel>
+      );
+    }
+
+    if (role === 'agent' && action === 'reforward') {
+      return (
+        <Panel t={t}>
+          <p style={hint(t)}>
+            The tenant rejected this property after the viewing
+            {m.declineReason ? ` — “${m.declineReason}”` : ''}. Re-offer it to the landlord once the
+            terms are re-worked, or cancel the match and redistribute the application to another property.
+          </p>
+          <TextArea t={t} placeholder="What changed / note to the landlord (optional)" value={val('note')} onChange={(e) => set('note', e.target.value)} />
+          <div style={rowActions}>
+            <PrimaryBtn t={t} busy={busyId === m.id} onClick={() => run(m.id, () => reforwardMatchAsAgent(m.id, val('note') || null), 'Re-forwarded to the landlord.')}>
+              <RotateCcw size={14} /> Re-forward to landlord
+            </PrimaryBtn>
+            <GhostBtn t={t} onClick={() => setOpenPanel(null)}>Cancel</GhostBtn>
+          </div>
+        </Panel>
+      );
+    }
+
+    if (action === 'cancel') {
+      return (
+        <Panel t={t}>
+          <p style={hint(t)}>
+            Close this match for good. The application stays with the tenant; you can ship it against
+            another property from the matching board.
+          </p>
+          <TextArea t={t} placeholder="Reason (optional)" value={val('note')} onChange={(e) => set('note', e.target.value)} />
+          <div style={rowActions}>
+            <DangerBtn t={t} busy={busyId === m.id} onClick={() => run(m.id, () => cancelMatch(m.id, val('note') || null), 'Match cancelled.')}>
+              <XCircle size={14} /> Cancel match
+            </DangerBtn>
+            <GhostBtn t={t} onClick={() => setOpenPanel(null)}>Keep it</GhostBtn>
           </div>
         </Panel>
       );
@@ -388,12 +445,33 @@ export default function MatchPipelineView({
     }
 
     // Generic decline form (tenant)
+    const afterViewing = TENANT_VIEWING_STATES.includes(m.state);
     return (
       <Panel t={t}>
-        <TextArea t={t} placeholder="Reason (optional)" value={val('note')} onChange={(e) => set('note', e.target.value)} />
+        <p style={hint(t)}>
+          {afterViewing
+            ? 'You have seen this property. Tell your agent what was wrong — the match goes back to them to re-work (or to find you another property).'
+            : 'This match will be closed for you.'}
+        </p>
+        <TextArea
+          t={t}
+          placeholder={afterViewing ? 'Why are you rejecting it? (rent too high, condition, distance…)' : 'Reason (optional)'}
+          value={val('note')}
+          onChange={(e) => set('note', e.target.value)}
+        />
         <div style={rowActions}>
-          <DangerBtn t={t} busy={busyId === m.id} onClick={() => run(m.id, () => declineMatchAsTenant(m.id, val('note') || null), 'Match declined.')}>
-            <XCircle size={14} /> Confirm decline
+          <DangerBtn
+            t={t}
+            busy={busyId === m.id}
+            onClick={() =>
+              run(
+                m.id,
+                () => declineMatchAsTenant(m.id, val('note') || null),
+                afterViewing ? 'Returned to your agent for redistribution.' : 'Match declined.'
+              )
+            }
+          >
+            <XCircle size={14} /> {afterViewing ? 'Reject after viewing' : 'Confirm decline'}
           </DangerBtn>
           <GhostBtn t={t} onClick={() => setOpenPanel(null)}>Cancel</GhostBtn>
         </div>
@@ -493,6 +571,32 @@ export default function MatchPipelineView({
         )}
 
         {renderStages(m)}
+
+        {/* Returned-for-redistribution banner (tenant declined after viewing) */}
+        {isRedistribution(m.state) && (
+          <div style={{ marginTop: 12, padding: 12, borderRadius: 12, background: t.warnSoft, border: `1px solid ${t.warn}44`, color: t.text, fontSize: 13 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 6 }}>
+              <strong style={{ display: 'inline-flex', alignItems: 'center', gap: 6, color: t.warn }}>
+                <RotateCcw size={14} /> Returned for redistribution
+              </strong>
+              <span style={{ fontSize: 11, color: t.warn, fontWeight: 700 }}>
+                Rejected by tenant{m.sessionScheduledAt ? ` · viewing ${dt(m.sessionScheduledAt)}` : ''}
+              </span>
+            </div>
+            {m.declineReason && (
+              <p style={{ margin: '6px 0 0', fontSize: 12, color: t.text }}>
+                <strong>Tenant's note:</strong> {m.declineReason}
+              </p>
+            )}
+            <p style={{ margin: '6px 0 0', fontSize: 12, color: t.muted }}>
+              {role === 'agent'
+                ? 'Re-negotiate if needed and re-forward to the landlord, or cancel this match and redistribute the application to another property.'
+                : role === 'tenant'
+                  ? 'Your agent has this back and will re-work it or find you another property.'
+                  : 'Waiting on the agent to re-forward or redistribute this match.'}
+            </p>
+          </div>
+        )}
 
         {/* Scheduled Session Banner */}
         {isScheduled(m.state) && (
@@ -641,6 +745,25 @@ export default function MatchPipelineView({
             <PrimaryBtn t={t} onClick={() => setOpenPanel({ matchId: m.id, action: 'accept_schedule' })}>
               <CheckCircle2 size={14} /> Accept schedule &amp; confirm meet
             </PrimaryBtn>
+          )}
+
+          {/* Agent: put a redistributed match back into the flow */}
+          {pending === 'reforward' && (
+            <PrimaryBtn t={t} onClick={() => setOpenPanel({ matchId: m.id, action: 'reforward' })}>
+              <RotateCcw size={14} /> {actionLabel(pending)}
+            </PrimaryBtn>
+          )}
+          {role === 'agent' && isRedistribution(m.state) && (
+            <GhostBtn t={t} onClick={() => setOpenPanel({ matchId: m.id, action: 'cancel' })}>
+              <XCircle size={14} /> Cancel &amp; redistribute
+            </GhostBtn>
+          )}
+
+          {/* Tenant: reject after seeing the property (or decline an accepted match) */}
+          {role === 'tenant' && canTenantDecline(m.state) && m.state !== MATCH_STATES.SHIPPED && (
+            <GhostBtn t={t} onClick={() => setOpenPanel({ matchId: m.id, action: 'decline' })}>
+              <XCircle size={14} /> {TENANT_VIEWING_STATES.includes(m.state) ? 'Reject after viewing' : 'Decline'}
+            </GhostBtn>
           )}
 
           {/* Landlord upload lease action */}

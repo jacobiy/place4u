@@ -140,6 +140,7 @@ Never let a status change be local-only. Read `subscribeToApplicationUpdates` / 
 ### 5.5 Two match workflows coexist (don't merge them by accident)
 - **Draft match** — `src/services/applicationMatchService.js` + `database/application_match_draft.sql`: one row per `(application_id, property_id)` with `flagged | skipped | shipped`. Local-cache-first, degrades gracefully if the migration isn't applied.
 - **Full pipeline** — `src/services/matchWorkflowService.js` + `database/match_.sql` on `public.application_property_matches`: `shipped → tenant_accepted → agent_forwarded → landlord_accepted → admin_approved → scheduled → …` with off-ramps. Writes go through **SECURITY DEFINER RPCs** validated server-side.
+  - **Post-viewing rejection is a loop, not a dead end.** A tenant decline from `scheduled` / `schedule_accepted` / `lease_uploaded` lands in the non-terminal `redistribution` state (`database/match_redistribution.sql`) with the tenant's reason on `decline_reason`. The agent sees it in their pipeline as "Returned for redistribution", can `re-forward` it to the landlord (`match_reforward_by_agent` → `agent_forwarded`) or cancel it. Only pre-viewing declines end in the terminal `tenant_declined`.
 
 Both are designed to **degrade gracefully when their SQL hasn't been applied** (reads return `[]`, transitions return a helpful error rather than throwing). Preserve that.
 

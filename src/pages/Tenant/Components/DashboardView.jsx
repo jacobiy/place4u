@@ -49,7 +49,8 @@ const PIPELINE_STAGE_NOTES = {
   schedule_accepted: 'Meetup confirmed — the landlord is preparing your lease agreement.',
   lease_uploaded: 'Your lease is ready. Review it and upload your signed copy.',
   lease_signed: 'Your signed lease is executed and the tenancy is active.',
-  move_in_confirmed: 'Move-in and key handover are confirmed.'
+  move_in_confirmed: 'Move-in and key handover are confirmed.',
+  redistribution: 'You rejected this property after the viewing — your agent is re-working it or finding you another home.'
 };
 
 /* Map of timestamp column → pipeline stage, used to reconstruct how far a match

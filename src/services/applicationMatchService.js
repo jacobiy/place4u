@@ -124,7 +124,10 @@ const PIPELINE_RANK = {
   agent_forwarded: 3,
   landlord_accepted: 4,
   admin_approved: 5,
-  scheduled: 6
+  scheduled: 6,
+  // A redistributed match is later in the story than a plain decline, so it
+  // wins the "one card per property" comparison and the agent sees it.
+  redistribution: 6
 };
 const pipelineRank = (state) => PIPELINE_RANK[state] || 0;
 
