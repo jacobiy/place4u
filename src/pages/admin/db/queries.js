@@ -21,6 +21,38 @@ export const formatCurrency = (amount) => {
   return `R${Number(amount ?? 0).toLocaleString('en-ZA')}`
 }
 
+// ---------------------------------------------------------------------------
+// Legacy document references
+// ---------------------------------------------------------------------------
+// An earlier revision read verification files with FileReader and stored base64
+// `data:` URLs on landlord_profiles (twice per document: the direct `*_doc_url`
+// column and the verification_documents array). Those rows are multi-megabyte
+// and would be shipped to the browser on every admin list load, so they are
+// stripped on read. `blob:` object URLs are stripped too: they are dead after a
+// reload, so rendering them only produces a broken image that looks uploaded.
+const isLegacyInlineDocRef = (value) =>
+  typeof value === 'string' && /^(data:|blob:)/i.test(value.trim())
+
+const durableDocRef = (value) => {
+  if (typeof value !== 'string') return null
+  const trimmed = value.trim()
+  if (!trimmed || isLegacyInlineDocRef(trimmed)) return null
+  return trimmed
+}
+
+const sanitizeVerificationDocs = (docs) => {
+  if (!Array.isArray(docs)) return []
+  return docs
+    .filter((doc) => doc && typeof doc === 'object')
+    .map((doc) => ({
+      ...doc,
+      fileUrl: durableDocRef(doc.fileUrl) || null,
+      storagePath: durableDocRef(doc.storagePath) || null,
+      dataUrl: null
+    }))
+    .filter((doc) => doc.fileUrl || doc.storagePath)
+}
+
 // Email Helper: opens the operator's own mail client with a prefilled recipient,
 // subject, and body.
 //
@@ -751,7 +783,7 @@ export const getAdminLandlordApplications = async () => {
         const portfolioValue = ownedProps.reduce((sum, p) => sum + (Number(p.price) || 0), 0)
         const lpRow = landlordProfileRows.find((lp) => lp.user_id === u.id)
         const vStatus = lpRow?.application_status || (u.is_verified ? 'approved' : 'not_applied')
-        const vDocs = Array.isArray(lpRow?.verification_documents) ? lpRow.verification_documents : []
+        const vDocs = sanitizeVerificationDocs(lpRow?.verification_documents)
         const deedDoc = vDocs.find((d) => d.documentType === 'ownership')
         const idDoc = vDocs.find((d) => d.documentType === 'id')
         const ratesDoc = vDocs.find((d) => d.documentType === 'rates')
@@ -772,9 +804,9 @@ export const getAdminLandlordApplications = async () => {
           postal_code: lpRow?.postal_code || null,
           property_count: ownedProps.length || 1,
           estimated_portfolio_value: portfolioValue || 0,
-          title_deed_url: lpRow?.ownership_doc_url || deedDoc?.storagePath || deedDoc?.fileUrl || null,
-          rates_taxes_url: lpRow?.rates_taxes_doc_url || ratesDoc?.storagePath || ratesDoc?.fileUrl || null,
-          id_document_url: lpRow?.id_document_url || idDoc?.storagePath || idDoc?.fileUrl || null,
+          title_deed_url: durableDocRef(lpRow?.ownership_doc_url) || deedDoc?.storagePath || deedDoc?.fileUrl || null,
+          rates_taxes_url: durableDocRef(lpRow?.rates_taxes_doc_url) || ratesDoc?.storagePath || ratesDoc?.fileUrl || null,
+          id_document_url: durableDocRef(lpRow?.id_document_url) || idDoc?.storagePath || idDoc?.fileUrl || null,
           verification_documents: vDocs,
           verification_status: vStatus,
           application_status: vStatus,
@@ -792,7 +824,7 @@ export const getAdminLandlordApplications = async () => {
     // Also include any landlord_profiles rows whose account is not yet in list
     for (const lp of landlordProfileRows) {
       if (!list.some((item) => item.user_id === lp.user_id)) {
-        const vDocs = Array.isArray(lp.verification_documents) ? lp.verification_documents : []
+        const vDocs = sanitizeVerificationDocs(lp.verification_documents)
         const deedDoc = vDocs.find((d) => d.documentType === 'ownership')
         const idDoc = vDocs.find((d) => d.documentType === 'id')
         const ratesDoc = vDocs.find((d) => d.documentType === 'rates')
@@ -813,9 +845,9 @@ export const getAdminLandlordApplications = async () => {
           postal_code: lp.postal_code || null,
           property_count: 1,
           estimated_portfolio_value: 0,
-          title_deed_url: lp.ownership_doc_url || deedDoc?.storagePath || deedDoc?.fileUrl || null,
-          rates_taxes_url: lp.rates_taxes_doc_url || ratesDoc?.storagePath || ratesDoc?.fileUrl || null,
-          id_document_url: lp.id_document_url || idDoc?.storagePath || idDoc?.fileUrl || null,
+          title_deed_url: durableDocRef(lp.ownership_doc_url) || deedDoc?.storagePath || deedDoc?.fileUrl || null,
+          rates_taxes_url: durableDocRef(lp.rates_taxes_doc_url) || ratesDoc?.storagePath || ratesDoc?.fileUrl || null,
+          id_document_url: durableDocRef(lp.id_document_url) || idDoc?.storagePath || idDoc?.fileUrl || null,
           verification_documents: vDocs,
           verification_status: lp.application_status || 'pending_review',
           application_status: lp.application_status || 'pending_review',

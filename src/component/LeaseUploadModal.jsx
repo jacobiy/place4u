@@ -15,7 +15,6 @@ export default function LeaseUploadModal({
   theme = 'light'
 }) {
   const [file, setFile] = useState(null);
-  const [fileBase64, setFileBase64] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState(null);
 
@@ -67,17 +66,11 @@ export default function LeaseUploadModal({
     if (!selected) return;
     setFile(selected);
     setError(null);
-
-    const reader = new FileReader();
-    reader.onload = () => {
-      setFileBase64(reader.result);
-    };
-    reader.readAsDataURL(selected);
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!file && !fileBase64) {
+    if (!file) {
       setError('Please select a lease agreement PDF file to upload.');
       return;
     }
@@ -90,24 +83,29 @@ export default function LeaseUploadModal({
     setError(null);
 
     try {
-      let leaseStorageUrl = fileBase64;
+      // The PDF must reach the private 'documents' bucket: neither a base64
+      // data URL (which bloats the match record and is invisible to every
+      // other portal) nor an in-memory blob URL (dead after reload) is an
+      // acceptable fallback, so a failed upload blocks the submission.
+      let leaseStorageUrl = null;
       const landlordId = currentUserId || match.landlord?.id || 'landlord';
 
-      // Attempt to persist to private Supabase Storage 'documents' bucket
-      if (file && landlordId) {
-        try {
-          const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
-          const path = `landlords/${landlordId}/leases/${Date.now()}_${safeName}`;
-          const { data: uploadData, error: uploadErr } = await supabase.storage
-            .from('documents')
-            .upload(path, file, { cacheControl: '3600', upsert: true, contentType: file.type || 'application/pdf' });
+      try {
+        const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+        const path = `landlords/${landlordId}/leases/${Date.now()}_${safeName}`;
+        const { data: uploadData, error: uploadErr } = await supabase.storage
+          .from('documents')
+          .upload(path, file, { cacheControl: '3600', upsert: true, contentType: file.type || 'application/pdf' });
 
-          if (!uploadErr && uploadData?.path) {
-            leaseStorageUrl = uploadData.path;
-          }
-        } catch (storageErr) {
-          console.warn('Storage bucket upload fallback:', storageErr);
+        if (uploadErr || !uploadData?.path) {
+          throw uploadErr || new Error('Storage did not return a path for the uploaded lease.');
         }
+        leaseStorageUrl = uploadData.path;
+      } catch (storageErr) {
+        console.error('Lease upload to storage failed:', storageErr);
+        setError('Could not upload the lease agreement to secure storage. Please try again.');
+        setIsSubmitting(false);
+        return;
       }
 
       const leaseTerms = {
@@ -117,8 +115,7 @@ export default function LeaseUploadModal({
         endDate: form.endDate,
         durationMonths: Number(form.durationMonths || 12),
         notes: form.notes,
-        fileName: file?.name || 'lease_agreement.pdf',
-        fileDataUrl: fileBase64 || null,
+        fileName: file.name || 'lease_agreement.pdf',
         uploadedAt: new Date().toISOString()
       };
 

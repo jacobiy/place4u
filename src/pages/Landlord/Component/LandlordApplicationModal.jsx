@@ -15,7 +15,7 @@ import {
   HelpCircle,
   Send
 } from 'lucide-react';
-import { LandlordQueries } from '../db/queries';
+import { LandlordQueries, isDurableDocumentRef, formatMaxVerificationFileSize } from '../db/queries';
 import { T } from '../Styles/designTokens';
 
 // Sample demo documents for quick 1-click verification testing
@@ -63,9 +63,13 @@ export const LandlordApplicationModal = ({
     city: profile?.city || 'Johannesburg',
     state: profile?.state || 'Gauteng',
     postalCode: profile?.postal_code || '',
-    idDocUrl: profile?.id_document_url || '',
-    ownershipDocUrl: profile?.ownership_doc_url || '',
-    ratesTaxesDocUrl: profile?.rates_taxes_doc_url || '',
+    // Legacy rows may still hold base64 `data:` values (an earlier revision
+    // read files with FileReader and stored them inline). Those are not durable
+    // references, so treat them as missing and require a fresh upload rather
+    // than re-saving megabytes into the profile row.
+    idDocUrl: isDurableDocumentRef(profile?.id_document_url) ? profile.id_document_url : '',
+    ownershipDocUrl: isDurableDocumentRef(profile?.ownership_doc_url) ? profile.ownership_doc_url : '',
+    ratesTaxesDocUrl: isDurableDocumentRef(profile?.rates_taxes_doc_url) ? profile.rates_taxes_doc_url : '',
     notes: profile?.application_notes || ''
   });
 
@@ -78,38 +82,35 @@ export const LandlordApplicationModal = ({
     setUploadingField(field);
     setError('');
 
+    if (!user?.id) {
+      setError('You must be signed in to upload documents.');
+      setUploadingField(null);
+      return;
+    }
+
     try {
-      if (user?.id) {
-        const uploadRes = await LandlordQueries.uploadVerificationDocumentFile(user.id, file);
-        if (uploadRes?.success && (uploadRes.storagePath || uploadRes.url)) {
-          const finalRef = uploadRes.storagePath || uploadRes.url;
-          setFormData((prev) => ({ ...prev, [field]: finalRef }));
-          setUploadingField(null);
-          return;
-        }
+      // The upload helper validates type/size and returns a storage path.
+      // There is deliberately no data URL fallback: base64 blobs bloat the
+      // landlord_profiles row (written twice per document) and `blob:` URLs
+      // are dead after a reload, so a failed upload must surface as an error.
+      const uploadRes = await LandlordQueries.uploadVerificationDocumentFile(user.id, file);
+
+      if (!uploadRes?.success || !isDurableDocumentRef(uploadRes.storagePath || uploadRes.url)) {
+        setError(
+          uploadRes?.error ||
+            `Could not upload that document. Please try again with a file under ${formatMaxVerificationFileSize()}.`
+        );
+        setUploadingField(null);
+        return;
       }
 
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        const dataUrl = e.target.result;
-        setFormData((prev) => ({ ...prev, [field]: dataUrl }));
-        setUploadingField(null);
-      };
-
-      reader.onerror = () => {
-        setError('Could not process file. Please try another image or document.');
-        setUploadingField(null);
-      };
-
-      reader.readAsDataURL(file);
+      const finalRef = uploadRes.storagePath || uploadRes.url;
+      setFormData((prev) => ({ ...prev, [field]: finalRef }));
     } catch (err) {
-      console.warn('Upload error, falling back to data URL:', err);
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        setFormData((prev) => ({ ...prev, [field]: e.target.result }));
-        setUploadingField(null);
-      };
-      reader.readAsDataURL(file);
+      console.error('Verification document upload error:', err);
+      setError(err?.message || 'Could not upload that document. Please try again.');
+    } finally {
+      setUploadingField(null);
     }
   };
 
@@ -136,7 +137,13 @@ export const LandlordApplicationModal = ({
       return;
     }
 
-    if (!formData.idDocUrl || !formData.ownershipDocUrl) {
+    if (uploadingField) {
+      setError('Please wait for the document upload to finish before submitting.');
+      setStep(3);
+      return;
+    }
+
+    if (!isDurableDocumentRef(formData.idDocUrl) || !isDurableDocumentRef(formData.ownershipDocUrl)) {
       setError('Please provide both your ID document and Proof of Property Ownership (Title Deed / Transfer / Lease mandate).');
       setStep(3);
       return;

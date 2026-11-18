@@ -137,7 +137,6 @@ export default function LeaseSigningModal({
   const [previewMode, setPreviewMode] = useState('original');
 
   const [signedFile, setSignedFile] = useState(null);
-  const [signedFileBase64, setSignedFileBase64] = useState('');
   const [signerName, setSignerName] = useState('');
   const [idNumber, setIdNumber] = useState('');
   const [agreedToTerms, setAgreedToTerms] = useState(false);
@@ -190,7 +189,6 @@ export default function LeaseSigningModal({
     if (isOpen) {
       setError(null);
       setSignedFile(null);
-      setSignedFileBase64('');
       setAgreedToTerms(false);
       setPreviewMode(isAlreadySigned ? 'signed' : 'original');
     }
@@ -319,17 +317,11 @@ export default function LeaseSigningModal({
     if (!selected) return;
     setSignedFile(selected);
     setError(null);
-
-    const reader = new FileReader();
-    reader.onload = () => {
-      setSignedFileBase64(reader.result);
-    };
-    reader.readAsDataURL(selected);
   };
 
   const handleSubmitSignedLease = async (e) => {
     if (e && e.preventDefault) e.preventDefault();
-    if (!signedFile && !signedFileBase64) {
+    if (!signedFile) {
       setError('Please select your signed lease agreement file (PDF or image) to upload.');
       return;
     }
@@ -346,36 +338,40 @@ export default function LeaseSigningModal({
     setError(null);
 
     try {
-      let signedLeaseStorageUrl = signedFileBase64;
+      // The executed lease must live in the private 'documents' bucket. A base64
+      // data URL here bloats the match record and is unreadable to the landlord
+      // and admin portals, and a blob: URL dies on reload — so fail loudly
+      // instead of degrading.
+      let signedLeaseStorageUrl = null;
       const tenantId = currentUserId || tenant.id || 'tenant';
 
-      // Attempt to upload to Supabase storage bucket
-      if (signedFile && tenantId) {
-        try {
-          const safeName = signedFile.name.replace(/[^a-zA-Z0-9._-]/g, '_');
-          const path = `tenants/${tenantId}/signed_leases/${Date.now()}_${safeName}`;
-          const { data: uploadData, error: uploadErr } = await supabase.storage
-            .from('documents')
-            .upload(path, signedFile, {
-              cacheControl: '3600',
-              upsert: true,
-              contentType: signedFile.type || 'application/pdf'
-            });
+      try {
+        const safeName = signedFile.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+        const path = `tenants/${tenantId}/signed_leases/${Date.now()}_${safeName}`;
+        const { data: uploadData, error: uploadErr } = await supabase.storage
+          .from('documents')
+          .upload(path, signedFile, {
+            cacheControl: '3600',
+            upsert: true,
+            contentType: signedFile.type || 'application/pdf'
+          });
 
-          if (!uploadErr && uploadData?.path) {
-            signedLeaseStorageUrl = uploadData.path;
-          }
-        } catch (storageErr) {
-          console.warn('Storage upload fallback to base64 payload:', storageErr);
+        if (uploadErr || !uploadData?.path) {
+          throw uploadErr || new Error('Storage did not return a path for the uploaded lease.');
         }
+        signedLeaseStorageUrl = uploadData.path;
+      } catch (storageErr) {
+        console.error('Signed lease upload to storage failed:', storageErr);
+        setError('Could not upload your signed lease to secure storage. Please try again.');
+        setIsSubmitting(false);
+        return;
       }
 
       const signatureData = {
         signerName: signerName.trim(),
         idNumber: idNumber.trim() || null,
         signedLeaseUrl: signedLeaseStorageUrl,
-        signedLeaseFileName: signedFile?.name || 'signed_lease.pdf',
-        fileDataUrl: signedFileBase64,
+        signedLeaseFileName: signedFile.name || 'signed_lease.pdf',
         signedAt: new Date().toISOString(),
         termsAccepted: true
       };

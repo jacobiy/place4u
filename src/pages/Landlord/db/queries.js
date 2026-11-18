@@ -21,6 +21,44 @@ function isMissingRelationError(error) {
   );
 }
 
+/**
+ * Verification documents are uploaded to Supabase Storage and only their
+ * storage path is persisted on `landlord_profiles`. Base64 `data:` URLs and
+ * ephemeral `blob:` object URLs must never reach the database: a single data
+ * URL is ~1.37x the file size, is written twice per document (the direct
+ * `*_doc_url` column plus `verification_documents`), and makes every
+ * `select('*')` on the table — including the admin review list — transfer
+ * megabytes per landlord.
+ */
+export const MAX_VERIFICATION_FILE_BYTES = 5 * 1024 * 1024;
+export const ACCEPTED_VERIFICATION_FILE_TYPES = [
+  'image/jpeg',
+  'image/jpg',
+  'image/png',
+  'image/webp',
+  'image/heic',
+  'image/heif',
+  'application/pdf'
+];
+
+export const formatMaxVerificationFileSize = () => {
+  const mb = MAX_VERIFICATION_FILE_BYTES / (1024 * 1024);
+  return `${Number.isInteger(mb) ? mb : mb.toFixed(1)} MB`;
+};
+
+/**
+ * True when a stored value is a durable reference we are willing to keep:
+ * a storage path, or an http(s) URL. `data:` (base64) and `blob:` (in-memory)
+ * refs are rejected — the blob one is dead after a page reload, so accepting
+ * it makes the UI claim a document is attached when nothing was stored.
+ */
+export const isDurableDocumentRef = (value) => {
+  if (typeof value !== 'string') return false;
+  const trimmed = value.trim();
+  if (!trimmed) return false;
+  return !/^(data:|blob:)/i.test(trimmed);
+};
+
 export const LandlordQueries = {
   
   // Get landlord profile by user ID
@@ -614,6 +652,26 @@ export const LandlordQueries = {
   // Upload verification document file to storage
   async uploadVerificationDocumentFile(userId, file) {
     try {
+      if (!file) {
+        return { success: false, error: 'No file selected. Please choose a document to upload.' };
+      }
+
+      // Reject anything we cannot persist durably BEFORE it reaches the network.
+      const fileType = (file.type || '').toLowerCase();
+      if (fileType && !ACCEPTED_VERIFICATION_FILE_TYPES.includes(fileType)) {
+        return {
+          success: false,
+          error: 'Unsupported file type. Please upload a JPG, PNG, WEBP or PDF document.'
+        };
+      }
+
+      if (file.size > MAX_VERIFICATION_FILE_BYTES) {
+        return {
+          success: false,
+          error: `That file is ${(file.size / (1024 * 1024)).toFixed(1)} MB. Documents must be ${formatMaxVerificationFileSize()} or smaller — please compress it and try again.`
+        };
+      }
+
       const fileExt = file.name.split('.').pop();
       const sanitizedName = file.name.replace(/[^a-zA-Z0-9.-]/g, '_');
       const fileName = `${userId}/${Date.now()}-${sanitizedName}`;
@@ -642,16 +700,15 @@ export const LandlordQueries = {
       }
 
       if (uploadRes.error) {
-        // Fallback for offline demo / client object URL
-        const objectUrl = URL.createObjectURL(file);
+        // Fail loudly. Earlier revisions returned a `blob:` object URL here,
+        // which dies on reload and made the UI report a document as attached
+        // when nothing was ever stored — and the pre-storage revision wrote a
+        // base64 data URL into the profile row instead.
         return {
-          success: true,
-          url: objectUrl,
-          storagePath: null,
-          bucket: null,
-          fileName: file.name,
-          fileSize: file.size,
-          fileType: file.type || fileExt
+          success: false,
+          error:
+            uploadRes.error.message ||
+            'Could not upload your document to secure storage. Check your connection and try again.'
         };
       }
 
@@ -672,21 +729,13 @@ export const LandlordQueries = {
         fileType: file.type || fileExt
       };
     } catch (error) {
-      console.warn('Storage upload note, using client URL fallback:', error);
-      try {
-        const objectUrl = URL.createObjectURL(file);
-        return {
-          success: true,
-          url: objectUrl,
-          storagePath: null,
-          bucket: null,
-          fileName: file.name,
-          fileSize: file.size,
-          fileType: file.type
-        };
-      } catch {
-        return { success: false, error: error.message };
-      }
+      // No client-side fallback: a data URL or object URL here would either
+      // bloat landlord_profiles or point at bytes that vanish on reload.
+      console.error('Verification document upload failed:', error);
+      return {
+        success: false,
+        error: error?.message || 'Could not upload your document. Please try again.'
+      };
     }
   },
 
@@ -1454,6 +1503,13 @@ export const LandlordQueries = {
         notes
       } = applicationData;
 
+      // Never persist an inline or in-memory reference: only a storage path or
+      // an http(s) URL survives a reload and stays readable by the admin
+      // reviewer. Anything else is dropped and treated as "not provided".
+      const idDocRef = isDurableDocumentRef(idDocUrl) ? idDocUrl : null;
+      const ownershipDocRef = isDurableDocumentRef(ownershipDocUrl) ? ownershipDocUrl : null;
+      const ratesTaxesDocRef = isDurableDocumentRef(ratesTaxesDocUrl) ? ratesTaxesDocUrl : null;
+
       // Preserve or initialize verification_documents
       let existingDocs = [];
       try {
@@ -1463,47 +1519,50 @@ export const LandlordQueries = {
           .eq('user_id', userId)
           .maybeSingle();
         if (Array.isArray(existingProf?.verification_documents)) {
-          existingDocs = existingProf.verification_documents;
+          // Drop legacy base64 entries so they are not carried forward.
+          existingDocs = existingProf.verification_documents.filter(
+            (doc) => doc && isDurableDocumentRef(doc.storagePath || doc.fileUrl)
+          );
         }
       } catch {}
 
       const newDocs = [...existingDocs];
-      if (ownershipDocUrl) {
+      if (ownershipDocRef) {
         const existingIdx = newDocs.findIndex((d) => d.documentType === 'ownership');
         const docObj = {
           id: `doc-ownership-${Date.now()}`,
           title: 'Proof of Ownership / Title Deed',
           documentType: 'ownership',
-          fileUrl: ownershipDocUrl,
-          storagePath: ownershipDocUrl,
+          fileUrl: ownershipDocRef,
+          storagePath: ownershipDocRef,
           uploadedAt: new Date().toISOString(),
           status: 'under_review'
         };
         if (existingIdx >= 0) newDocs[existingIdx] = docObj;
         else newDocs.push(docObj);
       }
-      if (idDocUrl) {
+      if (idDocRef) {
         const existingIdx = newDocs.findIndex((d) => d.documentType === 'id');
         const docObj = {
           id: `doc-id-${Date.now()}`,
           title: 'National Identity / Passport Document',
           documentType: 'id',
-          fileUrl: idDocUrl,
-          storagePath: idDocUrl,
+          fileUrl: idDocRef,
+          storagePath: idDocRef,
           uploadedAt: new Date().toISOString(),
           status: 'under_review'
         };
         if (existingIdx >= 0) newDocs[existingIdx] = docObj;
         else newDocs.push(docObj);
       }
-      if (ratesTaxesDocUrl) {
+      if (ratesTaxesDocRef) {
         const existingIdx = newDocs.findIndex((d) => d.documentType === 'rates');
         const docObj = {
           id: `doc-rates-${Date.now()}`,
           title: 'Municipal Rates & Taxes Statement',
           documentType: 'rates',
-          fileUrl: ratesTaxesDocUrl,
-          storagePath: ratesTaxesDocUrl,
+          fileUrl: ratesTaxesDocRef,
+          storagePath: ratesTaxesDocRef,
           uploadedAt: new Date().toISOString(),
           status: 'under_review'
         };
@@ -1526,9 +1585,9 @@ export const LandlordQueries = {
         management_tier: manageWithPlatform ? 'full_management' : 'listing_only',
         application_status: 'pending_review',
         application_submitted_at: new Date().toISOString(),
-        id_document_url: idDocUrl || null,
-        ownership_doc_url: ownershipDocUrl || null,
-        rates_taxes_doc_url: ratesTaxesDocUrl || null,
+        id_document_url: idDocRef,
+        ownership_doc_url: ownershipDocRef,
+        rates_taxes_doc_url: ratesTaxesDocRef,
         verification_documents: newDocs,
         application_notes: notes || null,
         updated_at: new Date().toISOString()
