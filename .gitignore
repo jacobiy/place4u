@@ -58,3 +58,9 @@ captures/
 scratch_frames/
 Business Commercial Music - Alec Koff Label.mp3
 
+# Partner scraper tools & data - never commit
+scripts/scrape_partners.py
+scrape_partners.py
+partners_scraped.*
+scripts/partners_scraped.*
+

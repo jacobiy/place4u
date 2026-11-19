@@ -74,69 +74,43 @@ export const PARTNER_TYPE_OPTIONS = [
   { value: 'other', label: 'Other' }
 ]
 
+export const INSTITUTION_OPTIONS = [
+  'UJ',
+  'Wits',
+  'UP',
+  'TUT',
+  'UCT',
+  'Stellenbosch',
+  'UWC',
+  'Other'
+]
+
+export const BUILDING_TYPE_OPTIONS = [
+  { value: 'student_accommodation', label: 'Student Accommodation' },
+  { value: 'residential_apartment', label: 'Residential Apartment' },
+  { value: 'house_commune', label: 'House / Commune' },
+  { value: 'mixed_use', label: 'Mixed Use' }
+]
+
 const LOCAL_STORAGE_KEY = 'place4u_partners_cache_v1'
 
-const INITIAL_FALLBACK_PARTNERS = [
-  {
-    id: 'demo-p-1',
-    first_name: 'Sipho',
-    last_name: 'Dlamini',
-    location: 'Braamfontein, JHB',
-    building_name: 'Apex Student Living',
-    partner_type: 'building_manager',
-    status: 'active',
-    phone: '+27 82 123 4567',
-    email: 'sipho@apexliving.co.za',
-    units_count: 120,
-    commission_deal: '50% placement fee',
-    notes: 'Manages 120 student units across 4 floors. Key Place4U contact.',
-    created_at: new Date(Date.now() - 86400000 * 5).toISOString(),
-    updated_at: new Date(Date.now() - 86400000 * 2).toISOString()
-  },
-  {
-    id: 'demo-p-2',
-    first_name: 'Lerato',
-    last_name: 'Mokoena',
-    location: 'Auckland Park, JHB',
-    building_name: 'Kingsway Court',
-    partner_type: 'caretaker',
-    status: 'onboarding',
-    phone: '+27 73 987 6543',
-    email: 'lerato.m@kingswaycourt.co.za',
-    units_count: 45,
-    commission_deal: 'R250 referral / unit',
-    notes: 'Finalizing room inventory list. Meeting scheduled for next Tuesday.',
-    created_at: new Date(Date.now() - 86400000 * 3).toISOString(),
-    updated_at: new Date(Date.now() - 86400000 * 1).toISOString()
-  },
-  {
-    id: 'demo-p-3',
-    first_name: 'Johan',
-    last_name: 'Van Der Merwe',
-    location: 'Hatfield, Pretoria',
-    building_name: 'Varsity Lodge Hatfield',
-    partner_type: 'landlord',
-    status: 'lead',
-    phone: '+27 84 555 1212',
-    email: 'johan@varsitylodges.co.za',
-    units_count: 250,
-    commission_deal: 'Standard commission',
-    notes: 'Owns 3 student blocks near UP campus. Initial email outreach sent.',
-    created_at: new Date(Date.now() - 86400000 * 8).toISOString(),
-    updated_at: new Date(Date.now() - 86400000 * 4).toISOString()
-  }
-]
+const INITIAL_FALLBACK_PARTNERS = []
 
 const readLocalFallback = () => {
   try {
     const raw = localStorage.getItem(LOCAL_STORAGE_KEY)
     if (!raw) {
-      localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(INITIAL_FALLBACK_PARTNERS))
-      return INITIAL_FALLBACK_PARTNERS
+      return []
     }
-    return JSON.parse(raw)
+    const parsed = JSON.parse(raw)
+    // Filter out any legacy dummy/demo entries
+    const cleaned = Array.isArray(parsed) ? parsed.filter(p => !String(p.id).startsWith('demo-p-')) : []
+    if (cleaned.length !== (parsed || []).length) {
+      localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(cleaned))
+    }
+    return cleaned
   } catch {
-    return INITIAL_FALLBACK_PARTNERS
+    return []
   }
 }
 
@@ -192,6 +166,8 @@ export const createPartner = async (payload) => {
     location: String(payload.location || '').trim(),
     building_name: String(payload.building_name || '').trim(),
     building_id: payload.building_id || null,
+    institution: String(payload.institution || 'UJ').trim(),
+    building_type: String(payload.building_type || 'student_accommodation').trim(),
     partner_type: payload.partner_type || 'building_manager',
     status: payload.status || 'lead',
     phone: String(payload.phone || '').trim(),
@@ -320,8 +296,10 @@ export const exportPartnersToCSV = (partners = []) => {
   const headers = [
     'Name',
     'Surname',
-    'Location',
     'Building Name',
+    'Institution',
+    'Building Type',
+    'Location',
     'Status',
     'Partner Type',
     'Phone',
@@ -335,8 +313,10 @@ export const exportPartnersToCSV = (partners = []) => {
   const rows = partners.map((p) => [
     `"${(p.first_name || '').replace(/"/g, '""')}"`,
     `"${(p.last_name || '').replace(/"/g, '""')}"`,
-    `"${(p.location || '').replace(/"/g, '""')}"`,
     `"${(p.building_name || p.building?.name || '').replace(/"/g, '""')}"`,
+    `"${(p.institution || 'UJ').replace(/"/g, '""')}"`,
+    `"${(p.building_type || 'student_accommodation').replace(/"/g, '""')}"`,
+    `"${(p.location || '').replace(/"/g, '""')}"`,
     `"${(p.status || '').replace(/"/g, '""')}"`,
     `"${(p.partner_type || '').replace(/"/g, '""')}"`,
     `"${(p.phone || '').replace(/"/g, '""')}"`,

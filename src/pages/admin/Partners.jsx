@@ -22,7 +22,8 @@ import {
   FileSpreadsheet,
   AlertCircle,
   Copy,
-  CheckCheck
+  CheckCheck,
+  Upload
 } from 'lucide-react'
 import {
   getPartners,
@@ -31,7 +32,9 @@ import {
   deletePartner,
   exportPartnersToCSV,
   PARTNER_STATUS_CONFIG,
-  PARTNER_TYPE_OPTIONS
+  PARTNER_TYPE_OPTIONS,
+  INSTITUTION_OPTIONS,
+  BUILDING_TYPE_OPTIONS
 } from './db/partnerQueries'
 import { getBuildings } from './db/buildingQueries'
 
@@ -45,7 +48,11 @@ export default function PartnersPage() {
   const [searchTerm, setSearchTerm] = useState('')
   const [statusFilter, setStatusFilter] = useState('all')
   const [typeFilter, setTypeFilter] = useState('all')
+  const [institutionFilter, setInstitutionFilter] = useState('all')
   const [copiedSql, setCopiedSql] = useState(false)
+  const fileInputRef = React.useRef(null)
+  const [importing, setImporting] = useState(false)
+  const [importStatusMsg, setImportStatusMsg] = useState('')
 
   // Status saving state tracker { [partnerId]: 'saving' | 'saved' }
   const [savingStatus, setSavingStatus] = useState({})
@@ -56,6 +63,8 @@ export default function PartnersPage() {
     last_name: '',
     location: '',
     building_name: '',
+    institution: 'UJ',
+    building_type: 'student_accommodation',
     status: 'lead',
     partner_type: 'building_manager',
     phone: '',
@@ -133,6 +142,8 @@ export default function PartnersPage() {
         last_name: '',
         location: '',
         building_name: '',
+        institution: 'UJ',
+        building_type: 'student_accommodation',
         status: 'lead',
         partner_type: 'building_manager',
         phone: '',
@@ -229,6 +240,64 @@ export default function PartnersPage() {
     }
   }
 
+  // Handle JSON file import
+  const handleImportFile = async (e) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setImporting(true)
+    setImportStatusMsg('Reading and importing records...')
+    try {
+      const text = await file.text()
+      let records = []
+      if (file.name.endsWith('.json')) {
+        records = JSON.parse(text)
+      } else if (file.name.endsWith('.csv')) {
+        // Basic CSV parsing
+        const lines = text.split('\n').filter((l) => l.trim())
+        if (lines.length > 1) {
+          records = lines.slice(1).map((line) => {
+            const cols = line.split(',').map((c) => c.replace(/^"|"$/g, '').trim())
+            return {
+              first_name: cols[0] || 'Partner',
+              last_name: cols[1] || '',
+              building_name: cols[2] || '',
+              institution: cols[3] || 'UJ',
+              building_type: cols[4] || 'student_accommodation',
+              location: cols[5] || '',
+              status: cols[6] || 'lead',
+              partner_type: cols[7] || 'building_manager',
+              phone: cols[8] || '',
+              email: cols[9] || '',
+              units_count: Number(cols[10]) || 0,
+              commission_deal: cols[11] || '',
+              notes: cols[12] || ''
+            }
+          })
+        }
+      }
+
+      if (Array.isArray(records) && records.length > 0) {
+        let inserted = 0
+        for (const item of records) {
+          const res = await createPartner(item)
+          if (res.success) inserted++
+        }
+        setImportStatusMsg(`Successfully imported ${inserted} partners!`)
+        setTimeout(() => setImportStatusMsg(''), 4500)
+        await fetchData()
+      } else {
+        setImportStatusMsg('No valid records found in file.')
+        setTimeout(() => setImportStatusMsg(''), 3000)
+      }
+    } catch (err) {
+      alert('Error importing file: ' + err.message)
+      setImportStatusMsg('')
+    } finally {
+      setImporting(false)
+      if (fileInputRef.current) fileInputRef.current.value = ''
+    }
+  }
+
   // Filtered partners
   const filteredPartners = useMemo(() => {
     return partners.filter((p) => {
@@ -239,6 +308,8 @@ export default function PartnersPage() {
           p.last_name,
           p.location,
           p.building_name,
+          p.institution,
+          p.building_type,
           p.phone,
           p.email,
           p.notes
@@ -248,10 +319,12 @@ export default function PartnersPage() {
 
       const matchStatus = statusFilter === 'all' || p.status === statusFilter
       const matchType = typeFilter === 'all' || p.partner_type === typeFilter
+      const matchInstitution =
+        institutionFilter === 'all' || (p.institution || 'UJ') === institutionFilter
 
-      return matchSearch && matchStatus && matchType
+      return matchSearch && matchStatus && matchType && matchInstitution
     })
-  }, [partners, searchTerm, statusFilter, typeFilter])
+  }, [partners, searchTerm, statusFilter, typeFilter, institutionFilter])
 
   // Summary counts
   const stats = useMemo(() => {
@@ -319,6 +392,30 @@ export default function PartnersPage() {
 
         {/* Action Buttons */}
         <div className="flex items-center gap-2">
+          {importStatusMsg && (
+            <span className="text-xs font-medium text-emerald-700 bg-emerald-50 border border-emerald-200 px-2.5 py-1 rounded-lg animate-pulse">
+              {importStatusMsg}
+            </span>
+          )}
+
+          <input
+            type="file"
+            ref={fileInputRef}
+            onChange={handleImportFile}
+            accept=".json,.csv"
+            className="hidden"
+          />
+
+          <button
+            onClick={() => fileInputRef.current?.click()}
+            disabled={importing}
+            className="flex items-center gap-1.5 px-3 py-2 bg-blue-50 border border-blue-200 hover:bg-blue-100 text-blue-700 text-xs font-semibold rounded-lg shadow-2xs transition cursor-pointer"
+            title="Import partners from JSON or CSV dataset"
+          >
+            <Upload size={14} className={importing ? 'animate-bounce' : ''} />
+            {importing ? 'Importing...' : 'Import Dataset'}
+          </button>
+
           <button
             onClick={() => exportPartnersToCSV(filteredPartners)}
             className="flex items-center gap-1.5 px-3 py-2 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-semibold rounded-lg shadow-2xs transition cursor-pointer"
@@ -443,12 +540,30 @@ export default function PartnersPage() {
             </select>
           </div>
 
-          {(searchTerm || statusFilter !== 'all' || typeFilter !== 'all') && (
+          {/* Institution Filter */}
+          <div className="flex items-center gap-1.5">
+            <span className="text-[11px] font-semibold text-slate-500">Institution:</span>
+            <select
+              value={institutionFilter}
+              onChange={(e) => setInstitutionFilter(e.target.value)}
+              className="text-xs px-2.5 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-slate-700 focus:outline-none focus:border-blue-600"
+            >
+              <option value="all">All Institutions</option>
+              {INSTITUTION_OPTIONS.map((inst) => (
+                <option key={inst} value={inst}>
+                  {inst}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {(searchTerm || statusFilter !== 'all' || typeFilter !== 'all' || institutionFilter !== 'all') && (
             <button
               onClick={() => {
                 setSearchTerm('')
                 setStatusFilter('all')
                 setTypeFilter('all')
+                setInstitutionFilter('all')
               }}
               className="text-xs text-blue-600 hover:text-blue-800 font-medium px-2 py-1"
             >
@@ -470,7 +585,7 @@ export default function PartnersPage() {
         </div>
 
         <form onSubmit={handleQuickAddSubmit} className="space-y-2">
-          <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-2 text-xs">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 text-xs">
             {/* Name */}
             <div>
               <input
@@ -513,6 +628,36 @@ export default function PartnersPage() {
               </datalist>
             </div>
 
+            {/* Institution */}
+            <div>
+              <select
+                value={quickAdd.institution}
+                onChange={(e) => setQuickAdd({ ...quickAdd, institution: e.target.value })}
+                className="w-full px-2 py-1.5 bg-white border border-blue-200 rounded-md text-slate-800 focus:outline-none focus:border-blue-600 font-semibold"
+              >
+                {INSTITUTION_OPTIONS.map((inst) => (
+                  <option key={inst} value={inst}>
+                    {inst}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Building Type */}
+            <div>
+              <select
+                value={quickAdd.building_type}
+                onChange={(e) => setQuickAdd({ ...quickAdd, building_type: e.target.value })}
+                className="w-full px-2 py-1.5 bg-white border border-blue-200 rounded-md text-slate-800 focus:outline-none focus:border-blue-600"
+              >
+                {BUILDING_TYPE_OPTIONS.map((bt) => (
+                  <option key={bt.value} value={bt.value}>
+                    {bt.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+
             {/* Location */}
             <div>
               <input
@@ -523,7 +668,10 @@ export default function PartnersPage() {
                 className="w-full px-2.5 py-1.5 bg-white border border-blue-200 rounded-md text-slate-800 placeholder:text-slate-400 focus:outline-none focus:border-blue-600"
               />
             </div>
+          </div>
 
+          {/* Secondary fields row */}
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-7 gap-2 text-xs">
             {/* Status Dropdown */}
             <div>
               <select
@@ -553,10 +701,7 @@ export default function PartnersPage() {
                 ))}
               </select>
             </div>
-          </div>
 
-          {/* Secondary fields row */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-2 text-xs">
             <div>
               <input
                 type="text"
@@ -588,7 +733,7 @@ export default function PartnersPage() {
               />
             </div>
 
-            <div className="sm:col-span-2">
+            <div>
               <input
                 type="text"
                 placeholder="Notes / Commission terms..."
@@ -624,6 +769,8 @@ export default function PartnersPage() {
                 <th className="py-2.5 px-3 min-w-[140px]">Name</th>
                 <th className="py-2.5 px-3 min-w-[140px]">Surname</th>
                 <th className="py-2.5 px-3 min-w-[170px]">Building Name</th>
+                <th className="py-2.5 px-3 min-w-[100px]">Institution</th>
+                <th className="py-2.5 px-3 min-w-[160px]">Building Type</th>
                 <th className="py-2.5 px-3 min-w-[160px]">Location</th>
                 <th className="py-2.5 px-3 min-w-[160px]">Status (Dropdown)</th>
                 <th className="py-2.5 px-3 min-w-[150px]">Partner Type</th>
@@ -638,7 +785,7 @@ export default function PartnersPage() {
             <tbody className="divide-y divide-slate-100">
               {filteredPartners.length === 0 ? (
                 <tr>
-                  <td colSpan={12} className="py-12 text-center text-slate-400">
+                  <td colSpan={14} className="py-12 text-center text-slate-400">
                     <Handshake className="w-8 h-8 mx-auto mb-2 text-slate-300" />
                     <p className="font-semibold text-slate-600">No partners found</p>
                     <p className="text-xs text-slate-400 mt-0.5">
@@ -695,6 +842,36 @@ export default function PartnersPage() {
                             className="w-full bg-transparent border border-transparent hover:border-slate-200 focus:border-blue-500 rounded px-1.5 py-0.5 focus:bg-white text-slate-900 font-medium focus:outline-none"
                           />
                         </div>
+                      </td>
+
+                      {/* Institution */}
+                      <td className="py-2 px-3">
+                        <select
+                          value={p.institution || 'UJ'}
+                          onChange={(e) => handleInlineBlur(p.id, 'institution', e.target.value)}
+                          className="bg-slate-50 border border-slate-200 rounded px-2 py-1 text-slate-800 font-semibold focus:outline-none focus:border-blue-500 cursor-pointer w-full text-xs"
+                        >
+                          {INSTITUTION_OPTIONS.map((inst) => (
+                            <option key={inst} value={inst}>
+                              {inst}
+                            </option>
+                          ))}
+                        </select>
+                      </td>
+
+                      {/* Building Type */}
+                      <td className="py-2 px-3">
+                        <select
+                          value={p.building_type || 'student_accommodation'}
+                          onChange={(e) => handleInlineBlur(p.id, 'building_type', e.target.value)}
+                          className="bg-slate-50 border border-slate-200 rounded px-2 py-1 text-slate-700 font-medium focus:outline-none focus:border-blue-500 cursor-pointer w-full text-xs"
+                        >
+                          {BUILDING_TYPE_OPTIONS.map((bt) => (
+                            <option key={bt.value} value={bt.value}>
+                              {bt.label}
+                            </option>
+                          ))}
+                        </select>
                       </td>
 
                       {/* Location */}
@@ -954,6 +1131,42 @@ export default function PartnersPage() {
                     }
                     className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-900 focus:outline-none focus:border-blue-600"
                   />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block font-semibold text-slate-700 mb-1">Institution</label>
+                  <select
+                    value={editingPartner.institution || 'UJ'}
+                    onChange={(e) =>
+                      setEditingPartner({ ...editingPartner, institution: e.target.value })
+                    }
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-900 focus:outline-none focus:border-blue-600 font-semibold"
+                  >
+                    {INSTITUTION_OPTIONS.map((inst) => (
+                      <option key={inst} value={inst}>
+                        {inst}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block font-semibold text-slate-700 mb-1">Building Type</label>
+                  <select
+                    value={editingPartner.building_type || 'student_accommodation'}
+                    onChange={(e) =>
+                      setEditingPartner({ ...editingPartner, building_type: e.target.value })
+                    }
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-900 focus:outline-none focus:border-blue-600"
+                  >
+                    {BUILDING_TYPE_OPTIONS.map((bt) => (
+                      <option key={bt.value} value={bt.value}>
+                        {bt.label}
+                      </option>
+                    ))}
+                  </select>
                 </div>
               </div>
 

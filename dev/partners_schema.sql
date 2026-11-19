@@ -30,6 +30,8 @@ create table if not exists public.partners (
   location         text not null default '',
   building_name    text not null default '',
   building_id      uuid references public.buildings(id) on delete set null,
+  institution      text not null default 'UJ',
+  building_type    text not null default 'student_accommodation',
   partner_type     text not null default 'building_manager',
   status           text not null default 'lead',
   phone            text default '',
@@ -43,6 +45,11 @@ create table if not exists public.partners (
   created_at       timestamptz not null default now(),
   updated_at       timestamptz not null default now()
 );
+
+-- Ensure columns exist if table was already created
+alter table public.partners
+  add column if not exists institution text not null default 'UJ',
+  add column if not exists building_type text not null default 'student_accommodation';
 
 -- 2. Constraints
 alter table public.partners
@@ -120,16 +127,3 @@ create policy "Admins have full access to partners"
         and users.user_type = 'admin'
     )
   );
-
--- Sample seeds (Dev only, if table is empty)
-insert into public.partners (first_name, last_name, location, building_name, status, partner_type, phone, email, notes, units_count)
-select 'Sipho', 'Dlamini', 'Braamfontein, JHB', 'Apex Student Living', 'active', 'building_manager', '+27 82 123 4567', 'sipho@apexliving.co.za', 'Manages 120 student units across 4 floors. Key Place4U contact.', 120
-where not exists (select 1 from public.partners limit 1);
-
-insert into public.partners (first_name, last_name, location, building_name, status, partner_type, phone, email, notes, units_count)
-select 'Lerato', 'Mokoena', 'Auckland Park, JHB', 'Kingsway Court', 'onboarding', 'caretaker', '+27 73 987 6543', 'lerato.m@kingswaycourt.co.za', 'Finalizing room inventory list. Meeting scheduled for next Tuesday.', 45
-where (select count(*) from public.partners) <= 1;
-
-insert into public.partners (first_name, last_name, location, building_name, status, partner_type, phone, email, notes, units_count)
-select 'Johan', 'Van Der Merwe', 'Hatfield, Pretoria', 'Varsity Lodge Hatfield', 'lead', 'landlord', '+27 84 555 1212', 'johan@varsitylodges.co.za', 'Owns 3 student blocks near UP campus. Initial email outreach sent.', 250
-where (select count(*) from public.partners) <= 2;
