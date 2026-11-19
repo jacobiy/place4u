@@ -23,14 +23,6 @@ const SUPPLY_STREAMS = [
 	{ id: 'student', n: '06', title: 'Student accommodation', body: 'Residences and private student housing' }
 ];
 
-const MARKET_ENTRY = [
-	'Student accommodation',
-	'Room rentals',
-	'Property agencies',
-	'Roommate connections',
-	'Broader residential rentals'
-];
-
 const DESKTOP_QUERY = '(min-width: 1024px)';
 
 const round = (value) => Math.round(value * 10) / 10;
@@ -45,7 +37,7 @@ const TierLabel = ({ n, title, detail }) => (
 	</div>
 );
 
-export default function MarketplaceFlowSection({ footerNote = null }) {
+export default function MarketplaceFlowSection() {
 	const containerRef = useRef(null);
 	const appRef = useRef(null);
 	const hubRef = useRef(null);
@@ -222,10 +214,9 @@ export default function MarketplaceFlowSection({ footerNote = null }) {
 							<span className="block italic">flowing into one Place4U.</span>
 						</h2>
 						<p className="max-w-[44ch] text-sm leading-relaxed text-[#47545a] lg:justify-self-end lg:text-[15px]">
-							Agencies, landlords, property managers, owners and roommates converge into a single marketplace — and
-							your application docks straight into it. Student accommodation leads our entry; it is not the whole
-							identity.
+							Agencies, landlords, property managers, owners and roommates converge into a single marketplace.
 						</p>
+	
 					</div>
 				</header>
 
@@ -406,6 +397,7 @@ export default function MarketplaceFlowSection({ footerNote = null }) {
 						</div>
 					</div>
 
+				
 					{/* Demand side */}
 					<div className="mt-9 flex flex-wrap items-baseline gap-x-6 gap-y-2 border-t border-[#d5e0df] pt-4 lg:pl-[152px]">
 						<span className="font-mono text-[9.5px] uppercase tracking-[0.18em] text-[#8a9699]">Demand</span>
@@ -419,18 +411,6 @@ export default function MarketplaceFlowSection({ footerNote = null }) {
 					<p className="font-serif-display text-lg leading-snug text-[#18262d]">
 						One platform. Multiple housing opportunities. <span className="italic">A place for everyone.</span>
 					</p>
-
-					<p className="mt-4 max-w-[92ch] font-mono text-[9.5px] uppercase leading-[2.1] tracking-[0.12em] text-[#8a9699]">
-						Market entry —{' '}
-						{MARKET_ENTRY.map((step, i) => (
-							<span key={step}>
-								{String(i + 1).padStart(2, '0')} {step}
-								{i < MARKET_ENTRY.length - 1 ? ' → ' : ''}
-							</span>
-						))}
-					</p>
-
-					{footerNote && <div className="mt-7 max-w-3xl text-xs leading-relaxed text-[#47545a]">{footerNote}</div>}
 				</footer>
 			</div>
 		</section>

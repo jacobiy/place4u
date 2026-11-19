@@ -518,30 +518,7 @@ const Landing = () => {
 			</section>
 
 			{/* ===================== MARKETPLACE ARCHITECTURE ===================== */}
-			<MarketplaceFlowSection
-				footerNote={
-					<>
-						<p>
-							{hasPromotion && isFree ? (
-								<>
-									<strong className="font-semibold text-emerald-700">{feeQuote.promotion?.name || 'Free Application Week'}: </strong>
-									the standard {formatZarAmount(feeQuote.originalAmount)} screening and document review fee is currently 100% waived — zero card charge to submit your application.
-								</>
-							) : hasPromotion ? (
-								<>
-									<strong className="font-semibold text-emerald-700">{feeQuote.promotion?.name || 'Promotion'}: </strong>
-									application screening fee discounted to {formatZarAmount(feeQuote.finalAmount)} (normally {formatZarAmount(feeQuote.originalAmount)}). Fully refundable if no placement is made.
-								</>
-							) : (
-								<>A small assistance fee covers application checks, document review and introductions. It is fully refundable if no placement is made.</>
-							)}
-						</p>
-						<p className="mt-4">
-							Place4U is a technology and relocation assistance platform, not an estate agency or property practitioner. A small fee covers application support, screening and introductions only. It is fully refundable if no placement is made. Placement is not guaranteed, and leases are signed directly between landlords and tenants.
-						</p>
-					</>
-				}
-			/>
+			<MarketplaceFlowSection />
 
 			{/* ===================== PROPERTIES GRID ===================== */}
 				<section id="residencies" className="py-20 px-6 lg:px-12 max-w-7xl mx-auto w-full scroll-mt-24">
