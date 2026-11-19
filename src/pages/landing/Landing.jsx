@@ -43,6 +43,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import Navbar from '../../component/Navbar'
 import Footer from '../../component/Footer'
 import TeamSection from '../../component/TeamSection'
+import MarketplaceFlowSection from './MarketplaceFlowSection'
 import { getFeaturedProperties } from './db/queries'
 import { setJsonLd, buildItemListJsonLd } from '../../utils/seo'
 import useHashScroll from '../../hooks/useHashScroll'
@@ -508,7 +509,7 @@ const Landing = () => {
 							<img
 								src="/hero-loft.jpg"
 								alt="Sunlit loft interior with city buildings visible through tall windows"
-								fetchPriority="high"
+								fetchpriority="high"
 								className="w-full h-full object-cover"
 							/>
 						</div>
@@ -516,55 +517,31 @@ const Landing = () => {
 				</div>
 			</section>
 
-			{/* ===================== HOW IT WORKS / TENANT PASSPORT FLOW ===================== */}
-			<section id="how-it-works" className="py-20 px-6 lg:px-12 bg-white scroll-mt-24">
-				<div className="max-w-7xl mx-auto">
-					<div className="max-w-2xl mb-12">
-						<h2 className="font-serif-display text-3xl sm:text-4xl font-normal text-[#18262d] mt-1 tracking-tight">
-							One application. Three clear steps.
-						</h2>
-						<p className="text-sm sm:text-base text-[#47545a] mt-2 leading-relaxed">
-							Submit one application, then we review your details and look for reviewed housing that fits.
+			{/* ===================== MARKETPLACE ARCHITECTURE ===================== */}
+			<MarketplaceFlowSection
+				footerNote={
+					<>
+						<p>
+							{hasPromotion && isFree ? (
+								<>
+									<strong className="font-semibold text-emerald-700">{feeQuote.promotion?.name || 'Free Application Week'}: </strong>
+									the standard {formatZarAmount(feeQuote.originalAmount)} screening and document review fee is currently 100% waived — zero card charge to submit your application.
+								</>
+							) : hasPromotion ? (
+								<>
+									<strong className="font-semibold text-emerald-700">{feeQuote.promotion?.name || 'Promotion'}: </strong>
+									application screening fee discounted to {formatZarAmount(feeQuote.finalAmount)} (normally {formatZarAmount(feeQuote.originalAmount)}). Fully refundable if no placement is made.
+								</>
+							) : (
+								<>A small assistance fee covers application checks, document review and introductions. It is fully refundable if no placement is made.</>
+							)}
 						</p>
-					</div>
-
-					<ol className="grid grid-cols-1 md:grid-cols-3 gap-8">
-						<li className="pt-5 border-t border-[#c3cecd]">
-							<p className="text-xs font-semibold tracking-[0.12em] text-[#006194]">01</p>
-							<h3 className="font-['Space_Grotesk'] text-lg font-semibold text-[#18262d] mt-3 mb-2">Tell us what you need</h3>
-							<p className="text-sm text-[#47545a] leading-relaxed">Share your budget, preferred areas and move date. Upload your ID and supporting documents once.</p>
-						</li>
-						<li className="pt-5 border-t border-[#c3cecd]">
-							<p className="text-xs font-semibold tracking-[0.12em] text-[#006194]">02</p>
-							<h3 className="font-['Space_Grotesk'] text-lg font-semibold text-[#18262d] mt-3 mb-2">We review your application</h3>
-							<p className="text-sm text-[#47545a] leading-relaxed">
-								{hasPromotion && isFree ? (
-									<>
-										<strong className="text-emerald-700 font-semibold">{feeQuote.promotion?.name || 'Free Application Week'}: </strong>
-										The standard {formatZarAmount(feeQuote.originalAmount)} screening and document review fee is currently 100% waived. Zero card charge to submit your application.
-									</>
-								) : hasPromotion ? (
-									<>
-										<strong className="text-emerald-700 font-semibold">{feeQuote.promotion?.name || 'Promotion'}: </strong>
-										Application screening fee discounted to {formatZarAmount(feeQuote.finalAmount)} (normally {formatZarAmount(feeQuote.originalAmount)}). Fully refundable if no placement is made.
-									</>
-								) : (
-									'A small assistance fee covers application checks, document review and introductions. It is fully refundable if no placement is made.'
-								)}
-							</p>
-						</li>
-						<li className="pt-5 border-t border-[#c3cecd]">
-							<p className="text-xs font-semibold tracking-[0.12em] text-[#006194]">03</p>
-							<h3 className="font-['Space_Grotesk'] text-lg font-semibold text-[#18262d] mt-3 mb-2">Meet the landlord or agent</h3>
-							<p className="text-sm text-[#47545a] leading-relaxed">We make an introduction when there is a suitable fit. Any lease is signed directly with the landlord.</p>
-						</li>
-					</ol>
-
-					<p className="text-xs text-[#47545a] mt-12 max-w-2xl mx-auto text-center leading-relaxed">
-					Place4U is a technology and relocation assistance platform, not an estate agency or property practitioner. A small fee covers application support, screening and introductions only. It is fully refundable if no placement is made. Placement is not guaranteed, and leases are signed directly between landlords and tenants.
-					</p>
-				</div>
-			</section>
+						<p className="mt-4">
+							Place4U is a technology and relocation assistance platform, not an estate agency or property practitioner. A small fee covers application support, screening and introductions only. It is fully refundable if no placement is made. Placement is not guaranteed, and leases are signed directly between landlords and tenants.
+						</p>
+					</>
+				}
+			/>
 
 			{/* ===================== PROPERTIES GRID ===================== */}
 				<section id="residencies" className="py-20 px-6 lg:px-12 max-w-7xl mx-auto w-full scroll-mt-24">
