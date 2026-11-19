@@ -529,6 +529,42 @@ const listingScopeFields = (propertyData, { partial = false } = {}) => {
   }
 }
 
+// The admin registry must keep working on a database that has not had
+// buildings_and_units_schema.sql applied yet. PostgREST names the offending
+// column in its error, so drop it and retry — the same strategy the landlord
+// createProperty path uses. Without this, every admin add/edit listing would
+// fail until the migration is run.
+const missingColumnFrom = (error) => {
+  const match = String(error?.message || '').match(/Could not find the '([^']+)' column/)
+  return match?.[1] || null
+}
+
+const writeProperty = async ({ mode, propertyId = null, payload }) => {
+  let working = { ...payload }
+  let lastError = null
+
+  for (let attempt = 0; attempt < 20; attempt++) {
+    const request = mode === 'insert'
+      ? supabase.from('properties').insert([working])
+      : supabase.from('properties').update(working).eq('id', propertyId)
+
+    const { data, error } = await request
+      .select('*, landlord:users!properties_landlord_id_fkey(*)')
+      .single()
+
+    if (!error) return data
+
+    lastError = error
+    const column = missingColumnFrom(error)
+    if (!column || !Object.prototype.hasOwnProperty.call(working, column)) break
+    const { [column]: _dropped, ...rest } = working
+    working = rest
+  }
+
+  console.error(`Error ${mode === 'insert' ? 'creating' : 'updating'} property:`, lastError)
+  throw lastError
+}
+
 // Create property directly from admin (supports manually entered or scraped listings)
 export const createAdminProperty = async (propertyData) => {
   const payload = {
@@ -551,17 +587,7 @@ export const createAdminProperty = async (propertyData) => {
     updated_at: new Date().toISOString()
   }
 
-  const { data, error } = await supabase
-    .from('properties')
-    .insert([payload])
-    .select('*, landlord:users!properties_landlord_id_fkey(*)')
-    .single()
-
-  if (error) {
-    console.error('Error creating property:', error)
-    throw error
-  }
-  return data
+  return writeProperty({ mode: 'insert', payload })
 }
 
 // Update existing property
@@ -572,18 +598,7 @@ export const updateAdminProperty = async (propertyId, updates) => {
     updated_at: new Date().toISOString()
   }
 
-  const { data, error } = await supabase
-    .from('properties')
-    .update(payload)
-    .eq('id', propertyId)
-    .select('*, landlord:users!properties_landlord_id_fkey(*)')
-    .single()
-
-  if (error) {
-    console.error('Error updating property:', error)
-    throw error
-  }
-  return data
+  return writeProperty({ mode: 'update', propertyId, payload })
 }
 
 // Delete property from database
