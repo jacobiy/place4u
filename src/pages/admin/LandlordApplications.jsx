@@ -381,14 +381,14 @@ export default function LandlordApplicationsPage() {
 
       {/* Filter and Search Bar */}
       <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-3">
-        <div className="relative flex-1">
+        <div className="relative w-full md:flex-1">
           <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
           <input
             type="text"
             placeholder="Search landlord name, email, phone, SA ID, company, or city..."
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            className="w-full pl-9 pr-8 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-900 focus:outline-none focus:border-blue-600 focus:bg-white"
+            className="w-full pl-9 pr-8 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-900 focus:outline-none focus:border-blue-600 focus:bg-white"
           />
           {query && (
             <button
@@ -464,7 +464,171 @@ export default function LandlordApplicationsPage() {
             <p className="text-[11px] text-slate-400">Try adjusting your search or status filters.</p>
           </div>
         ) : (
-          <div className="overflow-x-auto">
+          <>
+            {/* ── Mobile Card View ── */}
+            <div className="block md:hidden space-y-3 p-3">
+              {filtered.map((app) => {
+                const isApproved = app.verification_status === 'approved'
+                const isPending = app.verification_status === 'pending_review'
+                const isRejected = app.verification_status === 'rejected'
+
+                const initials = (app.full_name || 'Landlord')
+                  .split(' ')
+                  .map((n) => n[0])
+                  .join('')
+                  .substring(0, 2)
+                  .toUpperCase()
+
+                return (
+                  <div key={app.id} className="bg-white border border-slate-200 rounded-xl p-4 space-y-3 shadow-xs">
+                    {/* Top: Avatar + Name + Status */}
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex items-center gap-3 min-w-0">
+                        <div className="w-10 h-10 rounded-full bg-emerald-100 text-emerald-800 font-bold flex items-center justify-center flex-shrink-0 text-xs border border-emerald-200">
+                          {initials}
+                        </div>
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-1.5">
+                            <span className="font-bold text-sm text-slate-900 truncate">{app.full_name}</span>
+                            {isApproved && (
+                              <span title="Verified Property Owner" className="text-emerald-600">
+                                <ShieldCheck size={13} />
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-[11px] text-slate-500 font-medium truncate">
+                            {app.company_name || app.entity_type || 'Private Landlord'}
+                          </p>
+                        </div>
+                      </div>
+                      {/* Status Badge */}
+                      <div className="flex-shrink-0">
+                        {isPending && (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-50 text-amber-700 border border-amber-200">
+                            <Clock size={10} /> Pending
+                          </span>
+                        )}
+                        {isApproved && (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                            <CheckCircle2 size={10} /> Verified
+                          </span>
+                        )}
+                        {isRejected && (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-50 text-rose-700 border border-rose-200">
+                            <XCircle size={10} /> Rejected
+                          </span>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Contact Info */}
+                    <div className="grid grid-cols-1 gap-1.5 text-[11px]">
+                      <div className="flex items-center gap-1.5 text-slate-600 truncate">
+                        <Mail size={11} className="text-slate-400 flex-shrink-0" /> {app.email}
+                      </div>
+                      <div className="flex items-center gap-1.5 text-slate-600">
+                        <Phone size={11} className="text-slate-400 flex-shrink-0" /> {app.phone}
+                      </div>
+                      <div className="flex items-center gap-1.5 text-slate-500">
+                        <MapPin size={11} className="text-slate-400 flex-shrink-0" /> {app.city}, {app.province}
+                      </div>
+                    </div>
+
+                    {/* Portfolio + Date Row */}
+                    <div className="flex items-center justify-between text-[11px] bg-slate-50 rounded-lg px-3 py-2 border border-slate-100">
+                      <div>
+                        <span className="font-semibold text-slate-700">{app.property_count || 1} {(app.property_count || 1) === 1 ? 'Property' : 'Properties'}</span>
+                        <span className="text-slate-400 ml-1.5">· {formatCurrency(app.estimated_portfolio_value)}/mo</span>
+                      </div>
+                      <span className="text-slate-400">{formatDate(app.submitted_at)}</span>
+                    </div>
+
+                    {/* Documents */}
+                    <div className="flex flex-wrap gap-1.5">
+                      {app.title_deed_url ? (
+                        <button
+                          type="button"
+                          onClick={() => setPreviewDoc({ title: `Title Deed — ${app.full_name}`, url: app.title_deed_url })}
+                          className="inline-flex items-center gap-1 text-[11px] font-semibold text-blue-600 bg-blue-50 px-2.5 py-1 rounded border border-blue-200 cursor-pointer min-h-[32px]"
+                        >
+                          <Eye size={11} /> Title Deed
+                        </button>
+                      ) : (
+                        <span className="text-[10px] text-slate-400 py-1">No Deed</span>
+                      )}
+                      {app.rates_taxes_url && (
+                        <button
+                          type="button"
+                          onClick={() => setPreviewDoc({ title: `Municipal Rates — ${app.full_name}`, url: app.rates_taxes_url })}
+                          className="inline-flex items-center gap-1 text-[11px] font-semibold text-indigo-600 bg-indigo-50 px-2.5 py-1 rounded border border-indigo-200 cursor-pointer min-h-[32px]"
+                        >
+                          <Eye size={11} /> Rates
+                        </button>
+                      )}
+                      {app.id_document_url && (
+                        <button
+                          type="button"
+                          onClick={() => setPreviewDoc({ title: `Certified ID — ${app.full_name}`, url: app.id_document_url })}
+                          className="inline-flex items-center gap-1 text-[11px] font-semibold text-slate-600 bg-slate-100 px-2.5 py-1 rounded border border-slate-200 cursor-pointer min-h-[32px]"
+                        >
+                          <Eye size={11} /> ID
+                        </button>
+                      )}
+                    </div>
+
+                    {/* Actions */}
+                    <div className="flex flex-wrap gap-2 pt-1 border-t border-slate-100">
+                      {isPending && (
+                        <button
+                          type="button"
+                          disabled={isSubmitting}
+                          onClick={() => handleApproveLandlord(app)}
+                          className="flex-1 min-w-[100px] px-3 py-2 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg font-bold text-[11px] shadow-xs transition cursor-pointer flex items-center justify-center gap-1 disabled:opacity-50 min-h-[40px]"
+                          title="1-Click Approve Landlord"
+                        >
+                          <Check size={13} /> Approve
+                        </button>
+                      )}
+                      <button
+                        type="button"
+                        onClick={() => handleOpenDossier(app)}
+                        className="flex-1 min-w-[100px] px-3 py-2 bg-slate-800 hover:bg-slate-900 text-white rounded-lg font-bold text-[11px] shadow-xs transition cursor-pointer flex items-center justify-center gap-1 min-h-[40px]"
+                      >
+                        <FileCheck2 size={13} /> Audit Dossier
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          openEmailClient(
+                            app.email,
+                            `Place4U Property Ownership Verification — ${app.full_name}`,
+                            `Hi ${app.full_name},\n\nRegarding your property owner verification on Place4U:\n\n`
+                          )
+                        }
+                        className="p-2 text-slate-500 hover:text-red-600 hover:bg-red-50 border border-slate-200 rounded-lg transition cursor-pointer min-h-[40px] min-w-[40px] flex items-center justify-center"
+                        title="Send email"
+                      >
+                        <Mail size={15} />
+                      </button>
+                      {app.phone && (
+                        <a
+                          href={`https://wa.me/${app.phone.replace(/[^0-9]/g, '')}`}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="p-2 text-slate-500 hover:text-emerald-600 hover:bg-emerald-50 border border-slate-200 rounded-lg transition min-h-[40px] min-w-[40px] flex items-center justify-center"
+                          title="Chat on WhatsApp"
+                        >
+                          <MessageCircle size={15} />
+                        </a>
+                      )}
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+
+            {/* ── Desktop Table View ── */}
+            <div className="hidden md:block overflow-x-auto">
             <table className="w-full text-left text-xs border-collapse">
               <thead>
                 <tr className="bg-slate-50/80 border-b border-slate-200 text-slate-500 font-semibold uppercase tracking-wider text-[10px]">
@@ -668,6 +832,7 @@ export default function LandlordApplicationsPage() {
               </tbody>
             </table>
           </div>
+          </>
         )}
       </div>
 
@@ -676,13 +841,13 @@ export default function LandlordApplicationsPage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs overflow-y-auto">
           <div className="bg-white w-full max-w-4xl rounded-2xl shadow-2xl border border-slate-200 overflow-hidden my-6 animate-in fade-in zoom-in-95">
             {/* Modal Header */}
-            <div className="px-6 py-4 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-emerald-600 text-white font-bold flex items-center justify-center text-sm shadow-xs">
+            <div className="px-4 sm:px-6 py-4 bg-slate-50 border-b border-slate-200 flex items-start sm:items-center justify-between gap-3">
+              <div className="flex items-center gap-3 min-w-0">
+                <div className="w-10 h-10 rounded-full bg-emerald-600 text-white font-bold flex items-center justify-center text-sm shadow-xs flex-shrink-0">
                   {selectedApp.full_name?.substring(0, 2).toUpperCase() || 'LL'}
                 </div>
-                <div>
-                  <h3 className="font-bold text-slate-900 text-base flex items-center gap-2">
+                <div className="min-w-0">
+                  <h3 className="font-bold text-slate-900 text-sm sm:text-base flex flex-wrap items-center gap-2">
                     {selectedApp.full_name}
                     {selectedApp.verification_status === 'approved' && (
                       <span className="text-emerald-700 text-xs flex items-center gap-1 font-semibold bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full">
@@ -706,7 +871,7 @@ export default function LandlordApplicationsPage() {
             </div>
 
             {/* Modal Body */}
-            <div className="p-6 max-h-[75vh] overflow-y-auto space-y-6 text-xs">
+            <div className="p-4 sm:p-6 max-h-[75vh] overflow-y-auto space-y-6 text-xs">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {/* Left Column: Owner & Portfolio Details */}
                 <div className="space-y-4">

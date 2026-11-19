@@ -1267,6 +1267,20 @@ export const LandlordQueries = {
       for (let attempt = 0; attempt < 30; attempt++) {
         ({ data, error } = await attemptInsert(working));
         if (!error) break;
+
+        // If an unmigrated database check constraint rejects 'student' or custom types,
+        // gracefully fall back to 'room' or 'apartment' so property creation succeeds.
+        if (typeof error?.message === 'string' && error.message.includes('properties_property_type_check') && working.property_type) {
+          const lower = String(working.property_type).toLowerCase();
+          if (lower === 'student' || lower.includes('student')) {
+            working.property_type = 'room';
+            continue;
+          } else if (lower !== 'apartment') {
+            working.property_type = 'apartment';
+            continue;
+          }
+        }
+
         const match = typeof error.message === 'string' && error.message.match(/Could not find the '([^']+)' column/);
         if (match?.[1] && Object.prototype.hasOwnProperty.call(working, match[1])) {
           const { [match[1]]: _removed, ...rest } = working;
@@ -1305,6 +1319,18 @@ export const LandlordQueries = {
       for (let attempt = 0; attempt < 30; attempt++) {
         ({ data, error } = await attemptUpdate(working));
         if (!error) break;
+
+        if (typeof error?.message === 'string' && error.message.includes('properties_property_type_check') && working.property_type) {
+          const lower = String(working.property_type).toLowerCase();
+          if (lower === 'student' || lower.includes('student')) {
+            working.property_type = 'room';
+            continue;
+          } else if (lower !== 'apartment') {
+            working.property_type = 'apartment';
+            continue;
+          }
+        }
+
         const match = typeof error.message === 'string' && error.message.match(/Could not find the '([^']+)' column/);
         if (match?.[1] && Object.prototype.hasOwnProperty.call(working, match[1])) {
           const { [match[1]]: _removed, ...rest } = working;

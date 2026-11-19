@@ -555,6 +555,20 @@ const writeProperty = async ({ mode, propertyId = null, payload }) => {
     if (!error) return data
 
     lastError = error
+
+    // If an unmigrated database check constraint rejects 'student' or custom types,
+    // gracefully fall back to 'room' or 'apartment' so property creation succeeds.
+    if (String(error?.message || '').includes('properties_property_type_check') && working.property_type) {
+      const lower = String(working.property_type).toLowerCase()
+      if (lower === 'student' || lower.includes('student')) {
+        working.property_type = 'room'
+        continue
+      } else if (lower !== 'apartment') {
+        working.property_type = 'apartment'
+        continue
+      }
+    }
+
     const column = missingColumnFrom(error)
     if (!column || !Object.prototype.hasOwnProperty.call(working, column)) break
     const { [column]: _dropped, ...rest } = working

@@ -875,15 +875,80 @@
 
 /* --------------------------------------------------------------- Responsive */
 @media (max-width: 768px) {
-  .applications-wrapper { padding: 20px 16px 48px; }
+  .applications-wrapper { padding: 20px 14px 48px; }
   .applications-header { flex-direction: column; align-items: stretch; gap: 14px; }
+  .applications-title { font-size: 1.5rem; }
+  .applications-subtitle { font-size: 0.82rem; }
+  .refresh-button { align-self: flex-start; }
+
+  .search-filter-row { flex-direction: column; align-items: stretch; gap: 12px; }
+  .search-container { min-width: 0; max-width: 100%; }
+  .category-filter-buttons { justify-content: flex-start; overflow-x: auto; -webkit-overflow-scrolling: touch; padding-bottom: 2px; }
+  .cat-btn { white-space: nowrap; flex-shrink: 0; }
+
   .applications-grid { grid-template-columns: 1fr; gap: 14px; }
+
+  .card-body { padding: 16px; }
+  .card-head { flex-direction: column; gap: 10px; }
+  .applicant-name { white-space: normal; font-size: 0.95rem; }
+  .applicant-email span { max-width: 200px; }
+
+  .card-meta { font-size: 0.68rem; gap: 5px; }
+
+  .applied-property-banner { flex-wrap: wrap; gap: 8px; padding: 8px 10px; }
+  .applied-property-banner .banner-title { white-space: normal; overflow: visible; }
+
+  .job-profile-snippet { padding: 10px 11px; }
+  .job-snippet-header { flex-direction: column; align-items: flex-start; gap: 5px; }
+
+  .facts { grid-template-columns: 1fr; gap: 8px; }
+  .fact { padding: 10px; }
+  .fact-wide { grid-column: auto; }
+
+  .card-actions { grid-template-columns: 1fr; gap: 8px; }
+  .btn { min-height: 44px; font-size: 0.84rem; justify-content: center; }
+
+  .match-widget { flex-wrap: wrap; gap: 10px; padding: 10px 12px; }
+  .match-details { width: 100%; }
+
   .info-row { grid-template-columns: 1fr; }
   .card-content { padding: 16px; }
+
+  /* Assignment response actions */
+  .assignment-actions { flex-direction: column; gap: 8px; }
+  .assignment-actions .btn { width: 100%; }
 }
 
 @media (max-width: 480px) {
-  .card-header { flex-direction: column; gap: 12px; }
-  .application-meta { align-items: flex-start; text-align: left; }
-  .tenant-name h3 { font-size: 0.98rem; }
+  .applications-wrapper { padding: 16px 10px 40px; }
+  .applications-title { font-size: 1.3rem; }
+  .applicant-avatar { width: 36px; height: 36px; font-size: 0.82rem; border-radius: 10px; }
+  .applicant-name { font-size: 0.9rem; }
+  .applicant-email { font-size: 0.7rem; }
+  .applicant-email span { max-width: 150px; }
+
+  .status-chip { padding: 3px 8px; font-size: 0.65rem; }
+  .card-meta { gap: 4px; }
+  .meta-id { font-size: 0.66rem; }
+
+  .cat-btn { padding: 6px 11px; font-size: 0.74rem; }
+  .search-input { font-size: 0.82rem; padding: 8px 12px 8px 34px; }
+
+  .fact-label { font-size: 0.6rem; }
+  .fact-value { font-size: 0.8rem; }
+  .fact-money { font-size: 0.88rem; }
+
+  .btn { padding: 10px 14px; font-size: 0.8rem; }
+  .btn-sm { min-height: 38px; padding: 7px 12px; font-size: 0.72rem; }
+
+  .job-income-badge { font-size: 0.7rem; }
+
+  .match-score { font-size: 0.72rem; padding: 3px 8px; }
+  .match-ratio { font-size: 0.68rem; }
+  .match-verdict { font-size: 0.7rem; }
+
+  /* Modal responsive */
+  .job-response-footer { flex-direction: column; gap: 8px; padding: 14px 16px; }
+  .job-response-btn { width: 100%; justify-content: center; }
+  .job-response-chip { padding: 7px 12px; font-size: 0.74rem; }
 }

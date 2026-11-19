@@ -331,7 +331,7 @@ export default function ApplicationsView({
   const activeCount = applications.filter(isActiveApplication).length;
 
   return (
-    <div className="max-w-6xl mx-auto pb-16 text-slate-900 px-5 sm:px-8">
+    <div className="max-w-6xl mx-auto pb-16 text-slate-900 px-4 sm:px-8">
       <AlertToast toast={toast} onClose={() => setToast(null)} />
 
       <ConfirmModal
@@ -361,15 +361,17 @@ export default function ApplicationsView({
             </p>
           </div>
 
-          <div className="flex items-center gap-4 self-start sm:self-auto">
-            <div className="px-4 py-2 border-l border-slate-200">
-              <p className="font-serif text-2xl text-slate-900 leading-none">{activeCount}</p>
-              <p className="text-[11px] text-slate-500 mt-1">Active</p>
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-4 self-stretch sm:self-auto">
+            <div className="px-4 py-2 border-l-2 sm:border-l border-slate-200 flex items-center justify-between sm:block">
+              <div>
+                <p className="font-serif text-2xl text-slate-900 leading-none">{activeCount}</p>
+                <p className="text-[11px] text-slate-500 mt-1">Active</p>
+              </div>
             </div>
             <button
               type="button"
               onClick={onOpenCustomApplication}
-              className={`h-12 px-6 rounded-full text-sm font-bold flex items-center gap-2 ${BTN_PRIMARY}`}
+              className={`h-12 px-6 rounded-full text-sm font-bold flex items-center justify-center gap-2 w-full sm:w-auto min-h-[44px] ${BTN_PRIMARY}`}
             >
               <Plus size={16} />
               Submit application
@@ -543,12 +545,12 @@ export default function ApplicationsView({
                   )}
 
                   {/* Details */}
-                  <div className="grid grid-cols-2 gap-x-6 gap-y-4 border-y border-slate-200 py-4 mb-5">
-                    <div className="col-span-2">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4 border-y border-slate-200 py-4 mb-5">
+                    <div className="col-span-1 sm:col-span-2">
                       <Eyebrow className="flex items-center gap-1.5">
                         <MapPin size={12} className="text-sky-500" /> Preferred areas
                       </Eyebrow>
-                      <p className="text-sm font-medium text-slate-900 mt-1.5">
+                      <p className="text-sm font-medium text-slate-900 mt-1.5 break-words">
                         {app.preferred_areas?.join(', ') || 'Not specified'}
                       </p>
                     </div>
@@ -556,7 +558,7 @@ export default function ApplicationsView({
                       <Eyebrow className="flex items-center gap-1.5">
                         <DollarSign size={12} className="text-sky-500" /> Budget
                       </Eyebrow>
-                      <p className="font-serif text-lg text-sky-700 mt-1.5">
+                      <p className="font-serif text-lg text-sky-700 mt-1.5 break-words">
                         {app.min_budget != null || app.max_budget != null
                           ? `R${Number(app.min_budget || 0).toLocaleString('en-ZA')} – R${Number(app.max_budget || 0).toLocaleString('en-ZA')}`
                           : 'Not specified'}
@@ -566,7 +568,7 @@ export default function ApplicationsView({
                       <Eyebrow className="flex items-center gap-1.5">
                         <Calendar size={12} className="text-sky-500" /> Move in
                       </Eyebrow>
-                      <p className="text-sm font-medium text-slate-900 mt-2">{app.move_in_date || 'Not specified'}</p>
+                      <p className="text-sm font-medium text-slate-900 mt-1.5 sm:mt-2">{app.move_in_date || 'Not specified'}</p>
                     </div>
                   </div>
 
@@ -598,13 +600,13 @@ export default function ApplicationsView({
                         {docs.map((doc, idx) => (
                           <div
                             key={idx}
-                            className="p-3 rounded-2xl bg-white border border-sky-100 hover:border-sky-300 transition-colors flex items-center justify-between gap-3"
+                            className="p-3 rounded-2xl bg-white border border-sky-100 hover:border-sky-300 transition-colors flex flex-col xs:flex-row sm:flex-row items-start sm:items-center justify-between gap-3"
                           >
-                            <div className="flex items-center gap-3 min-w-0 flex-1">
+                            <div className="flex items-center gap-3 min-w-0 flex-1 w-full sm:w-auto">
                               <span className="px-2 py-1 rounded-md bg-rose-50 text-rose-500 font-bold text-[10px] font-mono shrink-0 border border-rose-100">
                                 PDF
                               </span>
-                              <div className="min-w-0">
+                              <div className="min-w-0 flex-1">
                                 <p className="font-semibold text-slate-900 truncate text-xs">
                                   {doc.shortLabel || doc.title || doc.fileName}
                                 </p>
@@ -617,7 +619,7 @@ export default function ApplicationsView({
                             <button
                               type="button"
                               onClick={() => setPreviewDoc(doc)}
-                              className="h-8 px-3.5 rounded-full bg-sky-50 hover:bg-sky-100 text-sky-700 text-[11px] font-semibold flex items-center gap-1.5 shrink-0 border border-sky-100 transition-colors cursor-pointer"
+                              className="h-9 px-4 rounded-full bg-sky-50 hover:bg-sky-100 text-sky-700 text-xs font-semibold flex items-center justify-center gap-1.5 w-full sm:w-auto shrink-0 border border-sky-100 transition-colors cursor-pointer min-h-[44px] sm:min-h-[36px]"
                               title="Preview PDF"
                             >
                               <Eye size={13} />
@@ -627,7 +629,7 @@ export default function ApplicationsView({
                         ))}
                       </div>
                     ) : (
-                      <div className="p-4 rounded-2xl bg-amber-50/60 border border-dashed border-amber-200 flex items-center justify-between gap-3 text-xs">
+                      <div className="p-3.5 sm:p-4 rounded-2xl bg-amber-50/60 border border-dashed border-amber-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
                         <span className="text-slate-600 text-[11px] leading-relaxed">
                           {isStudent
                             ? 'Requires: University acceptance + Bursary/NSFAS + ID'
@@ -636,7 +638,7 @@ export default function ApplicationsView({
                         <button
                           type="button"
                           onClick={() => setEditingApp(app)}
-                          className="text-sky-700 hover:text-sky-900 font-semibold text-[11px] underline underline-offset-4 shrink-0 cursor-pointer"
+                          className="text-sky-700 hover:text-sky-900 font-semibold text-xs underline underline-offset-4 self-start sm:self-auto shrink-0 cursor-pointer min-h-[36px] flex items-center"
                         >
                           Attach PDFs
                         </button>
@@ -647,7 +649,7 @@ export default function ApplicationsView({
                   {/* Fee status */}
                   <div className="mt-5 pt-5 border-t border-sky-100">
                     {isFeePaid ? (
-                      <div className="flex items-center justify-between gap-3 p-3.5 rounded-2xl bg-emerald-50 border border-emerald-200">
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 rounded-2xl bg-emerald-50 border border-emerald-200">
                         <div className="flex items-center gap-3">
                           <div className="w-8 h-8 rounded-full bg-emerald-500 text-white flex items-center justify-center shrink-0">
                             <Check size={15} strokeWidth={3} />
@@ -663,15 +665,15 @@ export default function ApplicationsView({
                             </p>
                           </div>
                         </div>
-                        <div className="flex items-center gap-2 min-w-0">
+                        <div className="flex flex-wrap items-center gap-2 min-w-0">
                           {app.fee_receipt && (
-                            <span className="text-[10px] font-mono text-emerald-700 bg-white border border-emerald-200 px-2 py-1 rounded-md hidden sm:inline-block truncate">
+                            <span className="text-[10px] font-mono text-emerald-700 bg-white border border-emerald-200 px-2 py-1 rounded-md inline-block max-w-full truncate">
                               {app.fee_receipt}
                             </span>
                           )}
                           {app.payment_id && (
                             <span
-                              className="text-[10px] font-mono text-sky-700 bg-white border border-sky-200 px-2 py-1 rounded-md hidden md:inline-block"
+                              className="text-[10px] font-mono text-sky-700 bg-white border border-sky-200 px-2 py-1 rounded-md inline-block max-w-full truncate"
                               title={`Linked Payment ID: ${app.payment_id}`}
                             >
                               PID {String(app.payment_id).slice(0, 8)}…
@@ -680,7 +682,7 @@ export default function ApplicationsView({
                         </div>
                       </div>
                     ) : (
-                      <div className="flex items-center justify-between gap-3 p-3.5 rounded-2xl bg-amber-50 border border-amber-200">
+                      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 p-3.5 rounded-2xl bg-amber-50 border border-amber-200">
                         <div className="flex items-center gap-3">
                           <div className="w-8 h-8 rounded-full bg-white border border-amber-200 text-amber-500 flex items-center justify-center shrink-0">
                             <CreditCard size={14} />
@@ -698,7 +700,7 @@ export default function ApplicationsView({
                         <button
                           type="button"
                           onClick={() => (feeQuote?.isFree ? handleClaimFreeFee(app) : setPayingApp(app))}
-                          className={`h-9 px-4 rounded-full text-[11px] font-bold flex items-center gap-1.5 shrink-0 ${BTN_PRIMARY}`}
+                          className={`h-11 sm:h-9 px-4 rounded-full text-xs sm:text-[11px] font-bold flex items-center justify-center gap-1.5 w-full sm:w-auto shrink-0 min-h-[44px] sm:min-h-[36px] ${BTN_PRIMARY}`}
                         >
                           {feeQuote?.isFree ? <Check size={11} /> : <Lock size={11} />}
                           {feeQuote?.isFree ? 'Claim free' : `Pay ${formatZarAmount(feeQuote?.finalAmount ?? 100)}`}
@@ -710,19 +712,19 @@ export default function ApplicationsView({
 
                 {/* Actions */}
                 {!isClosed && (
-                  <div className="px-0 py-4 bg-transparent border-t border-slate-200 flex items-center justify-between gap-3">
+                  <div className="px-0 py-4 bg-transparent border-t border-slate-200 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
                     <span className="text-[11px] text-slate-400 font-mono">Ref {String(app.id).slice(0, 10)}</span>
-                    <div className="flex items-center gap-2">
+                    <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
                       <button
                         onClick={() => setEditingApp(app)}
-                        className={`h-9 px-4 rounded-full text-xs font-semibold flex items-center gap-1.5 ${BTN_OUTLINE}`}
+                        className={`flex-1 sm:flex-initial h-10 sm:h-9 px-4 rounded-full text-xs font-semibold flex items-center justify-center gap-1.5 min-h-[44px] sm:min-h-[36px] ${BTN_OUTLINE}`}
                       >
                         <Edit2 size={13} className="text-sky-600" />
                         Edit / documents
                       </button>
                       <button
                         onClick={() => handleOpenCancelConfirm(app)}
-                        className="h-9 px-4 rounded-full text-xs font-semibold flex items-center gap-1.5 text-rose-600 bg-white border border-rose-200 hover:bg-rose-50 transition-colors cursor-pointer"
+                        className="flex-1 sm:flex-initial h-10 sm:h-9 px-4 rounded-full text-xs font-semibold flex items-center justify-center gap-1.5 text-rose-600 bg-white border border-rose-200 hover:bg-rose-50 transition-colors cursor-pointer min-h-[44px] sm:min-h-[36px]"
                       >
                         <XCircle size={13} />
                         Cancel

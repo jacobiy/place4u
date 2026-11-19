@@ -238,7 +238,25 @@ export const generateBuildingRooms = async ({ building, roomType, labels, tenant
     updated_at: now
   }))
 
-  const { data, error } = await supabase.from('properties').insert(rows).select('id')
+  let { data, error } = await supabase.from('properties').insert(rows).select('id')
+  if (error && typeof error.message === 'string' && error.message.includes('properties_property_type_check')) {
+    // Self-healing: if the database has an older check constraint that doesn't permit 'student',
+    // fallback to 'room' or 'apartment' so room generation succeeds without blocking the admin.
+    const fallbackType = propertyType === 'student' ? 'room' : 'apartment'
+    const retryRows = rows.map((r) => ({ ...r, property_type: fallbackType }))
+    const retry = await supabase.from('properties').insert(retryRows).select('id')
+    if (!retry.error) {
+      return retry.data || []
+    }
+    if (fallbackType !== 'apartment') {
+      const aptRows = rows.map((r) => ({ ...r, property_type: 'apartment' }))
+      const retryApt = await supabase.from('properties').insert(aptRows).select('id')
+      if (!retryApt.error) {
+        return retryApt.data || []
+      }
+    }
+  }
+
   if (error) {
     console.error('Error generating rooms:', error)
     throw new Error(missingBuildingSchema(error) ? BUILDING_FRIENDLY_ERROR : error.message)

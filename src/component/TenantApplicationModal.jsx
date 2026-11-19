@@ -146,7 +146,7 @@ export default function TenantApplicationModal({
               {tenantName.slice(0, 2).toUpperCase()}
             </div>
             <div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 8 }}>
                 <h3 style={{ margin: 0, fontSize: '1.2rem', fontWeight: 700, color: colors.text }}>
                   {tenantName}
                 </h3>
@@ -165,7 +165,7 @@ export default function TenantApplicationModal({
                   Tenant Application
                 </span>
               </div>
-              <div style={{ display: 'flex', gap: 12, marginTop: 4, color: colors.muted, fontSize: 12 }}>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px 12px', marginTop: 4, color: colors.muted, fontSize: 12 }}>
                 <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
                   <Mail size={12} color={colors.accent} /> {tenantEmail}
                 </span>
@@ -271,7 +271,7 @@ export default function TenantApplicationModal({
           </div>
 
           {/* Preferences */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 12 }}>
             <div style={{ padding: 14, borderRadius: 14, background: colors.card, border: `1px solid ${colors.border}` }}>
               <span style={{ fontSize: 11, fontWeight: 700, color: colors.muted, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                 Preferred Suburbs
@@ -319,7 +319,7 @@ export default function TenantApplicationModal({
 
           {/* Attached Documents */}
           <div>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+            <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: 8, marginBottom: 10 }}>
               <h4 style={{ margin: 0, fontSize: 13, fontWeight: 700, color: colors.text, display: 'flex', alignItems: 'center', gap: 6 }}>
                 <ShieldCheck size={16} color={colors.accent} />
                 Submitted FICA & Verification Documents ({documents.length})

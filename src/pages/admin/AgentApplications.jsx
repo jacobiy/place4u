@@ -356,96 +356,96 @@ export default function AgentApplicationsPage() {
       </div>
 
       {/* KPI Cards */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2.5 sm:gap-3">
         <button
           type="button"
           onClick={() => setStatusFilter('All')}
-          className={`p-4 rounded-xl border text-left transition cursor-pointer ${
+          className={`p-3 sm:p-4 rounded-xl border text-left transition cursor-pointer ${
             statusFilter === 'All'
               ? 'bg-blue-50/80 border-blue-300 ring-2 ring-blue-500/20'
               : 'bg-white border-slate-200 hover:bg-slate-50'
           }`}
         >
           <div className="flex items-center justify-between text-slate-500 mb-1">
-            <span className="text-[11px] font-semibold uppercase tracking-wider">Total Submissions</span>
-            <FileText size={15} className="text-blue-600" />
+            <span className="text-[10px] sm:text-[11px] font-semibold uppercase tracking-wider">Total Submissions</span>
+            <FileText size={15} className="text-blue-600 flex-shrink-0" />
           </div>
-          <p className="text-2xl font-bold text-slate-900">{counts.total}</p>
-          <span className="text-[10px] text-slate-400">All registered practitioners</span>
+          <p className="text-xl sm:text-2xl font-bold text-slate-900">{counts.total}</p>
+          <span className="text-[10px] text-slate-400 block truncate">All registered practitioners</span>
         </button>
 
         <button
           type="button"
           onClick={() => setStatusFilter('Pending')}
-          className={`p-4 rounded-xl border text-left transition cursor-pointer ${
+          className={`p-3 sm:p-4 rounded-xl border text-left transition cursor-pointer ${
             statusFilter === 'Pending'
               ? 'bg-amber-50/80 border-amber-300 ring-2 ring-amber-500/20'
               : 'bg-white border-slate-200 hover:bg-slate-50'
           }`}
         >
           <div className="flex items-center justify-between text-amber-700 mb-1">
-            <span className="text-[11px] font-semibold uppercase tracking-wider">Pending FICA Audit</span>
-            <Clock size={15} className="text-amber-600" />
+            <span className="text-[10px] sm:text-[11px] font-semibold uppercase tracking-wider">Pending Audit</span>
+            <Clock size={15} className="text-amber-600 flex-shrink-0" />
           </div>
-          <p className="text-2xl font-bold text-amber-700">{counts.pending}</p>
-          <span className="text-[10px] text-amber-600/80 font-medium">Requires admin review</span>
+          <p className="text-xl sm:text-2xl font-bold text-amber-700">{counts.pending}</p>
+          <span className="text-[10px] text-amber-600/80 font-medium block truncate">Requires admin review</span>
         </button>
 
         <button
           type="button"
           onClick={() => setStatusFilter('Interview')}
-          className={`p-4 rounded-xl border text-left transition cursor-pointer ${
+          className={`p-3 sm:p-4 rounded-xl border text-left transition cursor-pointer ${
             statusFilter === 'Interview'
               ? 'bg-purple-50/80 border-purple-300 ring-2 ring-purple-500/20'
               : 'bg-white border-slate-200 hover:bg-slate-50'
           }`}
         >
           <div className="flex items-center justify-between text-purple-700 mb-1">
-            <span className="text-[11px] font-semibold uppercase tracking-wider">Interview Scheduled</span>
-            <Calendar size={15} className="text-purple-600" />
+            <span className="text-[10px] sm:text-[11px] font-semibold uppercase tracking-wider">Interview</span>
+            <Calendar size={15} className="text-purple-600 flex-shrink-0" />
           </div>
-          <p className="text-2xl font-bold text-purple-700">{counts.interview}</p>
-          <span className="text-[10px] text-purple-600/80 font-medium">Booked for onboarding</span>
+          <p className="text-xl sm:text-2xl font-bold text-purple-700">{counts.interview}</p>
+          <span className="text-[10px] text-purple-600/80 font-medium block truncate">Booked for onboarding</span>
         </button>
 
         <button
           type="button"
           onClick={() => setStatusFilter('Verified')}
-          className={`p-4 rounded-xl border text-left transition cursor-pointer ${
+          className={`p-3 sm:p-4 rounded-xl border text-left transition cursor-pointer ${
             statusFilter === 'Verified'
               ? 'bg-emerald-50/80 border-emerald-300 ring-2 ring-emerald-500/20'
               : 'bg-white border-slate-200 hover:bg-slate-50'
           }`}
         >
           <div className="flex items-center justify-between text-emerald-700 mb-1">
-            <span className="text-[11px] font-semibold uppercase tracking-wider">Accredited Agents</span>
-            <CheckCircle2 size={15} className="text-emerald-600" />
+            <span className="text-[10px] sm:text-[11px] font-semibold uppercase tracking-wider">Accredited</span>
+            <CheckCircle2 size={15} className="text-emerald-600 flex-shrink-0" />
           </div>
-          <p className="text-2xl font-bold text-emerald-700">{counts.verified}</p>
-          <span className="text-[10px] text-emerald-600/80 font-medium">Active in marketplace</span>
+          <p className="text-xl sm:text-2xl font-bold text-emerald-700">{counts.verified}</p>
+          <span className="text-[10px] text-emerald-600/80 font-medium block truncate">Active in marketplace</span>
         </button>
 
         <button
           type="button"
           onClick={() => setStatusFilter('Rejected')}
-          className={`p-4 rounded-xl border text-left transition cursor-pointer ${
+          className={`col-span-2 sm:col-span-1 p-3 sm:p-4 rounded-xl border text-left transition cursor-pointer ${
             statusFilter === 'Rejected'
               ? 'bg-rose-50/80 border-rose-300 ring-2 ring-rose-500/20'
               : 'bg-white border-slate-200 hover:bg-slate-50'
           }`}
         >
           <div className="flex items-center justify-between text-rose-700 mb-1">
-            <span className="text-[11px] font-semibold uppercase tracking-wider">Rejected</span>
-            <XCircle size={15} className="text-rose-600" />
+            <span className="text-[10px] sm:text-[11px] font-semibold uppercase tracking-wider">Rejected</span>
+            <XCircle size={15} className="text-rose-600 flex-shrink-0" />
           </div>
-          <p className="text-2xl font-bold text-rose-700">{counts.rejected}</p>
-          <span className="text-[10px] text-rose-600/80 font-medium">Failed compliance / invalid</span>
+          <p className="text-xl sm:text-2xl font-bold text-rose-700">{counts.rejected}</p>
+          <span className="text-[10px] text-rose-600/80 font-medium block truncate">Failed compliance</span>
         </button>
       </div>
 
       {/* Filter and Search Bar */}
-      <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-3">
-        <div className="relative flex-1">
+      <div className="bg-white p-3 sm:p-4 rounded-xl border border-slate-200 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-3">
+        <div className="relative flex-1 w-full">
           <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
           <input
             type="text"
@@ -464,14 +464,14 @@ export default function AgentApplicationsPage() {
           )}
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:flex items-center gap-2 w-full md:w-auto">
           {/* Status Select */}
-          <div className="flex items-center gap-1.5 text-xs text-slate-600 bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1.5">
-            <Filter size={13} className="text-slate-400" />
+          <div className="flex items-center gap-1.5 text-xs text-slate-600 bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1.5 w-full md:w-auto">
+            <Filter size={13} className="text-slate-400 shrink-0" />
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
-              className="bg-transparent font-medium text-slate-800 focus:outline-none cursor-pointer"
+              className="bg-transparent font-medium text-slate-800 focus:outline-none cursor-pointer w-full md:w-auto text-xs"
             >
               <option value="All">All Statuses</option>
               <option value="Pending">Pending Review</option>
@@ -482,12 +482,12 @@ export default function AgentApplicationsPage() {
           </div>
 
           {/* Province Select */}
-          <div className="flex items-center gap-1.5 text-xs text-slate-600 bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1.5">
-            <MapPin size={13} className="text-slate-400" />
+          <div className="flex items-center gap-1.5 text-xs text-slate-600 bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1.5 w-full md:w-auto">
+            <MapPin size={13} className="text-slate-400 shrink-0" />
             <select
               value={provinceFilter}
               onChange={(e) => setProvinceFilter(e.target.value)}
-              className="bg-transparent font-medium text-slate-800 focus:outline-none cursor-pointer"
+              className="bg-transparent font-medium text-slate-800 focus:outline-none cursor-pointer w-full md:w-auto text-xs"
             >
               {PROVINCES.map((p) => (
                 <option key={p} value={p}>
@@ -513,210 +513,395 @@ export default function AgentApplicationsPage() {
             <p className="text-[11px] text-slate-400">Try adjusting your search or status filters.</p>
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs border-collapse">
-              <thead>
-                <tr className="bg-slate-50/80 border-b border-slate-200 text-slate-500 font-semibold uppercase tracking-wider text-[10px]">
-                  <th className="py-3 px-4">Applicant / Agency</th>
-                  <th className="py-3 px-4">Contact & Location</th>
-                  <th className="py-3 px-4">FICA Compliance</th>
-                  <th className="py-3 px-4">Interview Slot</th>
-                  <th className="py-3 px-4">Status</th>
-                  <th className="py-3 px-4">Submitted</th>
-                  <th className="py-3 px-4 text-right">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {filtered.map((app) => {
-                  const isVerified = app.verification_status === 'verified'
-                  const isPending = app.verification_status === 'pending_review'
-                  const isInterview = app.verification_status === 'interview_scheduled'
-                  const isRejected = app.verification_status === 'rejected'
+          <>
+            {/* Mobile Cards View (block md:hidden) */}
+            <div className="block md:hidden divide-y divide-slate-100">
+              {filtered.map((app) => {
+                const isVerified = app.verification_status === 'verified'
+                const isPending = app.verification_status === 'pending_review'
+                const isInterview = app.verification_status === 'interview_scheduled'
+                const isRejected = app.verification_status === 'rejected'
 
-                  const initials = (app.full_name || 'Agent')
-                    .split(' ')
-                    .map((n) => n[0])
-                    .join('')
-                    .substring(0, 2)
-                    .toUpperCase()
+                const initials = (app.full_name || 'Agent')
+                  .split(' ')
+                  .map((n) => n[0])
+                  .join('')
+                  .substring(0, 2)
+                  .toUpperCase()
 
-                  return (
-                    <tr key={app.id} className="hover:bg-slate-50/60 transition-colors">
-                      {/* Applicant & Agency */}
-                      <td className="py-3 px-4">
-                        <div className="flex items-center gap-3">
-                          <div className="w-9 h-9 rounded-full bg-blue-100 text-blue-700 font-bold flex items-center justify-center flex-shrink-0 text-xs border border-blue-200">
-                            {initials}
-                          </div>
-                          <div>
-                            <div className="flex items-center gap-1.5">
-                              <span className="font-bold text-slate-900">{app.full_name}</span>
-                              {isVerified && (
-                                <span title="Verified Leasing Agent" className="text-emerald-600">
-                                  <ShieldCheck size={13} />
-                                </span>
-                              )}
-                            </div>
-                            <p className="text-[11px] text-slate-500 font-medium">
-                              {app.agency_name || 'Independent Practitioner'}
-                            </p>
-                            <span className="text-[10px] text-slate-400 font-mono">
-                              ID: {app.id_number || 'Not provided'} • {app.experience_years ?? 1} yrs exp
-                            </span>
-                          </div>
+                return (
+                  <div key={app.id} className="p-4 space-y-3 bg-white">
+                    {/* Top Row: Applicant Initials, Name & Status */}
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex items-center gap-2.5">
+                        <div className="w-9 h-9 rounded-full bg-blue-100 text-blue-700 font-bold flex items-center justify-center flex-shrink-0 text-xs border border-blue-200">
+                          {initials}
                         </div>
-                      </td>
-
-                      {/* Contact & Location */}
-                      <td className="py-3 px-4">
-                        <p className="text-slate-800 font-medium">{app.email}</p>
-                        <p className="text-[11px] text-slate-500 flex items-center gap-1">
-                          <Phone size={10} className="text-slate-400" />
-                          {app.phone}
-                        </p>
-                        <p className="text-[10px] text-slate-400 flex items-center gap-1 mt-0.5">
-                          <MapPin size={10} className="text-slate-400" />
-                          {app.city}, {app.province}
-                        </p>
-                      </td>
-
-                      {/* FICA Compliance Documents */}
-                      <td className="py-3 px-4">
-                        <div className="space-y-1">
-                          <div className="flex items-center gap-2">
-                            {app.id_document_url ? (
-                              <button
-                                type="button"
-                                onClick={() => openPreviewDoc(`Certified ID — ${app.full_name}`, app.id_document_url)}
-                                className="inline-flex items-center gap-1 text-[11px] font-semibold text-blue-600 hover:text-blue-800 bg-blue-50 px-2 py-0.5 rounded border border-blue-200 cursor-pointer"
-                              >
-                                <Eye size={11} />
-                                ID Document
-                              </button>
-                            ) : (
-                              <span className="text-[10px] text-slate-400">No ID Attached</span>
-                            )}
-
-                            {app.proof_of_residence_url ? (
-                              <button
-                                type="button"
-                                onClick={() => openPreviewDoc(`Proof of Residence — ${app.full_name}`, app.proof_of_residence_url)}
-                                className="inline-flex items-center gap-1 text-[11px] font-semibold text-indigo-600 hover:text-indigo-800 bg-indigo-50 px-2 py-0.5 rounded border border-indigo-200 cursor-pointer"
-                              >
-                                <Eye size={11} />
-                                Proof Address
-                              </button>
-                            ) : (
-                              <span className="text-[10px] text-slate-400">No Address Proof</span>
+                        <div>
+                          <div className="flex items-center gap-1.5">
+                            <span className="font-bold text-slate-900 text-sm">{app.full_name}</span>
+                            {isVerified && (
+                              <span title="Verified Leasing Agent" className="text-emerald-600">
+                                <ShieldCheck size={14} />
+                              </span>
                             )}
                           </div>
-                          <span className="text-[10px] text-slate-400 block">
-                            Prefers contact via <strong className="capitalize text-slate-600">{app.preferred_contact_method || 'WhatsApp'}</strong>
-                          </span>
+                          <p className="text-[11px] text-slate-500 font-medium">
+                            {app.agency_name || 'Independent Practitioner'}
+                          </p>
                         </div>
-                      </td>
+                      </div>
 
-                      {/* Interview Slot / Scheduled Date */}
-                      <td className="py-3 px-4">
-                        {app.interview_date ? (
-                          <div>
-                            <span className="font-semibold text-purple-700 bg-purple-50 border border-purple-200 px-2 py-0.5 rounded text-[11px] flex items-center gap-1 w-max">
-                              <Calendar size={11} />
-                              {formatDate(app.interview_date)}
-                            </span>
-                            <span className="text-[10px] text-slate-400 block mt-0.5 capitalize">
-                              Slot: {app.interview_time_slot || 'Morning'}
-                            </span>
-                          </div>
-                        ) : (
-                          <div>
-                            <span className="text-slate-600 font-medium capitalize text-[11px]">
-                              {app.interview_time_slot || 'Anytime'} slot
-                            </span>
-                            <span className="text-[10px] text-slate-400 block">Not yet scheduled</span>
-                          </div>
-                        )}
-                      </td>
-
-                      {/* Status */}
-                      <td className="py-3 px-4">
+                      <div className="flex-shrink-0">
                         {isPending && (
-                          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold bg-amber-50 text-amber-700 border border-amber-200">
-                            <Clock size={11} />
-                            Pending Review
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-50 text-amber-700 border border-amber-200">
+                            <Clock size={10} /> Pending
                           </span>
                         )}
                         {isInterview && (
-                          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold bg-purple-50 text-purple-700 border border-purple-200">
-                            <Calendar size={11} />
-                            Interview Booked
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-purple-50 text-purple-700 border border-purple-200">
+                            <Calendar size={10} /> Interview
                           </span>
                         )}
                         {isVerified && (
-                          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
-                            <CheckCircle2 size={11} />
-                            Accredited & Active
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                            <CheckCircle2 size={10} /> Accredited
                           </span>
                         )}
                         {isRejected && (
-                          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold bg-rose-50 text-rose-700 border border-rose-200">
-                            <XCircle size={11} />
-                            Rejected
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-50 text-rose-700 border border-rose-200">
+                            <XCircle size={10} /> Rejected
                           </span>
                         )}
-                      </td>
+                      </div>
+                    </div>
 
-                      {/* Submitted Date */}
-                      <td className="py-3 px-4 text-slate-500 font-medium">
-                        {formatDate(app.submitted_at)}
-                      </td>
+                    {/* Meta info box */}
+                    <div className="bg-slate-50 rounded-xl p-3 space-y-1.5 text-xs">
+                      <div className="flex items-center justify-between text-[11px]">
+                        <span className="font-mono text-slate-500">
+                          ID: {app.id_number || 'Not provided'}
+                        </span>
+                        <span className="text-slate-500 font-medium">
+                          {app.experience_years ?? 1} yrs exp
+                        </span>
+                      </div>
+                      <div className="text-[11px] text-slate-700 font-medium break-all">
+                        {app.email}
+                      </div>
+                      <div className="flex items-center justify-between text-[11px] text-slate-500 pt-1 border-t border-slate-200/60">
+                        <span className="flex items-center gap-1">
+                          <Phone size={11} className="text-slate-400" />
+                          {app.phone}
+                        </span>
+                        <span className="flex items-center gap-1">
+                          <MapPin size={11} className="text-slate-400" />
+                          {app.city}, {app.province}
+                        </span>
+                      </div>
+                      <div className="text-[10px] text-slate-400">
+                        Submitted: {formatDate(app.submitted_at)}
+                      </div>
+                    </div>
 
-                      {/* Actions */}
-                      <td className="py-3 px-4 text-right">
-                        <div className="flex items-center justify-end gap-1.5">
+                    {/* FICA Documents Status & Quick Previews */}
+                    <div className="space-y-1.5">
+                      <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider block">
+                        FICA Documents Audit
+                      </span>
+                      <div className="flex flex-wrap items-center gap-2">
+                        {app.id_document_url ? (
                           <button
                             type="button"
-                            onClick={() => handleOpenDossier(app)}
-                            className="px-2.5 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-bold text-[11px] shadow-xs transition cursor-pointer flex items-center gap-1"
+                            onClick={() => openPreviewDoc(`Certified ID — ${app.full_name}`, app.id_document_url)}
+                            className="inline-flex items-center gap-1 text-[11px] font-semibold text-blue-700 hover:text-blue-900 bg-blue-50 px-2.5 py-1 rounded-lg border border-blue-200 cursor-pointer"
                           >
-                            <FileText size={12} />
-                            Review
+                            <Eye size={12} /> ID Document
                           </button>
+                        ) : (
+                          <span className="text-[10px] text-slate-400 bg-slate-100 px-2 py-0.5 rounded">No ID Attached</span>
+                        )}
 
+                        {app.proof_of_residence_url ? (
                           <button
                             type="button"
-                            onClick={() =>
-                              openEmailClient(
-                                app.email,
-                                `Place4U Agent Application — ${app.full_name}`,
-                                `Hi ${app.full_name},\n\nRegarding your leasing agent application with Place4U:\n\n`
-                              )
-                            }
-                            className="p-1.5 text-slate-500 hover:text-red-600 hover:bg-red-50 border border-slate-200 rounded-lg transition"
-                            title="Send email"
+                            onClick={() => openPreviewDoc(`Proof of Residence — ${app.full_name}`, app.proof_of_residence_url)}
+                            className="inline-flex items-center gap-1 text-[11px] font-semibold text-indigo-700 hover:text-indigo-900 bg-indigo-50 px-2.5 py-1 rounded-lg border border-indigo-200 cursor-pointer"
                           >
-                            <Mail size={13} />
+                            <Eye size={12} /> Proof of Address
                           </button>
+                        ) : (
+                          <span className="text-[10px] text-slate-400 bg-slate-100 px-2 py-0.5 rounded">No Address Proof</span>
+                        )}
+                      </div>
+                    </div>
 
-                          {app.phone && (
-                            <a
-                              href={`https://wa.me/${app.phone.replace(/[^0-9]/g, '')}`}
-                              target="_blank"
-                              rel="noreferrer"
-                              className="p-1.5 text-slate-500 hover:text-emerald-600 hover:bg-emerald-50 border border-slate-200 rounded-lg transition"
-                              title="Chat on WhatsApp"
-                            >
-                              <MessageCircle size={13} />
-                            </a>
-                          )}
+                    {/* Interview Slot Information */}
+                    {app.interview_date ? (
+                      <div className="flex items-center gap-2 text-xs bg-purple-50/70 border border-purple-200 rounded-lg p-2 text-purple-900">
+                        <Calendar size={13} className="text-purple-600 flex-shrink-0" />
+                        <div>
+                          <span className="font-semibold">{formatDate(app.interview_date)}</span>
+                          <span className="text-[10px] text-purple-600 block capitalize">
+                            Slot: {app.interview_time_slot || 'Morning'}
+                          </span>
                         </div>
-                      </td>
-                    </tr>
-                  )
-                })}
-              </tbody>
-            </table>
-          </div>
+                      </div>
+                    ) : (
+                      <div className="text-[11px] text-slate-500">
+                        Interview: <span className="capitalize font-medium text-slate-700">{app.interview_time_slot || 'Anytime'} slot</span> (not booked)
+                      </div>
+                    )}
+
+                    {/* Actions Row */}
+                    <div className="flex items-center gap-2 pt-2 border-t border-slate-100">
+                      <button
+                        type="button"
+                        onClick={() => handleOpenDossier(app)}
+                        className="flex-1 py-2 px-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-bold text-xs shadow-xs transition cursor-pointer flex items-center justify-center gap-1.5"
+                      >
+                        <FileText size={13} />
+                        Review Dossier & Audit
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() =>
+                          openEmailClient(
+                            app.email,
+                            `Place4U Agent Application — ${app.full_name}`,
+                            `Hi ${app.full_name},\n\nRegarding your leasing agent application with Place4U:\n\n`
+                          )
+                        }
+                        className="p-2 text-slate-600 hover:text-red-600 hover:bg-red-50 border border-slate-200 rounded-lg transition"
+                        title="Send email"
+                      >
+                        <Mail size={15} />
+                      </button>
+
+                      {app.phone && (
+                        <a
+                          href={`https://wa.me/${app.phone.replace(/[^0-9]/g, '')}`}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="p-2 text-slate-600 hover:text-emerald-600 hover:bg-emerald-50 border border-slate-200 rounded-lg transition"
+                          title="Chat on WhatsApp"
+                        >
+                          <MessageCircle size={15} />
+                        </a>
+                      )}
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+
+            {/* Desktop Table View (hidden md:block) */}
+            <div className="hidden md:block overflow-x-auto">
+              <table className="w-full text-left text-xs border-collapse">
+                <thead>
+                  <tr className="bg-slate-50/80 border-b border-slate-200 text-slate-500 font-semibold uppercase tracking-wider text-[10px]">
+                    <th className="py-3 px-4">Applicant / Agency</th>
+                    <th className="py-3 px-4">Contact & Location</th>
+                    <th className="py-3 px-4">FICA Compliance</th>
+                    <th className="py-3 px-4">Interview Slot</th>
+                    <th className="py-3 px-4">Status</th>
+                    <th className="py-3 px-4">Submitted</th>
+                    <th className="py-3 px-4 text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {filtered.map((app) => {
+                    const isVerified = app.verification_status === 'verified'
+                    const isPending = app.verification_status === 'pending_review'
+                    const isInterview = app.verification_status === 'interview_scheduled'
+                    const isRejected = app.verification_status === 'rejected'
+
+                    const initials = (app.full_name || 'Agent')
+                      .split(' ')
+                      .map((n) => n[0])
+                      .join('')
+                      .substring(0, 2)
+                      .toUpperCase()
+
+                    return (
+                      <tr key={app.id} className="hover:bg-slate-50/60 transition-colors">
+                        {/* Applicant & Agency */}
+                        <td className="py-3 px-4">
+                          <div className="flex items-center gap-3">
+                            <div className="w-9 h-9 rounded-full bg-blue-100 text-blue-700 font-bold flex items-center justify-center flex-shrink-0 text-xs border border-blue-200">
+                              {initials}
+                            </div>
+                            <div>
+                              <div className="flex items-center gap-1.5">
+                                <span className="font-bold text-slate-900">{app.full_name}</span>
+                                {isVerified && (
+                                  <span title="Verified Leasing Agent" className="text-emerald-600">
+                                    <ShieldCheck size={13} />
+                                  </span>
+                                )}
+                              </div>
+                              <p className="text-[11px] text-slate-500 font-medium">
+                                {app.agency_name || 'Independent Practitioner'}
+                              </p>
+                              <span className="text-[10px] text-slate-400 font-mono">
+                                ID: {app.id_number || 'Not provided'} • {app.experience_years ?? 1} yrs exp
+                              </span>
+                            </div>
+                          </div>
+                        </td>
+
+                        {/* Contact & Location */}
+                        <td className="py-3 px-4">
+                          <p className="text-slate-800 font-medium">{app.email}</p>
+                          <p className="text-[11px] text-slate-500 flex items-center gap-1">
+                            <Phone size={10} className="text-slate-400" />
+                            {app.phone}
+                          </p>
+                          <p className="text-[10px] text-slate-400 flex items-center gap-1 mt-0.5">
+                            <MapPin size={10} className="text-slate-400" />
+                            {app.city}, {app.province}
+                          </p>
+                        </td>
+
+                        {/* FICA Compliance Documents */}
+                        <td className="py-3 px-4">
+                          <div className="space-y-1">
+                            <div className="flex items-center gap-2">
+                              {app.id_document_url ? (
+                                <button
+                                  type="button"
+                                  onClick={() => openPreviewDoc(`Certified ID — ${app.full_name}`, app.id_document_url)}
+                                  className="inline-flex items-center gap-1 text-[11px] font-semibold text-blue-600 hover:text-blue-800 bg-blue-50 px-2 py-0.5 rounded border border-blue-200 cursor-pointer"
+                                >
+                                  <Eye size={11} />
+                                  ID Document
+                                </button>
+                              ) : (
+                                <span className="text-[10px] text-slate-400">No ID Attached</span>
+                              )}
+
+                              {app.proof_of_residence_url ? (
+                                <button
+                                  type="button"
+                                  onClick={() => openPreviewDoc(`Proof of Residence — ${app.full_name}`, app.proof_of_residence_url)}
+                                  className="inline-flex items-center gap-1 text-[11px] font-semibold text-indigo-600 hover:text-indigo-800 bg-indigo-50 px-2 py-0.5 rounded border border-indigo-200 cursor-pointer"
+                                >
+                                  <Eye size={11} />
+                                  Proof Address
+                                </button>
+                              ) : (
+                                <span className="text-[10px] text-slate-400">No Address Proof</span>
+                              )}
+                            </div>
+                            <span className="text-[10px] text-slate-400 block">
+                              Prefers contact via <strong className="capitalize text-slate-600">{app.preferred_contact_method || 'WhatsApp'}</strong>
+                            </span>
+                          </div>
+                        </td>
+
+                        {/* Interview Slot / Scheduled Date */}
+                        <td className="py-3 px-4">
+                          {app.interview_date ? (
+                            <div>
+                              <span className="font-semibold text-purple-700 bg-purple-50 border border-purple-200 px-2 py-0.5 rounded text-[11px] flex items-center gap-1 w-max">
+                                <Calendar size={11} />
+                                {formatDate(app.interview_date)}
+                              </span>
+                              <span className="text-[10px] text-slate-400 block mt-0.5 capitalize">
+                                Slot: {app.interview_time_slot || 'Morning'}
+                              </span>
+                            </div>
+                          ) : (
+                            <div>
+                              <span className="text-slate-600 font-medium capitalize text-[11px]">
+                                {app.interview_time_slot || 'Anytime'} slot
+                              </span>
+                              <span className="text-[10px] text-slate-400 block">Not yet scheduled</span>
+                            </div>
+                          )}
+                        </td>
+
+                        {/* Status */}
+                        <td className="py-3 px-4">
+                          {isPending && (
+                            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold bg-amber-50 text-amber-700 border border-amber-200">
+                              <Clock size={11} />
+                              Pending Review
+                            </span>
+                          )}
+                          {isInterview && (
+                            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold bg-purple-50 text-purple-700 border border-purple-200">
+                              <Calendar size={11} />
+                              Interview Booked
+                            </span>
+                          )}
+                          {isVerified && (
+                            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                              <CheckCircle2 size={11} />
+                              Accredited & Active
+                            </span>
+                          )}
+                          {isRejected && (
+                            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold bg-rose-50 text-rose-700 border border-rose-200">
+                              <XCircle size={11} />
+                              Rejected
+                            </span>
+                          )}
+                        </td>
+
+                        {/* Submitted Date */}
+                        <td className="py-3 px-4 text-slate-500 font-medium">
+                          {formatDate(app.submitted_at)}
+                        </td>
+
+                        {/* Actions */}
+                        <td className="py-3 px-4 text-right">
+                          <div className="flex items-center justify-end gap-1.5">
+                            <button
+                              type="button"
+                              onClick={() => handleOpenDossier(app)}
+                              className="px-2.5 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-bold text-[11px] shadow-xs transition cursor-pointer flex items-center gap-1"
+                            >
+                              <FileText size={12} />
+                              Review
+                            </button>
+
+                            <button
+                              type="button"
+                              onClick={() =>
+                                openEmailClient(
+                                  app.email,
+                                  `Place4U Agent Application — ${app.full_name}`,
+                                  `Hi ${app.full_name},\n\nRegarding your leasing agent application with Place4U:\n\n`
+                                )
+                              }
+                              className="p-1.5 text-slate-500 hover:text-red-600 hover:bg-red-50 border border-slate-200 rounded-lg transition"
+                              title="Send email"
+                            >
+                              <Mail size={13} />
+                            </button>
+
+                            {app.phone && (
+                              <a
+                                href={`https://wa.me/${app.phone.replace(/[^0-9]/g, '')}`}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="p-1.5 text-slate-500 hover:text-emerald-600 hover:bg-emerald-50 border border-slate-200 rounded-lg transition"
+                                title="Chat on WhatsApp"
+                              >
+                                <MessageCircle size={13} />
+                              </a>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </>
         )}
       </div>
 

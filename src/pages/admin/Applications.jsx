@@ -200,43 +200,45 @@ export default function ApplicationsPage() {
       {/* Agent rejection alerts — jobs needing reassignment */}
       {reassignQueue.length > 0 && (
         <section className="bg-red-50 border border-red-200 rounded-xl p-4 shadow-xs">
-          <div className="flex items-start gap-3">
-            <AlertCircle size={18} className="text-red-600 mt-0.5 flex-shrink-0" />
-            <div className="flex-1 min-w-0">
-              <h3 className="text-sm font-bold text-red-800">
-                {reassignQueue.length} assigned job{reassignQueue.length === 1 ? '' : 's'} rejected by
-                agent{reassignQueue.length === 1 ? '' : 's'} — needs reassignment
-              </h3>
-              <p className="text-[11px] text-red-600 mt-0.5">
-                These agents declined the job. Assign a different agent to keep the tenant application
-                moving.
-              </p>
-              <ul className="mt-3 space-y-1.5">
-                {reassignQueue.map((item) => (
-                  <li
-                    key={item.id}
-                    className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[11px] text-red-900 bg-white/70 border border-red-100 rounded-lg px-2.5 py-1.5"
-                  >
-                    <span className="font-mono text-red-500">#{String(item.id).slice(0, 8)}</span>
-                    <span className="font-semibold">{item.tenant?.full_name || 'Tenant'}</span>
-                    <span className="text-red-300">·</span>
-                    <span>
-                      declined by <strong>{item.agent?.full_name || 'agent'}</strong>
-                    </span>
-                    {item.assignment_rejection_reason && (
-                      <>
-                        <span className="text-red-300">·</span>
-                        <span className="italic">“{item.assignment_rejection_reason}”</span>
-                      </>
-                    )}
-                  </li>
-                ))}
-              </ul>
+          <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
+            <div className="flex items-start gap-3 flex-1 min-w-0">
+              <AlertCircle size={18} className="text-red-600 mt-0.5 flex-shrink-0" />
+              <div className="flex-1 min-w-0">
+                <h3 className="text-sm font-bold text-red-800">
+                  {reassignQueue.length} assigned job{reassignQueue.length === 1 ? '' : 's'} rejected by
+                  agent{reassignQueue.length === 1 ? '' : 's'} — needs reassignment
+                </h3>
+                <p className="text-[11px] text-red-600 mt-0.5">
+                  These agents declined the job. Assign a different agent to keep the tenant application
+                  moving.
+                </p>
+                <ul className="mt-3 space-y-1.5">
+                  {reassignQueue.map((item) => (
+                    <li
+                      key={item.id}
+                      className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[11px] text-red-900 bg-white/70 border border-red-100 rounded-lg px-2.5 py-1.5"
+                    >
+                      <span className="font-mono text-red-500">#{String(item.id).slice(0, 8)}</span>
+                      <span className="font-semibold">{item.tenant?.full_name || 'Tenant'}</span>
+                      <span className="text-red-300">·</span>
+                      <span>
+                        declined by <strong>{item.agent?.full_name || 'agent'}</strong>
+                      </span>
+                      {item.assignment_rejection_reason && (
+                        <>
+                          <span className="text-red-300">·</span>
+                          <span className="italic">“{item.assignment_rejection_reason}”</span>
+                        </>
+                      )}
+                    </li>
+                  ))}
+                </ul>
+              </div>
             </div>
             <button
               type="button"
               onClick={() => setNeedsReassignOnly((v) => !v)}
-              className={`flex-shrink-0 px-3 py-1.5 rounded-lg text-[11px] font-semibold border transition-colors ${
+              className={`w-full sm:w-auto flex-shrink-0 px-3 py-1.5 rounded-lg text-[11px] font-semibold border transition-colors text-center ${
                 needsReassignOnly
                   ? 'bg-red-600 text-white border-red-600 hover:bg-red-700'
                   : 'bg-white text-red-700 border-red-300 hover:bg-red-100'
@@ -251,49 +253,51 @@ export default function ApplicationsPage() {
       {/* Agent completion request alerts — jobs waiting for admin completion approval */}
       {completionQueue.length > 0 && (
         <section className="bg-amber-50 border border-amber-200 rounded-xl p-4 shadow-xs">
-          <div className="flex items-start gap-3">
-            <Clock size={18} className="text-amber-600 mt-0.5 flex-shrink-0" />
-            <div className="flex-1 min-w-0">
-              <h3 className="text-sm font-bold text-amber-900">
-                {completionQueue.length} job{completionQueue.length === 1 ? '' : 's'} awaiting completion approval
-              </h3>
-              <p className="text-[11px] text-amber-700 mt-0.5">
-                The assigned agent has requested sign-off for completed tenant placement. Approving marks the job completed and unlocks their 50% commission (R50.00).
-              </p>
-              <ul className="mt-3 space-y-1.5">
-                {completionQueue.map((item) => (
-                  <li
-                    key={item.id}
-                    className="flex flex-wrap items-center justify-between gap-2 text-[11px] text-amber-950 bg-white/80 border border-amber-100 rounded-lg px-2.5 py-1.5"
-                  >
-                    <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
-                      <span className="font-mono text-amber-600">#{String(item.id).slice(0, 8)}</span>
-                      <span className="font-semibold">{item.tenant?.full_name || 'Tenant'}</span>
-                      <span className="text-amber-300">·</span>
-                      <span>Agent: <strong>{item.agent?.full_name || 'Assigned Agent'}</strong></span>
-                      {item.completion_request_note && (
-                        <>
-                          <span className="text-amber-300">·</span>
-                          <span className="italic text-slate-600">&ldquo;{item.completion_request_note}&rdquo;</span>
-                        </>
-                      )}
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => handleApproveCompletion(item.id)}
-                      className="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-[11px] rounded-lg shadow-xs transition-colors inline-flex items-center gap-1 cursor-pointer"
+          <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
+            <div className="flex items-start gap-3 flex-1 min-w-0">
+              <Clock size={18} className="text-amber-600 mt-0.5 flex-shrink-0" />
+              <div className="flex-1 min-w-0">
+                <h3 className="text-sm font-bold text-amber-900">
+                  {completionQueue.length} job{completionQueue.length === 1 ? '' : 's'} awaiting completion approval
+                </h3>
+                <p className="text-[11px] text-amber-700 mt-0.5">
+                  The assigned agent has requested sign-off for completed tenant placement. Approving marks the job completed and unlocks their 50% commission (R50.00).
+                </p>
+                <ul className="mt-3 space-y-2">
+                  {completionQueue.map((item) => (
+                    <li
+                      key={item.id}
+                      className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-[11px] text-amber-950 bg-white/80 border border-amber-100 rounded-lg px-2.5 py-2"
                     >
-                      <CheckCircle2 size={12} />
-                      Approve Job Completed
-                    </button>
-                  </li>
-                ))}
-              </ul>
+                      <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
+                        <span className="font-mono text-amber-600">#{String(item.id).slice(0, 8)}</span>
+                        <span className="font-semibold">{item.tenant?.full_name || 'Tenant'}</span>
+                        <span className="text-amber-300">·</span>
+                        <span>Agent: <strong>{item.agent?.full_name || 'Assigned Agent'}</strong></span>
+                        {item.completion_request_note && (
+                          <>
+                            <span className="text-amber-300">·</span>
+                            <span className="italic text-slate-600">&ldquo;{item.completion_request_note}&rdquo;</span>
+                          </>
+                        )}
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => handleApproveCompletion(item.id)}
+                        className="w-full sm:w-auto px-2.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-[11px] rounded-lg shadow-xs transition-colors inline-flex items-center justify-center gap-1 cursor-pointer"
+                      >
+                        <CheckCircle2 size={12} />
+                        Approve Job Completed
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              </div>
             </div>
             <button
               type="button"
               onClick={() => setCompletionOnly((v) => !v)}
-              className={`flex-shrink-0 px-3 py-1.5 rounded-lg text-[11px] font-semibold border transition-colors ${
+              className={`w-full sm:w-auto flex-shrink-0 px-3 py-1.5 rounded-lg text-[11px] font-semibold border transition-colors text-center ${
                 completionOnly
                   ? 'bg-amber-600 text-white border-amber-600 hover:bg-amber-700'
                   : 'bg-white text-amber-800 border-amber-300 hover:bg-amber-100'
@@ -307,23 +311,23 @@ export default function ApplicationsPage() {
 
       {/* Filters and Search Bar */}
       <section className="bg-white rounded-xl shadow-xs border border-slate-200 overflow-hidden">
-        <div className="p-4 border-b border-slate-100 flex flex-col lg:flex-row lg:items-center justify-between gap-3">
-          <div className="relative">
+        <div className="p-3 sm:p-4 border-b border-slate-100 flex flex-col md:flex-row md:items-center justify-between gap-3">
+          <div className="relative w-full md:w-64">
             <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
             <input
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="Search by tenant name, email, area…"
-              className="pl-8 pr-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-900 placeholder-slate-400 w-64 focus:outline-none focus:border-blue-600"
+              placeholder="Search tenant, email, area…"
+              className="pl-8 pr-3 py-2 sm:py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-900 placeholder-slate-400 w-full focus:outline-none focus:border-blue-600"
             />
           </div>
 
-          <div className="flex flex-wrap items-center gap-2.5 text-xs">
+          <div className="flex flex-col sm:flex-row sm:flex-wrap items-stretch sm:items-center gap-2 text-xs">
             {completionQueue.length > 0 && (
               <button
                 type="button"
                 onClick={() => setCompletionOnly((v) => !v)}
-                className={`px-2.5 py-1.5 rounded-lg text-xs font-semibold border transition-colors flex items-center gap-1 cursor-pointer ${
+                className={`px-2.5 py-1.5 rounded-lg text-xs font-semibold border transition-colors flex items-center justify-center gap-1 cursor-pointer ${
                   completionOnly
                     ? 'bg-amber-600 text-white border-amber-600'
                     : 'bg-amber-50 text-amber-800 border-amber-200 hover:bg-amber-100'
@@ -334,227 +338,397 @@ export default function ApplicationsPage() {
               </button>
             )}
 
-            <select
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-              className="p-1.5 rounded-lg border border-slate-200 bg-slate-50 text-slate-700 focus:outline-none focus:border-blue-600"
-            >
-              <option value="All">All Statuses</option>
-              {SELECTABLE_APPLICATION_STATUSES.map((s) => (
-                <option key={s} value={s}>{applicationStatusLabel(s)}</option>
-              ))}
-            </select>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 flex-1 sm:flex-none">
+              <select
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value)}
+                className="w-full sm:w-auto p-2 sm:p-1.5 rounded-lg border border-slate-200 bg-slate-50 text-slate-700 text-xs focus:outline-none focus:border-blue-600"
+              >
+                <option value="All">All Statuses</option>
+                {SELECTABLE_APPLICATION_STATUSES.map((s) => (
+                  <option key={s} value={s}>{applicationStatusLabel(s)}</option>
+                ))}
+              </select>
 
-            <select
-              value={agentFilter}
-              onChange={(e) => setAgentFilter(e.target.value)}
-              className="p-1.5 rounded-lg border border-slate-200 bg-slate-50 text-slate-700 focus:outline-none focus:border-blue-600"
-            >
-              <option value="All">All Agent Allocations</option>
-              <option value="Unassigned">Unassigned Only</option>
-              {agents.map((ag) => (
-                <option key={ag.id} value={ag.id}>
-                  {ag.full_name}
-                </option>
-              ))}
-            </select>
+              <select
+                value={agentFilter}
+                onChange={(e) => setAgentFilter(e.target.value)}
+                className="w-full sm:w-auto p-2 sm:p-1.5 rounded-lg border border-slate-200 bg-slate-50 text-slate-700 text-xs focus:outline-none focus:border-blue-600"
+              >
+                <option value="All">All Agent Allocations</option>
+                <option value="Unassigned">Unassigned Only</option>
+                {agents.map((ag) => (
+                  <option key={ag.id} value={ag.id}>
+                    {ag.full_name}
+                  </option>
+                ))}
+              </select>
+            </div>
 
-            <span className="text-slate-400 text-xs ml-auto">
+            <span className="text-slate-400 text-[11px] sm:text-xs text-right sm:ml-auto">
               {filtered.length} application{filtered.length === 1 ? '' : 's'}
             </span>
           </div>
         </div>
 
-        {/* Applications List */}
-        <div className="overflow-x-auto">
-          {loading ? (
-            <div className="flex justify-center items-center py-20">
-              <p className="text-slate-400 text-xs">Loading real applications from database…</p>
-            </div>
-          ) : (
-            <table className="w-full text-xs">
-              <thead>
-                <tr className="bg-slate-50/80 border-b border-slate-100 text-slate-500 font-semibold uppercase tracking-wider text-[10px]">
-                  <th className="text-left px-5 py-3">Application ID</th>
-                  <th className="text-left px-4 py-3">Tenant Details</th>
-                  <th className="text-left px-4 py-3">Preferred Areas & Type</th>
-                  <th className="text-left px-4 py-3">Budget Range</th>
-                  <th className="text-left px-4 py-3">Submission Date</th>
-                  <th className="text-left px-4 py-3">Status</th>
-                  <th className="text-left px-4 py-3">Assign Agent</th>
-                  <th className="text-right px-5 py-3">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {filtered.map((app) => {
-                  const tenantName = app.tenant?.full_name || 'Tenant'
-                  const tenantEmail = app.tenant?.email || ''
-                  const tenantPhone = app.tenant?.phone || 'No phone'
-                  const agentName = app.agent?.full_name || 'Unassigned'
-                  const agentEmail = app.agent?.email || ''
-                  const areas = Array.isArray(app.preferred_areas) ? app.preferred_areas.join(', ') : 'Any area'
-                  const types = Array.isArray(app.preferred_types) ? app.preferred_types.join(', ') : 'Any'
+        {/* Loading State */}
+        {loading ? (
+          <div className="flex justify-center items-center py-20">
+            <p className="text-slate-400 text-xs">Loading real applications from database…</p>
+          </div>
+        ) : filtered.length === 0 ? (
+          <div className="p-8 text-center text-slate-400 text-xs">
+            No applications match your criteria.
+          </div>
+        ) : (
+          <>
+            {/* Mobile Cards View (block md:hidden) */}
+            <div className="block md:hidden divide-y divide-slate-100">
+              {filtered.map((app) => {
+                const tenantName = app.tenant?.full_name || 'Tenant'
+                const tenantEmail = app.tenant?.email || ''
+                const tenantPhone = app.tenant?.phone || ''
+                const agentName = app.agent?.full_name || 'Unassigned'
+                const agentEmail = app.agent?.email || ''
+                const areas = Array.isArray(app.preferred_areas) ? app.preferred_areas.join(', ') : 'Any area'
+                const types = Array.isArray(app.preferred_types) ? app.preferred_types.join(', ') : 'Any'
 
-                  return (
-                    <tr
-                      key={app.id}
-                      className={`transition-colors ${
-                        app.assignment_status === 'rejected'
-                          ? 'bg-red-50/40 hover:bg-red-50/70'
-                          : 'hover:bg-slate-50/70'
-                      }`}
-                    >
-                      <td className="px-5 py-3.5 font-mono text-blue-600">
-                        <div>{app.id.slice(0, 8)}…</div>
-                        <span className="text-[10px] text-slate-400">{app.lease_duration_months || 12} mo</span>
-                      </td>
-
-                      <td className="px-4 py-3.5">
-                        <p className="font-semibold text-slate-900">{tenantName}</p>
-                        <p className="text-[10px] text-slate-400">{tenantEmail || tenantPhone}</p>
-                      </td>
-
-                      <td className="px-4 py-3.5 max-w-[200px]">
-                        <p className="font-medium text-slate-800 truncate">{areas}</p>
-                        <p className="text-[10px] text-slate-400 truncate mt-0.5">
-                          Type: {types} {app.special_requirements ? `· "${app.special_requirements}"` : ''}
-                        </p>
-                      </td>
-
-                      <td className="px-4 py-3.5 font-mono font-bold text-slate-900">
-                        {formatCurrency(app.min_budget)} – {formatCurrency(app.max_budget)}
-                      </td>
-
-                      <td className="px-4 py-3.5 text-slate-500">
-                        <div>{formatDate(app.submitted_at)}</div>
-                        <span className="text-[10px] text-slate-400">
-                          Move-in: {formatDate(app.move_in_date)}
-                        </span>
-                      </td>
-
-                      <td className="px-4 py-3.5">
-                        <select
-                          value={app.status || 'submitted'}
-                          onChange={(e) => handleStatusChange(app.id, e.target.value)}
-                          className={`text-[11px] font-semibold rounded-lg px-2 py-1 border transition-colors ${getApplicationStatusMeta(app.status).tailwind}`}
-                        >
-                          {SELECTABLE_APPLICATION_STATUSES.map((s) => (
-                            <option key={s} value={s}>{applicationStatusLabel(s)}</option>
-                          ))}
-                        </select>
-
-                        {app.completion_requested_at && app.status !== 'completed' && (
-                          <div className="mt-1.5 flex flex-col gap-1">
-                            <span className="inline-flex items-center gap-1 text-[10px] font-bold text-amber-800 bg-amber-50 border border-amber-200 rounded-full px-2 py-0.5">
-                              <Clock size={10} /> Completion Requested
-                            </span>
-                            {app.completion_request_note && (
-                              <p className="text-[10px] text-slate-500 italic truncate max-w-[150px]" title={app.completion_request_note}>
-                                &ldquo;{app.completion_request_note}&rdquo;
-                              </p>
-                            )}
-                            <button
-                              type="button"
-                              onClick={() => handleApproveCompletion(app.id)}
-                              className="inline-flex items-center justify-center gap-1 text-[10px] font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-md px-2 py-1 transition-colors shadow-xs cursor-pointer"
-                            >
-                              <CheckCircle2 size={11} /> Approve Completed
-                            </button>
-                          </div>
-                        )}
-                        {app.completion_approved_at && app.status === 'completed' && (
-                          <div className="mt-1">
-                            <span className="inline-flex items-center gap-1 text-[9px] font-medium text-emerald-700 bg-emerald-50 border border-emerald-200 rounded px-1.5 py-0.5">
-                              <CheckCircle2 size={9} /> Approved by Admin
-                            </span>
-                          </div>
-                        )}
-                      </td>
-
-                      <td className="px-4 py-3.5">
-                        <select
-                          value={app.assigned_to || ''}
-                          onChange={(e) => handleAssign(app.id, e.target.value)}
-                          className="bg-white border border-slate-200 text-slate-800 text-xs rounded-lg px-2 py-1 focus:outline-none focus:border-blue-600 max-w-[150px]"
-                        >
-                          <option value="">-- Unassigned --</option>
-                          {agents.map((ag) => (
-                            <option key={ag.id} value={ag.id}>
-                              {ag.full_name}
-                            </option>
-                          ))}
-                        </select>
-
-                        {app.assigned_to && (
-                          <div className="mt-1.5">
-                            {app.assignment_status === 'accepted' ? (
-                              <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-full px-2 py-0.5">
-                                <CheckCircle2 size={10} /> Accepted
-                              </span>
-                            ) : app.assignment_status === 'rejected' ? (
-                              <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-red-700 bg-red-50 border border-red-200 rounded-full px-2 py-0.5">
-                                <AlertCircle size={10} /> Rejected — reassign
-                              </span>
-                            ) : (
-                              <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-amber-700 bg-amber-50 border border-amber-200 rounded-full px-2 py-0.5">
-                                <Clock size={10} /> Awaiting response
-                              </span>
-                            )}
-                          </div>
-                        )}
-                      </td>
-
-                      <td className="px-5 py-3.5 text-right">
-                        <div className="flex items-center justify-end gap-1.5">
-                          {tenantEmail && (
-                            <button
-                              onClick={() =>
-                                openEmailClient(
-                                  tenantEmail,
-                                  `Place4U Application Status [${app.id.slice(0, 8)}]`,
-                                  `Hi ${tenantName},\n\nWe are processing your rental application for ${areas}.\nYour assigned agent: ${agentName}.\n\nBest regards,\nPlace4U Team`
-                                )
-                              }
-                              className="px-2 py-1 rounded bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-[11px] inline-flex items-center gap-1"
-                              title="Email tenant"
-                            >
-                              <Mail size={12} className="text-red-500" />
-                              Tenant
-                            </button>
-                          )}
-
-                          {agentEmail && (
-                            <button
-                              onClick={() =>
-                                openEmailClient(
-                                  agentEmail,
-                                  `Assigned Application: ${tenantName} [${app.id.slice(0, 8)}]`,
-                                  `Hi ${agentName},\n\nPlease review application ${app.id}.\nTenant: ${tenantName} (${tenantPhone})\nRequirements: ${app.special_requirements || 'None'}\n\nPlace4U Admin`
-                                )
-                              }
-                              className="px-2 py-1 rounded bg-blue-50 hover:bg-blue-100 text-blue-700 font-semibold text-[11px] inline-flex items-center gap-1"
-                              title="Email agent"
-                            >
-                              <Mail size={12} className="text-blue-600" />
-                              Agent
-                            </button>
-                          )}
+                return (
+                  <div
+                    key={app.id}
+                    className={`p-4 space-y-3 transition-colors ${
+                      app.assignment_status === 'rejected'
+                        ? 'bg-red-50/40'
+                        : 'bg-white hover:bg-slate-50/50'
+                    }`}
+                  >
+                    {/* Header Row: ID, Duration & Status */}
+                    <div className="flex items-start justify-between gap-2">
+                      <div>
+                        <div className="font-mono text-xs font-bold text-blue-600">
+                          #{app.id.slice(0, 8)}
                         </div>
-                      </td>
-                    </tr>
-                  )
-                })}
-                {!filtered.length && !loading && (
-                  <tr>
-                    <td colSpan={8} className="px-5 py-10 text-center text-slate-400">
-                      No applications found.
-                    </td>
+                        <span className="text-[10px] text-slate-400">
+                          {app.lease_duration_months || 12} mo lease · Submitted {formatDate(app.submitted_at)}
+                        </span>
+                      </div>
+                      <select
+                        value={app.status || 'submitted'}
+                        onChange={(e) => handleStatusChange(app.id, e.target.value)}
+                        className={`text-[11px] font-semibold rounded-lg px-2 py-1 border transition-colors max-w-[140px] truncate ${getApplicationStatusMeta(app.status).tailwind}`}
+                      >
+                        {SELECTABLE_APPLICATION_STATUSES.map((s) => (
+                          <option key={s} value={s}>{applicationStatusLabel(s)}</option>
+                        ))}
+                      </select>
+                    </div>
+
+                    {/* Completion Alert if applicable */}
+                    {app.completion_requested_at && app.status !== 'completed' && (
+                      <div className="p-2.5 bg-amber-50 border border-amber-200 rounded-lg space-y-1.5">
+                        <div className="flex items-center gap-1 text-[11px] font-bold text-amber-800">
+                          <Clock size={12} /> Completion Sign-off Requested
+                        </div>
+                        {app.completion_request_note && (
+                          <p className="text-[11px] text-slate-600 italic">
+                            &ldquo;{app.completion_request_note}&rdquo;
+                          </p>
+                        )}
+                        <button
+                          type="button"
+                          onClick={() => handleApproveCompletion(app.id)}
+                          className="w-full inline-flex items-center justify-center gap-1 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-md py-1.5 transition-colors shadow-xs cursor-pointer"
+                        >
+                          <CheckCircle2 size={13} /> Approve Completed (Unlock 50%)
+                        </button>
+                      </div>
+                    )}
+
+                    {app.completion_approved_at && app.status === 'completed' && (
+                      <div className="inline-flex items-center gap-1 text-[10px] font-medium text-emerald-700 bg-emerald-50 border border-emerald-200 rounded px-2 py-0.5">
+                        <CheckCircle2 size={10} /> Completed & Approved by Admin
+                      </div>
+                    )}
+
+                    {/* Tenant Details */}
+                    <div className="bg-slate-50 rounded-lg p-2.5 space-y-1 text-xs">
+                      <div className="flex items-baseline justify-between">
+                        <span className="font-semibold text-slate-900">{tenantName}</span>
+                        <span className="font-mono font-bold text-slate-900 text-[11px]">
+                          {formatCurrency(app.min_budget)} – {formatCurrency(app.max_budget)}
+                        </span>
+                      </div>
+                      <div className="text-[11px] text-slate-500 break-all">
+                        {tenantEmail} {tenantPhone && `· ${tenantPhone}`}
+                      </div>
+                      <div className="text-[11px] text-slate-600 pt-1 border-t border-slate-200/60">
+                        <span className="text-slate-400">Areas:</span> {areas}
+                      </div>
+                      <div className="text-[10px] text-slate-500">
+                        <span className="text-slate-400">Type:</span> {types}
+                        {app.special_requirements ? ` · "${app.special_requirements}"` : ''}
+                      </div>
+                      {app.move_in_date && (
+                        <div className="text-[10px] text-slate-400">
+                          Move-in target: {formatDate(app.move_in_date)}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Agent Assignment */}
+                    <div className="space-y-1.5 pt-1">
+                      <div className="flex items-center justify-between text-[11px]">
+                        <span className="font-semibold text-slate-600">Assigned Agent:</span>
+                        {app.assigned_to && (
+                          app.assignment_status === 'accepted' ? (
+                            <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 rounded px-1.5 py-0.5">
+                              <CheckCircle2 size={9} /> Accepted
+                            </span>
+                          ) : app.assignment_status === 'rejected' ? (
+                            <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-red-700 bg-red-50 border border-red-200 rounded px-1.5 py-0.5">
+                              <AlertCircle size={9} /> Declined
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-amber-700 bg-amber-50 border border-amber-200 rounded px-1.5 py-0.5">
+                              <Clock size={9} /> Awaiting reply
+                            </span>
+                          )
+                        )}
+                      </div>
+                      <select
+                        value={app.assigned_to || ''}
+                        onChange={(e) => handleAssign(app.id, e.target.value)}
+                        className="w-full bg-white border border-slate-200 text-slate-800 text-xs rounded-lg px-2.5 py-1.5 focus:outline-none focus:border-blue-600"
+                      >
+                        <option value="">-- Select Agent / Unassigned --</option>
+                        {agents.map((ag) => (
+                          <option key={ag.id} value={ag.id}>
+                            {ag.full_name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    {/* Action buttons (Email Tenant & Agent) */}
+                    <div className="flex items-center gap-2 pt-2 border-t border-slate-100">
+                      {tenantEmail && (
+                        <button
+                          type="button"
+                          onClick={() =>
+                            openEmailClient(
+                              tenantEmail,
+                              `Place4U Application Status [${app.id.slice(0, 8)}]`,
+                              `Hi ${tenantName},\n\nWe are processing your rental application for ${areas}.\nYour assigned agent: ${agentName}.\n\nBest regards,\nPlace4U Team`
+                            )
+                          }
+                          className="flex-1 py-1.5 px-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-xs inline-flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+                        >
+                          <Mail size={12} className="text-red-500" />
+                          Email Tenant
+                        </button>
+                      )}
+
+                      {agentEmail && (
+                        <button
+                          type="button"
+                          onClick={() =>
+                            openEmailClient(
+                              agentEmail,
+                              `Assigned Application: ${tenantName} [${app.id.slice(0, 8)}]`,
+                              `Hi ${agentName},\n\nPlease review application ${app.id}.\nTenant: ${tenantName} (${tenantPhone})\nRequirements: ${app.special_requirements || 'None'}\n\nPlace4U Admin`
+                            )
+                          }
+                          className="flex-1 py-1.5 px-2 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-700 font-semibold text-xs inline-flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+                        >
+                          <Mail size={12} className="text-blue-600" />
+                          Email Agent
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+
+            {/* Desktop Table View (hidden md:block) */}
+            <div className="hidden md:block overflow-x-auto">
+              <table className="w-full text-xs">
+                <thead>
+                  <tr className="bg-slate-50/80 border-b border-slate-100 text-slate-500 font-semibold uppercase tracking-wider text-[10px]">
+                    <th className="text-left px-5 py-3">Application ID</th>
+                    <th className="text-left px-4 py-3">Tenant Details</th>
+                    <th className="text-left px-4 py-3">Preferred Areas & Type</th>
+                    <th className="text-left px-4 py-3">Budget Range</th>
+                    <th className="text-left px-4 py-3">Submission Date</th>
+                    <th className="text-left px-4 py-3">Status</th>
+                    <th className="text-left px-4 py-3">Assign Agent</th>
+                    <th className="text-right px-5 py-3">Actions</th>
                   </tr>
-                )}
-              </tbody>
-            </table>
-          )}
-        </div>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {filtered.map((app) => {
+                    const tenantName = app.tenant?.full_name || 'Tenant'
+                    const tenantEmail = app.tenant?.email || ''
+                    const tenantPhone = app.tenant?.phone || 'No phone'
+                    const agentName = app.agent?.full_name || 'Unassigned'
+                    const agentEmail = app.agent?.email || ''
+                    const areas = Array.isArray(app.preferred_areas) ? app.preferred_areas.join(', ') : 'Any area'
+                    const types = Array.isArray(app.preferred_types) ? app.preferred_types.join(', ') : 'Any'
+
+                    return (
+                      <tr
+                        key={app.id}
+                        className={`transition-colors ${
+                          app.assignment_status === 'rejected'
+                            ? 'bg-red-50/40 hover:bg-red-50/70'
+                            : 'hover:bg-slate-50/70'
+                        }`}
+                      >
+                        <td className="px-5 py-3.5 font-mono text-blue-600">
+                          <div>{app.id.slice(0, 8)}…</div>
+                          <span className="text-[10px] text-slate-400">{app.lease_duration_months || 12} mo</span>
+                        </td>
+
+                        <td className="px-4 py-3.5">
+                          <p className="font-semibold text-slate-900">{tenantName}</p>
+                          <p className="text-[10px] text-slate-400">{tenantEmail || tenantPhone}</p>
+                        </td>
+
+                        <td className="px-4 py-3.5 max-w-[200px]">
+                          <p className="font-medium text-slate-800 truncate">{areas}</p>
+                          <p className="text-[10px] text-slate-400 truncate mt-0.5">
+                            Type: {types} {app.special_requirements ? `· "${app.special_requirements}"` : ''}
+                          </p>
+                        </td>
+
+                        <td className="px-4 py-3.5 font-mono font-bold text-slate-900">
+                          {formatCurrency(app.min_budget)} – {formatCurrency(app.max_budget)}
+                        </td>
+
+                        <td className="px-4 py-3.5 text-slate-500">
+                          <div>{formatDate(app.submitted_at)}</div>
+                          <span className="text-[10px] text-slate-400">
+                            Move-in: {formatDate(app.move_in_date)}
+                          </span>
+                        </td>
+
+                        <td className="px-4 py-3.5">
+                          <select
+                            value={app.status || 'submitted'}
+                            onChange={(e) => handleStatusChange(app.id, e.target.value)}
+                            className={`text-[11px] font-semibold rounded-lg px-2 py-1 border transition-colors ${getApplicationStatusMeta(app.status).tailwind}`}
+                          >
+                            {SELECTABLE_APPLICATION_STATUSES.map((s) => (
+                              <option key={s} value={s}>{applicationStatusLabel(s)}</option>
+                            ))}
+                          </select>
+
+                          {app.completion_requested_at && app.status !== 'completed' && (
+                            <div className="mt-1.5 flex flex-col gap-1">
+                              <span className="inline-flex items-center gap-1 text-[10px] font-bold text-amber-800 bg-amber-50 border border-amber-200 rounded-full px-2 py-0.5">
+                                <Clock size={10} /> Completion Requested
+                              </span>
+                              {app.completion_request_note && (
+                                <p className="text-[10px] text-slate-500 italic truncate max-w-[150px]" title={app.completion_request_note}>
+                                  &ldquo;{app.completion_request_note}&rdquo;
+                                </p>
+                              )}
+                              <button
+                                type="button"
+                                onClick={() => handleApproveCompletion(app.id)}
+                                className="inline-flex items-center justify-center gap-1 text-[10px] font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-md px-2 py-1 transition-colors shadow-xs cursor-pointer"
+                              >
+                                <CheckCircle2 size={11} /> Approve Completed
+                              </button>
+                            </div>
+                          )}
+                          {app.completion_approved_at && app.status === 'completed' && (
+                            <div className="mt-1">
+                              <span className="inline-flex items-center gap-1 text-[9px] font-medium text-emerald-700 bg-emerald-50 border border-emerald-200 rounded px-1.5 py-0.5">
+                                <CheckCircle2 size={9} /> Approved by Admin
+                              </span>
+                            </div>
+                          )}
+                        </td>
+
+                        <td className="px-4 py-3.5">
+                          <select
+                            value={app.assigned_to || ''}
+                            onChange={(e) => handleAssign(app.id, e.target.value)}
+                            className="bg-white border border-slate-200 text-slate-800 text-xs rounded-lg px-2 py-1 focus:outline-none focus:border-blue-600 max-w-[150px]"
+                          >
+                            <option value="">-- Unassigned --</option>
+                            {agents.map((ag) => (
+                              <option key={ag.id} value={ag.id}>
+                                {ag.full_name}
+                              </option>
+                            ))}
+                          </select>
+
+                          {app.assigned_to && (
+                            <div className="mt-1.5">
+                              {app.assignment_status === 'accepted' ? (
+                                <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-full px-2 py-0.5">
+                                  <CheckCircle2 size={10} /> Accepted
+                                </span>
+                              ) : app.assignment_status === 'rejected' ? (
+                                <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-red-700 bg-red-50 border border-red-200 rounded-full px-2 py-0.5">
+                                  <AlertCircle size={10} /> Rejected — reassign
+                                </span>
+                              ) : (
+                                <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-amber-700 bg-amber-50 border border-amber-200 rounded-full px-2 py-0.5">
+                                  <Clock size={10} /> Awaiting response
+                                </span>
+                              )}
+                            </div>
+                          )}
+                        </td>
+
+                        <td className="px-5 py-3.5 text-right">
+                          <div className="flex items-center justify-end gap-1.5">
+                            {tenantEmail && (
+                              <button
+                                onClick={() =>
+                                  openEmailClient(
+                                    tenantEmail,
+                                    `Place4U Application Status [${app.id.slice(0, 8)}]`,
+                                    `Hi ${tenantName},\n\nWe are processing your rental application for ${areas}.\nYour assigned agent: ${agentName}.\n\nBest regards,\nPlace4U Team`
+                                  )
+                                }
+                                className="px-2 py-1 rounded bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-[11px] inline-flex items-center gap-1"
+                                title="Email tenant"
+                              >
+                                <Mail size={12} className="text-red-500" />
+                                Tenant
+                              </button>
+                            )}
+
+                            {agentEmail && (
+                              <button
+                                onClick={() =>
+                                  openEmailClient(
+                                    agentEmail,
+                                    `Assigned Application: ${tenantName} [${app.id.slice(0, 8)}]`,
+                                    `Hi ${agentName},\n\nPlease review application ${app.id}.\nTenant: ${tenantName} (${tenantPhone})\nRequirements: ${app.special_requirements || 'None'}\n\nPlace4U Admin`
+                                  )
+                                }
+                                className="px-2 py-1 rounded bg-blue-50 hover:bg-blue-100 text-blue-700 font-semibold text-[11px] inline-flex items-center gap-1"
+                                title="Email agent"
+                              >
+                                <Mail size={12} className="text-blue-600" />
+                                Agent
+                              </button>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </>
+        )}
       </section>
     </div>
   )
