@@ -310,7 +310,7 @@ export default function MarketplaceFlowSection({ footerNote = null }) {
 										<span className="h-[7px] w-[7px] rounded-full border border-[#0f1416]" />
 									</span>
 									<span className="rounded-full border border-[#d5e0df] px-3 py-1 font-mono text-[10px] text-[#6b757a]">
-										app.place4u.co.za
+										place4u.xyz
 									</span>
 									<span className="ml-auto flex flex-col gap-[3px]" aria-hidden="true">
 										<span className="h-[1.5px] w-3 bg-[#0f1416]" />
