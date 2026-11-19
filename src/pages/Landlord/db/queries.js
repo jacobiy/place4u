@@ -1084,6 +1084,50 @@ export const LandlordQueries = {
     }
   },
 
+  // Buildings assigned to this landlord (Place4U creates the asset, the
+  // landlord attaches rooms to it). Degrades to [] before the migration lands.
+  async getLandlordBuildings(userId) {
+    try {
+      if (!userId) return { success: true, data: [] };
+      const { data, error } = await supabase
+        .from('buildings')
+        .select('id, name, address, area, city, province, postal_code, property_type, amenities, image_urls, is_active')
+        .eq('landlord_id', userId)
+        .order('name', { ascending: true });
+
+      if (error) {
+        if (isMissingRelationError(error)) return { success: true, data: [] };
+        throw error;
+      }
+      return { success: true, data: data || [] };
+    } catch (error) {
+      console.error('Error fetching landlord buildings:', error);
+      return { success: false, error: error.message };
+    }
+  },
+
+  // Room types inside a building the landlord can upload a room against.
+  async getBuildingRoomTypes(buildingId) {
+    try {
+      if (!buildingId) return { success: true, data: [] };
+      const { data, error } = await supabase
+        .from('building_room_types')
+        .select('*')
+        .eq('building_id', buildingId)
+        .order('sort_order', { ascending: true })
+        .order('name', { ascending: true });
+
+      if (error) {
+        if (isMissingRelationError(error)) return { success: true, data: [] };
+        throw error;
+      }
+      return { success: true, data: data || [] };
+    } catch (error) {
+      console.error('Error fetching building room types:', error);
+      return { success: false, error: error.message };
+    }
+  },
+
   // Get applications submitted for this landlord's properties
   async getLandlordApplications(userId, ownedPropertyIds = []) {
     try {

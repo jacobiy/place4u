@@ -8,14 +8,17 @@ import { Modal } from "./Modal";
 import { PrimaryBtn, SecondaryBtn } from "./Buttons";
 import { T, SERIF } from "../Styles/designTokens";
 import { DOCUMENT_CATEGORIES } from "./DocumentUploadModal";
+import { LandlordQueries } from "../db/queries";
+import {
+  PROPERTY_TYPE_OPTIONS,
+  TENANT_ALLOWED_OPTIONS,
+  isRoomBasedType,
+  normalizeTenantAllowed
+} from "../../../services/listingTaxonomy";
 
-const TYPE_LABELS = {
-  house: "House",
-  apartment: "Apartment",
-  room: "Room",
-  backroom: "Backroom",
-  commercial: "Commercial"
-};
+const TYPE_LABELS = Object.fromEntries(
+  PROPERTY_TYPE_OPTIONS.map((option) => [option.value, option.label])
+);
 
 const POPULAR_AMENITIES = [
   "Fiber Internet Ready",
@@ -66,6 +69,10 @@ const defaultForm = {
   max_occupants: "2",
   available_from: "",
   amenities: [],
+  building_id: "",
+  room_type_id: "",
+  unit_label: "",
+  tenant_allowed: [],
   imageFiles: [],
   documentFiles: []
 };
@@ -103,11 +110,12 @@ const ToggleChip = ({ active, onClick, icon: Icon, children }) => (
   </button>
 );
 
-export const AddPropertyModal = ({ isOpen, onClose, onCreate, isCreating }) => {
+export const AddPropertyModal = ({ isOpen, onClose, onCreate, isCreating, buildings = [] }) => {
   const [formData, setFormData] = useState(defaultForm);
   const [error, setError] = useState("");
   const [previewUrls, setPreviewUrls] = useState([]);
   const [activeImage, setActiveImage] = useState(0);
+  const [roomTypes, setRoomTypes] = useState([]);
   const fileInputRef = useRef(null);
   const docInputRef = useRef(null);
 
@@ -129,6 +137,66 @@ export const AddPropertyModal = ({ isOpen, onClose, onCreate, isCreating }) => {
   }, [formData.imageFiles]);
 
   const set = (patch) => setFormData((prev) => ({ ...prev, ...patch }));
+
+  // Room types follow the building picked above. Empty until one is chosen.
+  useEffect(() => {
+    if (!formData.building_id) {
+      setRoomTypes([]);
+      return;
+    }
+    let cancelled = false;
+    LandlordQueries.getBuildingRoomTypes(formData.building_id).then((res) => {
+      if (!cancelled) setRoomTypes(res.success ? (res.data || []) : []);
+    });
+    return () => { cancelled = true; };
+  }, [formData.building_id]);
+
+  const chooseBuilding = (buildingId) => {
+    const building = buildings.find((b) => b.id === buildingId);
+    setFormData((prev) => ({
+      ...prev,
+      building_id: buildingId,
+      room_type_id: "",
+      // Pre-fill the location from the asset so a room never lands at a
+      // different address than the building it belongs to.
+      address: prev.address || building?.address || "",
+      area: prev.area || building?.area || "",
+      city: prev.city || building?.city || "",
+      province: prev.province || building?.province || "",
+      postal_code: prev.postal_code || building?.postal_code || ""
+    }));
+  };
+
+  const toggleTenant = (value) => {
+    const current = normalizeTenantAllowed(formData.tenant_allowed);
+    const next = current.includes(value)
+      ? current.filter((entry) => entry !== value)
+      : normalizeTenantAllowed([...current, value]);
+    set({ tenant_allowed: next });
+  };
+
+  const roomBased = isRoomBasedType(formData.property_type);
+  const selectedRoomType = roomTypes.find((rt) => rt.id === formData.room_type_id) || null;
+  const allowedTenants = normalizeTenantAllowed(formData.tenant_allowed);
+
+  // A room type carries the commercial terms, so picking one pre-fills the
+  // listing instead of making the landlord retype rent/capacity for every room.
+  const chooseRoomType = (roomTypeId) => {
+    const roomType = roomTypes.find((rt) => rt.id === roomTypeId);
+    if (!roomType) {
+      set({ room_type_id: roomTypeId });
+      return;
+    }
+    set({
+      room_type_id: roomTypeId,
+      price: roomType.rent ? String(roomType.rent) : formData.price,
+      bedrooms: roomType.bedrooms != null ? String(roomType.bedrooms) : formData.bedrooms,
+      bathrooms: roomType.bathrooms != null ? String(roomType.bathrooms) : formData.bathrooms,
+      max_occupants: roomType.capacity != null ? String(roomType.capacity) : formData.max_occupants,
+      size: roomType.size || formData.size,
+      furnished: roomType.furnished !== false
+    });
+  };
 
   const toggleAmenity = (amenity) => {
     const current = formData.amenities || [];
@@ -221,6 +289,9 @@ export const AddPropertyModal = ({ isOpen, onClose, onCreate, isCreating }) => {
   const checklist = [
     { label: "Listing title", done: Boolean(formData.title.trim()) },
     { label: "Property type", done: Boolean(formData.property_type) },
+    ...(roomBased
+      ? [{ label: "Building & room number", done: Boolean(formData.building_id), required: true }]
+      : []),
     { label: "Street address", done: Boolean(formData.address.trim()) },
     { label: "Area & city", done: Boolean(formData.area.trim() && formData.city.trim()) },
     { label: "Monthly rent", done: Boolean(formData.price) },
@@ -233,6 +304,12 @@ export const AddPropertyModal = ({ isOpen, onClose, onCreate, isCreating }) => {
     setError("");
     if (!formData.property_type || !formData.address || !formData.area || !formData.city || !formData.price) {
       setError("Property type, address, area, city, and price are required.");
+      return;
+    }
+    if (isRoomBasedType(formData.property_type) && !formData.building_id) {
+      setError(
+        "This is a room listing, so it must belong to a building. Pick the building it sits in — Place4U sets buildings up, so ask support if yours is not listed yet."
+      );
       return;
     }
     if (submitForApproval && !hasRequiredDoc) {
@@ -265,6 +342,10 @@ export const AddPropertyModal = ({ isOpen, onClose, onCreate, isCreating }) => {
       max_occupants: formData.max_occupants ? Number(formData.max_occupants) : 2,
       available_from: formData.available_from || null,
       amenities: formData.amenities || [],
+      building_id: formData.building_id || null,
+      room_type_id: formData.building_id ? (formData.room_type_id || null) : null,
+      unit_label: formData.unit_label.trim() || null,
+      tenant_allowed: normalizeTenantAllowed(formData.tenant_allowed),
       imageFiles: formData.imageFiles || [],
       documentFiles: formData.documentFiles || [],
       submitForApproval: !!submitForApproval
@@ -383,6 +464,92 @@ export const AddPropertyModal = ({ isOpen, onClose, onCreate, isCreating }) => {
                 <input value={formData.postal_code} onChange={(e) => set({ postal_code: e.target.value })} style={inputStyle} placeholder="2196" />
               </div>
             </div>
+          </Section>
+
+          {/* Building & Room Scope */}
+          <Section label="Building & Room Scope">
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: "10px", marginBottom: "10px" }}>
+              <div>
+                <label style={labelStyle}>
+                  Parent building{roomBased ? " (required)" : " (optional)"}
+                </label>
+                <select
+                  value={formData.building_id}
+                  onChange={(e) => chooseBuilding(e.target.value)}
+                  style={inputStyle}
+                >
+                  <option value="">Standalone listing — no building</option>
+                  {buildings.map((building) => (
+                    <option key={building.id} value={building.id}>
+                      {building.name}{building.city ? ` · ${building.city}` : ""}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label style={labelStyle}>Room type</label>
+                <select
+                  value={formData.room_type_id}
+                  onChange={(e) => chooseRoomType(e.target.value)}
+                  disabled={!formData.building_id}
+                  style={{
+                    ...inputStyle,
+                    background: formData.building_id ? "#ffffff" : "#f8fafc",
+                    color: formData.building_id ? T.textPrimary : T.textMuted
+                  }}
+                >
+                  <option value="">
+                    {formData.building_id ? "No room type" : "Pick a building first"}
+                  </option>
+                  {roomTypes.map((roomType) => (
+                    <option key={roomType.id} value={roomType.id}>
+                      {roomType.name} — R{Number(roomType.rent || 0).toLocaleString("en-ZA")}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label style={labelStyle}>Room / unit number</label>
+                <input
+                  value={formData.unit_label}
+                  onChange={(e) => set({ unit_label: e.target.value })}
+                  style={inputStyle}
+                  placeholder="e.g. Room 12"
+                />
+              </div>
+            </div>
+
+            <label style={labelStyle}>Allowed tenants</label>
+            <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+              {TENANT_ALLOWED_OPTIONS.map((option) => (
+                <ToggleChip
+                  key={option.value}
+                  active={allowedTenants.includes(option.value)}
+                  onClick={() => toggleTenant(option.value)}
+                  icon={Users}
+                >
+                  {option.label}
+                </ToggleChip>
+              ))}
+              {allowedTenants.length === 0 && (
+                <span style={{ fontSize: "0.75rem", color: T.textMuted, alignSelf: "center" }}>
+                  No restriction — open to any tenant
+                </span>
+              )}
+            </div>
+
+            {selectedRoomType && (
+              <p style={{ fontSize: "0.72rem", color: T.textMuted, marginTop: 8 }}>
+                {selectedRoomType.capacity === 1 ? "Single occupancy" : `Sleeps ${selectedRoomType.capacity}`} · rent,
+                deposit and capacity copied from the room type — adjust below if this specific room differs.
+              </p>
+            )}
+            {roomBased && !formData.building_id && (
+              <p style={{ fontSize: "0.74rem", color: T.amber || "#b45309", marginTop: 8, fontWeight: 600 }}>
+                Rooms must belong to a building. If your building is not listed, ask Place4U to set it up before
+                submitting this room.
+              </p>
+            )}
           </Section>
 
           {/* Spatial Specs & Parking */}

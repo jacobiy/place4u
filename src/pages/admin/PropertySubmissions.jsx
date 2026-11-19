@@ -61,7 +61,7 @@ const DOC_TYPE_LABELS = {
 }
 const docLabel = (doc) => DOC_TYPE_LABELS[doc?.documentType] || doc?.title || 'Property Document'
 
-const PROPERTY_TYPES = ['All Types', 'apartment', 'townhouse', 'house', 'room', 'studio', 'condo']
+const PROPERTY_TYPES = ['All Types', 'student', 'apartment', 'townhouse', 'house', 'room', 'studio', 'condo']
 
 const initialsOf = (name) =>
   (name || 'Landlord')

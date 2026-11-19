@@ -16,7 +16,8 @@ import {
   X,
   Mail,
   GitBranch,
-  Tag
+  Tag,
+  DoorOpen
 } from 'lucide-react'
 import { getAdminAgentApplications, getAdminLandlordApplications, getPropertySubmissionCount } from '../db/queries'
 import { subscribeToApplicationUpdates } from '../../../services/applicationSync'
@@ -250,6 +251,15 @@ export default function AdminSidebar({ isOpen, onClose }) {
           >
             <Building2 size={15} />
             Property Management
+          </NavLink>
+
+          <NavLink
+            to="/admin/buildings"
+            onClick={onClose}
+            className={({ isActive }) => `${navLinkClass} ${isActive ? navLinkActiveClass : 'hover:bg-white/5'}`}
+          >
+            <DoorOpen size={15} />
+            Buildings & Rooms
           </NavLink>
 
           <NavLink

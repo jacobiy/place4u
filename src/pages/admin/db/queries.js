@@ -1,5 +1,6 @@
 import { supabase } from '../../../utils/Supabase'
 import { resolveDocumentUrl, LANDLORD_DOCUMENTS_BUCKET } from '../../../utils/documentUrls'
+import { normalizeTenantAllowed } from '../../../services/listingTaxonomy'
 
 // Helpers
 export const initialsFromName = (name) => {
@@ -504,6 +505,30 @@ export const getPropertySubmissionCount = async () => {
 export const reviewPropertySubmission = async (propertyId, status, opts = {}) =>
   setPropertyApprovalStatus(propertyId, status, opts)
 
+// Listing fields shared by the admin create/update paths. Building linkage is
+// only meaningful for room-based listings, so it is stripped otherwise and the
+// row stays a standalone property.
+//
+// `partial` matters on UPDATE: a future caller that patches one unrelated
+// column (e.g. approval_status) must not blank an existing building link, so
+// those fields are only written when the caller actually supplied them.
+const SCOPE_FIELD_KEYS = ['building_id', 'room_type_id', 'unit_label', 'tenant_allowed']
+
+const listingScopeFields = (propertyData, { partial = false } = {}) => {
+  const source = propertyData || {}
+  if (partial && !SCOPE_FIELD_KEYS.some((key) => Object.prototype.hasOwnProperty.call(source, key))) {
+    return {}
+  }
+
+  const buildingId = source.building_id || null
+  return {
+    building_id: buildingId,
+    room_type_id: buildingId ? source.room_type_id || null : null,
+    unit_label: String(source.unit_label || '').trim() || null,
+    tenant_allowed: normalizeTenantAllowed(source.tenant_allowed)
+  }
+}
+
 // Create property directly from admin (supports manually entered or scraped listings)
 export const createAdminProperty = async (propertyData) => {
   const payload = {
@@ -521,6 +546,7 @@ export const createAdminProperty = async (propertyData) => {
     is_active: propertyData.is_active !== undefined ? propertyData.is_active : true,
     image_urls: Array.isArray(propertyData.image_urls) ? propertyData.image_urls : [],
     landlord_id: propertyData.landlord_id || null,
+    ...listingScopeFields(propertyData),
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString()
   }
@@ -542,6 +568,7 @@ export const createAdminProperty = async (propertyData) => {
 export const updateAdminProperty = async (propertyId, updates) => {
   const payload = {
     ...updates,
+    ...listingScopeFields(updates, { partial: true }),
     updated_at: new Date().toISOString()
   }
 

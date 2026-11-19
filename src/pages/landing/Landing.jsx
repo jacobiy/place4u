@@ -64,6 +64,7 @@ import { formatZarAmount } from '../../services/promotionService'
 const PROPERTY_TYPE_LABELS = {
 	house: 'House',
 	apartment: 'Apartment',
+	student: 'Student Accommodation',
 	room: 'Student Digs',
 	backroom: 'Cottage / Backroom',
 	commercial: 'Commercial Space'
@@ -72,6 +73,7 @@ const PROPERTY_TYPE_LABELS = {
 const PROPERTY_TYPE_CATEGORY = {
 	house: 'Apartments',
 	apartment: 'Apartments',
+	student: 'Student Digs',
 	room: 'Student Digs',
 	backroom: 'Cottages & Backrooms',
 	commercial: 'Apartments'

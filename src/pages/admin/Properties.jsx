@@ -10,6 +10,13 @@ import {
   formatCurrency
 } from './db/queries'
 import PropertyDetailView from './PropertyDetailView'
+import { getBuildings, getBuildingRoomTypes } from './db/buildingQueries'
+import {
+  PROPERTY_TYPE_OPTIONS,
+  TENANT_ALLOWED_OPTIONS,
+  normalizeTenantAllowed,
+  isRoomBasedType
+} from '../../services/listingTaxonomy'
 import { Link } from 'react-router-dom'
 import {
   Search,
@@ -348,6 +355,139 @@ function PropertyImageManager({
   )
 }
 
+// Building linkage + permitted tenant profiles. Shared by the create and edit
+// modals so the two forms cannot drift apart.
+function ListingScopeFields({ formData, setFormData, buildings, roomTypes, disabled = false }) {
+  const roomBased = isRoomBasedType(formData.property_type)
+  const selectedTenants = normalizeTenantAllowed(formData.tenant_allowed)
+
+  const toggleTenant = (value) => {
+    const next = selectedTenants.includes(value)
+      ? selectedTenants.filter((v) => v !== value)
+      : normalizeTenantAllowed([...selectedTenants, value])
+    setFormData({ ...formData, tenant_allowed: next })
+  }
+
+  const onBuildingChange = (buildingId) => {
+    const building = buildings.find((b) => b.id === buildingId)
+    setFormData({
+      ...formData,
+      building_id: buildingId,
+      room_type_id: '',
+      // Inherit the asset's address when the operator has not typed one yet.
+      address: formData.address || building?.address || '',
+      area: formData.area || building?.area || '',
+      city: formData.city || building?.city || '',
+      province: formData.province || building?.province || ''
+    })
+  }
+
+  return (
+    <div className="p-2.5 sm:p-3 bg-slate-50 border border-slate-200 rounded-xl space-y-2.5">
+      <div className="flex items-center justify-between gap-2">
+        <label className="block font-semibold text-slate-700">Building & Room Scope</label>
+        <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full border ${
+          roomBased
+            ? 'bg-amber-50 text-amber-700 border-amber-200'
+            : 'bg-slate-100 text-slate-500 border-slate-200'
+        }`}>
+          {roomBased ? 'Building required' : 'Optional'}
+        </span>
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+        <div>
+          <label className="block font-semibold text-slate-700 mb-1">Parent building</label>
+          <select
+            value={formData.building_id || ''}
+            onChange={(e) => onBuildingChange(e.target.value)}
+            disabled={disabled}
+            className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-slate-900 text-sm sm:text-xs"
+          >
+            <option value="">Standalone listing (no building)</option>
+            {buildings.map((building) => (
+              <option key={building.id} value={building.id}>
+                {building.name}{building.city ? ` — ${building.city}` : ''}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div>
+          <label className="block font-semibold text-slate-700 mb-1">Room type</label>
+          <select
+            value={formData.room_type_id || ''}
+            onChange={(e) => setFormData({ ...formData, room_type_id: e.target.value })}
+            disabled={disabled || !formData.building_id}
+            className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-slate-900 text-sm sm:text-xs disabled:bg-slate-100 disabled:text-slate-400"
+          >
+            <option value="">{formData.building_id ? 'No room type' : 'Pick a building first'}</option>
+            {roomTypes.map((roomType) => (
+              <option key={roomType.id} value={roomType.id}>
+                {roomType.name} — R{Number(roomType.rent || 0).toLocaleString('en-ZA')}
+              </option>
+            ))}
+          </select>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+        <div>
+          <label className="block font-semibold text-slate-700 mb-1">Room / unit label</label>
+          <input
+            type="text"
+            value={formData.unit_label || ''}
+            onChange={(e) => setFormData({ ...formData, unit_label: e.target.value })}
+            disabled={disabled}
+            placeholder="e.g. Room 12 or Unit 3B"
+            className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-slate-900 text-sm sm:text-xs"
+          />
+        </div>
+
+        <div>
+          <label className="block font-semibold text-slate-700 mb-1">Allowed tenants</label>
+          <div className="flex flex-wrap gap-1.5">
+            {TENANT_ALLOWED_OPTIONS.map((option) => {
+              const active = selectedTenants.includes(option.value)
+              return (
+                <button
+                  key={option.value}
+                  type="button"
+                  onClick={() => toggleTenant(option.value)}
+                  disabled={disabled}
+                  aria-pressed={active}
+                  className={`px-2.5 py-1.5 rounded-full border text-[11px] font-semibold cursor-pointer transition-colors ${
+                    active
+                      ? 'bg-blue-50 border-blue-300 text-blue-700'
+                      : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-100'
+                  }`}
+                >
+                  {option.label}
+                </button>
+              )
+            })}
+            {selectedTenants.length === 0 && (
+              <span className="text-[10px] text-slate-400 self-center">No restriction</span>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {roomBased && !formData.building_id && (
+        <p className="text-[10px] font-semibold text-amber-700">
+          A {formData.property_type === 'student' ? 'student' : 'room'} listing must belong to a building. Create the
+          building under Buildings & Rooms first.
+        </p>
+      )}
+      {!roomBased && (
+        <p className="text-[10px] text-slate-400">
+          Optional for houses and apartments. Rooms, student units and shared housing should always be linked.
+        </p>
+      )}
+    </div>
+  )
+}
+
 export default function PropertiesPage() {
   const [properties, setProperties] = useState([])
   const [landlords, setLandlords] = useState([])
@@ -386,9 +526,17 @@ export default function PropertiesPage() {
     imageUrlsText: '',
     image_urls: [],
     landlord_id: '', // empty string means Place4U Sourced (null)
-    sourceNote: ''
+    sourceNote: '',
+    building_id: '',
+    room_type_id: '',
+    unit_label: '',
+    tenant_allowed: []
   }
   const [formData, setFormData] = useState(defaultFormState)
+
+  // Buildings + the room types of whichever building is selected in the form.
+  const [buildings, setBuildings] = useState([])
+  const [formRoomTypes, setFormRoomTypes] = useState([])
 
   // Scraper raw JSON state
   const [scraperInput, setScraperInput] = useState('')
@@ -396,7 +544,21 @@ export default function PropertiesPage() {
   useEffect(() => {
     fetchProperties()
     fetchLandlords()
+    getBuildings().then((rows) => setBuildings(rows || []))
   }, [])
+
+  // Room types belong to the building picked in the form.
+  useEffect(() => {
+    if (!formData.building_id) {
+      setFormRoomTypes([])
+      return
+    }
+    let cancelled = false
+    getBuildingRoomTypes(formData.building_id).then((rows) => {
+      if (!cancelled) setFormRoomTypes(rows || [])
+    })
+    return () => { cancelled = true }
+  }, [formData.building_id])
 
   const fetchProperties = async () => {
     setLoading(true)
@@ -461,7 +623,11 @@ export default function PropertiesPage() {
       imageUrlsText: '',
       image_urls: existingImages,
       landlord_id: prop.landlord_id || '',
-      sourceNote: ''
+      sourceNote: '',
+      building_id: prop.building_id || '',
+      room_type_id: prop.room_type_id || '',
+      unit_label: prop.unit_label || '',
+      tenant_allowed: normalizeTenantAllowed(prop.tenant_allowed)
     })
     setIsEditModalOpen(true)
   }
@@ -477,6 +643,10 @@ export default function PropertiesPage() {
     e.preventDefault()
     if (!formData.address.trim() || !formData.area.trim() || !formData.city.trim() || !formData.price) {
       showToast('Please fill in all required fields (Address, Area, City, and Price).')
+      return
+    }
+    if (isRoomBasedType(formData.property_type) && !formData.building_id) {
+      showToast('A room or student listing must belong to a building. Create one under Buildings & Rooms first.')
       return
     }
 
@@ -504,7 +674,11 @@ export default function PropertiesPage() {
         available_from: formData.available_from || null,
         is_active: formData.is_active,
         image_urls: allImages,
-        landlord_id: formData.landlord_id || null
+        landlord_id: formData.landlord_id || null,
+        building_id: formData.building_id || null,
+        room_type_id: formData.room_type_id || null,
+        unit_label: formData.unit_label.trim() || null,
+        tenant_allowed: normalizeTenantAllowed(formData.tenant_allowed)
       }
 
       const created = await createAdminProperty(payload)
@@ -522,6 +696,10 @@ export default function PropertiesPage() {
   const handleUpdateProperty = async (e) => {
     e.preventDefault()
     if (!activeProperty?.id) return
+    if (isRoomBasedType(formData.property_type) && !formData.building_id) {
+      showToast('A room or student listing must belong to a building. Create one under Buildings & Rooms first.')
+      return
+    }
 
     setSubmitting(true)
     try {
@@ -546,7 +724,11 @@ export default function PropertiesPage() {
         available_from: formData.available_from || null,
         is_active: formData.is_active,
         image_urls: allImages,
-        landlord_id: formData.landlord_id || null
+        landlord_id: formData.landlord_id || null,
+        building_id: formData.building_id || null,
+        room_type_id: formData.room_type_id || null,
+        unit_label: formData.unit_label.trim() || null,
+        tenant_allowed: normalizeTenantAllowed(formData.tenant_allowed)
       }
 
       const updated = await updateAdminProperty(activeProperty.id, payload)
@@ -604,7 +786,11 @@ export default function PropertiesPage() {
           available_from: item.available_from || null,
           is_active: item.is_active !== undefined ? Boolean(item.is_active) : true,
           image_urls: Array.isArray(item.image_urls) ? item.image_urls : (item.images || []),
-          landlord_id: item.landlord_id || null
+          landlord_id: item.landlord_id || null,
+          building_id: item.building_id || null,
+          room_type_id: item.room_type_id || null,
+          unit_label: item.unit_label || null,
+          tenant_allowed: normalizeTenantAllowed(item.tenant_allowed)
         }
 
         const created = await createAdminProperty(payload)
@@ -879,12 +1065,9 @@ export default function PropertiesPage() {
                 className="w-full sm:w-auto px-2 sm:px-2.5 py-1.5 rounded-lg border border-slate-200 bg-white text-slate-700 focus:outline-none focus:border-blue-600 font-medium truncate"
               >
                 <option>All Types</option>
-                <option value="apartment">Apartment</option>
-                <option value="townhouse">Townhouse</option>
-                <option value="house">House</option>
-                <option value="room">Room</option>
-                <option value="studio">Studio</option>
-                <option value="condo">Condo</option>
+                {PROPERTY_TYPE_OPTIONS.map((option) => (
+                  <option key={option.value} value={option.value}>{option.label}</option>
+                ))}
               </select>
             </div>
 
@@ -944,6 +1127,11 @@ export default function PropertiesPage() {
                               <span className="inline-block mt-0.5 text-[10px] font-semibold text-blue-700 bg-blue-50 px-1.5 py-0.2 rounded capitalize">
                                 {p.property_type || 'Apartment'}
                               </span>
+                              {p.unit_label && (
+                                <span className="inline-block mt-0.5 ml-1 text-[10px] font-semibold text-slate-700 bg-slate-100 border border-slate-200 px-1.5 py-0.2 rounded">
+                                  {p.unit_label}
+                                </span>
+                              )}
                             </div>
                           </div>
                         </td>
@@ -1355,13 +1543,13 @@ export default function PropertiesPage() {
                     onChange={(e) => setFormData({ ...formData, property_type: e.target.value })}
                     className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-900 focus:outline-none focus:border-blue-600 capitalize text-sm sm:text-xs"
                   >
-                    <option value="apartment">Apartment</option>
-                    <option value="townhouse">Townhouse</option>
-                    <option value="house">House</option>
-                    <option value="room">Room</option>
-                    <option value="studio">Studio</option>
-                    <option value="condo">Condo</option>
-                    <option value="penthouse">Penthouse</option>
+                    {['Student', 'Residential', 'Commercial'].map((group) => (
+                      <optgroup key={group} label={group}>
+                        {PROPERTY_TYPE_OPTIONS.filter((option) => option.group === group).map((option) => (
+                          <option key={option.value} value={option.value}>{option.label}</option>
+                        ))}
+                      </optgroup>
+                    ))}
                   </select>
                 </div>
 
@@ -1456,6 +1644,15 @@ export default function PropertiesPage() {
                   Select "Place4U Direct" for manually scraped listings where no landlord user exists yet.
                 </p>
               </div>
+
+              {/* Building linkage + permitted tenants */}
+              <ListingScopeFields
+                formData={formData}
+                setFormData={setFormData}
+                buildings={buildings}
+                roomTypes={formRoomTypes}
+                disabled={submitting}
+              />
 
               {/* Status toggle */}
               <div className="flex items-center justify-between p-2.5 sm:p-3 bg-slate-50 rounded-xl border border-slate-200">
@@ -1578,13 +1775,13 @@ export default function PropertiesPage() {
                     onChange={(e) => setFormData({ ...formData, property_type: e.target.value })}
                     className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-900 capitalize text-sm sm:text-xs"
                   >
-                    <option value="apartment">Apartment</option>
-                    <option value="townhouse">Townhouse</option>
-                    <option value="house">House</option>
-                    <option value="room">Room</option>
-                    <option value="studio">Studio</option>
-                    <option value="condo">Condo</option>
-                    <option value="penthouse">Penthouse</option>
+                    {['Student', 'Residential', 'Commercial'].map((group) => (
+                      <optgroup key={group} label={group}>
+                        {PROPERTY_TYPE_OPTIONS.filter((option) => option.group === group).map((option) => (
+                          <option key={option.value} value={option.value}>{option.label}</option>
+                        ))}
+                      </optgroup>
+                    ))}
                   </select>
                 </div>
 
@@ -1600,6 +1797,15 @@ export default function PropertiesPage() {
                   </select>
                 </div>
               </div>
+
+              {/* Building linkage + permitted tenants */}
+              <ListingScopeFields
+                formData={formData}
+                setFormData={setFormData}
+                buildings={buildings}
+                roomTypes={formRoomTypes}
+                disabled={submitting}
+              />
 
               {/* Pictures Attachment Manager */}
               <PropertyImageManager
