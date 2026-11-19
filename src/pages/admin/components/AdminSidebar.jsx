@@ -17,7 +17,8 @@ import {
   Mail,
   GitBranch,
   Tag,
-  DoorOpen
+  DoorOpen,
+  Handshake
 } from 'lucide-react'
 import { getAdminAgentApplications, getAdminLandlordApplications, getPropertySubmissionCount } from '../db/queries'
 import { subscribeToApplicationUpdates } from '../../../services/applicationSync'
@@ -260,6 +261,15 @@ export default function AdminSidebar({ isOpen, onClose }) {
           >
             <DoorOpen size={15} />
             Buildings & Rooms
+          </NavLink>
+
+          <NavLink
+            to="/admin/partners"
+            onClick={onClose}
+            className={({ isActive }) => `${navLinkClass} ${isActive ? navLinkActiveClass : 'hover:bg-white/5'}`}
+          >
+            <Handshake size={15} />
+            Partners Spreadsheet
           </NavLink>
 
           <NavLink
