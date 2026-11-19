@@ -85,6 +85,9 @@ export default function MainLandlord() {
   const [isMobile, setIsMobile] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [buildings, setBuildings] = useState([]);
+  // Whether this deployment has the buildings tables yet. Until it does, the
+  // room upload keeps working standalone instead of blocking every listing.
+  const [buildingsEnabled, setBuildingsEnabled] = useState(false);
 
   useEffect(() => {
     const checkMobile = () => {
@@ -138,10 +141,14 @@ export default function MainLandlord() {
           // Buildings Place4U assigned to this landlord. A room upload must pick
           // one; an empty list simply means nothing has been assigned yet.
           const buildingsResult = await LandlordQueries.getLandlordBuildings(user.id);
-          if (!cancelled) setBuildings(buildingsResult.success ? (buildingsResult.data || []) : []);
+          if (!cancelled) {
+            setBuildings(buildingsResult.success ? (buildingsResult.data || []) : []);
+            setBuildingsEnabled(Boolean(buildingsResult.schemaReady));
+          }
         } else if (!cancelled) {
           setProperties([]);
           setBuildings([]);
+          setBuildingsEnabled(false);
         }
 
         if (landlordProfile) {
@@ -454,6 +461,7 @@ export default function MainLandlord() {
         onCreate={handleCreateProperty}
         isCreating={isCreatingProperty}
         buildings={buildings}
+        buildingsEnabled={buildingsEnabled}
       />
 
       <div className="ll-scope" style={{ display: "flex", minHeight: "100vh", width: "100%", maxWidth: "100vw", background: T.page, position: "relative" }}>

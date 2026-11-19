@@ -1086,9 +1086,14 @@ export const LandlordQueries = {
 
   // Buildings assigned to this landlord (Place4U creates the asset, the
   // landlord attaches rooms to it). Degrades to [] before the migration lands.
+  //
+  // `schemaReady` tells the room form whether the building requirement can be
+  // enforced at all: the app deploys independently of the hand-run migration,
+  // and blocking room uploads on a database without `public.buildings` would
+  // break an existing flow rather than enforce a rule.
   async getLandlordBuildings(userId) {
     try {
-      if (!userId) return { success: true, data: [] };
+      if (!userId) return { success: true, data: [], schemaReady: false };
       const { data, error } = await supabase
         .from('buildings')
         .select('id, name, address, area, city, province, postal_code, property_type, amenities, image_urls, is_active')
@@ -1096,13 +1101,13 @@ export const LandlordQueries = {
         .order('name', { ascending: true });
 
       if (error) {
-        if (isMissingRelationError(error)) return { success: true, data: [] };
+        if (isMissingRelationError(error)) return { success: true, data: [], schemaReady: false };
         throw error;
       }
-      return { success: true, data: data || [] };
+      return { success: true, data: data || [], schemaReady: true };
     } catch (error) {
       console.error('Error fetching landlord buildings:', error);
-      return { success: false, error: error.message };
+      return { success: false, error: error.message, schemaReady: false };
     }
   },
 

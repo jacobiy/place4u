@@ -20,6 +20,16 @@ const missingBuildingSchema = (error) =>
 const BUILDING_FRIENDLY_ERROR =
   'Buildings are not available yet. Run database/buildings_and_units_schema.sql in the Supabase SQL editor first.'
 
+// The app deploys independently of the hand-run SQL migration, so the room
+// forms need to know whether a building requirement can actually be met on this
+// deployment. Until `public.buildings` exists, requiring a building would block
+// every room listing instead of enforcing a rule — so the requirement only
+// switches on once the table is readable.
+let buildingsSchemaReady = null
+
+/** True once the buildings tables have been proven readable on this deployment. */
+export const areBuildingsAvailable = () => buildingsSchemaReady === true
+
 export const getBuildings = async () => {
   const { data, error } = await supabase
     .from('buildings')
@@ -27,9 +37,12 @@ export const getBuildings = async () => {
     .order('created_at', { ascending: false })
 
   if (error) {
-    if (!missingBuildingSchema(error)) console.error('Error fetching buildings:', error)
+    if (missingBuildingSchema(error)) buildingsSchemaReady = false
+    else console.error('Error fetching buildings:', error)
     return []
   }
+
+  buildingsSchemaReady = true
   return data || []
 }
 

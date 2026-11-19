@@ -110,7 +110,7 @@ const ToggleChip = ({ active, onClick, icon: Icon, children }) => (
   </button>
 );
 
-export const AddPropertyModal = ({ isOpen, onClose, onCreate, isCreating, buildings = [] }) => {
+export const AddPropertyModal = ({ isOpen, onClose, onCreate, isCreating, buildings = [], buildingsEnabled = false }) => {
   const [formData, setFormData] = useState(defaultForm);
   const [error, setError] = useState("");
   const [previewUrls, setPreviewUrls] = useState([]);
@@ -289,7 +289,7 @@ export const AddPropertyModal = ({ isOpen, onClose, onCreate, isCreating, buildi
   const checklist = [
     { label: "Listing title", done: Boolean(formData.title.trim()) },
     { label: "Property type", done: Boolean(formData.property_type) },
-    ...(roomBased
+    ...(roomBased && buildingsEnabled
       ? [{ label: "Building & room number", done: Boolean(formData.building_id), required: true }]
       : []),
     { label: "Street address", done: Boolean(formData.address.trim()) },
@@ -306,7 +306,7 @@ export const AddPropertyModal = ({ isOpen, onClose, onCreate, isCreating, buildi
       setError("Property type, address, area, city, and price are required.");
       return;
     }
-    if (isRoomBasedType(formData.property_type) && !formData.building_id) {
+    if (isRoomBasedType(formData.property_type) && !formData.building_id && buildingsEnabled) {
       setError(
         "This is a room listing, so it must belong to a building. Pick the building it sits in — Place4U sets buildings up, so ask support if yours is not listed yet."
       );
@@ -471,7 +471,7 @@ export const AddPropertyModal = ({ isOpen, onClose, onCreate, isCreating, buildi
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: "10px", marginBottom: "10px" }}>
               <div>
                 <label style={labelStyle}>
-                  Parent building{roomBased ? " (required)" : " (optional)"}
+                  Parent building{roomBased && buildingsEnabled ? " (required)" : " (optional)"}
                 </label>
                 <select
                   value={formData.building_id}
@@ -544,10 +544,16 @@ export const AddPropertyModal = ({ isOpen, onClose, onCreate, isCreating, buildi
                 deposit and capacity copied from the room type — adjust below if this specific room differs.
               </p>
             )}
-            {roomBased && !formData.building_id && (
+            {roomBased && !formData.building_id && buildingsEnabled && (
               <p style={{ fontSize: "0.74rem", color: T.amber || "#b45309", marginTop: 8, fontWeight: 600 }}>
                 Rooms must belong to a building. If your building is not listed, ask Place4U to set it up before
                 submitting this room.
+              </p>
+            )}
+            {roomBased && !formData.building_id && !buildingsEnabled && (
+              <p style={{ fontSize: "0.74rem", color: T.textMuted, marginTop: 8 }}>
+                Building linking is not switched on for this deployment yet, so this room will save as a standalone
+                listing. Place4U can attach it to its building afterwards.
               </p>
             )}
           </Section>

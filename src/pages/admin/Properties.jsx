@@ -10,7 +10,7 @@ import {
   formatCurrency
 } from './db/queries'
 import PropertyDetailView from './PropertyDetailView'
-import { getBuildings, getBuildingRoomTypes } from './db/buildingQueries'
+import { getBuildings, getBuildingRoomTypes, areBuildingsAvailable } from './db/buildingQueries'
 import {
   PROPERTY_TYPE_OPTIONS,
   TENANT_ALLOWED_OPTIONS,
@@ -357,7 +357,7 @@ function PropertyImageManager({
 
 // Building linkage + permitted tenant profiles. Shared by the create and edit
 // modals so the two forms cannot drift apart.
-function ListingScopeFields({ formData, setFormData, buildings, roomTypes, disabled = false }) {
+function ListingScopeFields({ formData, setFormData, buildings, roomTypes, buildingsEnabled = false, disabled = false }) {
   const roomBased = isRoomBasedType(formData.property_type)
   const selectedTenants = normalizeTenantAllowed(formData.tenant_allowed)
 
@@ -473,10 +473,16 @@ function ListingScopeFields({ formData, setFormData, buildings, roomTypes, disab
         </div>
       </div>
 
-      {roomBased && !formData.building_id && (
+      {roomBased && !formData.building_id && buildingsEnabled && (
         <p className="text-[10px] font-semibold text-amber-700">
           A {formData.property_type === 'student' ? 'student' : 'room'} listing must belong to a building. Create the
           building under Buildings & Rooms first.
+        </p>
+      )}
+      {roomBased && !formData.building_id && !buildingsEnabled && (
+        <p className="text-[10px] font-semibold text-slate-500">
+          Building management is not enabled on this deployment yet, so this room can be saved standalone. Run
+          database/buildings_and_units_schema.sql to switch the building requirement on.
         </p>
       )}
       {!roomBased && (
@@ -537,6 +543,9 @@ export default function PropertiesPage() {
   // Buildings + the room types of whichever building is selected in the form.
   const [buildings, setBuildings] = useState([])
   const [formRoomTypes, setFormRoomTypes] = useState([])
+  // Whether the buildings tables exist on this deployment yet. The room
+  // requirement only applies once they do (see buildingQueries.areBuildingsAvailable).
+  const [buildingsEnabled, setBuildingsEnabled] = useState(false)
 
   // Scraper raw JSON state
   const [scraperInput, setScraperInput] = useState('')
@@ -544,7 +553,10 @@ export default function PropertiesPage() {
   useEffect(() => {
     fetchProperties()
     fetchLandlords()
-    getBuildings().then((rows) => setBuildings(rows || []))
+    getBuildings().then((rows) => {
+      setBuildings(rows || [])
+      setBuildingsEnabled(areBuildingsAvailable())
+    })
   }, [])
 
   // Room types belong to the building picked in the form.
@@ -645,7 +657,7 @@ export default function PropertiesPage() {
       showToast('Please fill in all required fields (Address, Area, City, and Price).')
       return
     }
-    if (isRoomBasedType(formData.property_type) && !formData.building_id) {
+    if (isRoomBasedType(formData.property_type) && !formData.building_id && buildingsEnabled) {
       showToast('A room or student listing must belong to a building. Create one under Buildings & Rooms first.')
       return
     }
@@ -696,7 +708,7 @@ export default function PropertiesPage() {
   const handleUpdateProperty = async (e) => {
     e.preventDefault()
     if (!activeProperty?.id) return
-    if (isRoomBasedType(formData.property_type) && !formData.building_id) {
+    if (isRoomBasedType(formData.property_type) && !formData.building_id && buildingsEnabled) {
       showToast('A room or student listing must belong to a building. Create one under Buildings & Rooms first.')
       return
     }
@@ -1651,6 +1663,7 @@ export default function PropertiesPage() {
                 setFormData={setFormData}
                 buildings={buildings}
                 roomTypes={formRoomTypes}
+                buildingsEnabled={buildingsEnabled}
                 disabled={submitting}
               />
 
@@ -1804,6 +1817,7 @@ export default function PropertiesPage() {
                 setFormData={setFormData}
                 buildings={buildings}
                 roomTypes={formRoomTypes}
+                buildingsEnabled={buildingsEnabled}
                 disabled={submitting}
               />
 
