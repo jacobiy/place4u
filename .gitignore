@@ -63,4 +63,6 @@ scripts/scrape_partners.py
 scrape_partners.py
 partners_scraped.*
 scripts/partners_scraped.*
+partners_*.*
+scripts/partners_*.*
 
