@@ -40,17 +40,17 @@ import { formatZarAmount } from '../../../services/promotionService';
 /* One-line explanation per pipeline stage, shown under each step title in the
    "Live progress" tracker on the tenant dashboard. */
 const PIPELINE_STAGE_NOTES = {
-  shipped: 'Your agent has shipped a property shortlist — accept the match to proceed.',
-  tenant_accepted: 'You accepted the match; your agent will hand it to the landlord.',
-  agent_forwarded: 'Your profile and application have been forwarded to the landlord.',
-  landlord_accepted: 'The landlord accepted your application; Place4U sign-off is next.',
-  admin_approved: 'Place4U approved the meetup — your agent will schedule a viewing.',
-  scheduled: 'A viewing / meetup is booked. Confirm your attendance to keep it moving.',
-  schedule_accepted: 'Meetup confirmed — the landlord is preparing your lease agreement.',
-  lease_uploaded: 'Your lease is ready. Review it and upload your signed copy.',
-  lease_signed: 'Your signed lease is executed and the tenancy is active.',
-  move_in_confirmed: 'Move-in and key handover are confirmed.',
-  redistribution: 'You rejected this property after the viewing — your agent is re-working it or finding you another home.'
+  shipped: 'Accept the match to proceed.',
+  tenant_accepted: 'Your agent is handing this to the landlord.',
+  agent_forwarded: 'Forwarded to the landlord for review.',
+  landlord_accepted: 'Landlord accepted. Place4U sign-off is next.',
+  admin_approved: 'Approved. Your agent will book a viewing.',
+  scheduled: 'Viewing booked. Confirm your attendance.',
+  schedule_accepted: 'Confirmed. The landlord is preparing your lease.',
+  lease_uploaded: 'Lease ready. Review and upload your signed copy.',
+  lease_signed: 'Lease signed. Tenancy active.',
+  move_in_confirmed: 'Move-in and key handover confirmed.',
+  redistribution: 'You declined after the viewing. Your agent is finding alternatives.'
 };
 
 /* Map of timestamp column → pipeline stage, used to reconstruct how far a match
@@ -101,7 +101,7 @@ function buildPipelineSteps(match) {
       title: stateLabel(match.state),
       note: match.declineReason
         ? `Reason: ${match.declineReason}`
-        : 'This match was closed. Your agent will line up alternatives.',
+        : 'Match closed. Your agent will line up alternatives.',
       tag: 'Closed',
       state: 'declined'
     });
@@ -239,7 +239,9 @@ const ReceiptVoucherModal = ({ receipt, onClose }) => {
     [
       'Payment method',
       `${receipt.card_brand || receipt.cardBrand || 'Card'}${
-        receipt.card_last4 || receipt.cardLast4 ? ` •••• ${receipt.card_last4 || receipt.cardLast4}` : ''
+        receipt.card_last4 || receipt.cardLast4
+          ? ` ending ${receipt.card_last4 || receipt.cardLast4}`
+          : ''
       }`
     ],
     ['Date', formattedDate]
@@ -328,8 +330,7 @@ const ReceiptVoucherModal = ({ receipt, onClose }) => {
 
           <p className="flex items-start gap-2 text-[11px] text-slate-400 leading-relaxed">
             <Lock size={12} className="mt-0.5 shrink-0" />
-            This electronic voucher confirms payment of the non-refundable tenant screening and background vetting fee
-            in accordance with the Rental Housing Act.
+            Confirms the non-refundable tenant screening and background vetting fee (Rental Housing Act).
           </p>
         </div>
 
@@ -723,11 +724,6 @@ export default function DashboardView({
             <h1 className="font-sans text-3xl sm:text-4xl lg:text-[44px] font-semibold leading-tight tracking-tight text-slate-900">
               {timeGreeting}, <span className="text-sky-700">{firstName}</span>
             </h1>
-
-            <p className="mt-4 text-sm sm:text-base text-slate-600 leading-relaxed max-w-xl">
-              Track applications and verified documents, keep your receipts at hand, manage your tenancy, and discover
-              vetted homes across South Africa.
-            </p>
           </div>
 
           <div className="flex flex-wrap items-center gap-3">
@@ -764,17 +760,15 @@ export default function DashboardView({
             </div>
             <div className="min-w-0">
               <Eyebrow className="!text-sky-600">
-                {matchBanner.shipped ? 'New agent match · Verified' : `Agent match · ${matchBanner.stateLabel}`}
+                {matchBanner.shipped ? 'New agent match' : 'Agent match'}
               </Eyebrow>
               <h4 className="font-sans text-base sm:text-lg font-semibold text-slate-900 mt-1">
-                {matchBanner.shipped
-                  ? 'Your agent has matched a property to your application'
-                  : `Match progress: ${matchBanner.stateLabel}`}
+                {matchBanner.shipped ? 'Your agent matched a property' : matchBanner.stateLabel}
               </h4>
-              <p className="text-xs sm:text-sm text-slate-500 mt-1 truncate">
-                {[matchBanner.propertyLabel, matchBanner.location, matchBanner.agentName ? `handled by ${matchBanner.agentName}` : null]
-                  .filter(Boolean)
-                  .join(' · ')}
+              <p className="text-xs sm:text-sm text-slate-500 mt-1 flex flex-wrap items-center gap-x-2 gap-y-0.5">
+                <span className="truncate">{matchBanner.propertyLabel}</span>
+                {matchBanner.location && <span className="text-slate-400">{matchBanner.location}</span>}
+                {matchBanner.agentName && <span className="text-slate-400">Agent {matchBanner.agentName}</span>}
               </p>
             </div>
           </div>

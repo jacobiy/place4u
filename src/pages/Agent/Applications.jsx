@@ -71,7 +71,7 @@ export const Applications = ({
     setResponseError("");
     const res = await onRespondToAssignment(app.id, "accepted", null);
     if (res && res.success === false) {
-      setResponseError(res.error || "Could not accept this job. Please try again.");
+      setResponseError(res.error || "Could not accept job. Try again.");
     }
     setRespondingId(null);
   };
@@ -82,7 +82,7 @@ export const Applications = ({
     setResponseError("");
     const res = await onRespondToAssignment(rejectApp.id, "rejected", reason);
     if (res && res.success === false) {
-      setResponseError(res.error || "Could not reject this job. Please try again.");
+      setResponseError(res.error || "Could not reject job. Try again.");
     } else {
       setRejectApp(null);
     }
@@ -97,14 +97,14 @@ export const Applications = ({
     try {
       const ok = await onRequestCompletion(completionModalApp.id, completionNote.trim() || null);
       if (ok) {
-        setCompletionFeedback("Completion review requested! The administrator will review and approve the placement.");
+        setCompletionFeedback("Completion review requested.");
         setTimeout(() => {
           setCompletionModalApp(null);
           setCompletionNote("");
           setCompletionFeedback("");
         }, 1800);
       } else {
-        setCompletionFeedback("Failed to request completion review. Please try again.");
+        setCompletionFeedback("Could not request review. Try again.");
       }
     } catch (err) {
       setCompletionFeedback(err?.message || "Error submitting request");
@@ -153,11 +153,7 @@ export const Applications = ({
         {/* Header */}
         <div className="applications-header">
           <div>
-            <span className="ag-eyebrow">Assigned work</span>
-            <h1 className="applications-title" style={{ marginTop: 8 }}>Assigned applications</h1>
-            <p className="applications-subtitle">
-              Review rental applications assigned directly to you, inspect attached FICA verification documents, and run job-to-property affordability matching.
-            </p>
+            <h1 className="applications-title">Assigned applications</h1>
           </div>
           <button 
             onClick={onRefresh} 
@@ -183,7 +179,7 @@ export const Applications = ({
             <Search className="search-icon" size={18} />
             <input
               type="text"
-              placeholder="Search by tenant name, employer, area, or ID..."
+              placeholder="Search tenant, employer, area, ID"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               className="search-input"
@@ -195,22 +191,25 @@ export const Applications = ({
               type="button"
               onClick={() => setSelectedCategory('all')}
               className={`cat-btn ${selectedCategory === 'all' ? 'active' : ''}`}
+              aria-label={`Assigned to you (${applications.length})`}
             >
-              Assigned to You ({applications.length})
+              All ({applications.length})
             </button>
             <button
               type="button"
               onClick={() => setSelectedCategory('residential')}
               className={`cat-btn ${selectedCategory === 'residential' ? 'active' : ''}`}
+              aria-label="Residential rentals"
             >
-              Residential Rentals
+              Residential
             </button>
             <button
               type="button"
               onClick={() => setSelectedCategory('student')}
               className={`cat-btn ${selectedCategory === 'student' ? 'active' : ''}`}
+              aria-label="Student housing"
             >
-              Student Housing
+              Student
             </button>
           </div>
         </div>
@@ -218,14 +217,14 @@ export const Applications = ({
         {/* Content */}
         {loading ? (
           <div className="py-12 flex justify-center">
-            <Loading message="Loading application dossiers & documents..." />
+            <Loading message="Loading applications..." />
           </div>
         ) : filtered.length === 0 ? (
           <div className="empty-state">
             <FileText className="empty-icon" size={48} />
             <p className="empty-text">No applications assigned to you</p>
             <p className="empty-subtext">
-              {query ? 'Try adjusting your search query.' : 'When an administrator assigns a rental application to your agent profile, it will appear here.'}
+              {query ? 'Try a different search.' : 'Assignments from an administrator appear here.'}
             </p>
           </div>
         ) : (
@@ -310,7 +309,6 @@ export const Applications = ({
                       {/* Quiet metadata */}
                       <div className="card-meta">
                         <span className="meta-id ag-num">#{String(app.id).slice(0, 8)}</span>
-                        <span className="meta-sep" aria-hidden="true">&bull;</span>
                         <span className="meta-date">
                           {app.submitted_at ? new Date(app.submitted_at).toLocaleDateString() : 'Recent'}
                         </span>
@@ -355,8 +353,7 @@ export const Applications = ({
                         <div className="applied-property-meta is-unresolved">
                           <AlertTriangle size={12} aria-hidden="true" />
                           <span>
-                            Linked listing is not in your inventory — the name above comes from the
-                            application snapshot.
+                            Listing not in your inventory. Name comes from the application snapshot.
                           </span>
                         </div>
                       )}
@@ -377,7 +374,6 @@ export const Applications = ({
                         </div>
                         <div className="job-employer-line">
                           <span>{matchAnalysis.employment.employerName}</span>
-                          <span className="bullet" aria-hidden="true">&bull;</span>
                           <span className="status-tag">{matchAnalysis.employment.employmentStatus}</span>
                         </div>
                       </div>
@@ -398,7 +394,7 @@ export const Applications = ({
                         </span>
                         <span className="match-details">
                           <span className="match-ratio">
-                            {matchAnalysis.affordability.multiplier}x rent coverage &middot; ~{matchAnalysis.proximity.approxDistanceKm} km
+                            {matchAnalysis.affordability.multiplier}x rent, ~{matchAnalysis.proximity.approxDistanceKm} km
                           </span>
                           <span className="match-verdict" style={{ color: matchAnalysis.tierColor }}>
                             {matchAnalysis.verdict}
@@ -460,10 +456,11 @@ export const Applications = ({
                           type="button"
                           onClick={() => onManageApplication(app)}
                           className="btn btn-primary"
-                          title="Filter the inventory, flag potential matches, and build a shortlist to ship to the tenant"
+                          aria-label="Manage application: flag matches and build a shortlist"
+                          title="Flag matches and build a shortlist to ship to the tenant"
                         >
                           <Building size={16} aria-hidden="true" />
-                          <span>Manage Application</span>
+                          <span>Manage</span>
                         </button>
                       </div>
 
@@ -475,7 +472,7 @@ export const Applications = ({
                         {app.status === APPLICATION_STATUS.COMPLETED ? (
                           <div className="status-complete">
                             <CheckCircle2 size={14} aria-hidden="true" />
-                            Completed &middot; Admin approved
+                            Completed, admin approved
                           </div>
                         ) : (
                           <div className="select-wrapper">
@@ -504,7 +501,7 @@ export const Applications = ({
                                 <Clock size={13} aria-hidden="true" /> Completion review requested
                               </p>
                               <p className="completion-note">
-                                Awaiting administrator approval to finalise the file and unlock your R50 commission share.
+                                Awaiting admin approval to unlock your R50 share.
                               </p>
                               {app.completion_request_note && (
                                 <p className="completion-quote">Note: &ldquo;{app.completion_request_note}&rdquo;</p>
@@ -531,13 +528,13 @@ export const Applications = ({
                         {assignmentStatusOf(app) === 'accepted' ? (
                           <div className="assignment-response-badge accepted">
                             <CheckCircle2 size={16} aria-hidden="true" />
-                            <span>Job accepted · the administrator has been notified</span>
+                            <span>Job accepted, admin notified</span>
                           </div>
                         ) : assignmentStatusOf(app) === 'rejected' ? (
                           <>
                             <div className="assignment-response-badge rejected">
                               <XCircle size={16} aria-hidden="true" />
-                              <span>Job rejected · awaiting admin reassignment</span>
+                              <span>Job rejected, awaiting reassignment</span>
                             </div>
                             {app.assignment_rejection_reason && (
                               <p className="assignment-response-reason">
@@ -561,8 +558,7 @@ export const Applications = ({
                             <div className="assignment-response-prompt">
                               <Briefcase size={15} aria-hidden="true" />
                               <span>
-                                An administrator assigned this job to you. Accept it to start working the
-                                brief, or reject it so it can be reassigned.
+                                Assigned by an administrator. Accept to start, or reject for reassignment.
                               </span>
                             </div>
                             <div className="assignment-response-actions">
@@ -653,7 +649,7 @@ export const Applications = ({
             setCompletionNote("");
             setCompletionFeedback("");
           }}
-          title="Submit Placement for Admin Completion Review"
+          title="Request completion review"
           size="sm"
         >
           <form onSubmit={handleSubmitCompletionRequest} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
@@ -666,22 +662,22 @@ export const Applications = ({
               color: '#cbd5e1'
             }}>
               <p style={{ margin: 0, fontWeight: 600, color: '#10b981' }}>
-                Admin Completion Approval
+                Admin approval required
               </p>
               <p style={{ margin: '4px 0 0', color: '#94a3b8', fontSize: '0.75rem' }}>
-                To maintain regulatory compliance and audit trails, Place4U requires administrators to sign off on completed tenant placements before commission shares are unlocked for withdrawal.
+                Admin sign-off is required before commission shares unlock.
               </p>
             </div>
 
             <div>
               <label style={{ display: 'block', fontSize: '0.75rem', color: '#94a3b8', marginBottom: '0.35rem', fontWeight: 600, textTransform: 'uppercase' }}>
-                Placement Notes for Admin (Optional)
+                Placement notes (optional)
               </label>
               <textarea
                 rows={3}
                 value={completionNote}
                 onChange={(e) => setCompletionNote(e.target.value)}
-                placeholder="e.g. Tenant signed lease on property and move-in confirmed."
+                placeholder="e.g. Lease signed, move-in confirmed."
                 style={{
                   width: '100%',
                   padding: '0.65rem',
