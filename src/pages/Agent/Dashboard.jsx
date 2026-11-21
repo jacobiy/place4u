@@ -51,6 +51,7 @@ import {
   AGENT_SELECTABLE_APPLICATION_STATUSES,
   applicationStatusLabel
 } from '../../services/applicationStatus';
+import { getDefaultAvatar } from '../../utils/avatarHelper';
 import './Dashboard.css';
 
 const DEFAULT_PROPERTY_IMAGE = "https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=900&auto=format&fit=crop&q=60";
@@ -461,7 +462,7 @@ export const Dashboard = ({
               {userRow?.profile_picture ? (
                 <img src={userRow.profile_picture} alt="Agent" />
               ) : (
-                <span>{(agentName || "A")[0].toUpperCase()}</span>
+                <img src={getDefaultAvatar('agent', userRow?.id || agentName)} alt="Agent" />
               )}
             </div>
             <span>{agentName}</span>
@@ -568,7 +569,7 @@ export const Dashboard = ({
                                   {tenant?.profile_picture ? (
                                     <img src={tenant.profile_picture} alt="Applicant" />
                                   ) : (
-                                    <span>{(tenant?.full_name || tenant?.email || "T")[0].toUpperCase()}</span>
+                                    <img src={getDefaultAvatar('tenant', tenant?.id || tenant?.full_name || tenant?.email)} alt="Applicant" />
                                   )}
                                 </div>
                                 <div style={{ minWidth: 0 }}>
@@ -916,7 +917,7 @@ export const Dashboard = ({
                     {tenant?.profile_picture ? (
                       <img src={tenant.profile_picture} alt="Applicant" />
                     ) : (
-                      <span>{(tenant?.full_name || tenant?.email || "T")[0].toUpperCase()}</span>
+                      <img src={getDefaultAvatar('tenant', tenant?.id || tenant?.full_name || tenant?.email)} alt="Applicant" />
                     )}
                   </div>
                   <div style={{ flex: 1, minWidth: 0 }}>

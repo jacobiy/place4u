@@ -13,6 +13,7 @@ import {
   GitBranch
 } from "lucide-react";
 import "./SideBar.css";
+import { getDefaultAvatar } from "../../utils/avatarHelper";
 
 const initials = (nameOrEmail) => {
   const raw = (nameOrEmail || "").trim();
@@ -132,7 +133,7 @@ export const Sidebar = ({ activeView, setActiveView, onLogout, profile, agentPro
               {agentProfile?.profile_image_url ? (
                 <img src={agentProfile.profile_image_url} alt={displayName} />
               ) : (
-                initials(displayName)
+                <img src={getDefaultAvatar('agent', agentProfile?.id || displayName)} alt={displayName} />
               )}
               <span className={`sb-presence${isAgentVerified ? " is-on" : " is-off"}`} />
             </span>

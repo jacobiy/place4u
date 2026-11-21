@@ -1,6 +1,7 @@
 import { LayoutDashboard, Home, User, Settings, LogOut, ChevronDown, FileText, Menu, X, ShieldCheck, GitBranch } from "lucide-react";
 import { T } from './Styles/designTokens';
 import { useState, useRef, useEffect } from "react";
+import { getDefaultAvatar } from '../../utils/avatarHelper';
 
 const initials = (nameOrEmail) => {
   const raw = (nameOrEmail || "").trim();
@@ -187,15 +188,18 @@ export const Sidebar = ({ activeView, setActiveView, applicationsCount, matchesC
             width: "32px",
             height: "32px",
             borderRadius: "50%",
-            background: T.accent,
+            background: T.surface,
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            color: "#ffffff",
-            fontWeight: 700,
-            fontSize: "0.8rem"
+            overflow: "hidden",
+            flexShrink: 0
           }}>
-            {initials(displayName)}
+            <img
+              src={profile?.profile_image_url || getDefaultAvatar('tenant', profile?.id || displayName)}
+              alt={displayName}
+              style={{ width: "100%", height: "100%", objectFit: "cover" }}
+            />
           </div>
           <div className="hidden sm:block text-left">
             <p style={{ display: "flex", alignItems: "center", gap: 5, fontSize: "0.82rem", fontWeight: 600, color: T.textPrimary, lineHeight: 1.2, margin: 0 }}>

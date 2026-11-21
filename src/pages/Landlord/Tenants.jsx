@@ -16,6 +16,7 @@ import {
   normalizeApplicationStatus
 } from '../../services/applicationStatus';
 import { initials } from './Styles/helpers';
+import { getDefaultAvatar } from '../../utils/avatarHelper';
 import Loading from '../../component/loading';
 
 const EYEBROW = { fontSize: "0.66rem", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.12em", color: T.textMuted, margin: 0 };
@@ -217,15 +218,19 @@ export const Tenants = ({ profile, properties = [], user, onNavigate }) => {
 
   const thStyle = { padding: "14px 18px", fontSize: "0.68rem", color: T.textMuted, textTransform: "uppercase", fontWeight: 700, letterSpacing: "0.08em", whiteSpace: "nowrap" };
 
-  const renderAvatar = (label) => (
+  const renderAvatar = (label, seed) => (
     <div style={{
       width: "38px", height: "38px", borderRadius: "50%",
-      background: `linear-gradient(135deg, ${T.accent} 0%, #7c3aed 100%)`,
+      background: T.surface,
       display: "flex", alignItems: "center", justifyContent: "center",
-      fontSize: "0.78rem", fontWeight: 700, color: "#fff", flexShrink: 0,
-      boxShadow: "0 6px 14px -6px rgba(2,132,199,0.6)"
+      overflow: "hidden", flexShrink: 0,
+      border: `1px solid ${T.border}`
     }}>
-      {initials(label)}
+      <img
+        src={getDefaultAvatar('tenant', seed || label)}
+        alt={label || 'Tenant'}
+        style={{ width: "100%", height: "100%", objectFit: "cover" }}
+      />
     </div>
   );
 

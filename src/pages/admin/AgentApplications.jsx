@@ -30,6 +30,7 @@ import {
   Maximize2
 } from 'lucide-react'
 import { resolveDocumentUrl, AGENT_DOCUMENTS_BUCKET } from '../../utils/documentUrls'
+import { getDefaultAvatar } from '../../utils/avatarHelper'
 
 const PROVINCES = [
   'All Provinces',
@@ -534,8 +535,12 @@ export default function AgentApplicationsPage() {
                     {/* Top Row: Applicant Initials, Name & Status */}
                     <div className="flex items-start justify-between gap-2">
                       <div className="flex items-center gap-2.5">
-                        <div className="w-9 h-9 rounded-full bg-blue-100 text-blue-700 font-bold flex items-center justify-center flex-shrink-0 text-xs border border-blue-200">
-                          {initials}
+                        <div className="w-9 h-9 rounded-full overflow-hidden bg-blue-100 flex items-center justify-center flex-shrink-0 border border-blue-200">
+                          <img
+                            src={getDefaultAvatar('agent', app.id || app.full_name)}
+                            alt={app.full_name}
+                            className="w-full h-full object-cover"
+                          />
                         </div>
                         <div>
                           <div className="flex items-center gap-1.5">
@@ -729,8 +734,12 @@ export default function AgentApplicationsPage() {
                         {/* Applicant & Agency */}
                         <td className="py-3 px-4">
                           <div className="flex items-center gap-3">
-                            <div className="w-9 h-9 rounded-full bg-blue-100 text-blue-700 font-bold flex items-center justify-center flex-shrink-0 text-xs border border-blue-200">
-                              {initials}
+                            <div className="w-9 h-9 rounded-full overflow-hidden bg-blue-100 flex items-center justify-center flex-shrink-0 border border-blue-200">
+                              <img
+                                src={getDefaultAvatar('agent', app.id || app.full_name)}
+                                alt={app.full_name}
+                                className="w-full h-full object-cover"
+                              />
                             </div>
                             <div>
                               <div className="flex items-center gap-1.5">

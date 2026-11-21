@@ -23,6 +23,7 @@ import {
 import { getAdminAgentApplications, getAdminLandlordApplications, getPropertySubmissionCount } from '../db/queries'
 import { subscribeToApplicationUpdates } from '../../../services/applicationSync'
 import { listPipelineMatches } from '../../../services/matchWorkflowService'
+import { getDefaultAvatar } from '../../../utils/avatarHelper'
 
 const navLinkClass =
   'sidebar-link flex items-center gap-3 px-3 py-2 rounded-lg text-xs font-medium text-slate-300 transition-colors'
@@ -351,8 +352,12 @@ export default function AdminSidebar({ isOpen, onClose }) {
 
         {/* User Card Footer */}
         <div className="p-3.5 border-t border-slate-800 bg-[#070D1E] flex items-center gap-3">
-          <div className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center text-white text-xs font-bold flex-shrink-0">
-            {initials}
+          <div className="w-8 h-8 rounded-full overflow-hidden bg-slate-800 flex items-center justify-center text-white text-xs font-bold flex-shrink-0 border border-slate-700">
+            <img
+              src={getDefaultAvatar('admin', user?.id || adminName)}
+              alt={adminName}
+              className="w-full h-full object-cover"
+            />
           </div>
           <div className="flex-1 min-w-0">
             <p className="text-white text-xs font-semibold truncate leading-tight">{adminName}</p>

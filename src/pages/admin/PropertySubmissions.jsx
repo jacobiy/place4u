@@ -38,6 +38,7 @@ import {
   FileCheck2,
   Send
 } from 'lucide-react'
+import { getDefaultAvatar } from '../../utils/avatarHelper'
 
 // Approval lifecycle display metadata (mirrors the landlord portal + properties registry)
 const APPROVAL_META = {
@@ -462,8 +463,12 @@ export default function PropertySubmissionsPage() {
 
                     <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] mt-1.5">
                       <span className="flex items-center gap-1.5 text-slate-700 font-medium">
-                        <span className="w-5 h-5 rounded-full bg-blue-100 text-blue-700 font-bold flex items-center justify-center text-[9px]">
-                          {initialsOf(landlordName)}
+                        <span className="w-5 h-5 rounded-full overflow-hidden bg-slate-100 flex items-center justify-center shrink-0 border border-slate-200">
+                          <img
+                            src={getDefaultAvatar('landlord', landlordName)}
+                            alt={landlordName}
+                            className="w-full h-full object-cover"
+                          />
                         </span>
                         {landlordName}
                       </span>
@@ -770,8 +775,12 @@ function SubmissionDossier({ sub, isSubmitting, onClose, onApprove, onReject, on
               </h4>
 
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-blue-100 text-blue-700 font-bold flex items-center justify-center text-sm shrink-0">
-                  {initialsOf(landlord.full_name)}
+                <div className="w-10 h-10 rounded-full overflow-hidden bg-emerald-100 flex items-center justify-center text-sm shrink-0 border border-emerald-200">
+                  <img
+                    src={getDefaultAvatar('landlord', landlord.id || landlord.full_name)}
+                    alt={landlord.full_name || 'Landlord'}
+                    className="w-full h-full object-cover"
+                  />
                 </div>
                 <div className="min-w-0">
                   <p className="font-bold text-slate-900 truncate flex items-center gap-1.5">

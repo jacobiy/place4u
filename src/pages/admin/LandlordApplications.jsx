@@ -43,6 +43,7 @@ import {
   FileCheck2,
   TrendingUp
 } from 'lucide-react'
+import { getDefaultAvatar } from '../../utils/avatarHelper'
 
 const PROVINCES = [
   'All Provinces',
@@ -484,8 +485,12 @@ export default function LandlordApplicationsPage() {
                     {/* Top: Avatar + Name + Status */}
                     <div className="flex items-start justify-between gap-3">
                       <div className="flex items-center gap-3 min-w-0">
-                        <div className="w-10 h-10 rounded-full bg-emerald-100 text-emerald-800 font-bold flex items-center justify-center flex-shrink-0 text-xs border border-emerald-200">
-                          {initials}
+                        <div className="w-10 h-10 rounded-full overflow-hidden bg-emerald-100 flex items-center justify-center flex-shrink-0 border border-emerald-200">
+                          <img
+                            src={getDefaultAvatar('landlord', app.id || app.full_name)}
+                            alt={app.full_name}
+                            className="w-full h-full object-cover"
+                          />
                         </div>
                         <div className="min-w-0">
                           <div className="flex items-center gap-1.5">
@@ -659,8 +664,12 @@ export default function LandlordApplicationsPage() {
                       {/* Landlord & Entity */}
                       <td className="py-3 px-4">
                         <div className="flex items-center gap-3">
-                          <div className="w-9 h-9 rounded-full bg-emerald-100 text-emerald-800 font-bold flex items-center justify-center flex-shrink-0 text-xs border border-emerald-200">
-                            {initials}
+                          <div className="w-9 h-9 rounded-full overflow-hidden bg-emerald-100 flex items-center justify-center flex-shrink-0 border border-emerald-200">
+                            <img
+                              src={getDefaultAvatar('landlord', app.id || app.full_name)}
+                              alt={app.full_name}
+                              className="w-full h-full object-cover"
+                            />
                           </div>
                           <div>
                             <div className="flex items-center gap-1.5">

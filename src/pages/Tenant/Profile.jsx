@@ -19,6 +19,7 @@ import {
 import { TenantQueries } from './db/queries';
 import { useAuth } from '../../hooks/useAuth';
 import { AlertToast } from '../../component/AlertModal';
+import { getDefaultAvatar } from '../../utils/avatarHelper';
 
 /* ------------------------------------------------------------------ */
 /*  Palette: matches the tenant dashboard — white surfaces, light-blue */
@@ -399,7 +400,11 @@ export const Profile = ({ profile: initialProfile, user }) => {
                     className="w-full h-full object-cover"
                   />
                 ) : (
-                  initialsOf(displayName)
+                  <img
+                    src={getDefaultAvatar('tenant', profile?.id || displayName)}
+                    alt={displayName}
+                    className="w-full h-full object-cover"
+                  />
                 )}
               </div>
 

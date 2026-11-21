@@ -13,6 +13,7 @@ import {
   initialsFromName,
   openEmailClient
 } from './db/queries'
+import { getDefaultAvatar } from '../../utils/avatarHelper'
 
 const rolePill = (role) => {
   if (role === 'landlord') return 'bg-emerald-50 text-emerald-700 border border-emerald-200'
@@ -200,8 +201,12 @@ export default function UsersPage() {
                   <tr key={u.id} className="hover:bg-slate-50/70 transition-colors">
                     <td className="px-6 py-3.5">
                       <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-xs font-bold flex-shrink-0 text-slate-700 border border-slate-200">
-                          {initialsFromName(u.full_name)}
+                        <div className="w-8 h-8 rounded-full overflow-hidden bg-slate-100 flex items-center justify-center text-xs font-bold flex-shrink-0 text-slate-700 border border-slate-200">
+                          <img
+                            src={getDefaultAvatar(u.user_type, u.id || u.full_name)}
+                            alt={u.full_name || 'User'}
+                            className="w-full h-full object-cover"
+                          />
                         </div>
                         <div>
                           <p className="font-semibold text-slate-900">{u.full_name || 'Unnamed'}</p>
@@ -296,8 +301,12 @@ export default function UsersPage() {
 
             <div className="py-4 space-y-3.5 text-xs">
               <div className="flex items-center gap-3 bg-slate-50 p-3 rounded-xl border border-slate-100">
-                <div className="w-10 h-10 rounded-full bg-blue-600 text-white font-bold flex items-center justify-center text-sm">
-                  {initialsFromName(selectedUser.full_name)}
+                <div className="w-10 h-10 rounded-full overflow-hidden bg-slate-100 flex items-center justify-center text-sm font-bold flex-shrink-0 border border-slate-200">
+                  <img
+                    src={getDefaultAvatar(selectedUser.user_type, selectedUser.id || selectedUser.full_name)}
+                    alt={selectedUser.full_name || 'User'}
+                    className="w-full h-full object-cover"
+                  />
                 </div>
                 <div>
                   <h4 className="font-bold text-sm text-slate-900">{selectedUser.full_name || 'User'}</h4>
