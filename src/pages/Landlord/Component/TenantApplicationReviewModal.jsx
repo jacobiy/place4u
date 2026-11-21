@@ -278,7 +278,7 @@ export const TenantApplicationReviewModal = ({
                         {doc.title || doc.fileName || `Verification Document ${idx + 1}`}
                       </p>
                       <span style={{ fontSize: '0.72rem', color: T.textMuted }}>
-                        {doc.fileName || 'document.pdf'} · Uploaded: {doc.uploadedAt ? new Date(doc.uploadedAt).toLocaleDateString() : 'Recent'}
+                        {doc.fileName || 'document.pdf'}, {doc.uploadedAt ? new Date(doc.uploadedAt).toLocaleDateString() : 'Recent'}
                       </span>
                     </div>
                   </div>

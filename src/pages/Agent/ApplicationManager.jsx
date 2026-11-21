@@ -139,7 +139,7 @@ export default function ApplicationManager({
     const res = await listMatches(applicationId);
     if (res.success) setMatches(res.data || []);
     if (res.offline) {
-      setError('Working offline — changes are saved locally and will sync when the database is reachable.');
+      setError('Offline. Changes are saved locally and sync later.');
     }
   }, [applicationId]);
 

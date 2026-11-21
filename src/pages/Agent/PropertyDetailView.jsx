@@ -409,7 +409,7 @@ export default function PropertyDetailView({ property, onBack, variant = 'page' 
                       <Sparkles size={16} className="text-[#00668a]" />
                     </div>
                     <p className="text-xs text-slate-500 line-clamp-2">
-                      Engineered stone countertops, contemporary cabinetry, built-in cooktop, and scullery connection.
+                      Stone counters, modern cabinetry, built-in cooktop.
                     </p>
                   </div>
                 </div>
@@ -429,7 +429,7 @@ export default function PropertyDetailView({ property, onBack, variant = 'page' 
                       <BedDouble size={16} className="text-[#00668a]" />
                     </div>
                     <p className="text-xs text-slate-500 line-clamp-2">
-                      Tranquil master suite retreat with generous wardrobe storage, en-suite bathroom, and ambient lighting.
+                      Quiet suite with built-in wardrobes and en-suite.
                     </p>
                   </div>
                 </div>
@@ -445,20 +445,15 @@ export default function PropertyDetailView({ property, onBack, variant = 'page' 
                 <div className="space-y-1">
                   <div className="flex items-center gap-2">
                     <span className="font-bold text-sm sm:text-base text-slate-900">
-                      Architectural Spatial Specifications
+                      Specifications
                     </span>
                     <span className="px-2 py-0.5 rounded text-[#006194] text-[10px] font-bold bg-[#eaedff]">
-                      Verified Mandate
+                      Verified
                     </span>
                   </div>
-                  <p className="text-xs text-slate-500">
-                    Verified spatial clearances, floor area measurements, and natural sunlight orientation.
-                  </p>
                   <div className="flex flex-wrap items-center gap-3 pt-1 text-slate-600 text-xs font-semibold">
                     <span>Floor Area: {sizeValue}</span>
-                    <span>•</span>
                     <span>Bedrooms: {bedroomsValue ?? 2} Beds</span>
-                    <span>•</span>
                     <span>Bathrooms: {bathroomsValue ?? 2} Baths</span>
                   </div>
                 </div>
@@ -471,7 +466,7 @@ export default function PropertyDetailView({ property, onBack, variant = 'page' 
                   className="w-full sm:w-auto px-4 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-bold transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
                 >
                   <Printer size={15} />
-                  Print Dossier
+                  Print
                 </button>
                 <a
                   href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(fullAddress)}`}
@@ -481,7 +476,7 @@ export default function PropertyDetailView({ property, onBack, variant = 'page' 
                   style={{ textDecoration: 'none' }}
                 >
                   <ExternalLink size={15} />
-                  Location Map
+                  Map
                 </a>
               </div>
             </div>
@@ -490,12 +485,12 @@ export default function PropertyDetailView({ property, onBack, variant = 'page' 
             <div className="p-6 sm:p-7 rounded-2xl bg-white border border-slate-200 shadow-xs space-y-5">
               <div className="flex items-center gap-2">
                 <span className="w-2.5 h-2.5 rounded-full bg-[#00668a]" />
-                <h4 className="text-base font-bold text-slate-900">Mandate Narrative &amp; Living Experience</h4>
+                <h4 className="text-base font-bold text-slate-900">Description</h4>
               </div>
 
               <p className="text-sm sm:text-base text-slate-700 leading-relaxed">
                 {property?.description ||
-                  `Situated in prime ${property?.city || 'South Africa'}, this residence represents an exceptional residential relocation opportunity. Conceived to harmonize comfort with low-maintenance luxury fittings and verified ownership provenance.`}
+                  `Verified rental in ${property?.city || 'South Africa'}.`}
               </p>
 
               {/* Lease Specification Term Badges Grid */}
@@ -640,10 +635,10 @@ export default function PropertyDetailView({ property, onBack, variant = 'page' 
             <div className="p-5 rounded-2xl bg-[#f2f3ff] border border-slate-200/80 text-xs text-slate-600 space-y-2">
               <div className="font-bold flex items-center gap-1.5 text-slate-800">
                 <ShieldCheck size={16} className="text-[#006194]" />
-                PPRA &amp; Place4U Agent Mandate Governance
+                PPRA mandate
               </div>
               <p className="leading-relaxed">
-                All property representation is governed by the Property Practitioners Regulatory Authority (PPRA). All tenant deposits are held in statutory escrow accounts with verified ownership provenance.
+                Representation follows PPRA rules. Deposits are held in statutory escrow.
               </p>
             </div>
           </div>

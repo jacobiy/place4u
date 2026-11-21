@@ -292,7 +292,7 @@ export const PropertyDocumentsModal = ({ isOpen, onClose, property, user, onChan
       )}
 
       <p style={{ fontSize: "0.72rem", color: T.textMuted, marginTop: "1rem", lineHeight: 1.5 }}>
-        These documents are attached to <span style={{ fontFamily: SERIF, color: T.textPrimary }}>{property?.name || "this listing"}</span> only — they stay with the property for verification and are visible to the review team.
+        Attached to <span style={{ fontFamily: SERIF, color: T.textPrimary }}>{property?.name || "this listing"}</span> for verification.
       </p>
     </Modal>
   );

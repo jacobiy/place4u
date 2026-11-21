@@ -379,8 +379,8 @@ export default function MainLandlord() {
           </h2>
           <p style={{ color: T.textSecondary, fontSize: "0.9rem", lineHeight: 1.65, marginBottom: "1.5rem" }}>
             {isRejected
-              ? `Your landlord application requires revision (${profile?.rejection_reason || "submitted documents could not be validated"}). Access to ${activeView === "properties" ? "property listings" : "tenant management"} is locked until your revised documents are approved.`
-              : `Your landlord profile is currently unverified. Submit your proof of property ownership and identification dossier to unlock ${activeView === "properties" ? "property uploading and listing management" : "tenant applications and lease management"}.`}
+              ? `Application needs revision (${profile?.rejection_reason || "documents could not be validated"}). Access is locked until approved.`
+              : `Unverified profile. Submit proof of ownership and ID to unlock ${activeView === "properties" ? "listing management" : "tenant and lease management"}.`}
           </p>
           <PrimaryBtn onClick={() => setActiveView("dashboard")}>
             {isRejected ? "Return to dashboard to resubmit" : "Return to dashboard to apply"}

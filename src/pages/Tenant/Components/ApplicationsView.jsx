@@ -389,8 +389,7 @@ export default function ApplicationsView({
           <FileText size={24} className="text-slate-300 mb-4" />
           <h2 className="font-serif text-2xl text-slate-900 mb-2">No applications yet</h2>
           <p className="text-sm text-slate-500 max-w-md">
-            You haven't submitted any rental applications. Choose "Submit application" above to apply for a student
-            room or residential home with the required PDF verification documents.
+            Choose "Submit application" above to apply with your PDF documents.
           </p>
         </div>
       ) : (

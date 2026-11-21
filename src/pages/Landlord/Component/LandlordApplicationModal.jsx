@@ -98,7 +98,7 @@ export const LandlordApplicationModal = ({
       if (!uploadRes?.success || !isDurableDocumentRef(uploadRes.storagePath || uploadRes.url)) {
         setError(
           uploadRes?.error ||
-            `Could not upload that document. Please try again with a file under ${formatMaxVerificationFileSize()}.`
+            `Upload failed. Use a file under ${formatMaxVerificationFileSize()}.`
         );
         setUploadingField(null);
         return;
@@ -144,7 +144,7 @@ export const LandlordApplicationModal = ({
     }
 
     if (!isDurableDocumentRef(formData.idDocUrl) || !isDurableDocumentRef(formData.ownershipDocUrl)) {
-      setError('Please provide both your ID document and Proof of Property Ownership (Title Deed / Transfer / Lease mandate).');
+      setError('Attach your ID and proof of ownership (title deed, transfer or mandate).');
       setStep(3);
       return;
     }
@@ -336,11 +336,10 @@ export const LandlordApplicationModal = ({
             <div>
               <div style={{ marginBottom: '1.5rem' }}>
                 <h3 style={{ fontSize: '1.05rem', fontWeight: 600, color: T.textPrimary, margin: '0 0 6px' }}>
-                  Step 1: Choose Your Operational Portfolio Mode
+                  Choose your portfolio mode
                 </h3>
                 <p style={{ fontSize: '0.85rem', color: T.textSecondary, margin: 0, lineHeight: 1.5 }}>
-                  Do you want to manage your full rental portfolio (rents, occupancy, analytics, and tenant rosters)
-                  directly on Place4U, or do you only wish to list, market, and upload properties?
+                  Manage the full portfolio here, or just list and market properties?
                 </p>
               </div>
 
@@ -412,10 +411,10 @@ export const LandlordApplicationModal = ({
                       marginBottom: '8px'
                     }}
                   >
-                    RECOMMENDED · ALL FEATURES
+                    RECOMMENDED
                   </div>
                   <p style={{ fontSize: '0.82rem', color: T.textSecondary, margin: '0 0 12px', lineHeight: 1.4 }}>
-                    Full operational control: live rent collections, occupancy KPIs, financial history charts, tenant rosters, and lease tracking.
+                    Rents, occupancy, financials, tenants and leases.
                   </p>
 
                   <ul
@@ -496,10 +495,10 @@ export const LandlordApplicationModal = ({
                       marginBottom: '8px'
                     }}
                   >
-                    LIGHTWEIGHT · MARKETING ONLY
+                    MARKETING ONLY
                   </div>
                   <p style={{ fontSize: '0.82rem', color: T.textSecondary, margin: '0 0 12px', lineHeight: 1.4 }}>
-                    Ideal if you manage rent books offline or via your own agency ERP. You will only upload, publish, and manage property listings.
+                    List and publish only. Rent books stay with your own system.
                   </p>
 
                   <ul
@@ -534,7 +533,7 @@ export const LandlordApplicationModal = ({
                 }}
               >
                 <HelpCircle size={14} style={{ flexShrink: 0, marginTop: 2 }} />
-                <span>You can switch modes anytime from your Landlord Dashboard header or Settings tab.</span>
+                <span>Switch modes anytime in the dashboard header or Settings.</span>
               </div>
             </div>
           )}
@@ -742,7 +741,7 @@ export const LandlordApplicationModal = ({
                   Step 3: Verification & Ownership Documentation
                 </h3>
                 <p style={{ fontSize: '0.82rem', color: T.textSecondary, margin: 0 }}>
-                  To protect tenants from fraudulent listings, Place4U verifies South African ID and proof of property ownership (Deed, Municipal Rates, or Mandate).
+                  We verify your SA ID and proof of ownership (deed, rates or mandate).
                 </p>
               </div>
 
@@ -964,7 +963,7 @@ export const LandlordApplicationModal = ({
                       color: formData.manageWithPlatform ? T.accent : T.amber
                     }}
                   >
-                    {formData.manageWithPlatform ? 'Full Portfolio Management (Rents, Tenants & Analytics)' : 'Listing & Marketing Only'}
+                    {formData.manageWithPlatform ? 'Full portfolio management' : 'Listing only'}
                   </span>
                 </div>
 
@@ -1034,8 +1033,7 @@ export const LandlordApplicationModal = ({
                   color: T.textSecondary
                 }}
               >
-                Upon submission, your application will enter <strong style={{ color: T.accent }}>Pending Verification</strong>.
-                Our team checks deed records promptly to safeguard the marketplace.
+                Submission enters <strong style={{ color: T.accent }}>Pending Verification</strong>.
               </div>
             </div>
           )}

@@ -820,7 +820,7 @@ export const Profile = ({ onClose, isModal = false }) => {
                     Property: <strong style={{ color: T.textPrimary, fontWeight: 600 }}>{doc.propertyName || "Portfolio-wide"}</strong>
                   </p>
                   <p style={{ fontSize: "0.7rem", color: T.textMuted }}>
-                    {doc.fileName} • {doc.uploadedAt ? new Date(doc.uploadedAt).toLocaleDateString() : "Active"}
+                    {doc.fileName}, {doc.uploadedAt ? new Date(doc.uploadedAt).toLocaleDateString() : "Active"}
                   </p>
 
                   <div style={{ display: "flex", gap: "6px", marginTop: "4px" }}>
@@ -876,7 +876,7 @@ export const Profile = ({ onClose, isModal = false }) => {
                 No verification documents uploaded yet
               </p>
               <p style={{ color: T.textMuted, fontSize: "0.82rem", maxWidth: "420px", margin: "6px auto 1.25rem", lineHeight: 1.6 }}>
-                Upload your Title Deed or municipal rates clearance to get your landlord ownership verified.
+                Upload a title deed or rates clearance to verify ownership.
               </p>
               <div style={{ display: "flex", justifyContent: "center" }}>
                 <PrimaryBtn onClick={() => setShowUploadDocModal(true)}>
@@ -991,7 +991,7 @@ export const Profile = ({ onClose, isModal = false }) => {
         isOpen={!!docToDelete}
         title="Remove Verification Document?"
         itemName={docToDelete?.title}
-        message="Are you sure you want to remove this verification document from your profile? This cannot be undone."
+        message="Remove this verification document? This cannot be undone."
         confirmText="Yes, Remove Document"
         cancelText="Cancel"
         type="danger"

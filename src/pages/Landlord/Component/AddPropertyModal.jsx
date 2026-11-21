@@ -308,7 +308,7 @@ export const AddPropertyModal = ({ isOpen, onClose, onCreate, isCreating, buildi
     }
     if (isRoomBasedType(formData.property_type) && !formData.building_id && buildingsEnabled) {
       setError(
-        "This is a room listing, so it must belong to a building. Pick the building it sits in — Place4U sets buildings up, so ask support if yours is not listed yet."
+        "Room listings must belong to a building. Pick one, or ask support to add yours."
       );
       return;
     }
@@ -359,7 +359,7 @@ export const AddPropertyModal = ({ isOpen, onClose, onCreate, isCreating, buildi
       isOpen={isOpen}
       onClose={onClose}
       title="Add Property"
-      subtitle="Complete listing specifications, attach proof of ownership, then submit for approval"
+      subtitle="Specifications, ownership proof, approval"
       size="xl"
       footer={
         <>
@@ -412,7 +412,7 @@ export const AddPropertyModal = ({ isOpen, onClose, onCreate, isCreating, buildi
                 onChange={(e) => set({ description: e.target.value })}
                 rows={3}
                 style={{ ...inputStyle, resize: "vertical" }}
-                placeholder="Highlight living spaces, kitchen finishes, proximity to transport/business nodes, security..."
+                placeholder="Living spaces, finishes, transport, security..."
               />
             </div>
           </Section>
@@ -540,20 +540,18 @@ export const AddPropertyModal = ({ isOpen, onClose, onCreate, isCreating, buildi
 
             {selectedRoomType && (
               <p style={{ fontSize: "0.72rem", color: T.textMuted, marginTop: 8 }}>
-                {selectedRoomType.capacity === 1 ? "Single occupancy" : `Sleeps ${selectedRoomType.capacity}`} · rent,
-                deposit and capacity copied from the room type — adjust below if this specific room differs.
+                {selectedRoomType.capacity === 1 ? "Single occupancy" : `Sleeps ${selectedRoomType.capacity}`}, rent,
+                deposit and capacity copied from the room type.
               </p>
             )}
             {roomBased && !formData.building_id && buildingsEnabled && (
               <p style={{ fontSize: "0.74rem", color: T.amber || "#b45309", marginTop: 8, fontWeight: 600 }}>
-                Rooms must belong to a building. If your building is not listed, ask Place4U to set it up before
-                submitting this room.
+                Rooms need a building. Ask support to add yours.
               </p>
             )}
             {roomBased && !formData.building_id && !buildingsEnabled && (
               <p style={{ fontSize: "0.74rem", color: T.textMuted, marginTop: 8 }}>
-                Building linking is not switched on for this deployment yet, so this room will save as a standalone
-                listing. Place4U can attach it to its building afterwards.
+                Building linking is off here, so this room saves standalone. Support can attach it later.
               </p>
             )}
           </Section>
@@ -752,8 +750,8 @@ export const AddPropertyModal = ({ isOpen, onClose, onCreate, isCreating, buildi
               <ShieldCheck size={15} color={hasRequiredDoc ? T.emerald : T.amber} style={{ flexShrink: 0, marginTop: 1 }} />
               <span style={{ fontSize: "0.76rem", color: T.textSecondary, lineHeight: 1.45 }}>
                 {hasRequiredDoc
-                  ? "Proof of ownership attached — you're ready to submit for approval."
-                  : "Proof of ownership (title deed, deed of transfer or rates clearance) is required before you can submit this listing for approval."}
+                  ? "Proof of ownership attached, ready to submit."
+                  : "Proof of ownership is required before submitting."}
               </span>
             </div>
 
@@ -971,7 +969,7 @@ export const AddPropertyModal = ({ isOpen, onClose, onCreate, isCreating, buildi
           </div>
 
           <p style={{ fontSize: "0.72rem", color: T.textMuted, marginTop: 12, lineHeight: 1.5 }}>
-            Submitting sends this listing to the Place4U team for review. It only goes live once approved.
+            Goes live only after Place4U approval.
           </p>
         </div>
       </div>

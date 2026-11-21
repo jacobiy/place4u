@@ -62,7 +62,7 @@ export const Properties = ({ properties = [], onRefresh, loading }) => {
       ) : filtered.length === 0 ? (
         <div className="properties-empty-container">
           <p className="properties-empty-title">No properties found</p>
-          <p className="properties-empty-subtitle">If landlords haven't uploaded listings yet, this will be empty.</p>
+          <p className="properties-empty-subtitle">Listings appear once landlords upload them.</p>
         </div>
       ) : (
         <div className="properties-grid">

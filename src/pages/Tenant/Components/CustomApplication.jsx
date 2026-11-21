@@ -484,7 +484,7 @@ const CustomApplication = ({
               {application ? 'Application updated' : 'Application submitted'}
             </h2>
             <p className="mx-auto mt-3 max-w-xl text-sm leading-6 text-slate-600">
-              Your application and attached documents have been received. You can track its status from Applications.
+              Application and documents received. Track progress in Applications.
             </p>
           </div>
         ) : (
@@ -507,7 +507,7 @@ const CustomApplication = ({
                 <div>
                   <h2 className="text-base font-semibold text-slate-950">Properties in this application</h2>
                   <p className="mt-1 text-sm text-slate-600">
-                    Add every home you would accept. Your agent reviews them together, so you apply and pay once.
+                    Add every home you would accept. Apply and pay once.
                   </p>
                 </div>
                 <span className="text-sm font-semibold text-slate-900">
@@ -868,7 +868,7 @@ const CustomApplication = ({
                             ? (feeReceipt?.receiptNumber || (typeof feeReceipt === 'string' ? `Receipt reference: ${feeReceipt}` : 'Payment recorded.'))
                             : feeIsFree
                               ? 'This promotion waives the fee. Claim it to submit without a card.'
-                              : `Pay ${formatZarAmount(feeAmountValue)} by card to complete your application. The fee is non-refundable.`}
+                              : `Pay ${formatZarAmount(feeAmountValue)} by card. Non-refundable.`}
                         </p>
                       </div>
                     </div>

@@ -979,7 +979,7 @@ export default function DashboardView({
             <div>
               <h3 className="text-base font-semibold text-slate-900">Find your ideal home</h3>
               <p className="text-xs text-slate-500 mt-0.5">
-                Browse reviewed listings below and submit one verified application covering all your target homes.
+                Browse listings and apply once for all your target homes.
               </p>
             </div>
           </div>

@@ -62,17 +62,17 @@ const ModalHeader = ({ eyebrow, title, subtitle, onClose }) => (
 
 /* The tenant-facing label + colour for each point in the acceptance pipeline. */
 const STATE_META = {
-  shipped:            { label: 'Action needed', hint: 'Accept this match to request a viewing session.', tone: 'amber' },
-  tenant_accepted:    { label: 'You accepted', hint: 'Your agent is forwarding your details to the landlord.', tone: 'sky' },
-  agent_forwarded:    { label: 'With the landlord', hint: 'The landlord is reviewing your application.', tone: 'sky' },
-  landlord_accepted:  { label: 'Landlord accepted', hint: 'Awaiting Place4U admin sign-off.', tone: 'indigo' },
-  admin_approved:     { label: 'Approved — scheduling', hint: 'Your agent will confirm the session time.', tone: 'emerald' },
-  scheduled:          { label: 'Session scheduled', hint: 'Your viewing is confirmed.', tone: 'emerald' },
-  schedule_accepted:  { label: 'Meetup confirmed', hint: 'Schedule confirmed! After the meetup, the landlord will upload your lease.', tone: 'emerald' },
-  lease_uploaded:     { label: 'Lease ready for signing', hint: 'The landlord uploaded your lease agreement. Review and upload your signed copy to secure your new home.', tone: 'indigo' },
-  lease_signed:       { label: 'Lease active', hint: 'Your signed lease agreement has been submitted and your tenancy is active!', tone: 'emerald' },
-  move_in_confirmed:  { label: 'Move-in confirmed', hint: 'Your move-in date and key collection schedule has been finalized!', tone: 'emerald' },
-  redistribution:     { label: 'Back with your agent', hint: 'You rejected this property after the viewing — your agent will re-work it or find you another home.', tone: 'amber' },
+  shipped:            { label: 'Action needed', hint: 'Accept to request a viewing.', tone: 'amber' },
+  tenant_accepted:    { label: 'You accepted', hint: 'Sent to the landlord.', tone: 'sky' },
+  agent_forwarded:    { label: 'With the landlord', hint: 'Under landlord review.', tone: 'sky' },
+  landlord_accepted:  { label: 'Landlord accepted', hint: 'Awaiting admin sign-off.', tone: 'indigo' },
+  admin_approved:     { label: 'Approved, scheduling', hint: 'Your agent will confirm the time.', tone: 'emerald' },
+  scheduled:          { label: 'Session scheduled', hint: 'Viewing confirmed.', tone: 'emerald' },
+  schedule_accepted:  { label: 'Meetup confirmed', hint: 'Lease follows after the meetup.', tone: 'emerald' },
+  lease_uploaded:     { label: 'Lease ready for signing', hint: 'Review and upload your signed copy.', tone: 'indigo' },
+  lease_signed:       { label: 'Lease active', hint: 'Signed lease submitted.', tone: 'emerald' },
+  move_in_confirmed:  { label: 'Move-in confirmed', hint: 'Keys scheduled.', tone: 'emerald' },
+  redistribution:     { label: 'Back with your agent', hint: 'Your agent is re-working it.', tone: 'amber' },
   tenant_declined:    { label: 'Declined by you', hint: '', tone: 'slate' },
   landlord_declined:  { label: 'Declined by landlord', hint: '', tone: 'slate' },
   admin_rejected:     { label: 'Not approved', hint: '', tone: 'slate' },
@@ -222,8 +222,7 @@ export default function MatchedPropertiesView({
             </h1>
 
             <p className="mt-4 text-sm sm:text-base text-slate-600 leading-relaxed max-w-xl">
-              Every property your agent has matched to your application, with its live status. Accept a match to request
-              a viewing session, then follow it through the pipeline.
+              Properties your agent matched to you, with live status.
             </p>
           </div>
 
@@ -285,8 +284,7 @@ export default function MatchedPropertiesView({
           <Building2 size={24} className="text-slate-300 mx-auto" />
           <h3 className="font-serif text-2xl text-slate-900">No matches yet</h3>
           <p className="text-sm text-slate-500 max-w-md mx-auto">
-            Your assigned Place4U agent is reviewing properties against your application. Every home they ship to you
-            will appear here with its live status.
+            Your agent is reviewing properties. Matches appear here.
           </p>
           <button
             type="button"
@@ -544,8 +542,7 @@ export default function MatchedPropertiesView({
 
           <div className="space-y-5">
             <p className="p-3.5 rounded-xl bg-sky-50 border border-sky-100 text-xs text-sky-800 leading-relaxed">
-              Accepting notifies your agent, who forwards your details to the landlord for review. Once the landlord and
-              Place4U approve, your viewing is scheduled and confirmed with you.
+              Your agent forwards your details to the landlord. Once approved, the viewing is scheduled.
             </p>
 
             <div>

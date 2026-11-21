@@ -96,7 +96,7 @@ export const DocumentPreviewModal = ({
     } else {
       setInfoAlert({
         title: "Official Specimen Record",
-        message: "This is a verified specimen record initialized with demo data. Once a real document is uploaded to the Place4U storage bucket, it can be viewed directly in a separate secure tab."
+        message: "Specimen record with demo data. Real uploads open in a secure tab."
       });
     }
   };

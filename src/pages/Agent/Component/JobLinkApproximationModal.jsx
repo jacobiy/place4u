@@ -115,13 +115,13 @@ export const JobLinkApproximationModal = ({
           <div className="job-link-header-left">
             <div className="job-link-header-badge">
               <Briefcase size={14} />
-              <span>Place4U Affordability Analysis</span>
+              <span>Affordability</span>
             </div>
             <h2 className="job-link-modal-title">
-              Job & Commute Compatibility Analysis
+              Job &amp; commute match
             </h2>
             <p className="job-link-modal-subtitle">
-              Evaluating <strong style={{ color: '#fff' }}>{applicantName}</strong> &middot; #{String(application.id).slice(0, 8)}
+              <strong style={{ color: '#fff' }}>{applicantName}</strong> #{String(application.id).slice(0, 8)}
             </p>
           </div>
           <button className="job-link-modal-close" onClick={onClose} aria-label="Close modal">
@@ -165,8 +165,8 @@ export const JobLinkApproximationModal = ({
             <span>
               Tenant applied for <strong>{resolution.label || 'a specific listing'}</strong>
               {resolution.property
-                ? ' — the analysis below is scored against that listing.'
-                : ' — that listing is not in your inventory, so the analysis below uses the application snapshot.'}
+                ? ' (scored below).'
+                : ' (not in your inventory; using application snapshot).'}
             </span>
           </div>
         )}

@@ -451,7 +451,7 @@ export default function PropertyDetailView({
                       <Waves size={16} className="text-[#00668a]" />
                     </div>
                     <p className="text-xs text-slate-500 line-clamp-2">
-                      Spacious lounge layout extending to twilight exposure, outdoor patio, and coastal greenery.
+                      Lounge opens to a patio and garden.
                     </p>
                   </div>
                 </div>
@@ -471,7 +471,7 @@ export default function PropertyDetailView({
                       <Sparkles size={16} className="text-[#00668a]" />
                     </div>
                     <p className="text-xs text-slate-500 line-clamp-2">
-                      Modern cabinetry with premium stone finishes, built-in cooktop, and convenient scullery connection.
+                      Stone finishes, built-in cooktop, scullery.
                     </p>
                   </div>
                 </div>
@@ -491,7 +491,7 @@ export default function PropertyDetailView({
                       <BedDouble size={16} className="text-[#00668a]" />
                     </div>
                     <p className="text-xs text-slate-500 line-clamp-2">
-                      Quiet bedroom retreat with high ceilings, built-in robes, natural morning illumination, and en-suite.
+                      High ceilings, built-in robes, en-suite.
                     </p>
                   </div>
                 </div>
@@ -840,7 +840,7 @@ export default function PropertyDetailView({
                   }`}
                 >
                   {inApplication ? <CheckCircle2 size={16} /> : <FileText size={16} />}
-                  <span>{inApplication ? 'Added — tap to remove' : 'Add this property to application'}</span>
+                  <span>{inApplication ? 'Added, tap to remove' : 'Add to application'}</span>
                 </button>
 
                 <div className="grid grid-cols-2 gap-2">
@@ -988,10 +988,10 @@ export default function PropertyDetailView({
             {/* Quick Rental Guarantee & Compliance Mini-Card (BRD Aligned) */}
             <div className="p-4 rounded-xl bg-[#f2f3ff] border border-slate-200/60 space-y-2">
               <span className="text-[11px] font-bold text-[#006194] uppercase tracking-wider block">
-                Rental Relocation Guarantee
+                Rental guarantee
               </span>
               <p className="text-[11px] text-slate-600 leading-relaxed">
-                All property matches and applications are vetted under Place4U relocation assistance standards. Personal documents and tenant applications are protected under statutory POPIA frameworks.
+                Matches are vetted. Documents are protected under POPIA.
               </p>
               <div className="pt-1 flex items-center gap-2 text-[11px] text-[#006194] font-bold">
                 <span className="hover:underline cursor-pointer">Lease FAQ</span>

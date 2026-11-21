@@ -196,7 +196,7 @@ export const DocumentReplaceModal = ({
               {doc.title}
             </h4>
             <p style={{ fontSize: "0.78rem", color: T.textMuted, margin: "4px 0 0 0", lineHeight: 1.4 }}>
-              Uploading a replacement will overwrite the file in secure storage, keep your verification history intact, and update the timestamp.
+              Replacing overwrites the file but keeps your verification history.
             </p>
           </div>
         </div>

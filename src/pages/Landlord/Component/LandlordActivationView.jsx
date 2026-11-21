@@ -33,7 +33,7 @@ export const LandlordActivationView = ({
     ? { accent: T.red, soft: T.redSoft, border: T.redBorder, tag: 'Application Requires Revision' }
     : isPending
     ? { accent: T.amber, soft: T.amberSoft, border: T.amberBorder, tag: 'Application Pending Review' }
-    : { accent: T.accent, soft: T.accentSoft, border: T.accentBorder, tag: 'Action Required · Apply to Verify' };
+    : { accent: T.accent, soft: T.accentSoft, border: T.accentBorder, tag: 'Action required' };
 
   return (
     <div style={{ maxWidth: '1000px', margin: '0 auto', width: '100%' }}>
@@ -117,10 +117,10 @@ export const LandlordActivationView = ({
               </div>
               <p style={{ fontSize: '0.88rem', color: T.textSecondary, margin: '8px 0 0', maxWidth: '680px', lineHeight: 1.6 }}>
                 {isPending
-                  ? 'Your identity documents and proof of ownership are currently being reviewed by the compliance committee. Your operational tools unlock the moment you are approved.'
+                  ? 'Documents are under compliance review. Tools unlock on approval.'
                   : isRejected
-                  ? `Application declined: ${profile?.rejection_reason || 'Documents could not be validated.'} Please update your application and resubmit.`
-                  : 'Submit your landlord application to obtain verified badge accreditation, list properties with zero restrictions, and manage tenants.'}
+                  ? `Application declined: ${profile?.rejection_reason || 'Documents could not be validated.'} Update and resubmit.`
+                  : 'Apply to get verified, list properties and manage tenants.'}
               </p>
             </div>
           </div>

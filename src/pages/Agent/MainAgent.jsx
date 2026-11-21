@@ -243,7 +243,7 @@ export default function MainAgent() {
               Verification required
             </h2>
             <p style={{ color: "var(--ag-muted)", fontSize: "0.88rem", lineHeight: 1.6, margin: "0 0 1.5rem" }}>
-              Your agent account is currently inactive. Complete your FICA document submission and onboarding interview to access {activeView === 'wallet' ? 'earnings and withdrawals' : `${activeView} and tenant matching`}.
+              Verify your account to access {activeView === 'wallet' ? 'earnings' : activeView}.
             </p>
             <button type="button" className="agent-btn agent-btn-primary" onClick={() => setActiveView("dashboard")}>
               Go to dashboard

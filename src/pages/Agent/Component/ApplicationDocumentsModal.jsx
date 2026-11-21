@@ -132,13 +132,13 @@ ${doc.details || 'Record generated from the application intake data. No file con
           <div className="doc-modal-header-info">
             <div className="doc-modal-badge">
               <ShieldCheck size={14} />
-              <span>Application documents</span>
+              <span>Documents</span>
             </div>
             <h2 className="doc-modal-title">
-              Application Documents &middot; {applicantName}
+              {applicantName}
             </h2>
             <p className="doc-modal-subtitle">
-              Application #{String(application.id).slice(0, 8)} &bull; {documentsList.length} file{documentsList.length !== 1 ? 's' : ''} attached
+              Application #{String(application.id).slice(0, 8)}, {documentsList.length} file{documentsList.length !== 1 ? 's' : ''} attached
             </p>
           </div>
           <button className="doc-modal-close" onClick={onClose} aria-label="Close modal">
@@ -169,7 +169,7 @@ ${doc.details || 'Record generated from the application intake data. No file con
                     <div className="doc-item-info">
                       <span className="doc-item-title">{doc.shortLabel || doc.title}</span>
                       <span className="doc-item-meta">
-                        {formatFileSize(doc.fileSize)} &bull; {doc.category || 'PDF'}
+                        {formatFileSize(doc.fileSize)}, {doc.category || 'PDF'}
                       </span>
                     </div>
                     {doc.verified && (
@@ -205,7 +205,7 @@ ${doc.details || 'Record generated from the application intake data. No file con
                     <div>
                       <h4 className="doc-toolbar-filename">{activeDoc.fileName}</h4>
                       <span className="doc-toolbar-status">
-                        Uploaded {new Date(activeDoc.uploadedAt).toLocaleDateString()} &bull; {formatFileSize(activeDoc.fileSize)}
+                        Uploaded {new Date(activeDoc.uploadedAt).toLocaleDateString()} ({formatFileSize(activeDoc.fileSize)})
                       </span>
                     </div>
                   </div>
@@ -263,7 +263,7 @@ ${doc.details || 'Record generated from the application intake data. No file con
                 <div className="doc-viewer-footer">
                   <div className="doc-footer-status">
                     <span className="doc-status-dot" />
-                    <span>Document attached &middot; Review before drafting the lease</span>
+                    <span>Document attached. Review before drafting the lease</span>
                   </div>
                   <button
                     type="button"

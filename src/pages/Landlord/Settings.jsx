@@ -241,7 +241,7 @@ export const Settings = () => {
             Account &amp; preferences
           </h1>
           <p style={{ color: T.textSecondary, fontSize: "0.9rem", maxWidth: 640, lineHeight: 1.6, marginTop: 8 }}>
-            Manage how your portfolio account is secured and how Place4U keeps you informed about leases, payments and maintenance.
+            Security, alerts and lease notifications.
           </p>
         </div>
 

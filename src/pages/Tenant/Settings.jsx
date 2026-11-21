@@ -373,7 +373,7 @@ export const Settings = ({ profile }) => {
               Settings
             </h1>
             <p className="mt-3 text-sm text-slate-600 leading-relaxed max-w-xl">
-              Manage notifications, security, privacy and your POPIA data rights — all in one place for{' '}
+              Security, privacy and POPIA data rights for{' '}
               <span className="font-medium text-slate-900">{displayName}</span>.
             </p>
           </div>
@@ -691,16 +691,16 @@ export const Settings = ({ profile }) => {
         </div>
       </SkyModal>
 
-      <SkyModal isOpen={showErasure} onClose={() => setShowErasure(false)} title="Request data erasure" eyebrow="POPIA · Section 24">
+      <SkyModal isOpen={showErasure} onClose={() => setShowErasure(false)} title="Request data erasure" eyebrow="POPIA Section 24">
         <div className="space-y-5">
           <p className="text-sm text-slate-600 leading-relaxed">
-            Pursuant to <strong className="text-slate-900">Section 24 of the Protection of Personal Information Act (POPIA)</strong>,
-            you are submitting a formal request to destroy or delete personal information held by Place4U.
+            Under <strong className="text-slate-900">POPIA Section 24</strong>, this is a formal request to delete your
+            personal information.
           </p>
           <div className="flex items-start gap-2.5 p-4 rounded-2xl bg-rose-50 border border-rose-200">
             <AlertTriangle size={16} className="text-rose-500 mt-0.5 shrink-0" />
             <p className="text-xs text-rose-700 leading-relaxed">
-              Once processed, your applications and verified profile records will be permanently expunged. This cannot be undone.
+              Applications and profile records are permanently deleted. This cannot be undone.
             </p>
           </div>
           <div>
@@ -738,7 +738,7 @@ export const Settings = ({ profile }) => {
         message={
           isDeactivated
             ? 'Your profile and activity will become visible again. You can deactivate at any time.'
-            : 'Your listings and applications will be hidden and activity paused. This is reversible — you can reactivate anytime.'
+            : 'Your listings and applications are hidden and activity paused. Reversible anytime.'
         }
         confirmText={isDeactivated ? 'Yes, reactivate' : 'Yes, deactivate'}
         cancelText="Cancel"

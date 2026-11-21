@@ -218,17 +218,17 @@ export const Profile = ({ userRow, profile, user, onRefresh }) => {
                 color: isVerified ? '#10b981' : isPending ? '#7da2ff' : '#f59e0b'
               }}>
                 {isVerified 
-                  ? 'Verified Agent (FICA Compliant)' 
+                  ? 'Verified agent' 
                   : isPending 
                   ? 'Verification Pending Review' 
-                  : 'Account Inactive • Verification Required'}
+                  : 'Account inactive'}
               </p>
               <p style={{ margin: '2px 0 0', fontSize: '0.78rem', color: '#94a3b8' }}>
                 {isVerified 
-                  ? 'Your profile is approved. You have full access to tenant matching and listings.' 
+                  ? 'Approved. Full access enabled.' 
                   : isPending 
-                  ? 'Your FICA documents and interview request are under review by Place4U compliance.' 
-                  : 'Please complete your FICA document submission and interview on the dashboard to unlock all agent features.'}
+                  ? 'Documents under compliance review.' 
+                  : 'Complete verification to unlock features.'}
               </p>
             </div>
           </div>

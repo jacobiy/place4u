@@ -17,7 +17,7 @@ export const DOCUMENT_CONFIG = {
         title: 'University Acceptance Letter / Proof of Registration',
         required: true,
         shortLabel: 'Acceptance Letter',
-        description: 'Official letter from university, college, or TVET confirming enrollment or active registration.',
+        description: 'University or college registration proof.',
         acceptedHint: 'Official registrar/admissions letterhead PDF'
       },
       {
@@ -25,7 +25,7 @@ export const DOCUMENT_CONFIG = {
         title: 'Bursary Confirmation / NSFAS Letter',
         required: true,
         shortLabel: 'NSFAS / Bursary Letter',
-        description: 'Official NSFAS funding status letter, university financial aid statement, or sponsor bursary proof.',
+        description: 'NSFAS or bursary award letter.',
         acceptedHint: 'Letterhead PDF showing sponsor details and allowance allocation'
       },
       {
@@ -33,7 +33,7 @@ export const DOCUMENT_CONFIG = {
         title: 'Certified South African ID / Passport',
         required: true,
         shortLabel: 'Certified ID / Passport',
-        description: 'Certified copy of green South African ID book, Smart ID card (front & back), or valid passport.',
+        description: 'Certified ID (both sides) or passport.',
         acceptedHint: 'Certified stamp not older than 3 months'
       },
       {
@@ -41,7 +41,7 @@ export const DOCUMENT_CONFIG = {
         title: 'Additional Supporting Document (Optional)',
         required: false,
         shortLabel: 'Student Card / Voucher',
-        description: 'Student card, course schedule, fee statement, or guarantor letter if applicable.',
+        description: 'Student card or guarantor letter.',
         acceptedHint: 'Optional supplementary PDF document'
       }
     ]
@@ -57,7 +57,7 @@ export const DOCUMENT_CONFIG = {
         title: 'Bank Statement (Latest 3 Months)',
         required: true,
         shortLabel: '3 Months Bank Statements',
-        description: 'Official electronic stamped bank statement reflecting salary and income deposits for the last 90 days.',
+        description: 'Stamped bank statement, last 90 days.',
         acceptedHint: 'Official e-stamped PDF from your banking app'
       },
       {
@@ -65,7 +65,7 @@ export const DOCUMENT_CONFIG = {
         title: 'Certified South African ID / Passport',
         required: true,
         shortLabel: 'Certified ID / Passport',
-        description: 'Certified copy of RSA green ID book, Smart ID card (both sides), or valid passport with work permit.',
+        description: 'Certified ID (both sides) or passport with permit.',
         acceptedHint: 'Clear certified copy in PDF format'
       },
       {
@@ -73,7 +73,7 @@ export const DOCUMENT_CONFIG = {
         title: 'Proof of Income / Latest Payslip',
         required: true,
         shortLabel: 'Latest Payslip / Proof of Income',
-        description: 'Most recent salary payslip (last 1-3 months) or official employer letter verifying employment status.',
+        description: 'Latest payslip or employer letter.',
         acceptedHint: 'PDF payslip or letter on company letterhead'
       },
       {
@@ -81,7 +81,7 @@ export const DOCUMENT_CONFIG = {
         title: 'Additional Supporting Document (Optional)',
         required: false,
         shortLabel: 'Reference / Proof of Address',
-        description: 'Previous landlord reference letter, municipal utility account, or letter of recommendation.',
+        description: 'Landlord reference or utility account.',
         acceptedHint: 'Optional supplementary PDF document'
       }
     ]
@@ -528,13 +528,13 @@ export default function PdfAttachmentSection({
         <div className="space-y-1">
           <p className="text-slate-900 font-semibold">
             {category === 'student_room' 
-              ? 'Student Room Verification Requirements' 
-              : 'Room & Residential Verification Requirements'}
+              ? 'Student room requirements' 
+              : 'Residential requirements'}
           </p>
           <p className="leading-relaxed">
             {category === 'student_room' 
-              ? 'For student accommodation, our vetting desk only requires your official University Acceptance Letter, Bursary / NSFAS confirmation award, and Certified ID document. All submissions must be PDF files.'
-              : 'For residential rooms and full properties, landlords require your latest 3 months bank statements, certified ID, and proof of income / payslip. All submissions must be PDF files.'}
+              ? 'Student room: acceptance letter, NSFAS or bursary proof, certified ID. PDF only.'
+              : 'Residential: 3 months bank statements, certified ID, proof of income. PDF only.'}
           </p>
         </div>
       </div>

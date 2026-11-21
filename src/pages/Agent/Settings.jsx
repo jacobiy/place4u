@@ -509,7 +509,7 @@ export const Settings = ({ userRow, profile, user, onRefresh, onLogout }) => {
         <div className="settings-card-body">
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
             <p style={{ fontSize: '0.82rem', color: '#cbd5e1', lineHeight: 1.6, margin: 0 }}>
-              Under Section 23 of POPIA, you have the right to request a complete record of all personal information held about you by Place4U. Click below to download your complete data profile in JSON format.
+              Download a full copy of your personal data (POPIA Section 23).
             </p>
 
             <div>
@@ -544,7 +544,7 @@ export const Settings = ({ userRow, profile, user, onRefresh, onLogout }) => {
             <div className="settings-danger-desc">
               <h4>Delete Agent Account</h4>
               <p>
-                Permanently deletes your agent profile, FICA documentation, active listings, and dissolves active tenant match assignments. All pending commission balances must be settled prior to account deletion.
+                Permanently deletes your profile, FICA documents, listings and active match assignments.
               </p>
             </div>
 
@@ -580,7 +580,7 @@ export const Settings = ({ userRow, profile, user, onRefresh, onLogout }) => {
             fontSize: '0.82rem',
             lineHeight: 1.5
           }}>
-            <strong>Warning:</strong> This action cannot be undone. All your agent verification records, property listings, and placement history will be permanently erased.
+            <strong>Warning:</strong> This cannot be undone. Verification records, listings and placement history are erased.
           </div>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>

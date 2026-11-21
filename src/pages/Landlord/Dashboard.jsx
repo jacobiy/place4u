@@ -200,14 +200,14 @@ export const Dashboard = ({
           </h3>
           <p style={{ color: T.textSecondary, fontSize: "0.9rem", maxWidth: 540, margin: "0 auto 1rem", lineHeight: 1.6 }}>
             {isRejected
-              ? `Your landlord application was declined: ${profile?.rejection_reason || "submitted proof of ownership or FICA identity documents did not match records"}. Operational metrics, units, and tenant tools remain locked until revised credentials are approved.`
+              ? `Application declined: ${profile?.rejection_reason || "documents did not match records"}. Tools stay locked until revised credentials are approved.`
               : profile?.application_status === "pending_review"
-              ? "Your application credentials and proof of property ownership are being reviewed by the compliance committee. Your dashboard tools unlock automatically once approved."
-              : "To safeguard the Place4U ecosystem against fraudulent listings, your rental units matrix, financial analytics, and tenant management tools unlock once your landlord application is submitted and approved."}
+              ? "Compliance is reviewing your documents. Tools unlock once approved."
+              : "Tools unlock once your application is submitted and approved."}
           </p>
           <div style={{ display: "inline-flex", alignItems: "center", gap: 8, marginTop: "1.25rem", fontSize: "0.78rem", color: T.textSecondary }}>
             <Clock size={14} color={isRejected ? T.red : T.accent} />
-            {isRejected ? "Use 'Resubmit Application' above to upload updated documents." : "Application review typically completes within 24 hours."}
+            {isRejected ? "Resubmit above with updated documents." : "Reviews usually finish within 24 hours."}
           </div>
         </div>
       ) : (
@@ -485,7 +485,7 @@ export const Dashboard = ({
                   <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "0.75rem 0", borderBottom: `1px solid ${T.border}` }}>
                     <Activity size={15} color={T.textMuted} />
                     <p style={{ fontSize: "0.83rem", color: T.textMuted }}>
-                      No activity recorded yet. Actions you take — publishing listings, updating units or uploading documents — will appear here.
+                      No activity yet.
                     </p>
                   </div>
                 )}

@@ -473,11 +473,8 @@ export const Wallet = ({
           <div>
             <h1 className="agent-wallet-title">
               <WalletIcon size={32} color="#10b981" />
-              Agent Wallet &amp; Payment Shares
+              Wallet
             </h1>
-            <p className="agent-wallet-subtitle">
-              Place4U pays <strong>50% of the application payment actually collected (up to R50.00 per processed file)</strong> directly to you. It is not a rent commission.
-            </p>
           </div>
 
           <div className="agent-wallet-header-actions">
@@ -569,7 +566,7 @@ export const Wallet = ({
         </header>
 
         <p className="agent-wallet-policy">
-          Earnings are 50% of the application fee actually collected (up to R50 per eligible completed file; a waived fee earns R0), paid by EFT. This is a share of the application fee, not rent commission.
+          50% of the application fee collected, capped at R50 per completed file. Paid by EFT, not rent commission.
         </p>
 
         {/* 1. Hero Metric Cards Grid */}
@@ -1121,7 +1118,7 @@ export const Wallet = ({
                 </h3>
               </div>
               <span style={{ fontSize: '0.74rem', color: '#cbd5e1', textAlign: 'right' }}>
-                Zero EFT Fee &bull; 24h Bank Clearance
+                Zero EFT Fee, 24h Bank Clearance
               </span>
             </div>
 
@@ -1298,7 +1295,7 @@ export const Wallet = ({
               <div>
                 <div className="agent-voucher-logo">PLACE4U PROPERTY PLATFORM</div>
                 <p style={{ margin: '2px 0 0', fontSize: '0.75rem', color: '#64748b' }}>
-                  REPUBLIC OF SOUTH AFRICA &bull; AGENT 50% FEE SHARE DISBURSEMENT
+                  REPUBLIC OF SOUTH AFRICA, AGENT 50% FEE SHARE DISBURSEMENT
                 </p>
               </div>
               <div style={{ textAlign: 'right' }}>
@@ -1365,7 +1362,7 @@ export const Wallet = ({
             <div style={{ marginTop: '1.25rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.72rem', color: '#64748b' }}>
                 <Lock size={12} />
-                <span>POPIA Certified &bull; Authorized by Place4U Disbursement Clearing</span>
+                <span>POPIA Certified, authorized by Place4U disbursement clearing</span>
               </div>
 
               <div style={{ display: 'flex', gap: '0.5rem' }}>

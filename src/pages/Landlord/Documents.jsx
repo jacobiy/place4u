@@ -279,7 +279,7 @@ export const Documents = ({ profile, properties = [], onProfileUpdate, onRefresh
         isOpen={!!docToDelete}
         title="Delete Verification Document?"
         itemName={docToDelete?.title}
-        message="Are you sure you want to permanently delete this document? The file will be unlinked from your landlord profile and removed from secure storage."
+        message="Permanently delete this document? The file is removed from storage."
         confirmText="Yes, Delete Document"
         cancelText="Cancel"
         type="danger"
@@ -342,8 +342,7 @@ export const Documents = ({ profile, properties = [], onProfileUpdate, onRefresh
             Proof of ownership &amp; compliance
           </h1>
           <p style={{ color: T.textSecondary, fontSize: "0.9rem", maxWidth: "620px", lineHeight: 1.6 }}>
-            Upload and manage title deeds, municipal rates certificates, identity verification, and electrical compliance
-            documents. Documents attached to a specific listing appear here alongside your profile credentials.
+            Manage title deeds, rates, identity and compliance documents.
           </p>
 
           <div style={{ marginTop: "1.1rem", maxWidth: 340 }}>
@@ -370,9 +369,9 @@ export const Documents = ({ profile, properties = [], onProfileUpdate, onRefresh
 
       {/* VERIFICATION STATUS CARDS */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 250px), 1fr))", gap: "1.25rem", marginBottom: "1.75rem" }}>
-        {statusCard({ eyebrow: "Proof of Ownership", title: hasOwnershipDoc ? "Title Deeds On File" : "No ownership document", caption: hasOwnershipDoc ? "Attached to a listing for review" : "Upload a title deed or rates clearance", icon: Shield, accent: hasOwnershipDoc ? T.emerald : T.amber, accentSoft: hasOwnershipDoc ? T.emeraldSoft : T.amberSoft, accentBorder: hasOwnershipDoc ? T.emeraldBorder : T.amberBorder, tag: hasOwnershipDoc ? "ON FILE" : "ACTION" })}
-        {statusCard({ eyebrow: "Identity Status", title: hasIdDoc ? "ID Document On File" : "No ID document", caption: hasIdDoc ? "Identity document attached" : "Upload your national ID or passport", icon: FileCheck, accent: hasIdDoc ? T.accent : T.amber, accentSoft: hasIdDoc ? T.accentSoft : T.amberSoft, accentBorder: hasIdDoc ? T.accentBorder : T.amberBorder, tag: hasIdDoc ? "ON FILE" : "ACTION" })}
-        {statusCard({ eyebrow: "Compliance & Rates", title: hasComplianceDoc ? "Rates / ECOC On File" : "No compliance documents", caption: hasComplianceDoc ? "Municipal / compliance certificates attached" : "Upload rates or a compliance certificate", icon: FileText, accent: hasComplianceDoc ? T.purple : T.amber, accentSoft: hasComplianceDoc ? T.purpleSoft : T.amberSoft, accentBorder: hasComplianceDoc ? T.purpleBorder : T.amberBorder, tag: hasComplianceDoc ? "ON FILE" : "ACTION" })}
+        {statusCard({ eyebrow: "Proof of Ownership", title: hasOwnershipDoc ? "Title deed on file" : "No ownership document", caption: hasOwnershipDoc ? "Attached for review" : "Upload a title deed or rates clearance", icon: Shield, accent: hasOwnershipDoc ? T.emerald : T.amber, accentSoft: hasOwnershipDoc ? T.emeraldSoft : T.amberSoft, accentBorder: hasOwnershipDoc ? T.emeraldBorder : T.amberBorder, tag: hasOwnershipDoc ? "ON FILE" : "ACTION" })}
+        {statusCard({ eyebrow: "Identity", title: hasIdDoc ? "ID on file" : "No ID document", caption: hasIdDoc ? "Identity document attached" : "Upload your ID or passport", icon: FileCheck, accent: hasIdDoc ? T.accent : T.amber, accentSoft: hasIdDoc ? T.accentSoft : T.amberSoft, accentBorder: hasIdDoc ? T.accentBorder : T.amberBorder, tag: hasIdDoc ? "ON FILE" : "ACTION" })}
+        {statusCard({ eyebrow: "Compliance & Rates", title: hasComplianceDoc ? "Rates on file" : "No compliance documents", caption: hasComplianceDoc ? "Certificates attached" : "Upload rates or a compliance certificate", icon: FileText, accent: hasComplianceDoc ? T.purple : T.amber, accentSoft: hasComplianceDoc ? T.purpleSoft : T.amberSoft, accentBorder: hasComplianceDoc ? T.purpleBorder : T.amberBorder, tag: hasComplianceDoc ? "ON FILE" : "ACTION" })}
       </div>
 
       {/* TOOLBAR */}
@@ -611,10 +610,10 @@ export const Documents = ({ profile, properties = [], onProfileUpdate, onRefresh
         }}>
           <Shield size={24} color={T.textMuted} style={{ marginBottom: "0.85rem" }} />
           <h3 style={{ fontFamily: SERIF, fontSize: "1.4rem", color: T.textPrimary, marginBottom: "0.5rem" }}>
-            No documents matched your criteria
+            No documents yet
           </h3>
           <p style={{ color: T.textMuted, fontSize: "0.85rem", maxWidth: "440px", marginBottom: "1.5rem", lineHeight: 1.6 }}>
-            Upload title deeds, municipal utility accounts, or national ID cards to verify your ownership of properties on Place4U.
+            Upload a title deed, utility account or ID to verify ownership.
           </p>
           <PrimaryBtn onClick={() => setIsUploadModalOpen(true)}>
             <Upload size={16} /> Upload Verification Document

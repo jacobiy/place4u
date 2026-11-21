@@ -595,7 +595,7 @@ export const Tenants = ({ profile, properties = [], user, onNavigate }) => {
               No incoming tenant applications yet
             </h2>
             <p style={{ color: T.textMuted, fontSize: "0.85rem", maxWidth: "440px", margin: "0 auto 1.5rem", lineHeight: 1.6 }}>
-              Prospective tenants applying for your listings or submitting search requests through agents will appear here automatically in real time.
+              Applications for your listings appear here automatically.
             </p>
             <div style={{ display: "flex", justifyContent: "center" }}>
               <SecondaryBtn onClick={fetchApplications}>

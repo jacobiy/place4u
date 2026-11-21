@@ -190,7 +190,7 @@ export default function AgentActivationView({
         <div className="dossier-title-group">
           <h1>Agent Onboarding & Verification</h1>
           <p>
-            Place4U requires statutory FICA identity verification and an introductory interview before operational tenant placement and commission withdrawal tools are unlocked for your profile.
+            FICA verification and an onboarding interview are required before placement and withdrawals unlock.
           </p>
         </div>
 
@@ -268,7 +268,7 @@ export default function AgentActivationView({
 
             <div className="dossier-action-footer">
               <p className="dossier-help-text">
-                Submissions are encrypted and reviewed in accordance with the Financial Intelligence Centre Act and Section 48 of the Property Practitioners Act.
+                Encrypted and reviewed under FICA and the Property Practitioners Act.
               </p>
 
               <button
@@ -371,7 +371,7 @@ export default function AgentActivationView({
             <div>
               <h4>Verification Under Review</h4>
               <p>
-                Your documentation has been received. Our compliance officer will contact you on <strong>{profile?.phone || userRow?.phone || 'your phone number'}</strong> via {profile?.preferred_contact_method === 'whatsapp' ? 'WhatsApp' : 'cellular call'} to conduct your brief onboarding interview.
+                Documents received. A compliance officer will call <strong>{profile?.phone || userRow?.phone || 'you'}</strong> to book your interview.
               </p>
             </div>
           </div>

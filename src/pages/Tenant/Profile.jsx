@@ -640,8 +640,7 @@ export const Profile = ({ profile: initialProfile, user }) => {
       <div className="flex items-start gap-3 px-5 py-4 rounded-[20px] bg-sky-50/60 border border-sky-100">
         <ShieldCheck size={16} className="text-sky-500 mt-0.5 shrink-0" />
         <p className="text-xs text-slate-500 leading-relaxed">
-          Your information is encrypted and POPIA-compliant. It is only ever shared with a landlord when you submit an
-          application — never sold or used for marketing.
+          Encrypted and POPIA-compliant. Shared only with a landlord when you apply.
         </p>
       </div>
     </div>

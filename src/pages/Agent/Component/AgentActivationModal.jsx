@@ -214,7 +214,7 @@ export default function AgentActivationModal({
           {step === 1 && (
             <>
               <div className="activation-notice-box">
-                Provide your official identity details as they appear on your South African ID / Passport. Information is confidential and strictly used for compliance verification.
+                Use your details exactly as they appear on your SA ID or passport.
               </div>
 
               {/* Full Name & ID Number */}
@@ -354,7 +354,7 @@ export default function AgentActivationModal({
           {step === 2 && (
             <>
               <div className="activation-notice-box">
-                Attach clear scans or photos of your FICA documentation. Files are encrypted and stored in compliance with POPIA standards.
+                Clear scans or photos. Encrypted and POPIA-compliant.
               </div>
 
               {/* 1. SA ID Upload */}

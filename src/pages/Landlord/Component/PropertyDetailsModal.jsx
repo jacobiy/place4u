@@ -676,10 +676,10 @@ export const PropertyDetailsModal = ({
               <div className="bg-slate-50 rounded-2xl p-4 border border-slate-200/90 text-xs text-slate-600 space-y-2">
                 <div className="font-bold flex items-center gap-1.5 text-slate-800">
                   <ShieldCheck className="w-4 h-4 text-[#006194]" />
-                  Place4U Guaranteed Lease Protection
+                  Lease protection
                 </div>
                 <p className="leading-relaxed">
-                  All applicant tenants undergo strict FICA vetting and 33% gross income qualification prior to lease signing.
+                  Tenants pass FICA vetting and a 33% income check before signing.
                 </p>
               </div>
             </aside>

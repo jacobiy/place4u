@@ -432,7 +432,7 @@ export const Dashboard = ({
                         <FileText size={15} color="#7da2ff" style={{ flexShrink: 0, marginTop: 2 }} />
                         <div>
                           <p className="ag-notif-text">
-                            New application from <strong>{tenant?.full_name || "Applicant"}</strong> for {app.preferred_areas?.[0] || "your area"}.
+                            New application: <strong>{tenant?.full_name || "Applicant"}</strong>, {app.preferred_areas?.[0] || "your area"}.
                           </p>
                           <span className="ag-notif-time">Status: {getStatusBadge(app.status).label}</span>
                         </div>
@@ -975,7 +975,7 @@ export const Dashboard = ({
                     </div>
                   </div>
                   <span style={{ fontSize: '0.75rem', fontWeight: 700, color: matchAnalysis.tierColor, whiteSpace: 'nowrap' }}>
-                    {matchAnalysis.verdict} →
+                    {matchAnalysis.verdict}
                   </span>
                 </div>
 
@@ -1050,7 +1050,7 @@ export const Dashboard = ({
         <Modal isOpen={isMatchModalOpen} onClose={() => setIsMatchModalOpen(false)} title="Matching engine" size="lg">
           <div style={{ display: 'flex', flexDirection: 'column', gap: 18, color: 'var(--ag-text)' }}>
             <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--ag-muted)', lineHeight: 1.55 }}>
-              Review candidate listings for an applicant based on budget, area preferences and unit specifications.
+              Filter listings by budget, area and unit type.
             </p>
 
             <div style={{ display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap' }}>
