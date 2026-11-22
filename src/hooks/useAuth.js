@@ -80,15 +80,15 @@ export async function resolveUserAccess(authUser) {
       // so a suspended admin cannot keep the console. Non-admin portals stay
       // reachable while pending so onboarding flows are not blocked.
       if (row.user_type === 'admin' && row.is_verified === false) {
-        return { role: 'admin', active: false, reason: 'disabled' }
+        return { role: 'admin', isVerified: false, active: false, reason: 'disabled' }
       }
 
-      return { role: row.user_type, active: true, reason: 'ok' }
+      return { role: row.user_type, isVerified: Boolean(row.is_verified), active: true, reason: 'ok' }
     }
 
     if (outcome.status === 'empty') {
       // Definitive: the request succeeded but no profile row exists.
-      return { role: null, active: false, reason: 'no-profile' }
+      return { role: null, isVerified: false, active: false, reason: 'no-profile' }
     }
 
     // Transient: a network error or a timeout. Back off briefly and retry once
@@ -118,6 +118,7 @@ export async function resolveUserRole(authUser) {
 export function useAuth() {
   const [user, setUser] = useState(null)
   const [role, setRole] = useState(null)
+  const [isVerified, setIsVerified] = useState(false)
   const [loading, setLoading] = useState(true)
   const mountedRef = useRef(true)
 
@@ -127,20 +128,23 @@ export function useAuth() {
     if (!authUser) {
       setUser(null)
       setRole(null)
+      setIsVerified(false)
       setLoading(false)
       return
     }
 
     setUser(authUser)
     try {
-      const userRole = await resolveUserRole(authUser)
+      const access = await resolveUserAccess(authUser)
       if (mountedRef.current) {
-        setRole(userRole)
+        setRole(access.active ? access.role : null)
+        setIsVerified(Boolean(access.isVerified))
       }
     } catch {
       if (mountedRef.current) {
         // Fail closed — never guess a role from client-controlled metadata.
         setRole(null)
+        setIsVerified(false)
       }
     } finally {
       if (mountedRef.current) {
@@ -231,6 +235,7 @@ export function useAuth() {
   return {
     user,
     role,
+    isVerified,
     loading,
     signUp,
     signIn,

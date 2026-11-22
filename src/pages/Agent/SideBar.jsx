@@ -13,7 +13,7 @@ import {
   GitBranch
 } from "lucide-react";
 import "./SideBar.css";
-import { getDefaultAvatar } from "../../utils/avatarHelper";
+import { getUserAvatar, AvatarImage } from "../../utils/avatarHelper";
 
 const initials = (nameOrEmail) => {
   const raw = (nameOrEmail || "").trim();
@@ -40,7 +40,7 @@ const SECONDARY = [
 export const Sidebar = ({ activeView, setActiveView, onLogout, profile, agentProfile, user }) => {
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const displayName = profile?.full_name || agentProfile?.full_name || user?.user_metadata?.full_name || user?.email || "Agent";
-  const isAgentVerified = Boolean(agentProfile?.is_verified === true);
+  const isAgentVerified = Boolean(agentProfile?.is_verified === true || profile?.is_verified === true);
 
   const groups = useMemo(
     () => [
@@ -130,11 +130,7 @@ export const Sidebar = ({ activeView, setActiveView, onLogout, profile, agentPro
             aria-expanded={isProfileOpen}
           >
             <span className="sb-identity-avatar">
-              {agentProfile?.profile_image_url ? (
-                <img src={agentProfile.profile_image_url} alt={displayName} />
-              ) : (
-                <img src={getDefaultAvatar('agent', agentProfile?.id || displayName)} alt={displayName} />
-              )}
+              <AvatarImage src={getUserAvatar(agentProfile || { full_name: displayName }, 'agent')} alt={displayName} />
               <span className={`sb-presence${isAgentVerified ? " is-on" : " is-off"}`} />
             </span>
             <span className="sb-identity-text">

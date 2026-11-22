@@ -167,6 +167,18 @@ export default function MatchPipelineView({
 
   const pendingFor = (m) => pendingActionForRole(m.state, role, m);
 
+  // Matches that ended in a tenant decline (or came back for redistribution
+  // after a post-viewing rejection). Surfaced as its own section so the agent
+  // can always answer "what did they reject and why" without digging through
+  // the full history.
+  const declinedMatches = useMemo(
+    () =>
+      matches.filter(
+        (m) => m && (m.state === MATCH_STATES.TENANT_DECLINED || m.state === MATCH_STATES.REDISTRIBUTION)
+      ),
+    [matches]
+  );
+
   const renderStages = (m) => {
     const current = progressIndex(m);
     const declined = isDeclined(m.state);
@@ -899,6 +911,13 @@ export default function MatchPipelineView({
             <SectionTitle t={t} label={byAction.count > 0 ? 'All matches' : 'Matches'} />
             <div style={{ display: 'grid', gap: 14 }}>{matches.map(renderCard)}</div>
           </div>
+
+          {declinedMatches.length > 0 && (role === 'agent' || role === 'admin') && (
+            <div>
+              <SectionTitle t={t} label={`Declined by tenant (${declinedMatches.length})`} />
+              <div style={{ display: 'grid', gap: 14 }}>{declinedMatches.map(renderCard)}</div>
+            </div>
+          )}
         </div>
       )}
 

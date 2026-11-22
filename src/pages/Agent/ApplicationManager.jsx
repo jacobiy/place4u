@@ -11,7 +11,8 @@ import {
   CheckCircle2,
   PackageCheck,
   ChevronDown,
-  ChevronUp
+  ChevronUp,
+  XCircle
 } from 'lucide-react';
 import Loading from '../../component/loading';
 import ApplicationSummaryPanel from './Component/ApplicationSummaryPanel';
@@ -246,6 +247,19 @@ export default function ApplicationManager({
         .map((m) => ({ match: m, property: properties.find((p) => p.id === m.propertyId) }))
         .filter((x) => x.property),
     [shipped, properties]
+  );
+
+  // Matches the agent shipped that the tenant subsequently rejected (pre-viewing
+  // -> terminal, post-viewing -> back to redistribution). The agent must be able
+  // to see which shipments were declined and why, or the shortlist silently
+  // looks like it never landed.
+  const declinedByTenant = useMemo(
+    () =>
+      matches
+        .filter((m) => m && (m.state === 'tenant_declined' || m.state === 'redistribution'))
+        .map((m) => ({ match: m, property: properties.find((p) => p.id === m.propertyId) }))
+        .filter((x) => x.property),
+    [matches, properties]
   );
 
   /* ---------------- Filter helpers ---------------- */
@@ -590,6 +604,7 @@ export default function ApplicationManager({
                 </h2>
                 <p>
                   {flagged.length} flagged · {shipped.length} shipped
+                  {declinedByTenant.length > 0 ? ` · ${declinedByTenant.length} declined by tenant` : ''}
                   {skipped.length > 0 ? ` · You skipped ${skipped.length} propert${skipped.length === 1 ? 'y' : 'ies'}` : ''}
                 </p>
               </div>
@@ -665,6 +680,24 @@ export default function ApplicationManager({
                       variant="shipped"
                       isNewBatch={Boolean(match.shippedAt)}
                       onView={setViewProperty}
+                    />
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {declinedByTenant.length > 0 && (
+              <div className="apm-shipped-section">
+                <div className="apm-shipped-head">
+                  <XCircle size={16} /> Declined by tenant ({declinedByTenant.length})
+                </div>
+                <div className="apm-draft-list">
+                  {declinedByTenant.map(({ match, property }) => (
+                    <PropertyMatchCard
+                      key={property.id}
+                      property={property}
+                      match={match}
+                      variant="shipped"
                     />
                   ))}
                 </div>

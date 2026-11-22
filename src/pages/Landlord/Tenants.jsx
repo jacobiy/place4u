@@ -16,7 +16,7 @@ import {
   normalizeApplicationStatus
 } from '../../services/applicationStatus';
 import { initials } from './Styles/helpers';
-import { getDefaultAvatar } from '../../utils/avatarHelper';
+import { AvatarImage, getDefaultAvatar } from '../../utils/avatarHelper';
 import Loading from '../../component/loading';
 
 const EYEBROW = { fontSize: "0.66rem", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.12em", color: T.textMuted, margin: 0 };
@@ -226,7 +226,7 @@ export const Tenants = ({ profile, properties = [], user, onNavigate }) => {
       overflow: "hidden", flexShrink: 0,
       border: `1px solid ${T.border}`
     }}>
-      <img
+      <AvatarImage
         src={getDefaultAvatar('tenant', seed || label)}
         alt={label || 'Tenant'}
         style={{ width: "100%", height: "100%", objectFit: "cover" }}

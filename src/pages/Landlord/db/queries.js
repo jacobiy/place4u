@@ -85,17 +85,36 @@ export const LandlordQueries = {
         .eq('user_id', userId)
         .maybeSingle();
       
-      // Single source of truth: landlord_profiles.application_status in the database.
+      // Single source of truth: users.is_verified and landlord_profiles.application_status in the database.
       // No localStorage caching of status. Remove any legacy cached copy from older builds.
       try {
         if (typeof window !== 'undefined' && window.localStorage) {
           localStorage.removeItem(`place4u_landlord_profile_${userId}`);
         }
       } catch {}
-      const determinedStatus = String(data?.application_status || 'not_applied').toLowerCase();
-      const isApproved = determinedStatus === 'approved';
-      const isRejected = determinedStatus === 'rejected';
-      const rejectionReason = data?.rejection_reason || null;
+      const userIsVerified = Boolean(userRow?.is_verified);
+      const rawStatus = String(data?.application_status || '').toLowerCase();
+      const isApproved = userIsVerified || rawStatus === 'approved';
+      const determinedStatus = isApproved ? 'approved' : (rawStatus || 'not_applied');
+      const isRejected = !isApproved && rawStatus === 'rejected';
+      const rejectionReason = isRejected ? (data?.rejection_reason || null) : null;
+
+      // Self-heal landlord_profiles row if users table is already verified
+      if (userIsVerified && data && data.application_status !== 'approved') {
+        supabase
+          .from('landlord_profiles')
+          .update({
+            application_status: 'approved',
+            account_status: 'active',
+            id_verified: true,
+            ownership_proof_verified: true,
+            approved_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          })
+          .eq('user_id', userId)
+          .then(() => {})
+          .catch(() => {});
+      }
 
       // Management tier: 'full_management' => full portfolio mode, anything else => listing only
       const determinedTier = data?.management_tier || 'full_management';
@@ -113,13 +132,14 @@ export const LandlordQueries = {
             management_tier: isFull ? 'full_management' : 'listing_only',
             manage_with_platform: isFull,
             application_status: determinedStatus,
+            account_status: isApproved ? 'active' : (data.account_status || 'pending'),
             rejection_reason: rejectionReason,
             is_verified: isApproved
           }
         };
       }
 
-      // If landlord_profiles row doesn't exist yet, synthesize a clean "not applied" profile
+      // If landlord_profiles row doesn't exist yet, synthesize a profile
       if (userRow) {
         const syntheticProfile = {
           is_synthetic: true,
@@ -131,12 +151,12 @@ export const LandlordQueries = {
           landlord_code: `LD-${userId.substring(0, 6).toUpperCase()}`,
           management_tier: 'full_management',
           manage_with_platform: true,
-          application_status: 'not_applied',
+          application_status: userIsVerified ? 'approved' : 'not_applied',
           rejection_reason: null,
-          is_verified: false,
-          id_verified: false,
-          ownership_proof_verified: false,
-          account_status: 'pending',
+          is_verified: userIsVerified,
+          id_verified: userIsVerified,
+          ownership_proof_verified: userIsVerified,
+          account_status: userIsVerified ? 'active' : 'pending',
           account_tier: 'basic',
           created_at: userRow.created_at,
           updated_at: userRow.updated_at || userRow.created_at,

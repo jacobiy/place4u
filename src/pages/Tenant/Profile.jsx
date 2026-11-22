@@ -19,7 +19,7 @@ import {
 import { TenantQueries } from './db/queries';
 import { useAuth } from '../../hooks/useAuth';
 import { AlertToast } from '../../component/AlertModal';
-import { getDefaultAvatar } from '../../utils/avatarHelper';
+import { getUserAvatar, AvatarImage } from '../../utils/avatarHelper';
 
 /* ------------------------------------------------------------------ */
 /*  Palette: matches the tenant dashboard — white surfaces, light-blue */
@@ -393,19 +393,11 @@ export const Profile = ({ profile: initialProfile, user }) => {
           <div className="flex items-center gap-5 sm:gap-6 min-w-0">
             <div className="relative shrink-0">
               <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-full overflow-hidden bg-slate-800 flex items-center justify-center text-white font-serif text-3xl">
-                {editedData?.profile_image_url || profile?.profile_image_url ? (
-                  <img
-                    src={editedData?.profile_image_url || profile?.profile_image_url}
-                    alt={displayName}
-                    className="w-full h-full object-cover"
-                  />
-                ) : (
-                  <img
-                    src={getDefaultAvatar('tenant', profile?.id || displayName)}
-                    alt={displayName}
-                    className="w-full h-full object-cover"
-                  />
-                )}
+                <AvatarImage
+                  src={editedData?.profile_image_url || getUserAvatar(profile, 'tenant')}
+                  alt={displayName}
+                  className="w-full h-full object-cover"
+                />
               </div>
 
               {/* Change-photo overlay */}

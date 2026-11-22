@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { User, Building, MapPin, Briefcase, Phone, FileText, CheckCircle, AlertCircle, Award, Save, Camera } from 'lucide-react';
 import { AgentQueries } from './db/queries';
-import { getDefaultAvatar } from '../../utils/avatarHelper';
+import { getUserAvatar, AvatarImage } from '../../utils/avatarHelper';
 import './Profile.css';
 
 export const Profile = ({ userRow, profile, user, onRefresh }) => {
@@ -152,11 +152,11 @@ export const Profile = ({ userRow, profile, user, onRefresh }) => {
           </div>
           <div className="profile-avatar-wrap">
             <div className="profile-avatar">
-              {avatarUrl ? (
-                <img src={avatarUrl} alt="Agent profile" className="profile-avatar-img" />
-              ) : (
-                <img src={getDefaultAvatar('agent', profile?.id || user?.id || formData.full_name)} alt="Agent profile" className="profile-avatar-img" />
-              )}
+              <AvatarImage
+                src={avatarUrl || getUserAvatar(profile || user || formData, 'agent')}
+                alt="Agent profile"
+                className="profile-avatar-img"
+              />
               {isUploadingAvatar && (
                 <div className="profile-avatar-loading">•••</div>
               )}

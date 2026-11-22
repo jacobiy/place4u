@@ -51,7 +51,7 @@ import {
   AGENT_SELECTABLE_APPLICATION_STATUSES,
   applicationStatusLabel
 } from '../../services/applicationStatus';
-import { getDefaultAvatar } from '../../utils/avatarHelper';
+import { AvatarImage, getUserAvatar } from '../../utils/avatarHelper';
 import './Dashboard.css';
 
 const DEFAULT_PROPERTY_IMAGE = "https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=900&auto=format&fit=crop&q=60";
@@ -97,12 +97,15 @@ export const Dashboard = ({
   tenantById = new Map(),
   userRow = null,
   profile = null,
+  isAgentVerified: propIsVerified,
   setActiveView = () => {},
   onRefresh = () => {},
   onUpdateStatus = () => {},
   loading = false
 }) => {
-  const isAgentVerified = Boolean(profile?.is_verified === true);
+  const isAgentVerified = Boolean(
+    propIsVerified ?? (profile?.is_verified === true || userRow?.is_verified === true)
+  );
 
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
@@ -459,11 +462,7 @@ export const Dashboard = ({
             title="View profile"
           >
             <div className="agent-avatar" style={{ width: 28, height: 28 }}>
-              {userRow?.profile_picture ? (
-                <img src={userRow.profile_picture} alt="Agent" />
-              ) : (
-                <img src={getDefaultAvatar('agent', userRow?.id || agentName)} alt="Agent" />
-              )}
+              <AvatarImage src={getUserAvatar(userRow || { full_name: agentName }, 'agent')} alt="Agent" />
             </div>
             <span>{agentName}</span>
           </div>
@@ -566,11 +565,7 @@ export const Dashboard = ({
                             <td>
                               <div className="ag-tenant-cell">
                                 <div className="agent-avatar" style={{ width: 34, height: 34 }}>
-                                  {tenant?.profile_picture ? (
-                                    <img src={tenant.profile_picture} alt="Applicant" />
-                                  ) : (
-                                    <img src={getDefaultAvatar('tenant', tenant?.id || tenant?.full_name || tenant?.email)} alt="Applicant" />
-                                  )}
+                                  <AvatarImage src={getUserAvatar(tenant, 'tenant')} alt="Applicant" />
                                 </div>
                                 <div style={{ minWidth: 0 }}>
                                   <div className="ag-tenant-name">{tenant?.full_name || "Prospective tenant"}</div>
@@ -914,11 +909,7 @@ export const Dashboard = ({
               <div style={{ display: 'flex', flexDirection: 'column', gap: 20, color: 'var(--ag-text)' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 14, paddingBottom: 18, borderBottom: '1px solid var(--ag-line)' }}>
                   <div className="agent-avatar" style={{ width: 48, height: 48, fontSize: '1.05rem' }}>
-                    {tenant?.profile_picture ? (
-                      <img src={tenant.profile_picture} alt="Applicant" />
-                    ) : (
-                      <img src={getDefaultAvatar('tenant', tenant?.id || tenant?.full_name || tenant?.email)} alt="Applicant" />
-                    )}
+                    <AvatarImage src={getUserAvatar(tenant, 'tenant')} alt="Applicant" />
                   </div>
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <h3 style={{ margin: 0, fontSize: '1.05rem', fontWeight: 700 }}>{tenant?.full_name || "Applicant"}</h3>

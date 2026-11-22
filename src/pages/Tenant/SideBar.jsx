@@ -1,7 +1,7 @@
 import { LayoutDashboard, Home, User, Settings, LogOut, ChevronDown, FileText, Menu, X, ShieldCheck, GitBranch } from "lucide-react";
 import { T } from './Styles/designTokens';
 import { useState, useRef, useEffect } from "react";
-import { getDefaultAvatar } from '../../utils/avatarHelper';
+import { getUserAvatar, AvatarImage } from '../../utils/avatarHelper';
 
 const initials = (nameOrEmail) => {
   const raw = (nameOrEmail || "").trim();
@@ -195,8 +195,8 @@ export const Sidebar = ({ activeView, setActiveView, applicationsCount, matchesC
             overflow: "hidden",
             flexShrink: 0
           }}>
-            <img
-              src={profile?.profile_image_url || getDefaultAvatar('tenant', profile?.id || displayName)}
+            <AvatarImage
+              src={getUserAvatar(profile || { full_name: displayName }, 'tenant')}
               alt={displayName}
               style={{ width: "100%", height: "100%", objectFit: "cover" }}
             />

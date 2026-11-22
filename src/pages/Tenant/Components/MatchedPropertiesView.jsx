@@ -1,10 +1,10 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import {
   Search, CheckCircle2, Building2, MapPin, Calendar, Clock,
-  Eye, Check, X, PackageCheck, ChevronRight, ShieldCheck, Key
+  Eye, Check, X, PackageCheck, ChevronRight, ShieldCheck, Key, XCircle
 } from 'lucide-react';
 import { AlertToast } from '../../../component/AlertModal';
-import { acceptMatchAsTenant } from '../../../services/matchWorkflowService';
+import { acceptMatchAsTenant, declineMatchAsTenant, canTenantDecline } from '../../../services/matchWorkflowService';
 
 /* ------------------------------------------------------------------ */
 /*  Palette: white surfaces, light-blue washes, one confident blue.    */
@@ -122,6 +122,9 @@ export default function MatchedPropertiesView({
   const [categoryFilter, setCategoryFilter] = useState('all'); // 'all' | 'residential' | 'student'
   const [toast, setToast] = useState(null);
   const [bookingMatch, setBookingMatch] = useState(null);
+  const [declineCard, setDeclineCard] = useState(null);
+  const [declineReason, setDeclineReason] = useState('');
+  const [decliningBusy, setDecliningBusy] = useState(false);
   const [bookingDate, setBookingDate] = useState(() => new Date().toISOString().slice(0, 10));
   const [bookingTime, setBookingTime] = useState('09:00');
   const [bookingBusy, setBookingBusy] = useState(false);
@@ -196,6 +199,33 @@ export default function MatchedPropertiesView({
       setToast({
         type: 'error',
         title: 'Could not accept match',
+        message: res.error || 'Please try again.'
+      });
+    }
+  };
+
+  const openDecline = (card) => {
+    setDeclineCard(card);
+    setDeclineReason('');
+  };
+
+  const handleDecline = async () => {
+    if (!declineCard?.matchId || decliningBusy) return;
+    setDecliningBusy(true);
+    const res = await declineMatchAsTenant(declineCard.matchId, declineReason.trim() || null);
+    setDecliningBusy(false);
+
+    if (res.success) {
+      setDeclineCard(null);
+      setToast({
+        type: 'success',
+        title: 'Match declined',
+        message: `You declined ${propertyLabel(declineCard.property)}. Your agent has been notified and will work the next match.`
+      });
+    } else {
+      setToast({
+        type: 'error',
+        title: 'Could not decline match',
         message: res.error || 'Please try again.'
       });
     }
@@ -450,14 +480,26 @@ export default function MatchedPropertiesView({
                       </button>
 
                       {card.state === 'shipped' ? (
-                        <button
-                          type="button"
-                          onClick={() => setBookingMatch(card)}
-                          className="h-10 px-4 rounded-full text-xs font-semibold flex items-center gap-2 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-emerald-700 transition-colors cursor-pointer"
-                        >
-                          <Calendar size={14} />
-                          Accept &amp; book session
-                        </button>
+                        <>
+                          <button
+                            type="button"
+                            onClick={() => setBookingMatch(card)}
+                            className="h-10 px-4 rounded-full text-xs font-semibold flex items-center gap-2 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-emerald-700 transition-colors cursor-pointer"
+                          >
+                            <Calendar size={14} />
+                            Accept &amp; book session
+                          </button>
+                          {canTenantDecline(card.state) && (
+                            <button
+                              type="button"
+                              onClick={() => openDecline(card)}
+                              className={`h-10 px-4 rounded-full text-xs font-semibold flex items-center gap-2 ${BTN_OUTLINE}`}
+                            >
+                              <XCircle size={14} />
+                              Decline
+                            </button>
+                          )}
+                        </>
                       ) : card.state === 'scheduled' ? (
                         <button
                           type="button"
@@ -528,6 +570,59 @@ export default function MatchedPropertiesView({
             })}
           </div>
         </section>
+      )}
+
+      {/* ===================== DECLINE MATCH ================== */}
+      {declineCard && (
+        <ModalShell onClose={() => !decliningBusy && setDeclineCard(null)} maxWidth="max-w-md">
+          <ModalHeader
+            eyebrow="Decline match"
+            title="Decline this match"
+            subtitle={propertyLabel(declineCard.property)}
+            onClose={() => !decliningBusy && setDeclineCard(null)}
+          />
+
+          <div className="space-y-5">
+            <p className="p-3.5 rounded-xl bg-amber-50 border border-amber-100 text-xs text-amber-800 leading-relaxed">
+              You can decline before a viewing to let your agent move to the next property, or after a viewing to send the
+              match back for re-negotiation. Your agent will always see your reason.
+            </p>
+
+            <div>
+              <label htmlFor="decline-reason" className="block text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400 mb-2">
+                Reason <span className="font-normal normal-case tracking-normal">(optional)</span>
+              </label>
+              <textarea
+                id="decline-reason"
+                value={declineReason}
+                onChange={(e) => setDeclineReason(e.target.value)}
+                placeholder="e.g. Too far from work, deposit too high, rent above budget…"
+                rows={3}
+                className="w-full rounded-xl border border-slate-200 p-3 text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:border-amber-400 focus:ring-4 focus:ring-amber-100 transition resize-none"
+              />
+            </div>
+          </div>
+
+          <div className="flex items-center justify-end gap-3 pt-1">
+            <button
+              type="button"
+              onClick={() => setDeclineCard(null)}
+              disabled={decliningBusy}
+              className="h-11 px-5 rounded-full text-xs font-semibold text-slate-500 hover:text-slate-900 transition-colors cursor-pointer disabled:opacity-50"
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              onClick={handleDecline}
+              disabled={decliningBusy}
+              className={`h-11 px-6 rounded-full text-xs font-bold flex items-center gap-1.5 disabled:opacity-60 ${BTN_PRIMARY}`}
+            >
+              <XCircle size={14} />
+              {decliningBusy ? 'Declining…' : 'Decline match'}
+            </button>
+          </div>
+        </ModalShell>
       )}
 
       {/* ===================== ACCEPT & BOOK SESSION ================== */}

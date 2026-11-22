@@ -20,7 +20,7 @@ import { subscribeToApplicationUpdates, broadcastApplicationUpdate } from "../..
 import Loading from "../../component/loading";
 
 export default function MainAgent() {
-  const { user, loading: authLoading, signOut } = useAuth();
+  const { user, isVerified: authIsVerified, loading: authLoading, signOut } = useAuth();
   const navigate = useNavigate();
   const [activeView, setActiveView] = useState("dashboard");
   const [userRow, setUserRow] = useState(null);
@@ -230,7 +230,11 @@ export default function MainAgent() {
       );
     }
 
-    const isAgentVerified = Boolean(profile?.is_verified === true);
+    const isAgentVerified = Boolean(
+      profile?.is_verified === true ||
+      userRow?.is_verified === true ||
+      authIsVerified === true
+    );
 
     if (!isAgentVerified && ["applications", "application-manager", "pipeline", "properties", "wallet"].includes(activeView)) {
       return (
@@ -262,7 +266,8 @@ export default function MainAgent() {
             properties={properties} 
             tenantById={tenantById} 
             userRow={userRow}
-            profile={profile}
+            profile={profile ? { ...profile, is_verified: isAgentVerified } : { is_verified: isAgentVerified }}
+            isAgentVerified={isAgentVerified}
             setActiveView={setActiveView}
             onRefresh={refresh}
             onUpdateStatus={handleUpdateStatus}
@@ -349,11 +354,23 @@ export default function MainAgent() {
     }
   };
 
+  const layoutIsAgentVerified = Boolean(
+    profile?.is_verified === true ||
+    userRow?.is_verified === true ||
+    authIsVerified === true
+  );
+  const layoutAgentProfile = profile
+    ? { ...profile, is_verified: layoutIsAgentVerified }
+    : { is_verified: layoutIsAgentVerified };
+  const layoutUserRow = userRow
+    ? { ...userRow, is_verified: layoutIsAgentVerified }
+    : { is_verified: layoutIsAgentVerified };
+
   return (
     <>
       <style>{globalStyle}</style>
       <div className="agent-console agent-layout-wrapper">
-        {!isMobile && <Sidebar activeView={activeView} setActiveView={setActiveView} onLogout={handleLogout} profile={userRow} agentProfile={profile} user={user} />}
+        {!isMobile && <Sidebar activeView={activeView} setActiveView={setActiveView} onLogout={handleLogout} profile={layoutUserRow} agentProfile={layoutAgentProfile} user={user} />}
 
         {isMobile && isMobileMenuOpen && (
           <>
@@ -366,15 +383,15 @@ export default function MainAgent() {
                   setIsMobileMenuOpen(false);
                 }}
                 onLogout={handleLogout}
-                profile={userRow}
-                agentProfile={profile}
+                profile={layoutUserRow}
+                agentProfile={layoutAgentProfile}
                 user={user}
               />
             </div>
           </>
         )}
 
-        <main className={`agent-main-content ${isMobile ? 'is-mobile' : ''} ${activeView === 'dashboard' ? 'is-dashboard' : ''} ${activeView === 'dashboard' && profile?.is_verified === true ? 'is-verified-dashboard' : ''} ${['applications', 'pipeline', 'properties', 'wallet'].includes(activeView) ? 'is-workspace' : ''} ${activeView === 'wallet' ? 'is-wallet' : ''} ${activeView === 'application-manager' ? 'is-manager' : ''}`}>
+        <main className={`agent-main-content ${isMobile ? 'is-mobile' : ''} ${activeView === 'dashboard' ? 'is-dashboard' : ''} ${activeView === 'dashboard' && layoutIsAgentVerified ? 'is-verified-dashboard' : ''} ${['applications', 'pipeline', 'properties', 'wallet'].includes(activeView) ? 'is-workspace' : ''} ${activeView === 'wallet' ? 'is-wallet' : ''} ${activeView === 'application-manager' ? 'is-manager' : ''}`}>
           {isMobile && (
             <div className="agent-mobile-header">
               <button

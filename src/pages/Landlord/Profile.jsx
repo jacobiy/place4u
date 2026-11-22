@@ -18,7 +18,7 @@ import { useAuth } from '../../hooks/useAuth';
 import { supabase } from '../../utils/Supabase';
 import { ConfirmModal } from '../../component/AlertModal';
 import { initials } from './Styles/helpers';
-import { getDefaultAvatar } from '../../utils/avatarHelper';
+import { getUserAvatar, AvatarImage } from '../../utils/avatarHelper';
 import Loading from '../../component/loading';
 
 const EYEBROW = { fontSize: "0.68rem", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: T.textMuted, margin: 0 };
@@ -514,10 +514,8 @@ export const Profile = ({ onClose, isModal = false }) => {
             }}>
               {uploadingImage ? (
                 <div style={{ color: "#fff", fontSize: "0.75rem" }}>Uploading…</div>
-              ) : profile?.profile_image_url ? (
-                <img src={profile.profile_image_url} alt="Profile" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
               ) : (
-                <img src={getDefaultAvatar('landlord', profile?.id || displayName)} alt="Profile" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                <AvatarImage src={getUserAvatar(profile, 'landlord')} alt="Profile" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
               )}
             </div>
             <label style={{

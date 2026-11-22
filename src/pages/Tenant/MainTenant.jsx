@@ -255,6 +255,12 @@ export default function MainTenant() {
       if (isMounted && res?.success && Array.isArray(res.data)) {
         setPipelineMatches(res.data);
       }
+      // The shipped list is state-filtered server-side, so a tenant decline
+      // (shipped -> tenant_declined) must drop the card out of it promptly.
+      const shippedRes = await listTenantMatches();
+      if (isMounted && shippedRes?.success && Array.isArray(shippedRes.data)) {
+        setTenantMatches(shippedRes.data);
+      }
     };
     const unsubscribePipeline = subscribeToMatchPipeline(refreshPipeline);
     return () => {

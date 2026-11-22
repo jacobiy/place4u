@@ -11,7 +11,8 @@ import {
   RotateCcw,
   Info,
   MessageSquare,
-  CheckCircle2
+  CheckCircle2,
+  XCircle
 } from 'lucide-react';
 import { describeProperty } from '../../../utils/propertyLabel';
 
@@ -66,6 +67,7 @@ export default function PropertyMatchCard({
   const isStudent = (p.property_type || '').toLowerCase().includes('student');
 
   const isFlagged = state === 'flagged';
+  const isDeclined = state === 'tenant_declined' || state === 'redistribution';
 
   return (
     <article className={`apm-card ${isFlagged ? 'is-flagged' : ''}`}>
@@ -83,9 +85,14 @@ export default function PropertyMatchCard({
             R{rent(p).toLocaleString('en-ZA')}
             <span>/mo</span>
           </div>
-          {variant === 'shipped' && (
+          {variant === 'shipped' && !isDeclined && (
             <span className="apm-state-badge shipped">
               <CheckCircle2 size={12} /> Shipped
+            </span>
+          )}
+          {variant === 'shipped' && isDeclined && (
+            <span className="apm-state-badge declined">
+              <XCircle size={12} /> Declined by tenant
             </span>
           )}
           {variant === 'result' && isFlagged && (
@@ -212,6 +219,12 @@ export default function PropertyMatchCard({
 
         {variant === 'shipped' && match?.matchNote && (
           <div className="apm-card-skipreason">Note: {match.matchNote}</div>
+        )}
+
+        {variant === 'shipped' && isDeclined && (
+          <div className="apm-card-skipreason">
+            Reason: {match?.declineReason || 'Tenant rejected this match.'}
+          </div>
         )}
       </div>
     </article>

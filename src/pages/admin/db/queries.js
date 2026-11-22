@@ -391,9 +391,10 @@ export const getAdminUsers = async () => {
 
 // Toggle user verification
 export const toggleUserVerification = async (userId, isVerified) => {
+  const now = new Date().toISOString()
   const { data, error } = await supabase
     .from('users')
-    .update({ is_verified: isVerified })
+    .update({ is_verified: isVerified, updated_at: now })
     .eq('id', userId)
     .select()
     .single()
@@ -402,6 +403,35 @@ export const toggleUserVerification = async (userId, isVerified) => {
     console.error('Error updating user verification:', error)
     throw error
   }
+
+  // Also sync role profile tables so agent_profiles and landlord_profiles stay in sync
+  try {
+    if (data?.user_type === 'agent') {
+      await supabase
+        .from('agent_profiles')
+        .update({
+          is_verified: isVerified,
+          verification_status: isVerified ? 'verified' : 'rejected',
+          verified_at: isVerified ? now : null
+        })
+        .eq('user_id', userId)
+    } else if (data?.user_type === 'landlord') {
+      await supabase
+        .from('landlord_profiles')
+        .update({
+          application_status: isVerified ? 'approved' : 'rejected',
+          account_status: isVerified ? 'active' : 'pending',
+          id_verified: isVerified,
+          ownership_proof_verified: isVerified,
+          approved_at: isVerified ? now : null,
+          updated_at: now
+        })
+        .eq('user_id', userId)
+    }
+  } catch (syncErr) {
+    console.warn('Could not sync role profile verification:', syncErr)
+  }
+
   return data
 }
 

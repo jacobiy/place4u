@@ -3,7 +3,7 @@ import {
 } from "lucide-react";
 import { CHROME, T } from './Styles/designTokens';
 import { initials } from './Styles/helpers';
-import { getDefaultAvatar } from '../../utils/avatarHelper';
+import { getUserAvatar, AvatarImage } from '../../utils/avatarHelper';
 import { useState, useRef, useEffect } from "react";
 
 export const Sidebar = ({ activeView, setActiveView, onLogout, profile, user }) => {
@@ -183,11 +183,7 @@ export const Sidebar = ({ activeView, setActiveView, onLogout, profile, user }) 
               display: "flex", alignItems: "center", justifyContent: "center",
               fontSize: "0.85rem", fontWeight: 700, color: "#fff", overflow: "hidden",
             }}>
-              {profile?.profile_image_url ? (
-                <img src={profile.profile_image_url} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-              ) : (
-                <img src={getDefaultAvatar('landlord', profile?.id || displayName)} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-              )}
+              <AvatarImage src={getUserAvatar(profile || { full_name: displayName }, 'landlord')} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
             </div>
             <div style={{ flex: 1, textAlign: "left", minWidth: 0 }}>
               <p style={{ fontSize: "0.84rem", fontWeight: 600, color: CHROME.text, lineHeight: 1.2, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>

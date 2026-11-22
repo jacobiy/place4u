@@ -764,6 +764,12 @@
   border: 1px solid rgba(16, 185, 129, 0.35);
 }
 
+.apm-state-badge.declined {
+  background: rgba(239, 68, 68, 0.16);
+  color: #fca5a5;
+  border: 1px solid rgba(239, 68, 68, 0.35);
+}
+
 .apm-card-loc {
   display: flex;
   align-items: center;

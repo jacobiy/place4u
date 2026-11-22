@@ -28,7 +28,16 @@ export const AgentQueries = {
     try {
       const cached = this._getCache(userId);
 
-      // 1. Fetch from agent_profiles table in Supabase
+      // 1. Fetch user record from users table to get authoritative is_verified ground truth
+      const { data: uRow } = await supabase
+        .from('users')
+        .select('id, full_name, email, phone, id_number, is_verified, created_at')
+        .eq('id', userId)
+        .maybeSingle();
+
+      const userIsVerified = Boolean(uRow?.is_verified);
+
+      // 2. Fetch from agent_profiles table in Supabase
       const { data, error } = await supabase
         .from('agent_profiles')
         .select('*')
@@ -36,20 +45,30 @@ export const AgentQueries = {
         .maybeSingle();
 
       if (!error && data) {
-        this._setCache(userId, data);
-        return { success: true, data };
+        const verified = Boolean(data.is_verified || userIsVerified);
+        const resolved = {
+          ...data,
+          is_verified: verified,
+          verification_status: verified
+            ? 'verified'
+            : (data.verification_status || 'not_applied')
+        };
+
+        // Self-heal agent_profiles row if users table is already verified
+        if (userIsVerified && !data.is_verified) {
+          supabase
+            .from('agent_profiles')
+            .update({ is_verified: true, verification_status: 'verified', verified_at: new Date().toISOString() })
+            .eq('user_id', userId)
+            .then(() => {})
+            .catch(() => {});
+        }
+
+        this._setCache(userId, resolved);
+        return { success: true, data: resolved };
       }
 
-      // 2. If row does not exist in agent_profiles table:
-      // Fetch basic user information from users table
-      const { data: uRow } = await supabase
-        .from('users')
-        .select('id, full_name, email, phone, id_number, created_at')
-        .eq('id', userId)
-        .maybeSingle();
-
-      // Create an initial unverified profile. Note: is_verified is strictly false
-      // until the agent completes FICA submission and passes review.
+      // 3. If row does not exist in agent_profiles table:
       const initialRow = {
         user_id: userId,
         full_name: uRow?.full_name || cached?.full_name || "",
@@ -69,8 +88,8 @@ export const AgentQueries = {
         viewing_alerts: cached?.viewing_alerts ?? true,
         id_document_url: cached?.id_document_url || null,
         proof_of_residence_url: cached?.proof_of_residence_url || null,
-        verification_status: cached?.verification_status || "not_applied",
-        is_verified: false,
+        verification_status: userIsVerified ? "verified" : (cached?.verification_status || "not_applied"),
+        is_verified: userIsVerified,
         submitted_at: cached?.submitted_at || null,
         interview_date: cached?.interview_date || null
       };
@@ -82,8 +101,13 @@ export const AgentQueries = {
           .select()
           .single();
         if (!createErr && created) {
-          this._setCache(userId, created);
-          return { success: true, data: created };
+          const resolvedCreated = {
+            ...created,
+            is_verified: userIsVerified || Boolean(created.is_verified),
+            verification_status: (userIsVerified || created.is_verified) ? 'verified' : created.verification_status
+          };
+          this._setCache(userId, resolvedCreated);
+          return { success: true, data: resolvedCreated };
         }
       } catch (insErr) {
         console.warn('Could not auto-insert initial agent profile in Supabase:', insErr);
@@ -93,8 +117,8 @@ export const AgentQueries = {
       const fallback = {
         id: userId,
         ...initialRow,
-        is_verified: Boolean(cached?.is_verified ?? false),
-        verification_status: cached?.verification_status || (cached?.is_verified ? 'verified' : 'not_applied')
+        is_verified: userIsVerified || Boolean(cached?.is_verified ?? false),
+        verification_status: (userIsVerified || cached?.is_verified) ? 'verified' : (cached?.verification_status || 'not_applied')
       };
       this._setCache(userId, fallback);
       return { success: true, data: fallback };
