@@ -14,7 +14,7 @@
 # header to "Content-Security-Policy-Report-Only".
 
 /*
-  Content-Security-Policy: default-src 'self'; base-uri 'self'; object-src 'self' blob: https://rfajxzjrzmckroitcqxz.supabase.co; frame-ancestors 'none'; form-action 'self' https://*.paypal.com; script-src 'self' https://*.paypal.com; worker-src 'self' blob:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: blob: https:; connect-src 'self' https://rfajxzjrzmckroitcqxz.supabase.co wss://rfajxzjrzmckroitcqxz.supabase.co https://*.paypal.com; frame-src 'self' blob: https://rfajxzjrzmckroitcqxz.supabase.co https://*.paypal.com; manifest-src 'self'; upgrade-insecure-requests
+  Content-Security-Policy: default-src 'self'; base-uri 'self'; object-src 'self' blob: https://rfajxzjrzmckroitcqxz.supabase.co; frame-ancestors 'none'; form-action 'self' https://*.paypal.com; script-src 'self' https://*.paypal.com 'unsafe-inline'; worker-src 'self' blob:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: blob: https:; connect-src 'self' https://rfajxzjrzmckroitcqxz.supabase.co wss://rfajxzjrzmckroitcqxz.supabase.co https://*.paypal.com; frame-src 'self' blob: https://rfajxzjrzmckroitcqxz.supabase.co https://*.paypal.com; manifest-src 'self'; upgrade-insecure-requests
   X-Frame-Options: DENY
   X-Content-Type-Options: nosniff
   Referrer-Policy: strict-origin-when-cross-origin
