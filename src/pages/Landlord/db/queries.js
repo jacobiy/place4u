@@ -1387,18 +1387,13 @@ export const LandlordQueries = {
           cacheControl: '3600',
           upsert: false
         });
-  
-      console.log("UPLOAD ERROR:", uploadError);
-      console.log("UPLOAD DATA:", uploadData);
-  
+
       if (uploadError) throw uploadError;
-  
+
       const { data } = supabase.storage
         .from(bucket)
         .getPublicUrl(filePath);
-  
-      console.log("PUBLIC URL:", data.publicUrl);
-  
+
       return {
         success: true,
         url: data.publicUrl
