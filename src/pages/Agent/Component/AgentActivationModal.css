@@ -16,8 +16,8 @@
 
 .activation-modal-card {
   background: #101726;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 14px;
+  border: 1px solid var(--ag-line);
+  border-radius: var(--ag-radius, 18px);
   width: 100%;
   max-width: 620px;
   box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.75);
@@ -31,7 +31,7 @@
 /* Header */
 .activation-modal-header {
   padding: 1.5rem 1.75rem 1.25rem;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+  border-bottom: 1px solid var(--ag-line);
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
@@ -40,8 +40,9 @@
 }
 
 .activation-modal-header h3 {
+  font-family: var(--ag-font-display);
   font-size: 1.2rem;
-  font-weight: 700;
+  font-weight: 600;
   color: #f8fafc;
   margin: 0 0 0.25rem;
   letter-spacing: -0.015em;
@@ -49,7 +50,7 @@
 
 .activation-modal-header p {
   font-size: 0.82rem;
-  color: #94a3b8;
+  color: var(--ag-muted);
   margin: 0;
   line-height: 1.45;
 }
@@ -57,10 +58,10 @@
 .activation-modal-close {
   background: transparent;
   border: none;
-  color: #64748b;
+  color: var(--ag-dim);
   cursor: pointer;
   padding: 0.35rem;
-  border-radius: 6px;
+  border-radius: 8px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -168,8 +169,8 @@
 .activation-field textarea {
   padding: 0.65rem 0.85rem;
   background: #090e1a;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  border-radius: 6px;
+  border: 1px solid var(--ag-line);
+  border-radius: 8px;
   color: #f8fafc;
   font-size: 0.85rem;
   outline: none;
@@ -180,8 +181,8 @@
 .activation-field input:focus,
 .activation-field select:focus,
 .activation-field textarea:focus {
-  border-color: #4f7ef8;
-  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+  border-color: var(--ag-accent);
+  box-shadow: 0 0 0 2px var(--ag-accent-soft);
 }
 
 .activation-field input:disabled {
@@ -194,8 +195,8 @@
 .upload-dropzone-card {
   padding: 1.15rem;
   background: #0c121e;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 8px;
+  border: 1px solid var(--ag-line);
+  border-radius: var(--ag-radius-sm, 12px);
   display: flex;
   flex-direction: column;
   gap: 0.85rem;
@@ -215,14 +216,14 @@
 
 .upload-dropzone-desc {
   font-size: 0.75rem;
-  color: #94a3b8;
+  color: var(--ag-muted);
   margin: 0;
 }
 
 .upload-dropzone-box {
   padding: 1.25rem;
-  border: 1px dashed rgba(255, 255, 255, 0.15);
-  border-radius: 6px;
+  border: 1px dashed var(--ag-line-2);
+  border-radius: 8px;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -235,8 +236,8 @@
 }
 
 .upload-dropzone-box:hover {
-  border-color: #4f7ef8;
-  background: rgba(59, 130, 246, 0.04);
+  border-color: var(--ag-accent);
+  background: var(--ag-accent-soft);
 }
 
 .upload-dropzone-preview {
@@ -246,14 +247,14 @@
   padding: 0.65rem 0.85rem;
   background: rgba(16, 185, 129, 0.08);
   border: 1px solid rgba(16, 185, 129, 0.25);
-  border-radius: 6px;
+  border-radius: 8px;
   font-size: 0.78rem;
 }
 
 /* Footer Actions */
 .activation-modal-footer {
   padding: 1.15rem 1.75rem;
-  border-top: 1px solid rgba(255, 255, 255, 0.07);
+  border-top: 1px solid var(--ag-line);
   background: #0c121e;
   display: flex;
   align-items: center;
@@ -263,11 +264,11 @@
 .modal-btn-cancel {
   padding: 0.65rem 1.15rem;
   background: transparent;
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  border: 1px solid var(--ag-line);
   color: #cbd5e1;
   font-size: 0.82rem;
   font-weight: 500;
-  border-radius: 6px;
+  border-radius: 10px;
   cursor: pointer;
   transition: all 0.15s ease;
 }
@@ -279,11 +280,11 @@
 
 .modal-btn-primary {
   padding: 0.65rem 1.45rem;
-  background: #2563eb;
+  background: var(--ag-accent, #4f7ef8);
   color: #ffffff;
   font-size: 0.82rem;
   font-weight: 600;
-  border-radius: 6px;
+  border-radius: 10px;
   border: none;
   cursor: pointer;
   display: flex;
@@ -293,7 +294,7 @@
 }
 
 .modal-btn-primary:hover {
-  background: #1d4ed8;
+  background: #5f8bfb;
 }
 
 .modal-btn-primary:disabled {

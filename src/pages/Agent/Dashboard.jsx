@@ -340,27 +340,21 @@ export const Dashboard = ({
         </div>
       )}
 
-      {/* Top bar */}
-      <header className="ag-topbar">
-        <div className="ag-topbar-lead">
-          <span className="ag-eyebrow">Dashboard</span>
-          <h1 className="ag-topbar-title">Welcome back, {agentName}</h1>
-          <div className="ag-topbar-meta">
-            <span>{todayDateString}</span>
-            <span className="ag-dot-sep" />
-            {isAgentVerified ? (
+      {/* Top bar (active for verified agent desk) */}
+      {isAgentVerified && (
+        <header className="ag-topbar">
+          <div className="ag-topbar-lead">
+            <span className="ag-eyebrow">Dashboard</span>
+            <h1 className="ag-topbar-title">Agent dashboard</h1>
+            <div className="ag-topbar-meta">
+              <span>{todayDateString}</span>
+              <span className="ag-dot-sep" />
               <span className="ag-verify">
                 <span className="dot" /> Verified placement agent
               </span>
-            ) : (
-              <span className="ag-verify is-warn">
-                <span className="dot" /> Verification required
-              </span>
-            )}
+            </div>
           </div>
-        </div>
 
-        {isAgentVerified && (
           <div className="ag-search ag-topbar-search">
             <Search size={15} />
             <input
@@ -370,107 +364,88 @@ export const Dashboard = ({
               onChange={(e) => setSearchQuery(e.target.value)}
             />
           </div>
-        )}
 
-        <div className="ag-topbar-actions">
-          {isAgentVerified ? (
-            <>
-              <button type="button" onClick={() => setActiveView("properties")} className="agent-btn agent-btn-secondary" title="Manage listings">
-                <PlusCircle size={15} /> Add listing
-              </button>
-              <button type="button" onClick={() => setIsMatchModalOpen(true)} className="agent-btn agent-btn-sparkle" title="Open the matching engine">
-                <Waypoints size={15} /> Match tenant
-              </button>
-              <button type="button" onClick={() => setActiveView("wallet")} className="agent-btn agent-btn-secondary" title="Earnings & payouts">
-                <WalletIcon size={15} /> Earnings
-              </button>
-            </>
-          ) : (
-            <>
-              <span className={`ag-badge ${profile?.verification_status === 'pending_review' ? 'ag-badge--info' : 'ag-badge--warn'}`}>
-                {profile?.verification_status === 'pending_review' ? <Clock size={12} /> : <Lock size={12} />}
-                {profile?.verification_status === 'pending_review'
-                  ? 'Review pending'
-                  : profile?.verification_status === 'rejected'
-                    ? 'Application rejected'
-                    : 'Account inactive'}
-              </span>
-              <button type="button" onClick={() => setOpenApplyModal(true)} className="agent-btn agent-btn-primary">
-                <ShieldCheck size={15} />
-                {profile?.verification_status === 'rejected' ? 'Re-apply for verification' : 'Apply for verification'}
-              </button>
-            </>
-          )}
-
-          <span className="ag-topbar-divider" />
-
-          <button
-            type="button"
-            onClick={handleManualRefresh}
-            className="agent-icon-btn"
-            title="Refresh data"
-            disabled={isRefreshing || loading}
-          >
-            <RefreshCw size={16} className={isRefreshing || loading ? "animate-spin" : ""} />
-          </button>
-
-          <div className="ag-notif-wrap">
-            <button type="button" onClick={() => setShowNotifications(v => !v)} className="agent-icon-btn" title="Notifications">
-              <Bell size={16} />
-              {pendingResponses > 0 && <span className="ag-notif-dot" />}
+          <div className="ag-topbar-actions">
+            <button type="button" onClick={() => setActiveView("properties")} className="agent-btn agent-btn-secondary" title="Manage listings">
+              <PlusCircle size={15} /> Add listing
+            </button>
+            <button type="button" onClick={() => setIsMatchModalOpen(true)} className="agent-btn agent-btn-sparkle" title="Open the matching engine">
+              <Waypoints size={15} /> Match tenant
+            </button>
+            <button type="button" onClick={() => setActiveView("wallet")} className="agent-btn agent-btn-secondary" title="Earnings & payouts">
+              <WalletIcon size={15} /> Earnings
             </button>
 
-            {showNotifications && (
-              <div className="ag-notif">
-                <div className="ag-notif-head">
-                  <strong>Recent activity</strong>
-                  <button type="button" className="ag-notif-close" onClick={() => setShowNotifications(false)}>
-                    <X size={14} />
-                  </button>
-                </div>
-                <div className="ag-notif-list">
-                  {applications.slice(0, 4).map(app => {
-                    const tenant = tenantById.get(app.tenant_id);
-                    return (
-                      <div key={app.id} className="ag-notif-item">
-                        <FileText size={15} color="#7da2ff" style={{ flexShrink: 0, marginTop: 2 }} />
-                        <div>
-                          <p className="ag-notif-text">
-                            New application: <strong>{tenant?.full_name || "Applicant"}</strong>, {app.preferred_areas?.[0] || "your area"}.
-                          </p>
-                          <span className="ag-notif-time">Status: {getStatusBadge(app.status).label}</span>
-                        </div>
-                      </div>
-                    );
-                  })}
-                  {applications.length === 0 && (
-                    <div className="ag-empty" style={{ padding: '28px 16px' }}>
-                      <p className="ag-empty-sub" style={{ margin: 0 }}>No recent activity</p>
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
-          </div>
+            <span className="ag-topbar-divider" />
 
-          <div
-            className="ag-topbar-profile"
-            role="button"
-            tabIndex={0}
-            onClick={() => setActiveView("profile")}
-            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setActiveView("profile"); } }}
-            title="View profile"
-          >
-            <div className="agent-avatar" style={{ width: 28, height: 28 }}>
-              <AvatarImage src={getUserAvatar(userRow || { full_name: agentName }, 'agent')} alt="Agent" />
+            <button
+              type="button"
+              onClick={handleManualRefresh}
+              className="agent-icon-btn"
+              title="Refresh data"
+              disabled={isRefreshing || loading}
+            >
+              <RefreshCw size={16} className={isRefreshing || loading ? "animate-spin" : ""} />
+            </button>
+
+            <div className="ag-notif-wrap">
+              <button type="button" onClick={() => setShowNotifications(v => !v)} className="agent-icon-btn" title="Notifications">
+                <Bell size={16} />
+                {pendingResponses > 0 && <span className="ag-notif-dot" />}
+              </button>
+
+              {showNotifications && (
+                <div className="ag-notif">
+                  <div className="ag-notif-head">
+                    <strong>Recent activity</strong>
+                    <button type="button" className="ag-notif-close" onClick={() => setShowNotifications(false)}>
+                      <X size={14} />
+                    </button>
+                  </div>
+                  <div className="ag-notif-list">
+                    {applications.slice(0, 4).map(app => {
+                      const tenant = tenantById.get(app.tenant_id);
+                      return (
+                        <div key={app.id} className="ag-notif-item">
+                          <FileText size={15} color="#7da2ff" style={{ flexShrink: 0, marginTop: 2 }} />
+                          <div>
+                            <p className="ag-notif-text">
+                              New application: <strong>{tenant?.full_name || "Applicant"}</strong>, {app.preferred_areas?.[0] || "your area"}.
+                            </p>
+                            <span className="ag-notif-time">Status: {getStatusBadge(app.status).label}</span>
+                          </div>
+                        </div>
+                      );
+                    })}
+                    {applications.length === 0 && (
+                      <div className="ag-empty" style={{ padding: '28px 16px' }}>
+                        <p className="ag-empty-sub" style={{ margin: 0 }}>No recent activity</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
-            <span>{agentName}</span>
+
+            <div
+              className="ag-topbar-profile"
+              role="button"
+              tabIndex={0}
+              onClick={() => setActiveView("profile")}
+              onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setActiveView("profile"); } }}
+              title="View profile"
+            >
+              <div className="agent-avatar" style={{ width: 28, height: 28 }}>
+                <AvatarImage src={getUserAvatar(userRow || { full_name: agentName }, 'agent')} alt="Agent" />
+              </div>
+              <span>{agentName}</span>
+            </div>
           </div>
-        </div>
-      </header>
+        </header>
+      )}
 
       {/* Content */}
-      <div className="ag-page">
+      <div className={isAgentVerified ? "ag-page" : "p-4 sm:p-6 lg:p-8 max-w-7xl w-full mx-auto"}>
         {!isAgentVerified ? (
           <AgentActivationView
             userRow={userRow}
@@ -488,7 +463,7 @@ export const Dashboard = ({
                 </div>
                 <div className="ag-alert-text">
                   <p className="ag-alert-title">
-                    {pendingResponses} job{pendingResponses === 1 ? '' : 's'} awaiting your response
+                    {pendingResponses} application{pendingResponses === 1 ? '' : 's'} awaiting your response
                   </p>
                   <p className="ag-alert-sub">
                     Accept or reject each assignment so the administrator can plan placements and reassignments.
@@ -698,17 +673,11 @@ export const Dashboard = ({
                   {activity.placed > 0 ? (
                     <ResponsiveContainer width="100%" height="100%">
                       <BarChart data={activity.data} margin={{ top: 8, right: 8, left: -18, bottom: 0 }}>
-                        <defs>
-                          <linearGradient id="agBar" x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="0%" stopColor="#7da2ff" />
-                            <stop offset="100%" stopColor="#4f7ef8" />
-                          </linearGradient>
-                        </defs>
                         <CartesianGrid strokeDasharray="3 3" stroke="rgba(148,163,184,0.09)" vertical={false} />
                         <XAxis dataKey="label" stroke="#64748b" fontSize={11} tickLine={false} axisLine={false} />
                         <YAxis stroke="#64748b" fontSize={11} tickLine={false} axisLine={false} allowDecimals={false} />
                         <Tooltip cursor={{ fill: 'rgba(255,255,255,0.04)' }} content={<BarTip />} />
-                        <Bar dataKey="applications" fill="url(#agBar)" radius={[5, 5, 0, 0]} maxBarSize={34} />
+                        <Bar dataKey="applications" fill="#4f7ef8" radius={[4, 4, 0, 0]} maxBarSize={34} />
                       </BarChart>
                     </ResponsiveContainer>
                   ) : (
@@ -939,7 +908,7 @@ export const Dashboard = ({
                   ].map((f) => (
                     <div key={f.label} style={{ padding: 14, background: 'var(--ag-panel)', border: '1px solid var(--ag-line)', borderRadius: 12 }}>
                       <span style={{ fontSize: '0.68rem', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--ag-dim)' }}>{f.label}</span>
-                      <p className="ag-mono" style={{ margin: '7px 0 0', fontSize: '0.92rem', fontWeight: 600, color: f.accent ? '#34d399' : '#fff' }}>{f.value}</p>
+                      <p className="ag-mono" style={{ margin: '7px 0 0', fontSize: '0.92rem', fontWeight: 600, color: f.accent ? '#34d399' : 'var(--ag-text)' }}>{f.value}</p>
                     </div>
                   ))}
                 </div>

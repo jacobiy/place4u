@@ -391,7 +391,7 @@ export default function MainAgent() {
           </>
         )}
 
-        <main className={`agent-main-content ${isMobile ? 'is-mobile' : ''} ${activeView === 'dashboard' ? 'is-dashboard' : ''} ${activeView === 'dashboard' && layoutIsAgentVerified ? 'is-verified-dashboard' : ''} ${['applications', 'pipeline', 'properties', 'wallet'].includes(activeView) ? 'is-workspace' : ''} ${activeView === 'wallet' ? 'is-wallet' : ''} ${activeView === 'application-manager' ? 'is-manager' : ''}`}>
+        <main className={`agent-main-content ${isMobile ? 'is-mobile' : ''} ${activeView === 'dashboard' ? 'is-dashboard' : ''} ${activeView === 'dashboard' && layoutIsAgentVerified ? 'is-verified-dashboard' : ''} ${['applications', 'pipeline', 'properties', 'wallet', 'profile', 'settings'].includes(activeView) ? 'is-workspace' : ''} ${activeView === 'wallet' ? 'is-wallet' : ''} ${activeView === 'application-manager' ? 'is-manager' : ''}`}>
           {isMobile && (
             <div className="agent-mobile-header">
               <button

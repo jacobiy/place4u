@@ -1,40 +1,35 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react'
 import {
   ShieldCheck,
   Clock,
   CheckCircle2,
-  Lock,
+  AlertCircle,
   FileText,
   Phone,
+  Mail,
+  MapPin,
   RefreshCw,
-  Check,
-  Building,
-  Users,
-  Wallet,
-  ArrowRight,
-  ExternalLink,
-  AlertCircle,
   Eye,
-  X
-} from 'lucide-react';
-import AgentActivationModal from './AgentActivationModal';
-import { resolveDocumentUrls, AGENT_DOCUMENTS_BUCKET } from '../../../utils/documentUrls';
-import './AgentActivationView.css';
+  X,
+  Upload,
+  ExternalLink,
+  Building2,
+  UserCheck
+} from 'lucide-react'
+import { AgentQueries } from '../db/queries'
+import { resolveDocumentUrls, AGENT_DOCUMENTS_BUCKET } from '../../../utils/documentUrls'
 
-// Shared style for the clickable document chips shown in the pending-review view.
-const docChipStyle = {
-  display: 'flex',
-  alignItems: 'center',
-  gap: '0.75rem',
-  padding: '0.5rem 0.75rem',
-  background: '#0a0e1a',
-  border: '1px solid rgba(255, 255, 255, 0.08)',
-  borderRadius: '6px',
-  cursor: 'pointer',
-  color: 'inherit',
-  font: 'inherit',
-  textAlign: 'left'
-};
+const PROVINCES = [
+  'Gauteng',
+  'Western Cape',
+  'KwaZulu-Natal',
+  'Eastern Cape',
+  'Limpopo',
+  'Mpumalanga',
+  'Free State',
+  'North West',
+  'Northern Cape'
+]
 
 export default function AgentActivationView({
   userRow,
@@ -43,31 +38,81 @@ export default function AgentActivationView({
   autoOpenModal = false,
   onAutoOpenHandled = () => {}
 }) {
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [docUrls, setDocUrls] = useState({ id: null, por: null, ffc: null });
-  const [previewDoc, setPreviewDoc] = useState(null); // { title, url } for the enlarge modal
+  const formRef = useRef(null)
 
-  // A signed URL ending in .pdf should render in an <iframe>, everything else as an image
-  const isPdfUrl = (url) => typeof url === 'string' && /\.pdf(\?|#|$)/i.test(url);
+  const verificationStatus = profile?.verification_status || (profile?.submitted_at ? 'pending_review' : 'not_applied')
+  const isPending = verificationStatus === 'pending_review' || verificationStatus === 'interview_scheduled'
+  const isRejected = verificationStatus === 'rejected'
 
-  const openDocPreview = (title, url) => {
-    if (!url) return;
-    setPreviewDoc({ title, url });
-  };
+  const [isEditing, setIsEditing] = useState(!isPending)
+  const [submitting, setSubmitting] = useState(false)
+  const [error, setError] = useState('')
+  const [toast, setToast] = useState(null)
 
-  // Allow the dashboard header's "Apply for Verification" button to open the form.
+  const [formData, setFormData] = useState({
+    full_name: profile?.full_name || userRow?.full_name || '',
+    email: userRow?.email || '',
+    phone: profile?.phone || userRow?.phone || '',
+    id_number: profile?.id_number || userRow?.id_number || '',
+    address: profile?.address || '',
+    city: profile?.city || 'Johannesburg',
+    province: profile?.province || 'Gauteng',
+    postal_code: profile?.postal_code || '',
+    agency_name: profile?.agency_name || '',
+    experience_years: profile?.experience_years ?? 1,
+    tax_number: profile?.tax_number || '',
+    id_document_url: profile?.id_document_url || '',
+    proof_of_residence_url: profile?.proof_of_residence_url || '',
+    fidelity_fund_cert_url: profile?.fidelity_fund_cert_url || '',
+    preferred_contact_method: profile?.preferred_contact_method || 'whatsapp',
+    interview_time_slot: profile?.interview_time_slot || 'morning'
+  })
+
+  const [idDocumentFile, setIdDocumentFile] = useState(null)
+  const [proofOfResidenceFile, setProofOfResidenceFile] = useState(null)
+  const [fidelityFundCertFile, setFidelityFundCertFile] = useState(null)
+
+  const [docPreviews, setDocPreviews] = useState({ id: null, por: null, ffc: null })
+  const [previewModal, setPreviewModal] = useState(null) // { title, url }
+
+  const isPdfUrl = (url) => typeof url === 'string' && /\.pdf(\?|#|$)/i.test(url)
+
   useEffect(() => {
     if (autoOpenModal) {
-      setIsModalOpen(true);
-      onAutoOpenHandled();
+      setIsEditing(true)
+      if (formRef.current) {
+        formRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' })
+      }
+      onAutoOpenHandled()
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [autoOpenModal]);
+  }, [autoOpenModal, onAutoOpenHandled])
 
-  // Resolve stored FICA document paths into viewable signed URLs
   useEffect(() => {
-    let active = true;
-    (async () => {
+    if (profile) {
+      setFormData((prev) => ({
+        ...prev,
+        full_name: profile.full_name || prev.full_name,
+        phone: profile.phone || prev.phone,
+        id_number: profile.id_number || prev.id_number,
+        address: profile.address || prev.address,
+        city: profile.city || prev.city,
+        province: profile.province || prev.province,
+        postal_code: profile.postal_code || prev.postal_code,
+        agency_name: profile.agency_name || prev.agency_name,
+        experience_years: profile.experience_years ?? prev.experience_years,
+        tax_number: profile.tax_number || prev.tax_number,
+        id_document_url: profile.id_document_url || prev.id_document_url,
+        proof_of_residence_url: profile.proof_of_residence_url || prev.proof_of_residence_url,
+        fidelity_fund_cert_url: profile.fidelity_fund_cert_url || prev.fidelity_fund_cert_url,
+        preferred_contact_method: profile.preferred_contact_method || prev.preferred_contact_method,
+        interview_time_slot: profile.interview_time_slot || prev.interview_time_slot
+      }))
+    }
+  }, [profile])
+
+  useEffect(() => {
+    let active = true
+    ;(async () => {
       const resolved = await resolveDocumentUrls(
         {
           id: profile?.id_document_url || null,
@@ -75,109 +120,167 @@ export default function AgentActivationView({
           ffc: profile?.fidelity_fund_cert_url || null
         },
         { bucket: AGENT_DOCUMENTS_BUCKET }
-      );
-      if (active) setDocUrls(resolved);
-    })();
+      )
+      if (active) {
+        setDocPreviews((prev) => ({
+          id: idDocumentFile ? prev.id : (resolved.id || null),
+          por: proofOfResidenceFile ? prev.por : (resolved.por || null),
+          ffc: fidelityFundCertFile ? prev.ffc : (resolved.ffc || null)
+        }))
+      }
+    })()
     return () => {
-      active = false;
-    };
+      active = false
+    }
   }, [
     profile?.id_document_url,
     profile?.proof_of_residence_url,
-    profile?.fidelity_fund_cert_url
-  ]);
+    profile?.fidelity_fund_cert_url,
+    idDocumentFile,
+    proofOfResidenceFile,
+    fidelityFundCertFile
+  ])
 
-  const verificationStatus = profile?.verification_status || (profile?.submitted_at ? 'pending_review' : 'not_applied');
-  const isPending = verificationStatus === 'pending_review' || verificationStatus === 'interview_scheduled';
-  const isRejected = verificationStatus === 'rejected';
+  const handleFileSelect = (field, file) => {
+    if (!file) return
+    setError('')
+    const objectUrl = URL.createObjectURL(file)
 
-  const handleApplicationSuccess = async () => {
-    if (onRefresh) await onRefresh();
-  };
+    if (field === 'id_document') {
+      setIdDocumentFile(file)
+      setDocPreviews((prev) => ({ ...prev, id: objectUrl }))
+    } else if (field === 'proof_of_residence') {
+      setProofOfResidenceFile(file)
+      setDocPreviews((prev) => ({ ...prev, por: objectUrl }))
+    } else if (field === 'fidelity_fund_cert') {
+      setFidelityFundCertFile(file)
+      setDocPreviews((prev) => ({ ...prev, ffc: objectUrl }))
+    }
+  }
+
+  const handleFileRemove = (field) => {
+    if (field === 'id_document') {
+      setIdDocumentFile(null)
+      setDocPreviews((prev) => ({ ...prev, id: null }))
+      setFormData((prev) => ({ ...prev, id_document_url: '' }))
+    } else if (field === 'proof_of_residence') {
+      setProofOfResidenceFile(null)
+      setDocPreviews((prev) => ({ ...prev, por: null }))
+      setFormData((prev) => ({ ...prev, proof_of_residence_url: '' }))
+    } else if (field === 'fidelity_fund_cert') {
+      setFidelityFundCertFile(null)
+      setDocPreviews((prev) => ({ ...prev, ffc: null }))
+      setFormData((prev) => ({ ...prev, fidelity_fund_cert_url: '' }))
+    }
+  }
+
+  const handleSubmit = async (e) => {
+    e.preventDefault()
+    const hasId = Boolean(idDocumentFile || formData.id_document_url)
+    const hasPor = Boolean(proofOfResidenceFile || formData.proof_of_residence_url)
+
+    if (!hasId || !hasPor) {
+      setError('Both your identity document and proof of residential address are mandatory under FICA.')
+      return
+    }
+
+    if (!formData.full_name?.trim() || !formData.id_number?.trim() || !formData.phone?.trim()) {
+      setError('Please provide your full legal name, ID or passport number, and contact phone.')
+      return
+    }
+
+    setSubmitting(true)
+    setError('')
+
+    try {
+      const userId = userRow?.id || profile?.user_id
+      const res = await AgentQueries.submitVerificationApplication(userId, {
+        ...formData,
+        id_document_file: idDocumentFile,
+        proof_of_residence_file: proofOfResidenceFile,
+        fidelity_fund_cert_file: fidelityFundCertFile,
+        id_document_url: idDocumentFile ? null : (formData.id_document_url || null),
+        proof_of_residence_url: proofOfResidenceFile ? null : (formData.proof_of_residence_url || null),
+        fidelity_fund_cert_url: fidelityFundCertFile ? null : (formData.fidelity_fund_cert_url || null)
+      })
+
+      if (!res.success) {
+        throw new Error(res.error || 'Failed to submit application.')
+      }
+
+      setToast('Verification documents submitted. Place4U compliance is reviewing your profile.')
+      setIsEditing(false)
+      if (onRefresh) await onRefresh()
+    } catch (err) {
+      setError(err?.message || 'Submission error. Please check your connection and try again.')
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
+  const hasIdDoc = Boolean(idDocumentFile || formData.id_document_url || docPreviews.id)
+  const hasPorDoc = Boolean(proofOfResidenceFile || formData.proof_of_residence_url || docPreviews.por)
+  const hasFfcDoc = Boolean(fidelityFundCertFile || formData.fidelity_fund_cert_url || docPreviews.ffc)
+  const docCount = (hasIdDoc ? 1 : 0) + (hasPorDoc ? 1 : 0) + (hasFfcDoc ? 1 : 0)
 
   return (
-    <div className="dossier-wrapper">
-      {/* Verification Modal */}
-      <AgentActivationModal
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        userRow={userRow}
-        profile={profile}
-        onSuccess={handleApplicationSuccess}
-      />
+    <div className="space-y-6" ref={formRef}>
+      {/* Toast */}
+      {toast && (
+        <div className="fixed bottom-6 right-6 z-50 bg-slate-900 text-white px-4 py-2.5 rounded-xl shadow-2xl border border-slate-700 flex items-center gap-2.5 text-xs animate-in fade-in slide-in-from-bottom-2">
+          <CheckCircle2 size={16} className="text-emerald-400 flex-shrink-0" />
+          <span>{toast}</span>
+          <button onClick={() => setToast(null)} className="text-slate-400 hover:text-white ml-2 text-xs">
+            ✕
+          </button>
+        </div>
+      )}
 
-      {/* Full-size document preview */}
-      {previewDoc && (
+      {/* Document Inspector Modal */}
+      {previewModal && (
         <div
-          onClick={() => setPreviewDoc(null)}
-          style={{
-            position: 'fixed',
-            inset: 0,
-            zIndex: 1200,
-            background: 'rgba(2, 6, 23, 0.85)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            padding: '2rem'
-          }}
+          className="fixed inset-0 z-50 bg-slate-900/80 backdrop-blur-sm flex items-center justify-center p-4 sm:p-6"
+          onClick={() => setPreviewModal(null)}
+          role="dialog"
+          aria-modal="true"
         >
           <div
+            className="bg-white rounded-2xl border border-slate-200 shadow-2xl w-full max-w-4xl max-h-[90vh] flex flex-col overflow-hidden animate-in zoom-in-95 duration-150"
             onClick={(e) => e.stopPropagation()}
-            style={{
-              background: '#0b1120',
-              border: '1px solid rgba(255, 255, 255, 0.12)',
-              borderRadius: '12px',
-              width: 'min(920px, 100%)',
-              maxHeight: '90vh',
-              display: 'flex',
-              flexDirection: 'column',
-              overflow: 'hidden'
-            }}
           >
-            <div
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                gap: '1rem',
-                padding: '0.85rem 1.1rem',
-                borderBottom: '1px solid rgba(255, 255, 255, 0.08)'
-              }}
-            >
-              <span style={{ color: '#f1f5f9', fontWeight: 600, fontSize: '0.85rem' }}>
-                {previewDoc.title}
-              </span>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem' }}>
+            <div className="px-5 py-4 border-b border-slate-100 flex items-center justify-between gap-4">
+              <span className="font-semibold text-sm text-slate-900">{previewModal.title}</span>
+              <div className="flex items-center gap-3">
                 <a
-                  href={previewDoc.url}
+                  href={previewModal.url}
                   target="_blank"
                   rel="noreferrer"
-                  style={{ color: '#7da2ff', fontSize: '0.75rem', display: 'inline-flex', alignItems: 'center', gap: '0.3rem' }}
+                  className="inline-flex items-center gap-1.5 text-xs font-semibold text-blue-600 hover:text-blue-800"
                 >
-                  <ExternalLink size={13} />
-                  <span>Open in new tab</span>
+                  <ExternalLink size={13} /> Open full window
                 </a>
                 <button
-                  onClick={() => setPreviewDoc(null)}
-                  style={{ background: 'none', border: 'none', color: '#94a3b8', cursor: 'pointer', display: 'flex' }}
-                  title="Close preview"
+                  type="button"
+                  onClick={() => setPreviewModal(null)}
+                  className="text-slate-400 hover:text-slate-700 p-1 rounded-md"
+                  title="Close"
                 >
                   <X size={16} />
                 </button>
               </div>
             </div>
-            <div style={{ padding: '1rem', overflow: 'auto', background: '#05070f' }}>
-              {isPdfUrl(previewDoc.url) ? (
+            <div className="p-4 overflow-auto bg-slate-50 flex items-center justify-center">
+              {isPdfUrl(previewModal.url) ? (
                 <iframe
-                  title={previewDoc.title}
-                  src={previewDoc.url}
-                  style={{ width: '100%', height: '75vh', border: 'none', borderRadius: '8px', background: '#fff' }}
+                  title={previewModal.title}
+                  src={previewModal.url}
+                  className="w-full h-[70vh] border-0 rounded-lg bg-white shadow-xs"
                 />
               ) : (
                 <img
-                  src={previewDoc.url}
-                  alt={previewDoc.title}
-                  style={{ maxWidth: '100%', maxHeight: '75vh', display: 'block', margin: '0 auto', borderRadius: '8px' }}
+                  src={previewModal.url}
+                  alt={previewModal.title}
+                  className="max-w-full max-h-[70vh] object-contain rounded-lg shadow-xs"
                 />
               )}
             </div>
@@ -185,328 +288,643 @@ export default function AgentActivationView({
         </div>
       )}
 
-      {/* Header and Compliance Status */}
-      <header className="dossier-header">
-        <div className="dossier-title-group">
-          <h1>Agent Onboarding & Verification</h1>
-          <p>
-            FICA verification and an onboarding interview are required before placement and withdrawals unlock.
-          </p>
-        </div>
-
-        <div>
-          {isPending ? (
-            <span className="dossier-status-badge pending">
-              <Clock size={14} />
-              <span>Application Under Review</span>
-            </span>
-          ) : isRejected ? (
-            <span className="dossier-status-badge inactive" style={{ background: 'rgba(239, 68, 68, 0.1)', borderColor: 'rgba(239, 68, 68, 0.25)', color: '#f87171' }}>
-              <AlertCircle size={14} />
-              <span>Application Rejected</span>
-            </span>
-          ) : (
-            <span className="dossier-status-badge inactive">
-              <Lock size={13} />
-              <span>Verification Required</span>
-            </span>
-          )}
-        </div>
-      </header>
-
-      {/* Main Workspace (Unapplied State) */}
-      {!isPending && !isRejected && (
-        <div className="dossier-workspace">
-          {/* Left Column: Requirements Checklist */}
-          <section className="dossier-panel">
-            <div className="dossier-panel-title">
-              <span>Required Submissions</span>
-              <span className="count">4 steps</span>
-            </div>
-
-            <div className="checklist-list">
-              {/* Item 1 */}
-              <div className="checklist-row">
-                <div className="checklist-step-indicator active">1</div>
-                <div className="checklist-step-details">
-                  <h4>South African ID or Valid Passport</h4>
-                  <p>Smart ID card, green barcoded ID book, or foreign passport with valid South African work endorsement.</p>
-                </div>
-                <span className="checklist-step-tag required">FICA</span>
-              </div>
-
-              {/* Item 2 */}
-              <div className="checklist-row">
-                <div className="checklist-step-indicator">2</div>
-                <div className="checklist-step-details">
-                  <h4>Proof of Residential Address</h4>
-                  <p>Utility bill, municipal rates invoice, or formal bank statement dated within the last 3 months.</p>
-                </div>
-                <span className="checklist-step-tag required">FICA</span>
-              </div>
-
-              {/* Item 3 */}
-              <div className="checklist-row">
-                <div className="checklist-step-indicator">3</div>
-                <div className="checklist-step-details">
-                  <h4>Agency Affiliation & Operating Areas</h4>
-                  <p>Estate agency or independent brokerage details and active WhatsApp number for tenant matching handoffs.</p>
-                </div>
-                <span className="checklist-step-tag">Practice</span>
-              </div>
-
-              {/* Item 4 */}
-              <div className="checklist-row">
-                <div className="checklist-step-indicator">4</div>
-                <div className="checklist-step-details">
-                  <h4>15-Minute Compliance Review Call</h4>
-                  <p>Introductory phone or video interview with Place4U compliance before payout activation.</p>
-                </div>
-                <span className="checklist-step-tag">Final Step</span>
-              </div>
-            </div>
-
-            <div className="dossier-action-footer">
-              <p className="dossier-help-text">
-                Encrypted and reviewed under FICA and the Property Practitioners Act.
-              </p>
-
-              <button
-                onClick={() => setIsModalOpen(true)}
-                className="dossier-primary-btn"
-              >
-                <span>Begin Verification</span>
-                <ArrowRight size={15} />
-              </button>
-            </div>
-          </section>
-
-          {/* Right Column: Operational Entitlements on Approval */}
-          <aside className="entitlement-card">
-            <h3>Operational Entitlements Upon Approval</h3>
-
-            <div className="entitlement-list">
-              <div className="entitlement-item">
-                <div className="entitlement-icon">
-                  <Users size={16} />
-                </div>
-                <div className="entitlement-content">
-                  <h5>AI Tenant Match Stream</h5>
-                  <p>Algorithmic match feed connecting verified tenant applicants directly to your listings based on verified budgets.</p>
-                </div>
-              </div>
-
-              <div className="entitlement-item">
-                <div className="entitlement-icon">
-                  <Wallet size={16} />
-                </div>
-                <div className="entitlement-content">
-                  <h5>50% Placement Commission</h5>
-                  <p>Commission tracked transparently in escrow and disbursed directly via South African bank EFT on lease execution.</p>
-                </div>
-              </div>
-
-              <div className="entitlement-item">
-                <div className="entitlement-icon">
-                  <Building size={16} />
-                </div>
-                <div className="entitlement-content">
-                  <h5>Property Portfolio Registry</h5>
-                  <p>Publish listings, coordinate viewing schedules, and manage application review from a single dashboard.</p>
-                </div>
-              </div>
-            </div>
-
-            <div className="entitlement-regulatory-box">
-              <strong>Regulatory Notice:</strong> Unverified accounts may not interact with tenant personal information or collect placement fees.
-            </div>
-          </aside>
-        </div>
-      )}
-
-      {/* Rejected State — allow the agent to correct and re-apply */}
-      {isRejected && (
-        <section className="pending-dossier" style={{ borderColor: 'rgba(239, 68, 68, 0.3)' }}>
-          <div
-            className="pending-banner"
-            style={{ background: 'rgba(239, 68, 68, 0.08)', borderColor: 'rgba(239, 68, 68, 0.2)' }}
-          >
-            <div
-              className="pending-banner-icon"
-              style={{ background: 'rgba(239, 68, 68, 0.2)', color: '#f87171' }}
-            >
-              <AlertCircle size={18} />
-            </div>
-            <div>
-              <h4>Verification Not Approved</h4>
-              <p>
-                Your previous application was reviewed and not approved. Reason:{' '}
-                <strong>{profile?.rejection_reason || 'Submitted documentation did not satisfy regulatory requirements.'}</strong>
-              </p>
-            </div>
-          </div>
-
-          <div className="dossier-action-footer">
-            <p className="dossier-help-text">
-              Update your personal details and re-attach valid FICA documents, then resubmit for review.
-            </p>
-            <button
-              onClick={() => setIsModalOpen(true)}
-              className="dossier-primary-btn"
-            >
-              <span>Re-apply for Verification</span>
-              <ArrowRight size={15} />
-            </button>
-          </div>
-        </section>
-      )}
-
-      {/* Pending Review State (Submitted) */}
-      {isPending && (
-        <section className="pending-dossier">
-          <div className="pending-banner">
-            <div className="pending-banner-icon">
-              <Phone size={18} />
-            </div>
-            <div>
-              <h4>Verification Under Review</h4>
-              <p>
-                Documents received. A compliance officer will call <strong>{profile?.phone || userRow?.phone || 'you'}</strong> to book your interview.
-              </p>
-            </div>
-          </div>
-
+      {/* Header Banner — matching Admin Dashboard Header */}
+      <div className="bg-gradient-to-r from-[#0F1E35] via-[#132847] to-[#1A365D] rounded-2xl p-6 text-white shadow-sm border border-slate-800 relative overflow-hidden">
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 relative z-10">
           <div>
-            <div className="dossier-panel-title" style={{ marginBottom: '1rem' }}>
-              <span>Dossier Summary</span>
-              <button
-                onClick={onRefresh}
-                style={{
-                  background: 'none',
-                  border: 'none',
-                  color: '#7da2ff',
-                  fontSize: '0.78rem',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.35rem',
-                  cursor: 'pointer'
-                }}
-              >
-                <RefreshCw size={12} />
-                <span>Refresh Status</span>
-              </button>
+            <div className="flex items-center gap-2 mb-1.5">
+              <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold border ${
+                isPending
+                  ? 'bg-blue-500/20 text-blue-300 border-blue-500/30'
+                  : isRejected
+                  ? 'bg-red-500/20 text-red-300 border-red-500/30'
+                  : 'bg-amber-500/20 text-amber-300 border-amber-500/30'
+              }`}>
+                <span className={`w-1.5 h-1.5 rounded-full ${
+                  isPending ? 'bg-blue-400 animate-pulse' : isRejected ? 'bg-red-400' : 'bg-amber-400 animate-pulse'
+                }`} />
+                {isPending ? 'Application Under Review' : isRejected ? 'Verification Action Required' : 'Accreditation Pending'}
+              </span>
+              <span className="text-slate-400 text-xs">Place4U Practitioner Verification Desk</span>
             </div>
-
-            <table className="dossier-spec-table">
-              <tbody>
-                <tr>
-                  <th>Agent Legal Name</th>
-                  <td>{profile?.full_name || userRow?.full_name || '—'}</td>
-                </tr>
-                <tr>
-                  <th>SA ID / Passport</th>
-                  <td style={{ fontFamily: 'monospace' }}>{profile?.id_number || userRow?.id_number || '—'}</td>
-                </tr>
-                <tr>
-                  <th>Agency Affiliation</th>
-                  <td>{profile?.agency_name || 'Independent Agent'}</td>
-                </tr>
-                <tr>
-                  <th>Contact Number</th>
-                  <td>{profile?.phone || userRow?.phone || '—'}</td>
-                </tr>
-                <tr>
-                  <th>Operating Region</th>
-                  <td>{profile?.city || '—'}, {profile?.province || 'Gauteng'}</td>
-                </tr>
-                <tr>
-                  <th>Preferred Call Slot</th>
-                  <td style={{ textTransform: 'capitalize' }}>{profile?.interview_time_slot || 'Morning (09:00 - 12:00)'}</td>
-                </tr>
-              </tbody>
-            </table>
+            <h1 className="text-2xl font-bold tracking-tight text-white">Agent Onboarding & FICA Compliance</h1>
+            <p className="text-slate-300 text-xs mt-1 max-w-2xl leading-relaxed">
+              Under the Property Practitioners Act 22 of 2019 and FICA, Place4U verifies identity and practice credentials to activate application routing, matching tools, and commission disbursements.
+            </p>
           </div>
 
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '1rem', alignItems: 'center', paddingTop: '1rem', borderTop: '1px solid rgba(255, 255, 255, 0.06)' }}>
-            {(docUrls.id || profile?.id_document_url) && (
-              <button
-                type="button"
-                onClick={() => openDocPreview('Identity Document', docUrls.id || profile?.id_document_url)}
-                style={docChipStyle}
-                title="Preview identity document"
-              >
-                <img
-                  src={docUrls.id || profile?.id_document_url}
-                  alt="ID Document"
-                  style={{ width: '42px', height: '32px', objectFit: 'cover', borderRadius: '4px' }}
-                  onError={(e) => { e.currentTarget.style.display = 'none'; }}
-                />
-                <div>
-                  <span style={{ fontSize: '0.75rem', fontWeight: 600, color: '#f1f5f9', display: 'block' }}>Identity Document</span>
-                  <span style={{ fontSize: '0.68rem', color: '#34d399', display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}>
-                    <Eye size={11} /> Attached & Submitted — click to preview
-                  </span>
-                </div>
-              </button>
-            )}
-
-            {(docUrls.por || profile?.proof_of_residence_url) && (
-              <button
-                type="button"
-                onClick={() => openDocPreview('Proof of Residence', docUrls.por || profile?.proof_of_residence_url)}
-                style={docChipStyle}
-                title="Preview proof of residence"
-              >
-                <img
-                  src={docUrls.por || profile?.proof_of_residence_url}
-                  alt="Proof of Residence"
-                  style={{ width: '42px', height: '32px', objectFit: 'cover', borderRadius: '4px' }}
-                  onError={(e) => { e.currentTarget.style.display = 'none'; }}
-                />
-                <div>
-                  <span style={{ fontSize: '0.75rem', fontWeight: 600, color: '#f1f5f9', display: 'block' }}>Proof of Residence</span>
-                  <span style={{ fontSize: '0.68rem', color: '#34d399', display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}>
-                    <Eye size={11} /> Attached & Submitted — click to preview
-                  </span>
-                </div>
-              </button>
-            )}
-
-            {(docUrls.ffc || profile?.fidelity_fund_cert_url) && (
-              <button
-                type="button"
-                onClick={() => openDocPreview('Fidelity Fund Certificate', docUrls.ffc || profile?.fidelity_fund_cert_url)}
-                style={docChipStyle}
-                title="Preview Fidelity Fund Certificate"
-              >
-                <img
-                  src={docUrls.ffc || profile?.fidelity_fund_cert_url}
-                  alt="Fidelity Fund Certificate"
-                  style={{ width: '42px', height: '32px', objectFit: 'cover', borderRadius: '4px' }}
-                  onError={(e) => { e.currentTarget.style.display = 'none'; }}
-                />
-                <div>
-                  <span style={{ fontSize: '0.75rem', fontWeight: 600, color: '#f1f5f9', display: 'block' }}>Fidelity Fund Certificate</span>
-                  <span style={{ fontSize: '0.68rem', color: '#34d399', display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}>
-                    <Eye size={11} /> Attached & Submitted — click to preview
-                  </span>
-                </div>
-              </button>
-            )}
-
+          <div className="flex flex-wrap items-center gap-2.5">
             <button
               type="button"
-              onClick={() => setIsModalOpen(true)}
-              className="dossier-primary-btn"
-              style={{ marginLeft: 'auto' }}
-              title="Change your details or replace your FICA documents"
+              onClick={onRefresh}
+              className="inline-flex items-center gap-2 px-3.5 py-2 rounded-lg bg-white/10 hover:bg-white/15 text-white text-xs font-semibold backdrop-blur-sm border border-white/10 transition-colors"
             >
-              <span>Edit / Update Application</span>
-              <ArrowRight size={15} />
+              <RefreshCw size={13} />
+              Sync Status
             </button>
+
+            <p className="inline-flex items-center gap-1.5 text-xs text-slate-300">
+              <Mail size={13} className="text-slate-400" />
+              Need assistance? Email:
+              <a
+                href="mailto:support@place4u.xyz"
+                className="font-semibold text-white hover:text-blue-300 transition-colors"
+              >
+                support@place4u.xyz
+              </a>
+            </p>
           </div>
-        </section>
+        </div>
+      </div>
+
+      {/* Metrics KPI Grid — matching Admin Dashboard KPI Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        {/* Metric 1: Verification Status */}
+        <div className="bg-white rounded-xl border border-slate-200 p-4 shadow-xs">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-slate-500 text-[11px] font-semibold uppercase tracking-wider">Verification State</span>
+            <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${
+              isPending ? 'bg-blue-50 text-blue-600' : isRejected ? 'bg-red-50 text-red-600' : 'bg-amber-50 text-amber-600'
+            }`}>
+              {isPending ? <Clock size={16} /> : isRejected ? <AlertCircle size={16} /> : <ShieldCheck size={16} />}
+            </div>
+          </div>
+          <p className="text-xl font-bold text-slate-900">
+            {isPending ? 'Under Review' : isRejected ? 'Update Required' : 'Unverified'}
+          </p>
+          <div className="text-[11px] text-slate-500 mt-1">
+            {isPending ? 'Compliance audit in progress' : isRejected ? 'Please correct documents' : 'Submit FICA documents'}
+          </div>
+        </div>
+
+        {/* Metric 2: FICA Documents on File */}
+        <div className="bg-white rounded-xl border border-slate-200 p-4 shadow-xs">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-slate-500 text-[11px] font-semibold uppercase tracking-wider">FICA Documents</span>
+            <div className="w-8 h-8 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center">
+              <FileText size={16} />
+            </div>
+          </div>
+          <p className="text-xl font-bold text-slate-900">
+            {docCount} <span className="text-xs font-normal text-slate-400">/ 2 required</span>
+          </p>
+          <div className="text-[11px] text-slate-500 mt-1">
+            {hasIdDoc && hasPorDoc ? 'Required files uploaded' : 'ID & proof of address needed'}
+          </div>
+        </div>
+
+        {/* Metric 3: Territory / Location */}
+        <div className="bg-white rounded-xl border border-slate-200 p-4 shadow-xs">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-slate-500 text-[11px] font-semibold uppercase tracking-wider">Service Territory</span>
+            <div className="w-8 h-8 rounded-lg bg-teal-50 text-teal-600 flex items-center justify-center">
+              <MapPin size={16} />
+            </div>
+          </div>
+          <p className="text-xl font-bold text-slate-900 truncate">
+            {profile?.city || formData.city || 'Johannesburg'}
+          </p>
+          <div className="text-[11px] text-slate-500 mt-1">
+            {profile?.province || formData.province || 'Gauteng'}
+          </div>
+        </div>
+
+        {/* Metric 4: Review Turnaround SLA */}
+        <div className="bg-white rounded-xl border border-slate-200 p-4 shadow-xs">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-slate-500 text-[11px] font-semibold uppercase tracking-wider">Review Window</span>
+            <div className="w-8 h-8 rounded-lg bg-purple-50 text-purple-600 flex items-center justify-center">
+              <CheckCircle2 size={16} />
+            </div>
+          </div>
+          <p className="text-xl font-bold text-slate-900">1 – 2 Days</p>
+          <div className="text-[11px] text-slate-500 mt-1">
+            Standard compliance review
+          </div>
+        </div>
+      </div>
+
+      {/* Rejection Alert */}
+      {isRejected && !isEditing && (
+        <div className="bg-red-50/70 border border-red-200 rounded-xl p-4 flex items-start justify-between gap-4">
+          <div className="flex items-start gap-3">
+            <div className="w-8 h-8 rounded-lg bg-red-100 text-red-700 flex items-center justify-center flex-shrink-0 mt-0.5">
+              <AlertCircle size={16} />
+            </div>
+            <div>
+              <h4 className="text-sm font-bold text-red-900">Verification Returned for Revision</h4>
+              <p className="text-xs text-red-700 mt-0.5">
+                {profile?.rejection_reason || 'Submitted documentation did not satisfy regulatory FICA standards. Please update your details and re-attach valid documents.'}
+              </p>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={() => setIsEditing(true)}
+            className="px-3.5 py-1.5 rounded-lg bg-red-600 hover:bg-red-700 text-white text-xs font-semibold shadow-xs transition-colors whitespace-nowrap"
+          >
+            Update & Resubmit
+          </button>
+        </div>
+      )}
+
+      {/* Main Content Workspace — matching Admin's Panel Card */}
+      {isPending && !isEditing ? (
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
+          {/* Main Manifest Column */}
+          <div className="lg:col-span-2 bg-white rounded-xl border border-slate-200 shadow-xs overflow-hidden">
+            <div className="p-5 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div>
+                <div className="flex items-center gap-2">
+                  <h3 className="text-slate-900 font-bold text-base">Application Processing Status</h3>
+                  <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-blue-50 text-blue-700">
+                    Review In Progress
+                  </span>
+                </div>
+                <p className="text-slate-400 text-xs mt-0.5">
+                  Your credentials and FICA documentation are under review by Place4U compliance
+                </p>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={onRefresh}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold shadow-xs transition-colors"
+                >
+                  <RefreshCw size={12} /> Sync
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setIsEditing(true)}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold shadow-xs transition-colors"
+                >
+                  Edit Details
+                </button>
+              </div>
+            </div>
+
+            {/* Review Call Notice Banner */}
+            <div className="p-5 bg-blue-50/50 border-b border-blue-100/60 flex items-start gap-3">
+              <Clock size={18} className="text-blue-600 flex-shrink-0 mt-0.5" />
+              <div>
+                <strong className="text-xs font-semibold text-blue-900 block">Compliance Interview Scheduling</strong>
+                <p className="text-xs text-blue-800/90 mt-0.5 leading-relaxed">
+                  A compliance officer will call you at <span className="font-semibold">{profile?.phone || formData.phone}</span> during the {profile?.interview_time_slot || formData.interview_time_slot} window ({profile?.preferred_contact_method || formData.preferred_contact_method}) to complete your 15-minute onboarding interview.
+                </p>
+              </div>
+            </div>
+
+            {/* Submitted Data Table */}
+            <div className="p-5">
+              <h4 className="text-xs font-bold text-slate-900 uppercase tracking-wider mb-3">Submitted Practitioner Manifest</h4>
+              <div className="divide-y divide-slate-100 text-xs">
+                <div className="py-2.5 flex justify-between gap-4">
+                  <span className="text-slate-500 font-medium">Full Legal Name</span>
+                  <span className="text-slate-900 font-semibold">{profile?.full_name || formData.full_name || '—'}</span>
+                </div>
+                <div className="py-2.5 flex justify-between gap-4">
+                  <span className="text-slate-500 font-medium">ID or Passport Number</span>
+                  <span className="font-mono text-slate-900 font-semibold">{profile?.id_number || formData.id_number || '—'}</span>
+                </div>
+                <div className="py-2.5 flex justify-between gap-4">
+                  <span className="text-slate-500 font-medium">Agency / Practice</span>
+                  <span className="text-slate-900 font-semibold">{profile?.agency_name || formData.agency_name || 'Independent Practitioner'}</span>
+                </div>
+                <div className="py-2.5 flex justify-between gap-4">
+                  <span className="text-slate-500 font-medium">Contact Phone</span>
+                  <span className="font-mono text-slate-900 font-semibold">{profile?.phone || formData.phone || '—'}</span>
+                </div>
+                <div className="py-2.5 flex justify-between gap-4">
+                  <span className="text-slate-500 font-medium">Operating City & Province</span>
+                  <span className="text-slate-900 font-semibold">{profile?.city || formData.city}, {profile?.province || formData.province}</span>
+                </div>
+              </div>
+
+              {/* Uploaded Documents List */}
+              <div className="mt-5 pt-4 border-t border-slate-100">
+                <h4 className="text-xs font-bold text-slate-900 uppercase tracking-wider mb-3">Audited Documents on File</h4>
+                <div className="space-y-2">
+                  {docPreviews.id && (
+                    <div className="flex items-center justify-between p-3 rounded-lg border border-slate-200 bg-slate-50 text-xs">
+                      <div className="flex items-center gap-2.5">
+                        <FileText size={15} className="text-blue-600" />
+                        <span className="font-semibold text-slate-900">National ID or Passport</span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setPreviewModal({ title: 'Identity Document', url: docPreviews.id })}
+                        className="inline-flex items-center gap-1 text-xs font-semibold text-blue-600 hover:text-blue-800"
+                      >
+                        <Eye size={12} /> Inspect File
+                      </button>
+                    </div>
+                  )}
+
+                  {docPreviews.por && (
+                    <div className="flex items-center justify-between p-3 rounded-lg border border-slate-200 bg-slate-50 text-xs">
+                      <div className="flex items-center gap-2.5">
+                        <FileText size={15} className="text-blue-600" />
+                        <span className="font-semibold text-slate-900">Proof of Residential Address</span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setPreviewModal({ title: 'Proof of Address', url: docPreviews.por })}
+                        className="inline-flex items-center gap-1 text-xs font-semibold text-blue-600 hover:text-blue-800"
+                      >
+                        <Eye size={12} /> Inspect File
+                      </button>
+                    </div>
+                  )}
+
+                  {docPreviews.ffc && (
+                    <div className="flex items-center justify-between p-3 rounded-lg border border-slate-200 bg-slate-50 text-xs">
+                      <div className="flex items-center gap-2.5">
+                        <FileText size={15} className="text-blue-600" />
+                        <span className="font-semibold text-slate-900">Fidelity Fund Certificate (FFC)</span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setPreviewModal({ title: 'Fidelity Fund Certificate', url: docPreviews.ffc })}
+                        className="inline-flex items-center gap-1 text-xs font-semibold text-blue-600 hover:text-blue-800"
+                      >
+                        <Eye size={12} /> Inspect File
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Side Info Rail — matching Admin's Sidebar Card */}
+          <div className="space-y-4">
+            <div className="bg-white rounded-xl border border-slate-200 shadow-xs p-5">
+              <h3 className="font-bold text-slate-900 text-sm mb-3">Onboarding Procedure</h3>
+              <ol className="space-y-3 text-xs text-slate-600 list-decimal list-inside">
+                <li>
+                  <strong className="text-slate-900">Statutory FICA Audit:</strong> Compliance validates ID and utility bill against national records.
+                </li>
+                <li>
+                  <strong className="text-slate-900">Practitioner Interview:</strong> Brief call to confirm operating territories and brokerage accreditation.
+                </li>
+                <li>
+                  <strong className="text-slate-900">Platform Activation:</strong> Access granted to application queues, match pipeline, and EFT commission payouts.
+                </li>
+              </ol>
+            </div>
+
+            <div className="bg-white rounded-xl border border-slate-200 shadow-xs p-5">
+              <h3 className="font-bold text-slate-900 text-sm mb-2">Statutory Compliance Notice</h3>
+              <p className="text-xs text-slate-500 leading-relaxed">
+                Place4U complies with the Financial Intelligence Centre Act (FICA) No. 38 of 2001 and the Property Practitioners Act No. 22 of 2019. Unverified agent accounts cannot view personal tenant data or process placement transactions.
+              </p>
+            </div>
+          </div>
+        </div>
+      ) : (
+        /* Form State: Practitioner Registration & Document Upload */
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
+          <form onSubmit={handleSubmit} className="lg:col-span-2 bg-white rounded-xl border border-slate-200 shadow-xs overflow-hidden">
+            <div className="p-5 border-b border-slate-100 flex items-center justify-between">
+              <div>
+                <h3 className="text-slate-900 font-bold text-base">Practitioner Registration Form</h3>
+                <p className="text-slate-400 text-xs mt-0.5">
+                  Submit your details and FICA documents to complete accreditation
+                </p>
+              </div>
+              <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-50 text-amber-700">
+                FICA Mandatory
+              </span>
+            </div>
+
+            {error && (
+              <div className="mx-5 mt-5 p-3.5 rounded-lg bg-red-50 border border-red-200 text-xs text-red-700 flex items-center gap-2">
+                <AlertCircle size={15} className="flex-shrink-0" />
+                <span>{error}</span>
+              </div>
+            )}
+
+            <div className="p-5 space-y-6">
+              {/* Section 1: Practitioner Details */}
+              <div>
+                <h4 className="text-xs font-bold text-slate-900 uppercase tracking-wider mb-3">1. Practitioner Identity & Practice</h4>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
+                  <div>
+                    <label className="block text-slate-700 font-semibold mb-1">Full Legal Name <span className="text-red-500">*</span></label>
+                    <input
+                      type="text"
+                      required
+                      value={formData.full_name}
+                      onChange={(e) => setFormData({ ...formData, full_name: e.target.value })}
+                      placeholder="e.g. Sipho Ndlovu"
+                      className="w-full border border-slate-200 rounded-lg p-2.5 text-xs text-slate-900 focus:ring-2 focus:ring-blue-500 focus:outline-none bg-white"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-slate-700 font-semibold mb-1">ID or Passport Number <span className="text-red-500">*</span></label>
+                    <input
+                      type="text"
+                      required
+                      value={formData.id_number}
+                      onChange={(e) => setFormData({ ...formData, id_number: e.target.value })}
+                      placeholder="13-digit SA ID or passport"
+                      className="w-full font-mono border border-slate-200 rounded-lg p-2.5 text-xs text-slate-900 focus:ring-2 focus:ring-blue-500 focus:outline-none bg-white"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-slate-700 font-semibold mb-1">Agency or Brokerage Name</label>
+                    <input
+                      type="text"
+                      value={formData.agency_name}
+                      onChange={(e) => setFormData({ ...formData, agency_name: e.target.value })}
+                      placeholder="e.g. Pam Golding or Independent"
+                      className="w-full border border-slate-200 rounded-lg p-2.5 text-xs text-slate-900 focus:ring-2 focus:ring-blue-500 focus:outline-none bg-white"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-slate-700 font-semibold mb-1">Contact Phone / WhatsApp <span className="text-red-500">*</span></label>
+                    <input
+                      type="tel"
+                      required
+                      value={formData.phone}
+                      onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                      placeholder="e.g. 082 555 1234"
+                      className="w-full font-mono border border-slate-200 rounded-lg p-2.5 text-xs text-slate-900 focus:ring-2 focus:ring-blue-500 focus:outline-none bg-white"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-slate-700 font-semibold mb-1">Operating City <span className="text-red-500">*</span></label>
+                    <input
+                      type="text"
+                      required
+                      value={formData.city}
+                      onChange={(e) => setFormData({ ...formData, city: e.target.value })}
+                      placeholder="e.g. Johannesburg"
+                      className="w-full border border-slate-200 rounded-lg p-2.5 text-xs text-slate-900 focus:ring-2 focus:ring-blue-500 focus:outline-none bg-white"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-slate-700 font-semibold mb-1">Province <span className="text-red-500">*</span></label>
+                    <select
+                      value={formData.province}
+                      onChange={(e) => setFormData({ ...formData, province: e.target.value })}
+                      className="w-full border border-slate-200 rounded-lg p-2.5 text-xs text-slate-900 focus:ring-2 focus:ring-blue-500 focus:outline-none bg-white"
+                    >
+                      {PROVINCES.map((prov) => (
+                        <option key={prov} value={prov}>{prov}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              {/* Section 2: FICA Documents */}
+              <div className="pt-4 border-t border-slate-100">
+                <h4 className="text-xs font-bold text-slate-900 uppercase tracking-wider mb-1">2. Statutory FICA Documentation</h4>
+                <p className="text-xs text-slate-500 mb-3">Upload clear PDF, PNG, or JPEG documents (maximum 10 MB each).</p>
+
+                <div className="space-y-3">
+                  {/* ID Document Row */}
+                  <div className="p-3.5 rounded-lg border border-slate-200 bg-slate-50/50 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+                    <div>
+                      <strong className="text-slate-900 block font-semibold">National ID or Valid Passport <span className="text-red-500">*</span></strong>
+                      <span className="text-slate-500 text-[11px]">Smart ID card (both sides), green barcoded ID, or passport with work endorsement.</span>
+                    </div>
+
+                    <div>
+                      {hasIdDoc ? (
+                        <div className="flex items-center gap-2 bg-emerald-50 border border-emerald-200 text-emerald-800 px-3 py-1.5 rounded-lg">
+                          <CheckCircle2 size={13} className="text-emerald-600 flex-shrink-0" />
+                          <span className="font-semibold text-xs truncate max-w-[140px]">
+                            {idDocumentFile ? idDocumentFile.name : 'Attached'}
+                          </span>
+                          {docPreviews.id && (
+                            <button
+                              type="button"
+                              onClick={() => setPreviewModal({ title: 'Identity Document', url: docPreviews.id })}
+                              className="text-xs text-blue-600 underline hover:text-blue-800 ml-1"
+                            >
+                              View
+                            </button>
+                          )}
+                          <button
+                            type="button"
+                            onClick={() => handleFileRemove('id_document')}
+                            className="text-slate-400 hover:text-red-600 ml-1"
+                            title="Remove"
+                          >
+                            ✕
+                          </button>
+                        </div>
+                      ) : (
+                        <label className="cursor-pointer inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold shadow-xs transition-colors">
+                          <input
+                            type="file"
+                            accept="image/*,application/pdf"
+                            className="hidden"
+                            onChange={(e) => handleFileSelect('id_document', e.target.files[0])}
+                          />
+                          <Upload size={13} />
+                          Upload Document
+                        </label>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Proof of Address Row */}
+                  <div className="p-3.5 rounded-lg border border-slate-200 bg-slate-50/50 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+                    <div>
+                      <strong className="text-slate-900 block font-semibold">Proof of Residential Address <span className="text-red-500">*</span></strong>
+                      <span className="text-slate-500 text-[11px]">Utility bill, rates notice, or bank statement dated within the past 3 months.</span>
+                    </div>
+
+                    <div>
+                      {hasPorDoc ? (
+                        <div className="flex items-center gap-2 bg-emerald-50 border border-emerald-200 text-emerald-800 px-3 py-1.5 rounded-lg">
+                          <CheckCircle2 size={13} className="text-emerald-600 flex-shrink-0" />
+                          <span className="font-semibold text-xs truncate max-w-[140px]">
+                            {proofOfResidenceFile ? proofOfResidenceFile.name : 'Attached'}
+                          </span>
+                          {docPreviews.por && (
+                            <button
+                              type="button"
+                              onClick={() => setPreviewModal({ title: 'Proof of Address', url: docPreviews.por })}
+                              className="text-xs text-blue-600 underline hover:text-blue-800 ml-1"
+                            >
+                              View
+                            </button>
+                          )}
+                          <button
+                            type="button"
+                            onClick={() => handleFileRemove('proof_of_residence')}
+                            className="text-slate-400 hover:text-red-600 ml-1"
+                            title="Remove"
+                          >
+                            ✕
+                          </button>
+                        </div>
+                      ) : (
+                        <label className="cursor-pointer inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold shadow-xs transition-colors">
+                          <input
+                            type="file"
+                            accept="image/*,application/pdf"
+                            className="hidden"
+                            onChange={(e) => handleFileSelect('proof_of_residence', e.target.files[0])}
+                          />
+                          <Upload size={13} />
+                          Upload Document
+                        </label>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* FFC Certificate Row */}
+                  <div className="p-3.5 rounded-lg border border-slate-200 bg-slate-50/50 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <strong className="text-slate-900 font-semibold">Fidelity Fund Certificate (FFC)</strong>
+                        <span className="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-slate-200 text-slate-600">Optional</span>
+                      </div>
+                      <span className="text-slate-500 text-[11px]">PPRA registration certificate if available.</span>
+                    </div>
+
+                    <div>
+                      {hasFfcDoc ? (
+                        <div className="flex items-center gap-2 bg-emerald-50 border border-emerald-200 text-emerald-800 px-3 py-1.5 rounded-lg">
+                          <CheckCircle2 size={13} className="text-emerald-600 flex-shrink-0" />
+                          <span className="font-semibold text-xs truncate max-w-[140px]">
+                            {fidelityFundCertFile ? fidelityFundCertFile.name : 'Attached'}
+                          </span>
+                          {docPreviews.ffc && (
+                            <button
+                              type="button"
+                              onClick={() => setPreviewModal({ title: 'Fidelity Fund Certificate', url: docPreviews.ffc })}
+                              className="text-xs text-blue-600 underline hover:text-blue-800 ml-1"
+                            >
+                              View
+                            </button>
+                          )}
+                          <button
+                            type="button"
+                            onClick={() => handleFileRemove('fidelity_fund_cert')}
+                            className="text-slate-400 hover:text-red-600 ml-1"
+                            title="Remove"
+                          >
+                            ✕
+                          </button>
+                        </div>
+                      ) : (
+                        <label className="cursor-pointer inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold shadow-xs transition-colors">
+                          <input
+                            type="file"
+                            accept="image/*,application/pdf"
+                            className="hidden"
+                            onChange={(e) => handleFileSelect('fidelity_fund_cert', e.target.files[0])}
+                          />
+                          <Upload size={13} />
+                          Upload Document
+                        </label>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Section 3: Onboarding Call Window */}
+              <div className="pt-4 border-t border-slate-100">
+                <h4 className="text-xs font-bold text-slate-900 uppercase tracking-wider mb-1">3. Compliance Interview Preference</h4>
+                <p className="text-xs text-slate-500 mb-3">Choose your preferred window for the 15-minute verification interview.</p>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
+                  <div>
+                    <label className="block text-slate-700 font-semibold mb-1">Preferred Time of Day</label>
+                    <select
+                      value={formData.interview_time_slot}
+                      onChange={(e) => setFormData({ ...formData, interview_time_slot: e.target.value })}
+                      className="w-full border border-slate-200 rounded-lg p-2.5 text-xs text-slate-900 focus:ring-2 focus:ring-blue-500 focus:outline-none bg-white"
+                    >
+                      <option value="morning">Morning (09:00 – 12:00)</option>
+                      <option value="afternoon">Afternoon (13:00 – 17:00)</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-slate-700 font-semibold mb-1">Preferred Channel</label>
+                    <select
+                      value={formData.preferred_contact_method}
+                      onChange={(e) => setFormData({ ...formData, preferred_contact_method: e.target.value })}
+                      className="w-full border border-slate-200 rounded-lg p-2.5 text-xs text-slate-900 focus:ring-2 focus:ring-blue-500 focus:outline-none bg-white"
+                    >
+                      <option value="whatsapp">WhatsApp Voice Call</option>
+                      <option value="phone">Cellular Direct Call</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Footer Buttons */}
+            <div className="p-5 border-t border-slate-100 bg-slate-50/50 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div className="flex items-center gap-2.5">
+                <button
+                  type="submit"
+                  disabled={submitting}
+                  className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold shadow-xs transition-colors disabled:opacity-50"
+                >
+                  <ShieldCheck size={14} />
+                  {submitting ? 'Submitting Application…' : 'Submit Verification Application'}
+                </button>
+                {isPending && (
+                  <button
+                    type="button"
+                    onClick={() => setIsEditing(false)}
+                    className="px-4 py-2.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold shadow-xs transition-colors"
+                  >
+                    Cancel
+                  </button>
+                )}
+              </div>
+              <p className="text-[11px] text-slate-400">
+                Documents are protected and encrypted per POPIA regulations.
+              </p>
+            </div>
+          </form>
+
+          {/* Side Info Rail */}
+          <div className="space-y-4">
+            <div className="bg-white rounded-xl border border-slate-200 shadow-xs p-5">
+              <h3 className="font-bold text-slate-900 text-sm mb-3">Verification Checklist</h3>
+              <ul className="space-y-2.5 text-xs text-slate-600">
+                <li className="flex items-start gap-2">
+                  <CheckCircle2 size={14} className="text-emerald-500 flex-shrink-0 mt-0.5" />
+                  <span>Valid South African smart ID or passport with permit</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <CheckCircle2 size={14} className="text-emerald-500 flex-shrink-0 mt-0.5" />
+                  <span>Proof of residence with street address (under 3 months old)</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <CheckCircle2 size={14} className="text-emerald-500 flex-shrink-0 mt-0.5" />
+                  <span>Reachability on mobile/WhatsApp for onboarding call</span>
+                </li>
+              </ul>
+            </div>
+
+            <div className="bg-white rounded-xl border border-slate-200 shadow-xs p-5">
+              <h3 className="font-bold text-slate-900 text-sm mb-2">Statutory Notice</h3>
+              <p className="text-xs text-slate-500 leading-relaxed">
+                Place4U operates under the Property Practitioners Act 22 of 2019 and the Financial Intelligence Centre Act 38 of 2001. Unverified agent accounts are restricted from tenant data access and commission payouts.
+              </p>
+            </div>
+          </div>
+        </div>
       )}
     </div>
-  );
+  )
 }

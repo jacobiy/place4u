@@ -281,7 +281,7 @@ export const Settings = ({ userRow, profile, user, onRefresh, onLogout }) => {
       <section className="settings-card">
         <div className="settings-card-header">
           <div className="settings-card-title-group">
-            <KeyRound size={20} color="#7da2ff" />
+            <KeyRound size={20} color="#2563eb" />
             <div>
               <h2>Password & Security</h2>
               <p className="settings-card-desc">Update your login password and manage access security</p>
@@ -340,7 +340,7 @@ export const Settings = ({ userRow, profile, user, onRefresh, onLogout }) => {
       <section className="settings-card">
         <div className="settings-card-header">
           <div className="settings-card-title-group">
-            <Wallet size={20} color="#10b981" />
+            <Wallet size={20} color="#16a34a" />
             <div>
               <h2>Commission Payout Banking Details</h2>
               <p className="settings-card-desc">South African bank account for receiving 50% placement commission disbursements via EFT</p>
@@ -412,8 +412,7 @@ export const Settings = ({ userRow, profile, user, onRefresh, onLogout }) => {
               <button
                 type="submit"
                 disabled={isSavingBanking}
-                className="settings-save-btn"
-                style={{ background: '#059669' }}
+                className="settings-save-btn banking-btn"
               >
                 <Save size={15} />
                 <span>{isSavingBanking ? 'Saving...' : 'Save Banking Details'}</span>
@@ -427,7 +426,7 @@ export const Settings = ({ userRow, profile, user, onRefresh, onLogout }) => {
       <section className="settings-card">
         <div className="settings-card-header">
           <div className="settings-card-title-group">
-            <Bell size={20} color="#7da2ff" />
+            <Bell size={20} color="#2563eb" />
             <div>
               <h2>Placement Notifications & Alerts</h2>
               <p className="settings-card-desc">Configure how and when you receive tenant match alerts and payout releases</p>
@@ -498,7 +497,7 @@ export const Settings = ({ userRow, profile, user, onRefresh, onLogout }) => {
       <section className="settings-card">
         <div className="settings-card-header">
           <div className="settings-card-title-group">
-            <FileText size={20} color="#38bdf8" />
+            <FileText size={20} color="#0284c7" />
             <div>
               <h2>POPIA Privacy & Data Rights</h2>
               <p className="settings-card-desc">Complying with South Africa's Protection of Personal Information Act, No. 4 of 2013</p>
@@ -508,7 +507,7 @@ export const Settings = ({ userRow, profile, user, onRefresh, onLogout }) => {
 
         <div className="settings-card-body">
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-            <p style={{ fontSize: '0.82rem', color: '#cbd5e1', lineHeight: 1.6, margin: 0 }}>
+            <p style={{ fontSize: '0.82rem', color: '#475569', lineHeight: 1.6, margin: 0 }}>
               Download a full copy of your personal data (POPIA Section 23).
             </p>
 
@@ -516,8 +515,7 @@ export const Settings = ({ userRow, profile, user, onRefresh, onLogout }) => {
               <button
                 type="button"
                 onClick={handleExportData}
-                className="settings-save-btn"
-                style={{ background: 'rgba(56, 189, 248, 0.15)', border: '1px solid rgba(56, 189, 248, 0.35)', color: '#38bdf8' }}
+                className="settings-save-btn popia-btn"
               >
                 <Download size={15} />
                 <span>Export Personal Data (DSAR)</span>
