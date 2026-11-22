@@ -152,12 +152,19 @@ export default function AdminSidebar({ isOpen, onClose }) {
       >
         {/* Brand header */}
         <div className="flex items-center justify-between px-5 h-16 border-b border-slate-800">
-          <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center text-white shadow-xs">
-              <Building2 size={18} />
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-lg overflow-hidden flex items-center justify-center bg-slate-800/60 border border-slate-700/60 flex-shrink-0">
+              <img
+                src="/logo-icon.png"
+                alt="Place4U"
+                className="w-6 h-6 object-contain"
+                onError={(e) => {
+                  e.currentTarget.src = '/logo.png'
+                }}
+              />
             </div>
             <div>
-              <span className="text-white font-bold text-sm tracking-tight block">Place4U</span>
+              <span className="text-white font-bold text-sm tracking-tight block leading-tight">Place4U</span>
               <span className="text-[10px] text-blue-400 font-medium tracking-wide uppercase">Admin Operations</span>
             </div>
           </div>

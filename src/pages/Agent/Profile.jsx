@@ -181,55 +181,23 @@ export const Profile = ({ userRow, profile, user, onRefresh }) => {
         </div>
 
         {/* Verification Status Banner */}
-        <div style={{
-          marginBottom: '1.5rem',
-          padding: '1rem 1.25rem',
-          borderRadius: '12px',
-          background: isVerified 
-            ? 'rgba(16, 185, 129, 0.1)' 
-            : isPending 
-            ? 'rgba(79, 126, 248, 0.1)' 
-            : 'rgba(245, 158, 11, 0.1)',
-          border: `1px solid ${
-            isVerified 
-              ? 'rgba(16, 185, 129, 0.3)' 
-              : isPending 
-              ? 'rgba(79, 126, 248, 0.3)' 
-              : 'rgba(245, 158, 11, 0.3)'
-          }`,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          flexWrap: 'wrap',
-          gap: '12px'
-        }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <span style={{
-              display: 'inline-block',
-              width: '10px',
-              height: '10px',
-              borderRadius: '50%',
-              background: isVerified ? '#10b981' : isPending ? '#4f7ef8' : '#f59e0b'
-            }} />
+        <div className={`profile-status-banner ${isVerified ? 'verified' : isPending ? 'pending' : 'inactive'}`}>
+          <div className="profile-status-content">
+            <span className="profile-status-dot" />
             <div>
-              <p style={{
-                margin: 0,
-                fontSize: '0.9rem',
-                fontWeight: 700,
-                color: isVerified ? '#10b981' : isPending ? '#7da2ff' : '#f59e0b'
-              }}>
+              <p className="profile-status-title">
                 {isVerified 
                   ? 'Verified agent' 
                   : isPending 
-                  ? 'Verification Pending Review' 
-                  : 'Account inactive'}
+                  ? 'Verification pending review' 
+                  : 'Account unverified'}
               </p>
-              <p style={{ margin: '2px 0 0', fontSize: '0.78rem', color: '#94a3b8' }}>
+              <p className="profile-status-subtitle">
                 {isVerified 
-                  ? 'Approved. Full access enabled.' 
+                  ? 'Approved. Full portal and match dispatch access enabled.' 
                   : isPending 
-                  ? 'Documents under compliance review.' 
-                  : 'Complete verification to unlock features.'}
+                  ? 'FICA and EAAB documents are currently under compliance review.' 
+                  : 'Complete verification on your dashboard to unlock live match placements.'}
               </p>
             </div>
           </div>

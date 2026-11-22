@@ -33,9 +33,9 @@
   align-items: center;
   gap: 7px;
   font-size: 0.68rem;
-  font-weight: 700;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
+  font-weight: 600;
+  letter-spacing: 0;
+  text-transform: none;
   color: var(--ag-dim);
 }
 
@@ -75,7 +75,7 @@
 /* -------------------------------------------------------------------- Panels */
 .ag-panel {
   position: relative;
-  background: linear-gradient(180deg, rgba(255,255,255,0.045) 0%, rgba(255,255,255,0.022) 100%);
+  background: rgba(255, 255, 255, 0.02);
   border: 1px solid var(--ag-line);
   border-radius: var(--ag-radius);
   box-shadow: var(--ag-shadow);
@@ -156,13 +156,11 @@
   background: var(--ag-accent);
   color: #ffffff;
   border-color: var(--ag-accent);
-  box-shadow: 0 10px 24px -14px rgba(79,126,248,0.9);
 }
 
 .agent-btn-primary:hover:not(:disabled) {
   background: #5f8bfb;
   border-color: #5f8bfb;
-  transform: translateY(-1px);
 }
 
 .agent-btn-secondary {
@@ -311,7 +309,7 @@
   font-weight: 700;
   color: #ffffff;
   overflow: hidden;
-  background: linear-gradient(140deg, #2b4a8f 0%, #4f7ef8 100%);
+  background: #315f91;
   flex-shrink: 0;
 }
 

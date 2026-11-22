@@ -10,6 +10,11 @@
   width: 100%;
 }
 
+.agent-dashboard.is-onboarding {
+  background: #f8fafc;
+  color: #0f172a;
+}
+
 /* ================================================================== Top bar */
 .ag-topbar {
   position: sticky;
@@ -31,7 +36,7 @@
 .ag-topbar-title {
   font-family: var(--ag-font-display);
   font-size: 1.3rem;
-  font-weight: 700;
+  font-weight: 600;
   letter-spacing: -0.022em;
   line-height: 1.15;
   color: #ffffff;
@@ -51,7 +56,7 @@
 .ag-dot-sep { width: 3px; height: 3px; border-radius: 50%; background: var(--ag-dim); }
 
 .ag-verify { display: inline-flex; align-items: center; gap: 6px; font-weight: 600; color: var(--ag-ok); }
-.ag-verify .dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; box-shadow: 0 0 8px currentColor; }
+.ag-verify .dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
 .ag-verify.is-warn { color: var(--ag-warn); }
 
 .ag-topbar-search { flex: 1 1 240px; max-width: 440px; min-width: 200px; }
@@ -193,7 +198,7 @@
 .ag-kpi {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.045) 0%, rgba(255, 255, 255, 0.02) 100%);
+  background: #141e2e;
   border: 1px solid var(--ag-line);
   border-radius: var(--ag-radius);
   box-shadow: var(--ag-shadow);
@@ -208,9 +213,9 @@
 
 .ag-kpi-label {
   font-size: 0.68rem;
-  font-weight: 700;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
+  font-weight: 600;
+  letter-spacing: 0;
+  text-transform: none;
   color: var(--ag-dim);
 }
 
@@ -220,7 +225,7 @@
   font-family: var(--ag-font-mono);
   font-variant-numeric: tabular-nums;
   font-size: 2.1rem;
-  font-weight: 700;
+  font-weight: 600;
   letter-spacing: -0.03em;
   line-height: 1;
   color: #ffffff;
@@ -628,9 +633,10 @@
 .agent-dashboard.is-verified .ag-alert-icon { background: #fff0c2; color: #9a6700; }
 
 .agent-dashboard.is-verified .ag-kpi {
-  background: transparent;
+  background: #141e2e;
+  box-shadow: none;
   border: 0;
-  border-block: 1px solid #d8e0e9;
+  border-bottom: 1px solid #d8e0e9;
   border-radius: 0;
 }
 
