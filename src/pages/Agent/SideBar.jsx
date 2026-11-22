@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import React from 'react'
 import {
   LayoutDashboard,
   FileText,
@@ -7,174 +7,201 @@ import {
   User,
   Settings,
   LogOut,
-  ChevronsUpDown,
-  Lock,
-  ShieldCheck,
-  GitBranch
-} from "lucide-react";
-import "./SideBar.css";
-import { getUserAvatar, AvatarImage } from "../../utils/avatarHelper";
+  GitBranch,
+  X
+} from 'lucide-react'
+import { getUserAvatar, AvatarImage } from '../../utils/avatarHelper'
 
-const initials = (nameOrEmail) => {
-  const raw = (nameOrEmail || "").trim();
-  if (!raw) return "AG";
-  if (raw.includes("@")) return raw.slice(0, 2).toUpperCase();
-  const parts = raw.split(/\s+/).filter(Boolean);
-  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
-  return `${parts[0][0]}${parts[parts.length - 1][0]}`.toUpperCase();
-};
+const navLinkClass =
+  'flex items-center gap-3 px-3 py-2 rounded-lg text-xs font-medium text-slate-300 transition-colors w-full text-left'
 
-const PRIMARY = [
-  { id: "dashboard", icon: LayoutDashboard, label: "Dashboard" },
-  { id: "applications", icon: FileText, label: "Applications", locked: true },
-  { id: "pipeline", icon: GitBranch, label: "Match Pipeline", locked: true },
-  { id: "properties", icon: Building2, label: "Properties", locked: true },
-  { id: "wallet", icon: Wallet, label: "Wallet & Earnings", locked: true }
-];
+const navLinkActiveClass = 'bg-blue-600 text-white font-semibold shadow-xs'
 
-const SECONDARY = [
-  { id: "profile", icon: User, label: "Profile" },
-  { id: "settings", icon: Settings, label: "Settings" }
-];
+const SectionTitle = ({ children }) => (
+  <p className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider px-3 mb-1.5 mt-3">
+    {children}
+  </p>
+)
 
-export const Sidebar = ({ activeView, setActiveView, onLogout, profile, agentProfile, user }) => {
-  const [isProfileOpen, setIsProfileOpen] = useState(false);
-  const displayName = profile?.full_name || agentProfile?.full_name || user?.user_metadata?.full_name || user?.email || "Agent";
-  const isAgentVerified = Boolean(agentProfile?.is_verified === true || profile?.is_verified === true);
-
-  const groups = useMemo(
-    () => [
-      {
-        label: "Workspace",
-        items: PRIMARY.map((item) => ({ ...item, locked: Boolean(item.locked) && !isAgentVerified }))
-      },
-      {
-        label: "Account",
-        items: SECONDARY.map((item) => ({ ...item, locked: Boolean(item.locked) && !isAgentVerified }))
-      }
-    ],
-    [isAgentVerified]
-  );
-
-  const NavItem = ({ id, icon: Icon, label, locked }) => {
-    const active = activeView === id;
-    return (
-      <button
-        type="button"
-        onClick={() => setActiveView(id)}
-        className={`sb-nav-item${active ? " is-active" : ""}${locked ? " is-locked" : ""}`}
-        aria-current={active ? "page" : undefined}
-      >
-        <span className="sb-nav-rail" aria-hidden="true" />
-        <Icon size={17} strokeWidth={2} className="sb-nav-icon" />
-        <span className="sb-nav-label">{label}</span>
-        {locked && (
-          <span className="sb-nav-lock" title="Complete verification to unlock">
-            <Lock size={10} />
-          </span>
-        )}
-      </button>
-    );
-  };
+export const Sidebar = ({
+  activeView,
+  setActiveView,
+  onLogout,
+  profile,
+  agentProfile,
+  user,
+  isOpen = false,
+  onClose = () => {}
+}) => {
+  const displayName =
+    profile?.full_name ||
+    agentProfile?.full_name ||
+    user?.user_metadata?.full_name ||
+    user?.email ||
+    'Agent'
+  const isAgentVerified = Boolean(agentProfile?.is_verified === true || profile?.is_verified === true)
+  const email = user?.email || profile?.email || ''
 
   return (
-    <aside className="agent-sidebar">
-      {/* Brand */}
-      <div className="sb-brand">
-        <div className="sb-brand-mark">
-          <img src="/logo-icon.png" alt="Place4U" />
+    <aside
+      className={`fixed top-0 bottom-0 left-0 w-[240px] bg-slate-900 border-r border-slate-800 flex flex-col z-40 transition-transform duration-200 ${
+        isOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
+      }`}
+    >
+      {/* Brand header */}
+      <div className="flex items-center justify-between px-5 h-16 border-b border-slate-800">
+        <div className="flex items-center gap-3">
+          <div className="w-8 h-8 rounded-lg overflow-hidden flex items-center justify-center bg-slate-800/60 border border-slate-700/60 flex-shrink-0">
+            <img
+              src="/logo-icon.png"
+              alt="Place4U"
+              className="w-6 h-6 object-contain"
+              onError={(e) => {
+                e.currentTarget.src = '/logo.png';
+              }}
+            />
+          </div>
+          <div>
+            <span className="text-white font-bold text-sm tracking-tight block leading-tight">Place4U</span>
+            <span className="text-[10px] text-blue-400 font-medium tracking-wide uppercase">Agent Portal</span>
+          </div>
         </div>
-        <div className="sb-brand-text">
-          <span className="sb-brand-name">Place4U</span>
-          <span className="sb-brand-sub">Agent Console</span>
-        </div>
+
+        <button
+          type="button"
+          onClick={onClose}
+          className="lg:hidden text-slate-400 hover:text-white p-1"
+        >
+          <X size={18} />
+        </button>
       </div>
 
-      {/* Navigation */}
-      <nav className="sb-nav">
-        {groups.map((group) => (
-          <div className="sb-group" key={group.label}>
-            <p className="sb-group-label">{group.label}</p>
-            {group.items.map((item) => (
-              <NavItem key={item.id} {...item} />
-            ))}
-          </div>
-        ))}
+      {/* Navigation list */}
+      <nav className="flex-1 px-3 py-3 space-y-1 overflow-y-auto">
+        <SectionTitle>Workspace</SectionTitle>
+
+        <button
+          type="button"
+          onClick={() => {
+            setActiveView('dashboard')
+            onClose()
+          }}
+          className={`${navLinkClass} ${activeView === 'dashboard' ? navLinkActiveClass : 'hover:bg-white/5'}`}
+        >
+          <LayoutDashboard size={15} />
+          <span>Dashboard</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => {
+            setActiveView('applications')
+            onClose()
+          }}
+          className={`${navLinkClass} ${activeView === 'applications' ? navLinkActiveClass : 'hover:bg-white/5'}`}
+        >
+          <FileText size={15} />
+          <span>Applications</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => {
+            setActiveView('pipeline')
+            onClose()
+          }}
+          className={`${navLinkClass} ${activeView === 'pipeline' ? navLinkActiveClass : 'hover:bg-white/5'}`}
+        >
+          <GitBranch size={15} />
+          <span>Match Pipeline</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => {
+            setActiveView('properties')
+            onClose()
+          }}
+          className={`${navLinkClass} ${activeView === 'properties' ? navLinkActiveClass : 'hover:bg-white/5'}`}
+        >
+          <Building2 size={15} />
+          <span>Properties</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => {
+            setActiveView('wallet')
+            onClose()
+          }}
+          className={`${navLinkClass} ${activeView === 'wallet' ? navLinkActiveClass : 'hover:bg-white/5'}`}
+        >
+          <Wallet size={15} />
+          <span>Earnings & Payouts</span>
+        </button>
+
+        <SectionTitle>Account</SectionTitle>
+
+        <button
+          type="button"
+          onClick={() => {
+            setActiveView('profile')
+            onClose()
+          }}
+          className={`${navLinkClass} ${activeView === 'profile' ? navLinkActiveClass : 'hover:bg-white/5'}`}
+        >
+          <User size={15} />
+          <span>Profile</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => {
+            setActiveView('settings')
+            onClose()
+          }}
+          className={`${navLinkClass} ${activeView === 'settings' ? navLinkActiveClass : 'hover:bg-white/5'}`}
+        >
+          <Settings size={15} />
+          <span>Settings</span>
+        </button>
+
+        {/* Support note */}
+        <div className="pt-6 px-3">
+          <p className="text-[11px] leading-relaxed text-slate-400">
+            Need assistance?
+            <a
+              href="mailto:support@place4u.xyz"
+              className="block font-semibold text-blue-300 hover:text-blue-200 transition-colors break-all mt-0.5"
+            >
+              support@place4u.xyz
+            </a>
+          </p>
+        </div>
       </nav>
 
-      {/* Verification prompt */}
-      {!isAgentVerified && (
-        <div className="sb-verify">
-          <div className="sb-verify-icon">
-            <Lock size={14} />
-          </div>
-          <div className="sb-verify-copy">
-            <p className="sb-verify-title">Account inactive</p>
-            <p className="sb-verify-text">
-              Submit your FICA documents to unlock listings, matching and earnings.
-            </p>
-          </div>
-          <button type="button" className="sb-verify-btn" onClick={() => setActiveView("dashboard")}>
-            <ShieldCheck size={13} /> Get verified
-          </button>
+      {/* User Card Footer */}
+      <div className="p-3.5 border-t border-slate-800 bg-[#070D1E] flex items-center gap-3">
+        <div className="w-8 h-8 rounded-full overflow-hidden bg-slate-800 flex items-center justify-center text-white text-xs font-bold flex-shrink-0 border border-slate-700">
+          <AvatarImage src={getUserAvatar(agentProfile || { full_name: displayName }, 'agent')} alt={displayName} />
         </div>
-      )}
-
-      {/* Identity / account menu */}
-      <div className="sb-footer">
-        <div className="sb-identity-wrap">
-          <button
-            type="button"
-            className={`sb-identity${isProfileOpen ? " is-open" : ""}`}
-            onClick={() => setIsProfileOpen((v) => !v)}
-            aria-expanded={isProfileOpen}
-          >
-            <span className="sb-identity-avatar">
-              <AvatarImage src={getUserAvatar(agentProfile || { full_name: displayName }, 'agent')} alt={displayName} />
-              <span className={`sb-presence${isAgentVerified ? " is-on" : " is-off"}`} />
-            </span>
-            <span className="sb-identity-text">
-              <span className="sb-identity-name">{displayName}</span>
-              <span className={`sb-identity-role${isAgentVerified ? " is-verified" : ""}`}>
-                {isAgentVerified ? "Verified agent" : "Unverified"}
-              </span>
-            </span>
-            <ChevronsUpDown size={14} className="sb-identity-chev" />
-          </button>
-
-          {isProfileOpen && (
-            <>
-              <div className="sb-menu-backdrop" onClick={() => setIsProfileOpen(false)} />
-              <div className="sb-menu">
-                <button
-                  type="button"
-                  className="sb-menu-item"
-                  onClick={() => {
-                    setActiveView("profile");
-                    setIsProfileOpen(false);
-                  }}
-                >
-                  <User size={15} /> View profile
-                </button>
-                <button
-                  type="button"
-                  className="sb-menu-item"
-                  onClick={() => {
-                    setActiveView("settings");
-                    setIsProfileOpen(false);
-                  }}
-                >
-                  <Settings size={15} /> Account settings
-                </button>
-                <div className="sb-menu-sep" />
-                <button type="button" className="sb-menu-item is-danger" onClick={onLogout}>
-                  <LogOut size={15} /> Sign out
-                </button>
-              </div>
-            </>
-          )}
+        <div className="flex-1 min-w-0">
+          <p className="text-white text-xs font-semibold truncate leading-tight">{displayName}</p>
+          <p className="text-slate-400 text-[10px] truncate leading-tight mt-0.5">
+            {isAgentVerified ? 'Verified Agent' : 'Unverified Agent'}
+          </p>
         </div>
+        <button
+          onClick={onLogout}
+          type="button"
+          className="text-slate-400 hover:text-white p-1 rounded transition-colors"
+          title="Log Out"
+          aria-label="Logout"
+        >
+          <LogOut size={15} />
+        </button>
       </div>
     </aside>
-  );
-};
+  )
+}
+export default Sidebar

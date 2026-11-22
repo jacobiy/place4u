@@ -5,7 +5,7 @@
   isolation: isolate;
   display: flex;
   min-height: 100dvh;
-  background: #101827;
+  background: #f8fafc;
 }
 
 .agent-sidebar-overlay {
@@ -26,12 +26,12 @@
 
 .agent-main-content {
   flex: 1;
-  margin-left: 264px;
-  width: calc(100% - 264px);
+  margin-left: 240px;
+  width: calc(100% - 240px);
   height: 100dvh;
   overflow-y: auto;
   position: relative;
-  background: #101827;
+  background: #f8fafc;
 }
 
 .agent-main-content.is-mobile {
@@ -40,11 +40,11 @@
 }
 
 .agent-main-content.is-verified-dashboard {
-  background: #f5f6f7;
+  background: #f8fafc;
 }
 
 .agent-main-content.is-workspace {
-  background: #ffffff;
+  background: #f8fafc;
   color: #111827;
   --ag-ink: #ffffff;
   --ag-ink-2: #f8fafc;
