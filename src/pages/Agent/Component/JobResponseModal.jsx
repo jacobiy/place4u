@@ -2,10 +2,10 @@ import React, { useEffect, useState } from 'react';
 import { X, AlertTriangle, ThumbsDown, Send } from 'lucide-react';
 
 const QUICK_REASONS = [
-  'Outside my coverage area',
-  'Not my property specialisation',
-  'Already at capacity with current briefs',
-  'Client budget below my fee threshold',
+  'Outside coverage area',
+  'Different specialisation',
+  'At current capacity',
+  'Budget below threshold',
   'Conflict of interest'
 ];
 
@@ -59,7 +59,7 @@ export const JobResponseModal = ({
               <ThumbsDown size={18} />
             </span>
             <div>
-              <h3>Reject this Job</h3>
+              <h3>Decline Assignment</h3>
               <p>
                 {tenant?.full_name ? `${tenant.full_name} · ` : ''}
                 #{String(application?.id || '').slice(0, 8)}
@@ -73,8 +73,7 @@ export const JobResponseModal = ({
 
         <div className="job-response-body">
           <p className="job-response-intro">
-            The administrator will be notified that you cannot take this job and will be prompted to
-            reassign it to another agent. A short reason helps them pick the right person.
+            Admin will be notified to reassign. A quick reason helps route it faster.
           </p>
 
           <div className="job-response-quick">
@@ -98,7 +97,7 @@ export const JobResponseModal = ({
             className="job-response-textarea"
             rows={3}
             maxLength={500}
-            placeholder="e.g. This brief falls outside my coverage area — please reassign."
+            placeholder="e.g. Outside my coverage area."
             value={reason}
             onChange={(e) => {
               setReason(e.target.value);
@@ -121,7 +120,7 @@ export const JobResponseModal = ({
             onClick={onClose}
             disabled={submitting}
           >
-            Keep Job
+            Cancel
           </button>
           <button
             type="button"
@@ -130,7 +129,7 @@ export const JobResponseModal = ({
             disabled={submitting}
           >
             <Send size={15} />
-            {submitting ? 'Sending…' : 'Reject Job & Notify Admin'}
+            {submitting ? 'Submitting…' : 'Decline & Reassign'}
           </button>
         </div>
       </div>

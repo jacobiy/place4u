@@ -25,8 +25,11 @@ import {
   CheckCircle2,
   Clock,
   Mail,
-  AlertCircle
+  AlertCircle,
+  Eye,
+  FileText
 } from 'lucide-react'
+import TenantApplicationModal from '../../component/TenantApplicationModal'
 
 export default function ApplicationsPage() {
   const [applications, setApplications] = useState([])
@@ -509,41 +512,52 @@ export default function ApplicationsPage() {
                       </select>
                     </div>
 
-                    {/* Action buttons (Email Tenant & Agent) */}
-                    <div className="flex items-center gap-2 pt-2 border-t border-slate-100">
-                      {tenantEmail && (
-                        <button
-                          type="button"
-                          onClick={() =>
-                            openEmailClient(
-                              tenantEmail,
-                              `Place4U Application Status [${app.id.slice(0, 8)}]`,
-                              `Hi ${tenantName},\n\nWe are processing your rental application for ${areas}.\nYour assigned agent: ${agentName}.\n\nBest regards,\nPlace4U Team`
-                            )
-                          }
-                          className="flex-1 py-1.5 px-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-xs inline-flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
-                        >
-                          <Mail size={12} className="text-red-500" />
-                          Email Tenant
-                        </button>
-                      )}
+                    {/* Action buttons (Inspect Dossier, Email Tenant & Agent) */}
+                    <div className="pt-2 border-t border-slate-100 flex flex-col gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setSelectedApp(app)}
+                        className="w-full py-2 px-3 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs inline-flex items-center justify-center gap-1.5 transition-colors shadow-xs cursor-pointer"
+                      >
+                        <Eye size={13} />
+                        Inspect Tenant Dossier
+                      </button>
 
-                      {agentEmail && (
-                        <button
-                          type="button"
-                          onClick={() =>
-                            openEmailClient(
-                              agentEmail,
-                              `Assigned Application: ${tenantName} [${app.id.slice(0, 8)}]`,
-                              `Hi ${agentName},\n\nPlease review application ${app.id}.\nTenant: ${tenantName} (${tenantPhone})\nRequirements: ${app.special_requirements || 'None'}\n\nPlace4U Admin`
-                            )
-                          }
-                          className="flex-1 py-1.5 px-2 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-700 font-semibold text-xs inline-flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
-                        >
-                          <Mail size={12} className="text-blue-600" />
-                          Email Agent
-                        </button>
-                      )}
+                      <div className="flex items-center gap-2">
+                        {tenantEmail && (
+                          <button
+                            type="button"
+                            onClick={() =>
+                              openEmailClient(
+                                tenantEmail,
+                                `Place4U Application Status [${app.id.slice(0, 8)}]`,
+                                `Hi ${tenantName},\n\nWe are processing your rental application for ${areas}.\nYour assigned agent: ${agentName}.\n\nBest regards,\nPlace4U Team`
+                              )
+                            }
+                            className="flex-1 py-1.5 px-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-xs inline-flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+                          >
+                            <Mail size={12} className="text-red-500" />
+                            Email Tenant
+                          </button>
+                        )}
+
+                        {agentEmail && (
+                          <button
+                            type="button"
+                            onClick={() =>
+                              openEmailClient(
+                                agentEmail,
+                                `Assigned Application: ${tenantName} [${app.id.slice(0, 8)}]`,
+                                `Hi ${agentName},\n\nPlease review application ${app.id}.\nTenant: ${tenantName} (${tenantPhone})\nRequirements: ${app.special_requirements || 'None'}\n\nPlace4U Admin`
+                              )
+                            }
+                            className="flex-1 py-1.5 px-2 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-700 font-semibold text-xs inline-flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+                          >
+                            <Mail size={12} className="text-blue-600" />
+                            Email Agent
+                          </button>
+                        )}
+                      </div>
                     </div>
                   </div>
                 )
@@ -585,7 +599,15 @@ export default function ApplicationsPage() {
                         }`}
                       >
                         <td className="px-5 py-3.5 font-mono text-blue-600">
-                          <div>{app.id.slice(0, 8)}…</div>
+                          <button
+                            type="button"
+                            onClick={() => setSelectedApp(app)}
+                            className="hover:underline flex items-center gap-1 font-bold text-left cursor-pointer"
+                            title="Inspect application dossier"
+                          >
+                            <span>{app.id.slice(0, 8)}…</span>
+                            <Eye size={11} className="opacity-60" />
+                          </button>
                           <span className="text-[10px] text-slate-400">{app.lease_duration_months || 12} mo</span>
                         </td>
 
@@ -686,6 +708,16 @@ export default function ApplicationsPage() {
 
                         <td className="px-5 py-3.5 text-right">
                           <div className="flex items-center justify-end gap-1.5">
+                            <button
+                              type="button"
+                              onClick={() => setSelectedApp(app)}
+                              className="px-2.5 py-1 rounded bg-blue-50 hover:bg-blue-100 text-blue-700 font-semibold text-[11px] inline-flex items-center gap-1 border border-blue-200 transition-colors cursor-pointer"
+                              title="Inspect full application dossier"
+                            >
+                              <Eye size={12} className="text-blue-600" />
+                              Inspect
+                            </button>
+
                             {tenantEmail && (
                               <button
                                 onClick={() =>
@@ -730,6 +762,48 @@ export default function ApplicationsPage() {
           </>
         )}
       </section>
+
+      {/* Tenant Application Dossier Modal */}
+      {selectedApp && (
+        <TenantApplicationModal
+          isOpen={!!selectedApp}
+          onClose={() => setSelectedApp(null)}
+          application={selectedApp}
+          tenant={selectedApp.tenant}
+          property={selectedApp.property || null}
+          footerExtra={
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="text-xs font-semibold text-slate-700">Assign to Agent:</span>
+              <select
+                value={selectedApp.assigned_to || ''}
+                onChange={async (e) => {
+                  const newAgentId = e.target.value
+                  await handleAssign(selectedApp.id, newAgentId)
+                  setSelectedApp((prev) =>
+                    prev
+                      ? {
+                          ...prev,
+                          assigned_to: newAgentId || null,
+                          status: newAgentId ? 'under_review' : 'submitted',
+                          assignment_status: newAgentId ? 'assigned' : 'unassigned',
+                          agent: agents.find((a) => a.id === newAgentId) || null
+                        }
+                      : null
+                  )
+                }}
+                className="bg-white border border-slate-300 text-slate-800 text-xs rounded-lg px-2.5 py-1.5 focus:outline-none focus:border-blue-600"
+              >
+                <option value="">-- Select Agent / Unassigned --</option>
+                {agents.map((ag) => (
+                  <option key={ag.id} value={ag.id}>
+                    {ag.full_name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          }
+        />
+      )}
     </div>
   )
 }

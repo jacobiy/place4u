@@ -1,5 +1,5 @@
 import { supabase } from '../../../utils/Supabase'
-import { resolveDocumentUrl, LANDLORD_DOCUMENTS_BUCKET } from '../../../utils/documentUrls'
+import { resolveDocumentUrl, resolveApplicationDocuments, LANDLORD_DOCUMENTS_BUCKET } from '../../../utils/documentUrls'
 import { normalizeTenantAllowed } from '../../../services/listingTaxonomy'
 
 // Helpers
@@ -187,7 +187,22 @@ export const getAdminDashboardData = async () => {
   }
 }
 
-// Get all applications with tenant and agent joins
+// Decode embedded Base64 metadata tokens if present
+const decodeMetadata = (b64) => {
+  try {
+    let jsonStr = ''
+    if (typeof atob !== 'undefined') {
+      jsonStr = decodeURIComponent(escape(atob(b64)))
+    } else {
+      jsonStr = Buffer.from(b64, 'base64').toString('utf-8')
+    }
+    return JSON.parse(jsonStr)
+  } catch {
+    return null
+  }
+}
+
+// Get all applications with tenant and agent joins, including decoded documents & metadata
 export const getAdminApplications = async () => {
   const { data, error } = await supabase
     .from('applications')
@@ -202,16 +217,64 @@ export const getAdminApplications = async () => {
     console.error('Error fetching applications:', error)
     return []
   }
-  // The tenant client can embed a base64 metadata token in special_requirements
-  // (documents, fee state, etc). Strip it so the admin table never renders a
-  // wall of base64 as if it were a requirement the applicant typed.
-  return (data || []).map((row) => {
-    const cleaned = String(row.special_requirements || '')
-      .replace(/\n?\[(?:P4U_DATA|PLACE4U_APP_DATA):[A-Za-z0-9+/=]+\]/g, '')
-      .replace(/\n?\[Attached PDFs:[^\]]*\]/g, '')
-      .trim()
-    return { ...row, special_requirements: cleaned || null }
-  })
+
+  // Decode embedded metadata tokens and resolve documents so admin can inspect the full dossier
+  return Promise.all(
+    (data || []).map(async (row) => {
+      let meta = {}
+      if (
+        row.special_requirements &&
+        (row.special_requirements.includes('[P4U_DATA:') ||
+          row.special_requirements.includes('[PLACE4U_APP_DATA:'))
+      ) {
+        const match = row.special_requirements.match(
+          /\[(?:P4U_DATA|PLACE4U_APP_DATA):([A-Za-z0-9+/=]+)\]/
+        )
+        if (match && match[1]) {
+          const decoded = decodeMetadata(match[1])
+          if (decoded && typeof decoded === 'object') meta = decoded
+        }
+      }
+
+      const cleaned = String(row.special_requirements || '')
+        .replace(/\n?\[(?:P4U_DATA|PLACE4U_APP_DATA):[A-Za-z0-9+/=]+\]/g, '')
+        .replace(/\n?\[Attached PDFs:[^\]]*\]/g, '')
+        .trim()
+
+      const dbDocs = Array.isArray(row.documents) && row.documents.length > 0 ? row.documents : []
+      const metaDocs = Array.isArray(meta.documents) && meta.documents.length > 0 ? meta.documents : []
+      const rawDocs = dbDocs.length ? dbDocs : metaDocs
+
+      let docs = []
+      try {
+        docs = await resolveApplicationDocuments(rawDocs)
+      } catch (e) {
+        docs = rawDocs
+      }
+
+      const feePaidResolved = Boolean(
+        row.fee_paid === true ||
+          row.fee_paid === 'true' ||
+          row.fee_receipt ||
+          row.payment_id ||
+          meta.fee_paid === true ||
+          meta.fee_paid === 'true' ||
+          meta.fee_receipt ||
+          meta.payment_id
+      )
+
+      return {
+        ...meta,
+        ...row,
+        documents: docs,
+        fee_paid: feePaidResolved,
+        fee_receipt: row.fee_receipt || meta.fee_receipt || null,
+        payment_id: row.payment_id || meta.payment_id || null,
+        fee_refunded: row.fee_refunded === true || row.fee_refunded === 'true',
+        special_requirements: cleaned || null
+      }
+    })
+  )
 }
 
 // Get list of real agents for assignment

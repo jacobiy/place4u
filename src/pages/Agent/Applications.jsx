@@ -191,7 +191,7 @@ export const Applications = ({
               type="button"
               onClick={() => setSelectedCategory('all')}
               className={`cat-btn ${selectedCategory === 'all' ? 'active' : ''}`}
-              aria-label={`Assigned to you (${applications.length})`}
+              aria-label={`All (${applications.length})`}
             >
               All ({applications.length})
             </button>
@@ -199,7 +199,7 @@ export const Applications = ({
               type="button"
               onClick={() => setSelectedCategory('residential')}
               className={`cat-btn ${selectedCategory === 'residential' ? 'active' : ''}`}
-              aria-label="Residential rentals"
+              aria-label="Residential"
             >
               Residential
             </button>
@@ -207,7 +207,7 @@ export const Applications = ({
               type="button"
               onClick={() => setSelectedCategory('student')}
               className={`cat-btn ${selectedCategory === 'student' ? 'active' : ''}`}
-              aria-label="Student housing"
+              aria-label="Student"
             >
               Student
             </button>
@@ -221,10 +221,10 @@ export const Applications = ({
           </div>
         ) : filtered.length === 0 ? (
           <div className="empty-state">
-            <FileText className="empty-icon" size={48} />
-            <p className="empty-text">No applications assigned to you</p>
+            <FileText className="empty-icon" size={44} />
+            <p className="empty-text">No applications found</p>
             <p className="empty-subtext">
-              {query ? 'Try a different search.' : 'Assignments from an administrator appear here.'}
+              {query ? 'Try adjusting your search query.' : 'New assignments will appear here.'}
             </p>
           </div>
         ) : (
@@ -313,21 +313,20 @@ export const Applications = ({
                           {app.submitted_at ? new Date(app.submitted_at).toLocaleDateString() : 'Recent'}
                         </span>
                         <span className="assigned-to-you-badge">
-                          <UserCheck size={11} aria-hidden="true" /> Assigned to you
+                          <UserCheck size={11} aria-hidden="true" /> Assigned
                         </span>
                         {app.agent_working_status === 'draft_complete' && (
-                          <span className="working-status-badge draft_complete">Draft in progress</span>
+                          <span className="working-status-badge draft_complete">Drafting</span>
                         )}
                         {app.agent_working_status === 'shipped' && (
-                          <span className="working-status-badge shipped">Shortlist shipped</span>
+                          <span className="working-status-badge shipped">Shipped</span>
                         )}
                       </div>
 
                       {/* Which property the tenant applied for */}
                       {propertyLabel && (
                         <div className="applied-property-banner">
-                          <Building size={14} className="banner-icon" aria-hidden="true" />
-                          <span className="banner-label">Applying for</span>
+                          <Building size={13} className="banner-icon" aria-hidden="true" />
                           <span className="banner-title" title={propertyLabel}>{propertyLabel}</span>
                         </div>
                       )}
@@ -350,11 +349,12 @@ export const Applications = ({
                       )}
 
                       {!linkedProperty && resolution.isLinked && (
-                        <div className="applied-property-meta is-unresolved">
+                        <div
+                          className="applied-property-meta is-unresolved"
+                          title="Listing not in your inventory. Name comes from the application snapshot."
+                        >
                           <AlertTriangle size={12} aria-hidden="true" />
-                          <span>
-                            Listing not in your inventory. Name comes from the application snapshot.
-                          </span>
+                          <span>External listing</span>
                         </div>
                       )}
 
@@ -384,8 +384,8 @@ export const Applications = ({
                         className="match-widget"
                         style={{ '--match-tint': matchAnalysis.tierColor }}
                         onClick={() => setActiveJobApp(app)}
-                        aria-label={`Open job linking and commute proximity analysis. ${matchAnalysis.compositeScore}% match. ${matchAnalysis.verdict}.`}
-                        title="View full job linking & commute proximity analysis"
+                        aria-label={`Match analysis: ${matchAnalysis.compositeScore}%, ${matchAnalysis.verdict}`}
+                        title="View match analysis"
                       >
                         <span className="match-score">
                           <Briefcase size={14} aria-hidden="true" />
@@ -394,7 +394,7 @@ export const Applications = ({
                         </span>
                         <span className="match-details">
                           <span className="match-ratio">
-                            {matchAnalysis.affordability.multiplier}x rent, ~{matchAnalysis.proximity.approxDistanceKm} km
+                            {matchAnalysis.affordability.multiplier}x rent · ~{matchAnalysis.proximity.approxDistanceKm}km
                           </span>
                           <span className="match-verdict" style={{ color: matchAnalysis.tierColor }}>
                             {matchAnalysis.verdict}
@@ -411,7 +411,7 @@ export const Applications = ({
                             <span>Budget</span>
                           </dt>
                           <dd className="fact-value fact-money ag-num">
-                            {app.max_budget ? `R${Number(app.max_budget).toLocaleString()}` : 'Not specified'}
+                            {app.max_budget ? `R${Number(app.max_budget).toLocaleString()}` : 'Flexible'}
                           </dd>
                         </div>
                         <div className="fact">
@@ -426,26 +426,27 @@ export const Applications = ({
                         <div className="fact fact-wide">
                           <dt className="fact-label">
                             <MapPin size={13} aria-hidden="true" />
-                            <span>Preferred areas</span>
+                            <span>Areas</span>
                           </dt>
                           <dd className="fact-value">
-                            {app.preferred_areas?.length ? app.preferred_areas.join(', ') : 'Any area'}
+                            {app.preferred_areas?.length ? app.preferred_areas.join(', ') : 'Any'}
                           </dd>
                         </div>
                         {app.special_requirements && (
                           <div className="fact fact-wide">
-                            <dt className="fact-label"><span>Special notes</span></dt>
+                            <dt className="fact-label"><span>Notes</span></dt>
                             <dd className="fact-value fact-notes">{app.special_requirements}</dd>
                           </div>
                         )}
                       </dl>
 
-                      {/* Actions — one primary CTA, one secondary */}
+                      {/* Actions */}
                       <div className="card-actions">
                         <button
                           type="button"
                           onClick={() => setActiveDocApp(app)}
                           className="btn btn-secondary"
+                          title="View documents"
                         >
                           <FileCheck size={15} aria-hidden="true" />
                           <span>Documents</span>
@@ -456,23 +457,23 @@ export const Applications = ({
                           type="button"
                           onClick={() => onManageApplication(app)}
                           className="btn btn-primary"
-                          aria-label="Manage application: flag matches and build a shortlist"
-                          title="Flag matches and build a shortlist to ship to the tenant"
+                          aria-label="Manage Matches"
+                          title="Build and ship match shortlist"
                         >
-                          <Building size={16} aria-hidden="true" />
-                          <span>Manage</span>
+                          <Building size={15} aria-hidden="true" />
+                          <span>Manage Matches</span>
                         </button>
                       </div>
 
                       {/* Application status */}
                       <div className="status-block">
                         <label className="field-label" htmlFor={`status-${app.id}`}>
-                          Application status
+                          Status
                         </label>
                         {app.status === APPLICATION_STATUS.COMPLETED ? (
                           <div className="status-complete">
                             <CheckCircle2 size={14} aria-hidden="true" />
-                            Completed, admin approved
+                            Completed · Approved
                           </div>
                         ) : (
                           <div className="select-wrapper">
@@ -498,25 +499,25 @@ export const Applications = ({
                           {app.completion_requested_at ? (
                             <>
                               <p className="completion-heading">
-                                <Clock size={13} aria-hidden="true" /> Completion review requested
+                                <Clock size={13} aria-hidden="true" /> Review requested
                               </p>
                               <p className="completion-note">
-                                Awaiting admin approval to unlock your R50 share.
+                                Awaiting admin sign-off · R50 payout
                               </p>
                               {app.completion_request_note && (
-                                <p className="completion-quote">Note: &ldquo;{app.completion_request_note}&rdquo;</p>
+                                <p className="completion-quote">&ldquo;{app.completion_request_note}&rdquo;</p>
                               )}
                             </>
                           ) : (
                             <>
-                              <span className="completion-prompt">Placement finished?</span>
+                              <span className="completion-prompt">Placement complete?</span>
                               <button
                                 type="button"
                                 onClick={() => setCompletionModalApp(app)}
                                 className="btn btn-success btn-sm"
                               >
                                 <CheckCircle2 size={13} aria-hidden="true" />
-                                <span>Request completion</span>
+                                <span>Request sign-off</span>
                               </button>
                             </>
                           )}
@@ -527,18 +528,18 @@ export const Applications = ({
                       <div className="assignment-response-box">
                         {assignmentStatusOf(app) === 'accepted' ? (
                           <div className="assignment-response-badge accepted">
-                            <CheckCircle2 size={16} aria-hidden="true" />
-                            <span>Job accepted, admin notified</span>
+                            <CheckCircle2 size={15} aria-hidden="true" />
+                            <span>Accepted</span>
                           </div>
                         ) : assignmentStatusOf(app) === 'rejected' ? (
                           <>
                             <div className="assignment-response-badge rejected">
-                              <XCircle size={16} aria-hidden="true" />
-                              <span>Job rejected, awaiting reassignment</span>
+                              <XCircle size={15} aria-hidden="true" />
+                              <span>Declined · Reassigning</span>
                             </div>
                             {app.assignment_rejection_reason && (
                               <p className="assignment-response-reason">
-                                Reason: {app.assignment_rejection_reason}
+                                {app.assignment_rejection_reason}
                               </p>
                             )}
                             <div className="assignment-response-actions">
@@ -548,18 +549,16 @@ export const Applications = ({
                                 onClick={() => handleAcceptJob(app)}
                                 disabled={respondingId === app.id}
                               >
-                                <CheckCircle2 size={15} aria-hidden="true" />
-                                {respondingId === app.id ? 'Saving…' : 'Accept instead'}
+                                <CheckCircle2 size={14} aria-hidden="true" />
+                                {respondingId === app.id ? 'Saving…' : 'Accept'}
                               </button>
                             </div>
                           </>
                         ) : (
                           <>
                             <div className="assignment-response-prompt">
-                              <Briefcase size={15} aria-hidden="true" />
-                              <span>
-                                Assigned by an administrator. Accept to start, or reject for reassignment.
-                              </span>
+                              <Briefcase size={14} aria-hidden="true" />
+                              <span>New assignment · Please accept or decline</span>
                             </div>
                             <div className="assignment-response-actions">
                               <button
@@ -568,8 +567,8 @@ export const Applications = ({
                                 onClick={() => handleAcceptJob(app)}
                                 disabled={respondingId === app.id}
                               >
-                                <CheckCircle2 size={15} aria-hidden="true" />
-                                {respondingId === app.id ? 'Saving…' : 'Accept job'}
+                                <CheckCircle2 size={14} aria-hidden="true" />
+                                {respondingId === app.id ? 'Saving…' : 'Accept'}
                               </button>
                               <button
                                 type="button"
@@ -580,8 +579,8 @@ export const Applications = ({
                                 }}
                                 disabled={respondingId === app.id}
                               >
-                                <XCircle size={15} aria-hidden="true" />
-                                Reject job
+                                <XCircle size={14} aria-hidden="true" />
+                                Decline
                               </button>
                             </div>
                           </>
@@ -654,19 +653,14 @@ export const Applications = ({
         >
           <form onSubmit={handleSubmitCompletionRequest} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
             <div style={{
-              padding: '0.85rem',
+              padding: '0.7rem 0.85rem',
               background: 'rgba(16, 185, 129, 0.1)',
               border: '1px solid rgba(16, 185, 129, 0.25)',
               borderRadius: '0.5rem',
-              fontSize: '0.8rem',
-              color: '#cbd5e1'
+              fontSize: '0.78rem',
+              color: '#94a3b8'
             }}>
-              <p style={{ margin: 0, fontWeight: 600, color: '#10b981' }}>
-                Admin approval required
-              </p>
-              <p style={{ margin: '4px 0 0', color: '#94a3b8', fontSize: '0.75rem' }}>
-                Admin sign-off is required before commission shares unlock.
-              </p>
+              <span style={{ fontWeight: 600, color: '#10b981' }}>Admin sign-off</span> unlocks your R50 commission share.
             </div>
 
             <div>
