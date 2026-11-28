@@ -80,6 +80,20 @@
   padding: 2rem 3rem;
 }
 
+/* The manager workspace relies on a fixed-height two-pane grid, so its padding
+   has to shrink with the viewport or the panes get crushed on tablets/phones. */
+@media (max-width: 1280px) {
+  .agent-main-content.is-manager {
+    padding: 1.75rem 1.75rem;
+  }
+}
+
+@media (max-width: 720px) {
+  .agent-main-content.is-manager {
+    padding: 1rem 1.15rem 2rem;
+  }
+}
+
 .agent-main-content.is-dashboard .agent-mobile-header,
 .agent-main-content.is-wallet .agent-mobile-header {
   margin: 0;

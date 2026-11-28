@@ -213,8 +213,8 @@ export default function MarketplaceFlowSection() {
 							Every housing opportunity,
 							<span className="block italic">flowing into one Place4U.</span>
 						</h2>
-						<p className="max-w-[44ch] text-sm leading-relaxed text-[#47545a] lg:justify-self-end lg:text-[15px]">
-							Agencies, landlords, property managers, owners and roommates converge into a single marketplace.
+						<p className="max-w-[38ch] text-sm leading-relaxed text-[#47545a] lg:justify-self-end lg:text-[15px]">
+							Six supply channels converging into one vetted marketplace.
 						</p>
 	
 					</div>
@@ -321,11 +321,13 @@ export default function MarketplaceFlowSection() {
 										<span className="h-5 w-[38px] rounded-full border border-[#e3e8e7]" />
 									</div>
 									<div className="mt-4 grid grid-cols-3 gap-2.5">
-										{[0, 1, 2].map((i) => (
-											<div key={i} className="rounded-lg border border-[#e3e8e7] p-2">
-												<span className="block h-[54px] rounded bg-[#ececec]" aria-hidden="true" />
-												<span className="mt-2 block h-[7px] w-[82%] rounded bg-[#d9d9d9]" aria-hidden="true" />
-												<span className="mt-1.5 block h-[7px] w-[44%] rounded bg-[#e7e7e7]" aria-hidden="true" />
+										{['01 · Profile', '02 · FICA Docs', '03 · Matched'].map((stepLabel) => (
+											<div key={stepLabel} className="rounded-lg border border-[#e3e8e7] p-2">
+												<span className="block font-mono text-[9px] font-medium uppercase tracking-[0.1em] text-[#6b757a]">
+													{stepLabel}
+												</span>
+												<span className="mt-2 block h-[34px] rounded bg-[#f2f5f2]" aria-hidden="true" />
+												<span className="mt-2 block h-[6px] w-[72%] rounded bg-[#d9d9d9]" aria-hidden="true" />
 											</div>
 										))}
 									</div>
@@ -389,28 +391,21 @@ export default function MarketplaceFlowSection() {
 											aria-hidden="true"
 										/>
 										<span className="block font-mono text-[9.5px] tracking-[0.14em] text-[#8a9699]">{stream.n}</span>
-										<h3 className="mt-2.5 text-[15px] font-semibold leading-snug text-[#18262d]">{stream.title}</h3>
-										<p className="mt-1.5 text-[12.5px] leading-relaxed text-[#6b757a]">{stream.body}</p>
+										<h3 className="mt-2 text-[14px] font-semibold leading-snug text-[#18262d]">{stream.title}</h3>
 									</article>
 								))}
 							</div>
 						</div>
 					</div>
-
-				
-					{/* Demand side */}
-					<div className="mt-9 flex flex-wrap items-baseline gap-x-6 gap-y-2 border-t border-[#d5e0df] pt-4 lg:pl-[152px]">
-						<span className="font-mono text-[9.5px] uppercase tracking-[0.18em] text-[#8a9699]">Demand</span>
-						<p className="max-w-[66ch] text-[12.5px] leading-relaxed text-[#6b757a]">
-							Students · Young professionals · Families · Room seekers · Anyone looking for a place to call home
-						</p>
-					</div>
 				</div>
 
-				<footer className="mt-10 border-t border-[#18262d] pt-5 lg:pl-[152px]">
+				<footer className="mt-10 flex flex-wrap items-baseline justify-between gap-4 border-t border-[#18262d] pt-5 lg:pl-[152px]">
 					<p className="font-serif-display text-lg leading-snug text-[#18262d]">
 						One platform. Multiple housing opportunities. <span className="italic">A place for everyone.</span>
 					</p>
+					<span className="font-mono text-[9.5px] uppercase tracking-[0.16em] text-[#8a9699]">
+						Students · Professionals · Families · Room seekers
+					</span>
 				</footer>
 			</div>
 		</section>

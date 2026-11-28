@@ -34,7 +34,13 @@ function toRequirementList(text) {
     .filter((s) => s.length > 1);
 }
 
-export default function ApplicationSummaryPanel({ application, tenant, onBack = () => {}, onViewFullApplication = () => {} }) {
+export default function ApplicationSummaryPanel({
+  application,
+  tenant,
+  onBack = () => {},
+  onViewFullApplication = () => {},
+  onOpenDocuments = () => {}
+}) {
   const [docsOpen, setDocsOpen] = useState(false);
 
   const app = application || {};
@@ -165,6 +171,9 @@ export default function ApplicationSummaryPanel({ application, tenant, onBack = 
       <div className="apm-summary-footer">
         <button type="button" className="apm-link-btn" onClick={() => onViewFullApplication(app)}>
           <ExternalLink size={14} /> View full application
+        </button>
+        <button type="button" className="apm-link-btn" onClick={() => onOpenDocuments(app)}>
+          <FileText size={14} /> Documents
         </button>
       </div>
     </div>

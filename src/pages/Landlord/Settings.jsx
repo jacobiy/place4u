@@ -9,7 +9,7 @@ import { Modal } from './Component/Modal';
 import { LandlordQueries } from './db/queries';
 import { useAuth } from '../../hooks/useAuth';
 import { supabase } from '../../utils/Supabase';
-import Loading from '../../component/loading';
+import { ProfileSettingsSkeleton } from '../../component/DashboardSkeletons';
 
 const EYEBROW = { fontSize: "0.68rem", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: T.textMuted, margin: 0 };
 
@@ -192,7 +192,7 @@ export const Settings = () => {
   };
 
   if (isLoading) {
-    return <Loading fullScreen message="Loading settings..." />;
+    return <ProfileSettingsSkeleton label="Loading settings..." />;
   }
 
   const notif = profile?.notification_preferences || {};

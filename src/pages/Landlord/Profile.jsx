@@ -19,7 +19,7 @@ import { supabase } from '../../utils/Supabase';
 import { ConfirmModal } from '../../component/AlertModal';
 import { initials } from './Styles/helpers';
 import { getUserAvatar, AvatarImage } from '../../utils/avatarHelper';
-import Loading from '../../component/loading';
+import { ProfileSettingsSkeleton } from '../../component/DashboardSkeletons';
 
 const EYEBROW = { fontSize: "0.68rem", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: T.textMuted, margin: 0 };
 
@@ -459,7 +459,7 @@ export const Profile = ({ onClose, isModal = false }) => {
   };
 
   if (isLoading) {
-    return <Loading fullScreen message="Loading profile..." />;
+    return <ProfileSettingsSkeleton label="Loading profile..." />;
   }
 
   if (error && !profile) {

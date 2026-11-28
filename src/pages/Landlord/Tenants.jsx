@@ -17,7 +17,7 @@ import {
 } from '../../services/applicationStatus';
 import { initials } from './Styles/helpers';
 import { AvatarImage, getDefaultAvatar } from '../../utils/avatarHelper';
-import Loading from '../../component/loading';
+import { LandlordRecordsSkeleton } from '../../component/DashboardSkeletons';
 
 const EYEBROW = { fontSize: "0.66rem", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.12em", color: T.textMuted, margin: 0 };
 
@@ -486,9 +486,7 @@ export const Tenants = ({ profile, properties = [], user, onNavigate }) => {
 
       {/* Content Area */}
       {isLoading ? (
-        <div style={{ textAlign: "center", padding: "4rem" }}>
-          <Loading message="Loading records…" />
-        </div>
+        <LandlordRecordsSkeleton label="Loading records…" />
       ) : activeTab === "applications" ? (
         filteredApplications.length > 0 ? (
           <div className="ll-anim-up" style={{ borderTop: `1px solid ${T.border}`, borderBottom: `1px solid ${T.border}` }}>

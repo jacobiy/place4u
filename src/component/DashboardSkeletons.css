@@ -1,0 +1,65 @@
+/* ============================================================================
+   DashboardSkeletons.css — Shared shimmer & layout primitives for Place4U
+   portal loading states (Tenant, Landlord, Agent, Admin).
+   ========================================================================== */
+
+@keyframes p4u-shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+.p4u-skel-block {
+  display: block;
+  border-radius: 8px;
+  background: linear-gradient(
+    90deg,
+    rgba(226, 232, 240, 0.72) 25%,
+    rgba(241, 245, 249, 0.95) 50%,
+    rgba(226, 232, 240, 0.72) 75%
+  );
+  background-size: 200% 100%;
+  animation: p4u-shimmer 1.6s ease-in-out infinite;
+}
+
+.p4u-skel-block.is-dark {
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0.06) 25%,
+    rgba(255, 255, 255, 0.14) 50%,
+    rgba(255, 255, 255, 0.06) 75%
+  );
+  background-size: 200% 100%;
+}
+
+.p4u-skel-circle {
+  border-radius: 9999px;
+  flex-shrink: 0;
+}
+
+.p4u-skel-pill {
+  border-radius: 9999px;
+}
+
+.p4u-skel-ring {
+  width: 164px;
+  height: 164px;
+  border-radius: 9999px;
+  border: 22px solid rgba(226, 232, 240, 0.7);
+  margin: 0 auto;
+  box-sizing: border-box;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .p4u-skel-block {
+    animation: none;
+    background: rgba(226, 232, 240, 0.75);
+  }
+  .p4u-skel-block.is-dark {
+    animation: none;
+    background: rgba(255, 255, 255, 0.08);
+  }
+}
