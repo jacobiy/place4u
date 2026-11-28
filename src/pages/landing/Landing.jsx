@@ -240,25 +240,25 @@ const VERIFICATION_STEPS = [
 		step: '01',
 		icon: 'badge',
 		title: 'Identity checked',
-		body: 'Landlords and agents submit identity documents for review before listing a property.'
+		body: 'Landlords and agents submit ID before listing.'
 	},
 	{
 		step: '02',
 		icon: 'home_work',
 		title: 'Ownership reviewed',
-		body: 'Proof of ownership is reviewed against the property being advertised.'
+		body: 'Proof of ownership is matched to the property.'
 	},
 	{
 		step: '03',
 		icon: 'fact_check',
 		title: 'Listing details reviewed',
-		body: 'Address, rent and photos are reviewed before a listing goes live.'
+		body: 'Address, rent and photos are checked before publishing.'
 	},
 	{
 		step: '04',
 		icon: 'handshake',
 		title: 'Introduced to a person',
-		body: 'You are introduced to the owner or the agent representing them, so you know who to speak with.'
+		body: 'Connect directly with the owner or their agent.'
 	}
 ]
 
@@ -303,6 +303,7 @@ const Landing = () => {
 	const [copiedToast, setCopiedToast] = useState(false)
 	const [liveProperties, setLiveProperties] = useState(null)
 	const [loadingProperties, setLoadingProperties] = useState(true)
+	const [openFaqIndex, setOpenFaqIndex] = useState(0)
 
 	const { quote: feeQuote } = useFeeQuote()
 	const hasPromotion = Boolean(feeQuote?.promotionApplied)
@@ -485,8 +486,23 @@ const Landing = () => {
 						</h1>
 
 						<p className="text-base sm:text-lg text-[#47545a] max-w-xl leading-relaxed">
-							One application connects you to reviewed homes and the people behind them. Landlord identity and ownership documents are reviewed before a listing goes live.
+							Apply once to reviewed homes across South Africa, with landlord ID and ownership checked before listing.
 						</p>
+
+						<div className="flex flex-wrap items-center gap-2 text-xs font-semibold text-[#28434e]">
+							<span className="inline-flex items-center gap-1.5 rounded-full bg-[#e7eef0] px-3 py-1.5">
+								<HiShieldCheck className="w-3.5 h-3.5 text-[#006c4a]" />
+								ID &amp; Title Checked
+							</span>
+							<span className="inline-flex items-center gap-1.5 rounded-full bg-[#e7eef0] px-3 py-1.5">
+								<HiCheckCircle className="w-3.5 h-3.5 text-[#006194]" />
+								Once-off Application
+							</span>
+							<span className="inline-flex items-center gap-1.5 rounded-full bg-[#e7eef0] px-3 py-1.5">
+								<Lock className="w-3.5 h-3.5 text-[#006194]" />
+								No Deposits Held
+							</span>
+						</div>
 
 						<div className="flex flex-wrap items-center gap-3 pt-1">
 							<button
@@ -519,11 +535,8 @@ const Landing = () => {
 				</div>
 			</section>
 
-			{/* ===================== MARKETPLACE ARCHITECTURE ===================== */}
-			<MarketplaceFlowSection />
-
 			{/* ===================== PROPERTIES GRID ===================== */}
-				<section id="residencies" className="py-20 px-6 lg:px-12 max-w-7xl mx-auto w-full scroll-mt-24">
+			<section id="residencies" className="py-20 px-6 lg:px-12 max-w-7xl mx-auto w-full scroll-mt-24">
 				<div className="max-w-2xl mb-9">
 					<h2 className="font-serif-display text-3xl sm:text-4xl font-normal text-[#18262d] tracking-tight">
 						Reviewed homes, in real places
@@ -819,14 +832,17 @@ const Landing = () => {
 				)}
 			</section>
 
+			{/* ===================== MARKETPLACE ARCHITECTURE ===================== */}
+			<MarketplaceFlowSection />
+
 			{/* ===================== VERIFICATION (replaces fabricated testimonials) ===================== */}
 			<section id="verification" className="py-20 px-6 lg:px-12 max-w-7xl mx-auto w-full scroll-mt-24">
-				<div className="max-w-2xl mb-12">
+				<div className="max-w-2xl mb-10">
 					<h2 className="font-serif-display text-3xl sm:text-4xl font-normal text-[#18262d] tracking-tight">
 						What we review before an introduction
 					</h2>
 					<p className="text-sm sm:text-base text-[#47545a] mt-2 leading-relaxed">
-						A listing goes through a human review before it appears in the matching process.
+						Every listing passes a four-point human check before going live.
 					</p>
 				</div>
 
@@ -836,8 +852,13 @@ const Landing = () => {
 							key={s.step}
 							className="pt-5 border-t border-[#c3cecd]"
 						>
-							<p className="text-xs font-semibold tracking-[0.12em] text-[#006194]">{s.step}</p>
-							<h3 className="font-['Space_Grotesk'] text-base font-semibold text-[#18262d] mt-3 mb-1.5">
+							<div className="flex items-center justify-between">
+								<span className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-[#e7eef0] text-[#006194]">
+									<span className="material-symbols-outlined text-[20px]" aria-hidden="true">{s.icon}</span>
+								</span>
+								<p className="text-xs font-semibold tracking-[0.12em] text-[#006194]">{s.step}</p>
+							</div>
+							<h3 className="font-['Space_Grotesk'] text-base font-semibold text-[#18262d] mt-3.5 mb-1.5">
 								{s.title}
 							</h3>
 							<p className="text-sm text-[#47545a] leading-relaxed">{s.body}</p>
@@ -863,101 +884,116 @@ const Landing = () => {
 			</section>
 
 			{/* ===================== LEADERSHIP / TEAM ===================== */}
-			<TeamSection className="border-t border-[#d5e0df]/60" />
+			<TeamSection compact className="border-t border-[#d5e0df]/60" />
 
 			{/* ===================== FAQ ===================== */}
-			<section id="faq" className="py-20 px-6 lg:px-12 bg-white scroll-mt-24">
-				<div className="max-w-7xl mx-auto">
-					<div className="max-w-2xl mb-12">
+			<section id="faq" className="py-16 px-6 lg:px-12 bg-white scroll-mt-24">
+				<div className="max-w-4xl mx-auto">
+					<div className="mb-10">
 						<h2 className="font-serif-display text-3xl sm:text-4xl font-normal text-[#18262d] tracking-tight">
 							Answers before you apply
 						</h2>
 					</div>
 
-					<div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-8">
-						{FAQS.map((item) => (
-							<article key={item.q} className="pt-4 border-t border-[#d5e0df]">
-								<h3 className="font-['Space_Grotesk'] text-base sm:text-lg font-semibold text-[#18262d] leading-snug">
-									{item.q}
+					<div className="divide-y divide-[#d5e0df] border-y border-[#d5e0df]">
+						{FAQS.map((item, idx) => {
+							const isOpen = openFaqIndex === idx
+							return (
+								<div key={item.q}>
+									<button
+										type="button"
+										aria-expanded={isOpen}
+										onClick={() => setOpenFaqIndex(isOpen ? -1 : idx)}
+										className="w-full py-5 flex items-center justify-between gap-4 text-left group cursor-pointer focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#006194]"
+									>
+										<span className="font-['Space_Grotesk'] text-base sm:text-lg font-semibold text-[#18262d] group-hover:text-[#006194] transition-colors leading-snug">
+											{item.q}
+										</span>
+										<HiChevronDown
+											className={`w-5 h-5 text-[#707881] shrink-0 transition-transform duration-200 ${
+												isOpen ? 'rotate-180 text-[#006194]' : ''
+											}`}
+										/>
+									</button>
+									<AnimatePresence initial={false}>
+										{isOpen && (
+											<motion.div
+												initial={{ height: 0, opacity: 0 }}
+												animate={{ height: 'auto', opacity: 1 }}
+												exit={{ height: 0, opacity: 0 }}
+												transition={{ duration: 0.18, ease: 'easeOut' }}
+												className="overflow-hidden"
+											>
+												<p className="pb-5 pr-8 text-sm text-[#47545a] leading-relaxed">{item.a}</p>
+											</motion.div>
+										)}
+									</AnimatePresence>
+								</div>
+							)
+						})}
+					</div>
+				</div>
+			</section>
+
+			{/* ===================== DUAL CALL TO ACTION & WHATSAPP DESK ===================== */}
+			<section className="py-16 px-6 lg:px-12 bg-[#f7f8f5]">
+				<div className="max-w-7xl mx-auto space-y-6">
+					<div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
+						<div className="lg:col-span-7 p-8 sm:p-10 rounded-xl bg-[#e7eef0] flex flex-col justify-between">
+							<div>
+								<p className="text-sm font-semibold text-[#006194] mb-2">
+									For renters
+								</p>
+								<h3 className="font-serif-display text-3xl sm:text-4xl font-normal text-[#18262d] tracking-tight mb-6">
+									Ready to find your next digs?
 								</h3>
-								<p className="text-sm text-[#47545a] leading-relaxed mt-2">{item.a}</p>
-							</article>
-						))}
-					</div>
-				</div>
-			</section>
-
-			{/* ===================== DUAL CALL TO ACTION ===================== */}
-			<section className="py-20 px-6 lg:px-12 bg-[#f7f8f5]">
-				<div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
-					<div className="lg:col-span-7 p-8 sm:p-10 rounded-xl bg-[#e7eef0] flex flex-col justify-between">
-						<div>
-							<p className="text-sm font-semibold text-[#006194] mb-3">
-								For renters
-							</p>
-							<h3 className="font-serif-display text-3xl sm:text-4xl font-normal text-[#18262d] tracking-tight mb-3">
-								Ready to find your next digs?
-							</h3>
-							<p className="text-sm text-[#47545a] leading-relaxed mb-8">
-								Tell us what you are looking for in one application. We will review your details and look for a suitable introduction.
-							</p>
-						</div>
-
-						<button
-							onClick={() => openAuthModal('signup')}
-							className="w-fit bg-[#006194] hover:bg-[#004b73] text-white font-['Space_Grotesk'] font-bold text-sm px-6 py-3 rounded-xl shadow-md transition-all flex items-center gap-2"
-						>
-							<span>Start My Application</span>
-							<HiArrowRight className="w-4 h-4" />
-						</button>
-					</div>
-
-					<div className="lg:col-span-5 p-8 sm:p-10 rounded-xl bg-white border border-[#d5e0df] flex flex-col justify-between">
-						<div>
-							<p className="text-sm font-semibold text-[#006c4a] mb-3">For property owners</p>
-							<h3 className="font-serif-display text-2xl sm:text-3xl font-normal text-[#18262d] tracking-tight mb-3">
-								Have a room, cottage or flat to let?
-							</h3>
-							<p className="text-sm text-[#47545a] leading-relaxed mb-8">
-								Submit your property for review and connect with renters looking for a place like yours.
-							</p>
-						</div>
-
-						<button
-							onClick={() => openAuthModal('signup')}
-							className="w-fit bg-[#e7eef0] hover:bg-[#dce8e9] text-[#18262d] font-['Space_Grotesk'] font-bold text-sm px-6 py-3 rounded-xl border border-[#c3cecd]/40 transition-all flex items-center gap-2"
-						>
-							<span>List Your Property</span>
-							<HiArrowRight className="w-4 h-4" />
-						</button>
-					</div>
-				</div>
-			</section>
-
-			{/* ===================== WHATSAPP SUPPORT ===================== */}
-			<section id="whatsapp-desk" className="px-6 lg:px-12 py-8 bg-white scroll-mt-24">
-				<div className="max-w-7xl mx-auto">
-					<div className="bg-[#d6e7ec] rounded-xl p-8 lg:p-10 text-[#18262d] flex flex-col md:flex-row items-center justify-between gap-8">
-						<div className="flex flex-col gap-3 max-w-xl">
-							<div className="inline-flex items-center gap-2 text-xs font-semibold w-max text-[#006194]">
-								<span className="material-symbols-outlined text-[18px]">chat</span> WhatsApp support
 							</div>
-							<h3 className="font-serif-display text-2xl sm:text-3xl font-normal text-[#18262d] tracking-tight leading-snug">
-								Have a question about a listing or your application?
-							</h3>
-							<p className="text-sm text-[#47545a] leading-relaxed">
-								Talk to the Place4U team about the next step.
-							</p>
+
+							<button
+								onClick={() => openAuthModal('signup')}
+								className="w-fit bg-[#006194] hover:bg-[#004b73] text-white font-['Space_Grotesk'] font-bold text-sm px-6 py-3 rounded-xl shadow-md transition-all flex items-center gap-2 cursor-pointer"
+							>
+								<span>Start My Application</span>
+								<HiArrowRight className="w-4 h-4" />
+							</button>
 						</div>
 
+						<div className="lg:col-span-5 p-8 sm:p-10 rounded-xl bg-white border border-[#d5e0df] flex flex-col justify-between">
+							<div>
+								<p className="text-sm font-semibold text-[#006c4a] mb-2">For property owners</p>
+								<h3 className="font-serif-display text-2xl sm:text-3xl font-normal text-[#18262d] tracking-tight mb-6">
+									Have a room, cottage or flat to let?
+								</h3>
+							</div>
+
+							<button
+								onClick={() => openAuthModal('signup')}
+								className="w-fit bg-[#e7eef0] hover:bg-[#dce8e9] text-[#18262d] font-['Space_Grotesk'] font-bold text-sm px-6 py-3 rounded-xl border border-[#c3cecd]/40 transition-all flex items-center gap-2 cursor-pointer"
+							>
+								<span>List Your Property</span>
+								<HiArrowRight className="w-4 h-4" />
+							</button>
+						</div>
+					</div>
+
+					<div
+						id="whatsapp-desk"
+						className="scroll-mt-24 bg-[#d6e7ec] rounded-xl px-6 py-5 lg:px-8 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4"
+					>
+						<div className="flex items-center gap-3 text-[#18262d]">
+							<FaWhatsapp className="w-5 h-5 text-[#006c4a] shrink-0" />
+							<p className="text-sm font-medium">
+								Have a question about a listing or your application? Talk to our WhatsApp desk.
+							</p>
+						</div>
 						<a
 							href="https://wa.me/27824822611?text=Hello%20Place4U%20Desk%2C%20I%20need%20help%20with%20a%20listing"
 							target="_blank"
 							rel="noopener noreferrer"
-							className="bg-[#006194] text-white hover:bg-[#004b73] font-semibold text-sm px-6 py-3.5 rounded-lg transition-colors flex items-center gap-3 whitespace-nowrap active:scale-[0.98]"
+							className="bg-[#006194] text-white hover:bg-[#004b73] font-semibold text-xs sm:text-sm px-5 py-2.5 rounded-lg transition-colors inline-flex items-center gap-2 whitespace-nowrap active:scale-[0.98]"
 						>
-							<span className="material-symbols-outlined text-[#006194]">forum</span>
 							Message us on WhatsApp
+							<HiArrowRight className="w-4 h-4" />
 						</a>
 					</div>
 				</div>

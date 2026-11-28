@@ -14,7 +14,7 @@ import {
   ChevronUp,
   XCircle
 } from 'lucide-react';
-import Loading from '../../component/loading';
+import { AgentDraftMatchSkeleton } from '../../component/DashboardSkeletons';
 import ApplicationSummaryPanel from './Component/ApplicationSummaryPanel';
 import PropertyMatchCard from './Component/PropertyMatchCard';
 import { SkipReasonModal } from './Component/SkipReasonModal';
@@ -101,6 +101,7 @@ export default function ApplicationManager({
   properties = [],
   currentUserId,
   onBack = () => {},
+  onViewApplication = () => {},
   onRejectJob = async () => ({ success: true }),
   onShipped = () => {}
 }) {
@@ -396,7 +397,8 @@ export default function ApplicationManager({
           application={application}
           tenant={tenant}
           onBack={onBack}
-          onViewFullApplication={() => setDocsOpen(true)}
+          onViewFullApplication={onViewApplication}
+          onOpenDocuments={() => setDocsOpen(true)}
         />
       </div>
 
@@ -567,9 +569,7 @@ export default function ApplicationManager({
 
             <div className="apm-results">
               {loadingMatches ? (
-                <div className="apm-loading">
-                  <Loading message="Loading your draft…" />
-                </div>
+                <AgentDraftMatchSkeleton label="Loading your draft…" />
               ) : workingList.length === 0 ? (
                 <div className="apm-empty">
                   <Search size={34} />

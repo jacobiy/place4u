@@ -2,116 +2,46 @@ import React, { useMemo, useState } from "react";
 import {
   Search,
   RefreshCw,
-  MapPin,
-  DollarSign,
-  Calendar,
   FileText,
   Mail,
-  ChevronDown,
-  Briefcase,
-  FileCheck,
-  CheckCircle2,
-  XCircle,
-  AlertTriangle,
-  Building,
-  ChevronRight,
-  UserCheck,
-  Clock
+  ChevronRight
 } from "lucide-react";
-import Loading from "../../component/loading";
-import { Modal } from "./Component/Modal";
-import { ApplicationDocumentsModal } from "./Component/ApplicationDocumentsModal";
-import { JobLinkApproximationModal } from "./Component/JobLinkApproximationModal";
-import { JobResponseModal } from "./Component/JobResponseModal";
+import { AgentApplicationsSkeleton } from "../../component/DashboardSkeletons";
 import { evaluateJobApplicationMatch } from "../../utils/jobAffordabilityMatcher";
-import {
-  APPLICATION_STATUS,
-  AGENT_SELECTABLE_APPLICATION_STATUSES,
-  applicationStatusLabel,
-  getApplicationStatusMeta
-} from "../../services/applicationStatus";
-import {
-  resolveApplicationProperty,
-  describePropertyLocation,
-  isGenericPropertyTitle
-} from "../../utils/propertyLabel";
+import { resolveApplicationProperty } from "../../utils/propertyLabel";
+import { getApplicationStatusMeta } from "../../services/applicationStatus";
 import "./Applications.css";
 
+const TIER_TONES = {
+  "#10b981": "ok",
+  "#4f7ef8": "accent",
+  "#f59e0b": "warn",
+  "#ef4444": "danger"
+};
+
+const toneForTier = (hex) => TIER_TONES[String(hex || "").toLowerCase()] || "warn";
+
+const formatDate = (value) =>
+  value
+    ? new Date(value).toLocaleDateString("en-ZA", { day: "numeric", month: "short", year: "numeric" })
+    : "Flexible";
+
+/**
+ * Assigned applications — a scannable list. Each row carries the identity, the
+ * basics an agent triages on, and a View action that opens the full-page
+ * record (ApplicationDetail) rather than a modal.
+ */
 export const Applications = ({
   applications = [],
   properties = [],
   tenantById = new Map(),
   currentUserId = null,
   onRefresh = () => {},
-  onUpdateStatus = () => {},
-  onRequestCompletion = async () => ({ success: true }),
-  onRespondToAssignment = async () => ({ success: true }),
-  onManageApplication = () => {},
+  onViewApplication = () => {},
   loading = false
 }) => {
   const [query, setQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("all");
-
-  // Modals state
-  const [activeDocApp, setActiveDocApp] = useState(null);
-  const [activeJobApp, setActiveJobApp] = useState(null);
-  const [rejectApp, setRejectApp] = useState(null);
-  const [completionModalApp, setCompletionModalApp] = useState(null);
-  const [completionNote, setCompletionNote] = useState("");
-  const [isSubmittingCompletion, setIsSubmittingCompletion] = useState(false);
-  const [completionFeedback, setCompletionFeedback] = useState("");
-  const [respondingId, setRespondingId] = useState(null);
-  const [responseError, setResponseError] = useState("");
-
-  const assignmentStatusOf = (app) =>
-    app?.assignment_status || (app?.assigned_to ? "assigned" : "unassigned");
-
-  const handleAcceptJob = async (app) => {
-    setRespondingId(app.id);
-    setResponseError("");
-    const res = await onRespondToAssignment(app.id, "accepted", null);
-    if (res && res.success === false) {
-      setResponseError(res.error || "Could not accept job. Try again.");
-    }
-    setRespondingId(null);
-  };
-
-  const handleRejectJob = async (reason) => {
-    if (!rejectApp) return;
-    setRespondingId(rejectApp.id);
-    setResponseError("");
-    const res = await onRespondToAssignment(rejectApp.id, "rejected", reason);
-    if (res && res.success === false) {
-      setResponseError(res.error || "Could not reject job. Try again.");
-    } else {
-      setRejectApp(null);
-    }
-    setRespondingId(null);
-  };
-
-  const handleSubmitCompletionRequest = async (e) => {
-    if (e && e.preventDefault) e.preventDefault();
-    if (!completionModalApp) return;
-    setIsSubmittingCompletion(true);
-    setCompletionFeedback("");
-    try {
-      const ok = await onRequestCompletion(completionModalApp.id, completionNote.trim() || null);
-      if (ok) {
-        setCompletionFeedback("Completion review requested.");
-        setTimeout(() => {
-          setCompletionModalApp(null);
-          setCompletionNote("");
-          setCompletionFeedback("");
-        }, 1800);
-      } else {
-        setCompletionFeedback("Could not request review. Try again.");
-      }
-    } catch (err) {
-      setCompletionFeedback(err?.message || "Error submitting request");
-    } finally {
-      setIsSubmittingCompletion(false);
-    }
-  };
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -122,11 +52,14 @@ export const Applications = ({
       }
 
       const tenant = tenantById?.get(a.tenant_id);
-      
-      const matchesCategory = 
-        selectedCategory === 'all' || 
-        (selectedCategory === 'student' && (a.accommodation_category === 'student_room' || a.category === 'student_room')) ||
-        (selectedCategory === 'residential' && (a.accommodation_category !== 'student_room' && a.category !== 'student_room'));
+
+      const matchesCategory =
+        selectedCategory === "all" ||
+        (selectedCategory === "student" &&
+          (a.accommodation_category === "student_room" || a.category === "student_room")) ||
+        (selectedCategory === "residential" &&
+          a.accommodation_category !== "student_room" &&
+          a.category !== "student_room");
 
       if (!matchesCategory) return false;
 
@@ -138,606 +71,243 @@ export const Applications = ({
         (tenant?.full_name || "").toLowerCase().includes(q) ||
         (tenant?.email || "").toLowerCase().includes(q) ||
         (tenant?.occupation || "").toLowerCase().includes(q) ||
-        (tenant?.employer || "").toLowerCase().includes(q)
+        (tenant?.employer || "").toLowerCase().includes(q) ||
+        (a.preferred_areas || []).join(" ").toLowerCase().includes(q)
       );
     });
-  }, [applications, query, tenantById, selectedCategory]);
+  }, [applications, query, tenantById, selectedCategory, currentUserId]);
 
-  const getStatusColor = (status) => getApplicationStatusMeta(status).hex;
-  const getStatusLabel = (status) => applicationStatusLabel(status);
+  const categoryCounts = useMemo(() => {
+    const base = (applications || []).filter(
+      (a) => !currentUserId || !a.assigned_to || String(a.assigned_to) === String(currentUserId)
+    );
+    const isStudent = (a) =>
+      a.accommodation_category === "student_room" || a.category === "student_room";
+    return {
+      all: base.length,
+      residential: base.filter((a) => !isStudent(a)).length,
+      student: base.filter(isStudent).length
+    };
+  }, [applications, currentUserId]);
+
+  const awaitingResponse = useMemo(
+    () =>
+      (applications || []).filter((a) => {
+        // Only count work actually allocated to this agent (unassigned rows are
+        // still visible, but they are not "awaiting your response").
+        if (currentUserId && a.assigned_to && String(a.assigned_to) !== String(currentUserId)) {
+          return false;
+        }
+        const status = a.assignment_status || (a.assigned_to ? "assigned" : "unassigned");
+        return status !== "accepted" && status !== "rejected";
+      }).length,
+    [applications, currentUserId]
+  );
+
+  const hasActiveFilters = Boolean(query.trim()) || selectedCategory !== "all";
+
+  const clearFilters = () => {
+    setQuery("");
+    setSelectedCategory("all");
+  };
 
   return (
     <div className="applications-container">
       <div className="applications-wrapper">
-        
         {/* Header */}
-        <div className="applications-header">
+        <header className="applications-header">
           <div>
+            <span className="applications-eyebrow">Pipeline</span>
             <h1 className="applications-title">Assigned applications</h1>
+            <p className="applications-subtitle">
+              {categoryCounts.all} application{categoryCounts.all === 1 ? "" : "s"} allocated to you.
+              {awaitingResponse > 0 && (
+                <span className="applications-summary"> {awaitingResponse} awaiting your response.</span>
+              )}
+            </p>
           </div>
-          <button 
-            onClick={onRefresh} 
-            disabled={loading}
-            className="refresh-button"
-          >
-            <RefreshCw size={18} className={loading ? "spinning" : ""} /> 
-            {loading ? 'Refreshing...' : 'Refresh'}
+          <button onClick={onRefresh} disabled={loading} className="refresh-button" type="button">
+            <RefreshCw size={15} className={loading ? "spinning" : ""} />
+            <span>{loading ? "Refreshing…" : "Refresh"}</span>
           </button>
-        </div>
-
-        {/* Assignment response error */}
-        {responseError && (
-          <div className="assignment-response-error" style={{ marginBottom: "1.25rem" }}>
-            <AlertTriangle size={15} />
-            <span>{responseError}</span>
-          </div>
-        )}
+        </header>
 
         {/* Search & Category Filter */}
         <div className="search-filter-row">
           <div className="search-container">
-            <Search className="search-icon" size={18} />
+            <Search className="search-icon" size={16} />
             <input
               type="text"
-              placeholder="Search tenant, employer, area, ID"
+              placeholder="Search tenant, employer, area or ID"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               className="search-input"
+              aria-label="Search applications"
             />
           </div>
 
-          <div className="category-filter-buttons">
+          <div className="category-filter-buttons" role="group" aria-label="Application category">
             <button
               type="button"
-              onClick={() => setSelectedCategory('all')}
-              className={`cat-btn ${selectedCategory === 'all' ? 'active' : ''}`}
-              aria-label={`All (${applications.length})`}
+              aria-pressed={selectedCategory === "all"}
+              onClick={() => setSelectedCategory("all")}
+              className={`cat-btn ${selectedCategory === "all" ? "active" : ""}`}
             >
-              All ({applications.length})
+              All <span className="cat-count">{categoryCounts.all}</span>
             </button>
             <button
               type="button"
-              onClick={() => setSelectedCategory('residential')}
-              className={`cat-btn ${selectedCategory === 'residential' ? 'active' : ''}`}
-              aria-label="Residential"
+              aria-pressed={selectedCategory === "residential"}
+              onClick={() => setSelectedCategory("residential")}
+              className={`cat-btn ${selectedCategory === "residential" ? "active" : ""}`}
             >
-              Residential
+              Residential <span className="cat-count">{categoryCounts.residential}</span>
             </button>
             <button
               type="button"
-              onClick={() => setSelectedCategory('student')}
-              className={`cat-btn ${selectedCategory === 'student' ? 'active' : ''}`}
-              aria-label="Student"
+              aria-pressed={selectedCategory === "student"}
+              onClick={() => setSelectedCategory("student")}
+              className={`cat-btn ${selectedCategory === "student" ? "active" : ""}`}
             >
-              Student
+              Student <span className="cat-count">{categoryCounts.student}</span>
             </button>
           </div>
         </div>
 
         {/* Content */}
-        {loading ? (
-          <div className="py-12 flex justify-center">
-            <Loading message="Loading applications..." />
-          </div>
+        {loading && filtered.length === 0 ? (
+          <AgentApplicationsSkeleton label="Loading applications…" />
         ) : filtered.length === 0 ? (
           <div className="empty-state">
-            <FileText className="empty-icon" size={44} />
+            <FileText className="empty-icon" size={34} />
             <p className="empty-text">No applications found</p>
             <p className="empty-subtext">
-              {query ? 'Try adjusting your search query.' : 'New assignments will appear here.'}
+              {hasActiveFilters
+                ? "Nothing matches this search or category."
+                : "New assignments will appear here once allocated."}
             </p>
+            {hasActiveFilters && (
+              <button type="button" className="empty-reset" onClick={clearFilters}>
+                Clear filters
+              </button>
+            )}
           </div>
         ) : (
           <>
-            <div className="applications-grid">
+            <div className="applications-list">
+              <div className="row-head" aria-hidden="true">
+                <span>Applicant</span>
+                <span>Budget · area · move-in</span>
+                <span>Fit</span>
+                <span>Status</span>
+                <span />
+              </div>
+
               {filtered.map((app) => {
                 const tenant = tenantById?.get(app.tenant_id);
-
-                // Only evaluate against the listing the application is actually linked to —
-                // never borrow an unrelated property to produce a score.
-                const resolution = resolveApplicationProperty(app, properties);
-                const linkedProperty = resolution.property;
-                const propertyLabel =
-                  resolution.label ||
-                  (isGenericPropertyTitle(app.property_title) ? null : app.property_title);
-                const propertyLocation = describePropertyLocation(linkedProperty);
-                const resolvedRent = Number(linkedProperty?.price);
-                const propertyPrice =
-                  Number.isFinite(resolvedRent) && resolvedRent > 0
-                    ? `R${resolvedRent.toLocaleString('en-ZA')}/mo`
-                    : null;
-
+                const statusMeta = getApplicationStatusMeta(app.status);
+                const assignmentStatus =
+                  app.assignment_status || (app.assigned_to ? "assigned" : "unassigned");
+                const awaiting = assignmentStatus !== "accepted" && assignmentStatus !== "rejected";
+                const linkedProperty = resolveApplicationProperty(app, properties).property;
                 const matchAnalysis = evaluateJobApplicationMatch({
                   application: app,
                   tenant,
                   property: linkedProperty || undefined
                 });
-
-                const docsCount = Array.isArray(app.documents) ? app.documents.length : 0;
+                const tierTone = toneForTier(matchAnalysis.tierColor);
+                const initial = (tenant?.full_name || tenant?.email || "T")[0].toUpperCase();
+                const isStudent =
+                  app.accommodation_category === "student_room" || app.category === "student_room";
+                const targetArea = linkedProperty
+                  ? linkedProperty.city || linkedProperty.area || linkedProperty.location
+                  : null;
 
                 return (
-                  <div key={app.id} className="application-card">
-                    <span
-                      className="card-accent"
-                      style={{ background: getStatusColor(app.status) }}
-                      aria-hidden="true"
-                    />
-
-                    <div className="card-body">
-
-                      {/* Identity + status */}
-                      <header className="card-head">
-                        <div className="applicant">
-                          <span className="applicant-avatar" aria-hidden="true">
-                            {(tenant?.full_name || tenant?.email || "T")[0].toUpperCase()}
-                          </span>
-                          <div className="applicant-details">
-                            <h3
-                              className="applicant-name"
-                              title={tenant?.full_name || 'Verified Applicant'}
-                            >
-                              {tenant?.full_name || 'Verified Applicant'}
-                            </h3>
-                            <a
-                              className="applicant-email"
-                              href={tenant?.email ? `mailto:${tenant.email}` : undefined}
-                              title={tenant?.email || 'No email provided'}
-                            >
-                              <Mail size={13} aria-hidden="true" />
-                              <span>{tenant?.email || 'No email provided'}</span>
-                            </a>
-                          </div>
-                        </div>
-
-                        <span
-                          className="status-chip"
-                          style={{
-                            color: getStatusColor(app.status),
-                            background: `${getStatusColor(app.status)}18`,
-                            borderColor: `${getStatusColor(app.status)}35`
-                          }}
-                        >
-                          <span
-                            className="status-dot"
-                            style={{ background: getStatusColor(app.status) }}
-                            aria-hidden="true"
-                          />
-                          {getStatusLabel(app.status)}
+                  <article
+                    key={app.id}
+                    className="application-row"
+                    onClick={() => onViewApplication(app)}
+                  >
+                    <div className="row-identity">
+                      <span className="applicant-avatar" aria-hidden="true">
+                        {initial}
+                      </span>
+                      <div className="row-identity-text">
+                        <span className="applicant-name" title={tenant?.full_name || "Verified Applicant"}>
+                          {tenant?.full_name || "Verified Applicant"}
                         </span>
-                      </header>
-
-                      {/* Quiet metadata */}
-                      <div className="card-meta">
-                        <span className="meta-id ag-num">#{String(app.id).slice(0, 8)}</span>
-                        <span className="meta-date">
-                          {app.submitted_at ? new Date(app.submitted_at).toLocaleDateString() : 'Recent'}
+                        <span className="applicant-email" title={tenant?.email || "No email provided"}>
+                          <Mail size={11} aria-hidden="true" />
+                          <span>{tenant?.email || "No email provided"}</span>
                         </span>
-                        <span className="assigned-to-you-badge">
-                          <UserCheck size={11} aria-hidden="true" /> Assigned
-                        </span>
-                        {app.agent_working_status === 'draft_complete' && (
-                          <span className="working-status-badge draft_complete">Drafting</span>
-                        )}
-                        {app.agent_working_status === 'shipped' && (
-                          <span className="working-status-badge shipped">Shipped</span>
-                        )}
+                        {awaiting && <span className="row-flag">Awaiting response</span>}
                       </div>
+                    </div>
 
-                      {/* Which property the tenant applied for */}
-                      {propertyLabel && (
-                        <div className="applied-property-banner">
-                          <Building size={13} className="banner-icon" aria-hidden="true" />
-                          <span className="banner-title" title={propertyLabel}>{propertyLabel}</span>
-                        </div>
-                      )}
+                    <div className="row-facts">
+                      <span className="row-fact">
+                        <span className="row-fact-label">Budget</span>
+                        <span className="row-fact-value ag-num">
+                          {app.max_budget
+                            ? `R${Number(app.max_budget).toLocaleString("en-ZA")}/mo`
+                            : "Flexible"}
+                        </span>
+                      </span>
+                      <span className="row-fact">
+                        <span className="row-fact-label">Area</span>
+                        <span className="row-fact-value">
+                          {targetArea || app.preferred_areas?.[0] || app.location || "Any area"}
+                        </span>
+                      </span>
+                      <span className="row-fact">
+                        <span className="row-fact-label">Move-in</span>
+                        <span className="row-fact-value">{formatDate(app.move_in_date)}</span>
+                      </span>
+                    </div>
 
-                      {linkedProperty && (propertyLocation || propertyPrice) && (
-                        <div className="applied-property-meta">
-                          {propertyLocation && (
-                            <span className="applied-property-meta-item">
-                              <MapPin size={12} aria-hidden="true" />
-                              {propertyLocation}
-                            </span>
-                          )}
-                          {propertyPrice && (
-                            <span className="applied-property-meta-item">
-                              <DollarSign size={12} aria-hidden="true" />
-                              {propertyPrice}
-                            </span>
-                          )}
-                        </div>
-                      )}
+                    <div className="row-fit">
+                      <span className={`match-score-pill is-${tierTone}`} title={matchAnalysis.verdict}>
+                        {matchAnalysis.compositeScore}%
+                      </span>
+                      <span className="row-fit-label">{isStudent ? "Student" : "Residential"}</span>
+                    </div>
 
-                      {!linkedProperty && resolution.isLinked && (
-                        <div
-                          className="applied-property-meta is-unresolved"
-                          title="Listing not in your inventory. Name comes from the application snapshot."
-                        >
-                          <AlertTriangle size={12} aria-hidden="true" />
-                          <span>External listing</span>
-                        </div>
-                      )}
+                    <div className="row-status">
+                      <span className={`status-pill tone-${statusMeta.tone || "slate"}`}>
+                        <span className="status-dot" aria-hidden="true" />
+                        {statusMeta.label}
+                      </span>
+                    </div>
 
-                      {/* Employment & income snapshot */}
-                      <div className="job-profile-snippet">
-                        <div className="job-snippet-header">
-                          <span className="job-snippet-title">
-                            <Briefcase size={14} aria-hidden="true" />
-                            <span title={matchAnalysis.employment.jobTitle}>
-                              {matchAnalysis.employment.jobTitle}
-                            </span>
-                          </span>
-                          <span className="job-income-badge ag-num">
-                            R{matchAnalysis.affordability.monthlyIncome.toLocaleString()}
-                            <span className="per-mo">/mo</span>
-                          </span>
-                        </div>
-                        <div className="job-employer-line">
-                          <span>{matchAnalysis.employment.employerName}</span>
-                          <span className="status-tag">{matchAnalysis.employment.employmentStatus}</span>
-                        </div>
-                      </div>
-
-                      {/* Affordability & commute analysis — single entry point */}
+                    <div className="row-actions">
                       <button
                         type="button"
-                        className="match-widget"
-                        style={{ '--match-tint': matchAnalysis.tierColor }}
-                        onClick={() => setActiveJobApp(app)}
-                        aria-label={`Match analysis: ${matchAnalysis.compositeScore}%, ${matchAnalysis.verdict}`}
-                        title="View match analysis"
+                        className="row-view"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onViewApplication(app);
+                        }}
+                        aria-label={`View application for ${tenant?.full_name || "applicant"}`}
                       >
-                        <span className="match-score">
-                          <Briefcase size={14} aria-hidden="true" />
-                          <strong className="ag-num">{matchAnalysis.compositeScore}%</strong>
-                          <span className="match-score-label">match</span>
-                        </span>
-                        <span className="match-details">
-                          <span className="match-ratio">
-                            {matchAnalysis.affordability.multiplier}x rent · ~{matchAnalysis.proximity.approxDistanceKm}km
-                          </span>
-                          <span className="match-verdict" style={{ color: matchAnalysis.tierColor }}>
-                            {matchAnalysis.verdict}
-                          </span>
-                        </span>
-                        <ChevronRight size={16} className="match-chevron" aria-hidden="true" />
+                        View <ChevronRight size={14} aria-hidden="true" />
                       </button>
-
-                      {/* Key requirements */}
-                      <dl className="facts">
-                        <div className="fact">
-                          <dt className="fact-label">
-                            <DollarSign size={13} aria-hidden="true" />
-                            <span>Budget</span>
-                          </dt>
-                          <dd className="fact-value fact-money ag-num">
-                            {app.max_budget ? `R${Number(app.max_budget).toLocaleString()}` : 'Flexible'}
-                          </dd>
-                        </div>
-                        <div className="fact">
-                          <dt className="fact-label">
-                            <Calendar size={13} aria-hidden="true" />
-                            <span>Move-in</span>
-                          </dt>
-                          <dd className="fact-value">
-                            {app.move_in_date ? new Date(app.move_in_date).toLocaleDateString() : 'Flexible'}
-                          </dd>
-                        </div>
-                        <div className="fact fact-wide">
-                          <dt className="fact-label">
-                            <MapPin size={13} aria-hidden="true" />
-                            <span>Areas</span>
-                          </dt>
-                          <dd className="fact-value">
-                            {app.preferred_areas?.length ? app.preferred_areas.join(', ') : 'Any'}
-                          </dd>
-                        </div>
-                        {app.special_requirements && (
-                          <div className="fact fact-wide">
-                            <dt className="fact-label"><span>Notes</span></dt>
-                            <dd className="fact-value fact-notes">{app.special_requirements}</dd>
-                          </div>
-                        )}
-                      </dl>
-
-                      {/* Actions */}
-                      <div className="card-actions">
-                        <button
-                          type="button"
-                          onClick={() => setActiveDocApp(app)}
-                          className="btn btn-secondary"
-                          title="View documents"
-                        >
-                          <FileCheck size={15} aria-hidden="true" />
-                          <span>Documents</span>
-                          <span className="btn-count ag-num">{docsCount}</span>
-                        </button>
-
-                        <button
-                          type="button"
-                          onClick={() => onManageApplication(app)}
-                          className="btn btn-primary"
-                          aria-label="Manage Matches"
-                          title="Build and ship match shortlist"
-                        >
-                          <Building size={15} aria-hidden="true" />
-                          <span>Manage Matches</span>
-                        </button>
-                      </div>
-
-                      {/* Application status */}
-                      <div className="status-block">
-                        <label className="field-label" htmlFor={`status-${app.id}`}>
-                          Status
-                        </label>
-                        {app.status === APPLICATION_STATUS.COMPLETED ? (
-                          <div className="status-complete">
-                            <CheckCircle2 size={14} aria-hidden="true" />
-                            Completed · Approved
-                          </div>
-                        ) : (
-                          <div className="select-wrapper">
-                            <select
-                              id={`status-${app.id}`}
-                              value={app.status || APPLICATION_STATUS.SUBMITTED}
-                              onChange={(e) => onUpdateStatus?.(app.id, e.target.value)}
-                              className="status-select"
-                              style={{ borderColor: getStatusColor(app.status) }}
-                            >
-                              {AGENT_SELECTABLE_APPLICATION_STATUSES.map((s) => (
-                                <option key={s} value={s}>{applicationStatusLabel(s)}</option>
-                              ))}
-                            </select>
-                            <ChevronDown size={16} className="select-icon" aria-hidden="true" />
-                          </div>
-                        )}
-                      </div>
-
-                      {/* Completion approval request */}
-                      {app.status !== APPLICATION_STATUS.COMPLETED && (
-                        <div className={`completion-box${app.completion_requested_at ? ' is-requested' : ''}`}>
-                          {app.completion_requested_at ? (
-                            <>
-                              <p className="completion-heading">
-                                <Clock size={13} aria-hidden="true" /> Review requested
-                              </p>
-                              <p className="completion-note">
-                                Awaiting admin sign-off · R50 payout
-                              </p>
-                              {app.completion_request_note && (
-                                <p className="completion-quote">&ldquo;{app.completion_request_note}&rdquo;</p>
-                              )}
-                            </>
-                          ) : (
-                            <>
-                              <span className="completion-prompt">Placement complete?</span>
-                              <button
-                                type="button"
-                                onClick={() => setCompletionModalApp(app)}
-                                className="btn btn-success btn-sm"
-                              >
-                                <CheckCircle2 size={13} aria-hidden="true" />
-                                <span>Request sign-off</span>
-                              </button>
-                            </>
-                          )}
-                        </div>
-                      )}
-
-                      {/* Assignment response */}
-                      <div className="assignment-response-box">
-                        {assignmentStatusOf(app) === 'accepted' ? (
-                          <div className="assignment-response-badge accepted">
-                            <CheckCircle2 size={15} aria-hidden="true" />
-                            <span>Accepted</span>
-                          </div>
-                        ) : assignmentStatusOf(app) === 'rejected' ? (
-                          <>
-                            <div className="assignment-response-badge rejected">
-                              <XCircle size={15} aria-hidden="true" />
-                              <span>Declined · Reassigning</span>
-                            </div>
-                            {app.assignment_rejection_reason && (
-                              <p className="assignment-response-reason">
-                                {app.assignment_rejection_reason}
-                              </p>
-                            )}
-                            <div className="assignment-response-actions">
-                              <button
-                                type="button"
-                                className="resp-btn accept"
-                                onClick={() => handleAcceptJob(app)}
-                                disabled={respondingId === app.id}
-                              >
-                                <CheckCircle2 size={14} aria-hidden="true" />
-                                {respondingId === app.id ? 'Saving…' : 'Accept'}
-                              </button>
-                            </div>
-                          </>
-                        ) : (
-                          <>
-                            <div className="assignment-response-prompt">
-                              <Briefcase size={14} aria-hidden="true" />
-                              <span>New assignment · Please accept or decline</span>
-                            </div>
-                            <div className="assignment-response-actions">
-                              <button
-                                type="button"
-                                className="resp-btn accept"
-                                onClick={() => handleAcceptJob(app)}
-                                disabled={respondingId === app.id}
-                              >
-                                <CheckCircle2 size={14} aria-hidden="true" />
-                                {respondingId === app.id ? 'Saving…' : 'Accept'}
-                              </button>
-                              <button
-                                type="button"
-                                className="resp-btn reject"
-                                onClick={() => {
-                                  setResponseError('');
-                                  setRejectApp(app);
-                                }}
-                                disabled={respondingId === app.id}
-                              >
-                                <XCircle size={14} aria-hidden="true" />
-                                Decline
-                              </button>
-                            </div>
-                          </>
-                        )}
-                      </div>
-
                     </div>
-                  </div>
+                  </article>
                 );
               })}
             </div>
 
-            {/* Results Count */}
-            <div className="results-count">
-              Showing {filtered.length} application{filtered.length !== 1 ? 's' : ''}
-              {query && ` matching "${query}"`}
+            <div className="results-count-bar">
+              Showing {filtered.length} of {categoryCounts.all} application
+              {categoryCounts.all !== 1 ? "s" : ""}
+              {query && ` matching “${query}”`}
             </div>
           </>
         )}
       </div>
-
-      {/* Document Inspection Modal */}
-      {activeDocApp && (
-        <ApplicationDocumentsModal
-          isOpen={Boolean(activeDocApp)}
-          onClose={() => setActiveDocApp(null)}
-          application={activeDocApp}
-          tenant={tenantById?.get(activeDocApp.tenant_id)}
-        />
-      )}
-
-      {/* Job-to-Application Compatibility & Approximation Modal */}
-      {activeJobApp && (
-        <JobLinkApproximationModal
-          isOpen={Boolean(activeJobApp)}
-          onClose={() => setActiveJobApp(null)}
-          application={activeJobApp}
-          tenant={tenantById?.get(activeJobApp.tenant_id)}
-          properties={properties}
-          onOpenDocuments={(app) => setActiveDocApp(app)}
-          onUpdateStatus={onUpdateStatus}
-        />
-      )}
-
-      {/* Reject Job Modal (captures a reassignment reason for the admin) */}
-      <JobResponseModal
-        isOpen={Boolean(rejectApp)}
-        onClose={() => {
-          setRejectApp(null);
-          setResponseError('');
-        }}
-        application={rejectApp}
-        tenant={rejectApp ? tenantById?.get(rejectApp.tenant_id) : null}
-        submitting={Boolean(rejectApp) && respondingId === rejectApp.id}
-        error={responseError}
-        onSubmit={handleRejectJob}
-      />
-
-      {/* Completion Request Modal */}
-      {completionModalApp && (
-        <Modal
-          isOpen={Boolean(completionModalApp)}
-          onClose={() => {
-            setCompletionModalApp(null);
-            setCompletionNote("");
-            setCompletionFeedback("");
-          }}
-          title="Request completion review"
-          size="sm"
-        >
-          <form onSubmit={handleSubmitCompletionRequest} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-            <div style={{
-              padding: '0.7rem 0.85rem',
-              background: 'rgba(16, 185, 129, 0.1)',
-              border: '1px solid rgba(16, 185, 129, 0.25)',
-              borderRadius: '0.5rem',
-              fontSize: '0.78rem',
-              color: '#94a3b8'
-            }}>
-              <span style={{ fontWeight: 600, color: '#10b981' }}>Admin sign-off</span> unlocks your R50 commission share.
-            </div>
-
-            <div>
-              <label style={{ display: 'block', fontSize: '0.75rem', color: '#94a3b8', marginBottom: '0.35rem', fontWeight: 600, textTransform: 'uppercase' }}>
-                Placement notes (optional)
-              </label>
-              <textarea
-                rows={3}
-                value={completionNote}
-                onChange={(e) => setCompletionNote(e.target.value)}
-                placeholder="e.g. Lease signed, move-in confirmed."
-                style={{
-                  width: '100%',
-                  padding: '0.65rem',
-                  background: '#151d31',
-                  border: '1px solid var(--wallet-border, #334155)',
-                  borderRadius: '0.5rem',
-                  color: '#fff',
-                  fontSize: '0.8rem',
-                  outline: 'none',
-                  fontFamily: 'inherit'
-                }}
-              />
-            </div>
-
-            {completionFeedback && (
-              <div style={{
-                padding: '0.65rem 0.85rem',
-                borderRadius: '0.5rem',
-                background: completionFeedback.includes('requested') ? 'rgba(16, 185, 129, 0.15)' : 'rgba(239, 68, 68, 0.15)',
-                color: completionFeedback.includes('requested') ? '#10b981' : '#ef4444',
-                fontSize: '0.75rem',
-                fontWeight: 600
-              }}>
-                {completionFeedback}
-              </div>
-            )}
-
-            <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'flex-end', marginTop: '0.25rem' }}>
-              <button
-                type="button"
-                onClick={() => setCompletionModalApp(null)}
-                style={{
-                  padding: '0.5rem 1rem',
-                  borderRadius: '0.5rem',
-                  background: 'rgba(255,255,255,0.06)',
-                  color: '#cbd5e1',
-                  border: 'none',
-                  cursor: 'pointer',
-                  fontSize: '0.78rem',
-                  fontWeight: 600
-                }}
-              >
-                Cancel
-              </button>
-              <button
-                type="submit"
-                disabled={isSubmittingCompletion}
-                style={{
-                  padding: '0.5rem 1.25rem',
-                  borderRadius: '0.5rem',
-                  background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
-                  color: '#fff',
-                  border: 'none',
-                  cursor: isSubmittingCompletion ? 'not-allowed' : 'pointer',
-                  fontSize: '0.78rem',
-                  fontWeight: 700,
-                  opacity: isSubmittingCompletion ? 0.6 : 1
-                }}
-              >
-                {isSubmittingCompletion ? "Submitting…" : "Submit for Approval"}
-              </button>
-            </div>
-          </form>
-        </Modal>
-      )}
-
     </div>
   );
 };
+
+export default Applications;

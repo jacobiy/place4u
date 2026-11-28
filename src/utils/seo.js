@@ -132,6 +132,26 @@ function findPrivateRoute(path) {
   );
 }
 
+const NOT_FOUND_TITLE = 'Page Not Found | Place4U';
+
+const NOT_FOUND_DESCRIPTION =
+  'That address does not exist on Place4U. Head back to the home page or browse verified rental listings across South Africa.';
+
+/**
+ * True when the router will render something other than the 404 catch-all.
+ * Mirrors the route table in App.jsx: known public pages and aliases, the two
+ * listing-detail prefixes (any id), and anything under a private prefix.
+ */
+export function isKnownPath(pathname) {
+  const path = normalizePath(pathname);
+  if (findPrivateRoute(path)) return true;
+  if (path.startsWith('/property/') || path.startsWith('/residence/')) return true;
+  return (
+    Object.prototype.hasOwnProperty.call(ROUTE_SEO, path) ||
+    Object.prototype.hasOwnProperty.call(ROUTE_ALIASES, path)
+  );
+}
+
 function buildSeo({ title, description, canonicalPath, robots }) {
   const url = toAbsolute(canonicalPath);
   return {
@@ -152,6 +172,18 @@ function buildSeo({ title, description, canonicalPath, robots }) {
  */
 export function resolveSeoForPath(pathname) {
   const path = normalizePath(pathname);
+
+  // Unknown addresses render the 404 page (App.jsx catch-all). They must not
+  // borrow the home page's title/canonical: that would advertise every broken
+  // URL as a duplicate of "/". Keep the URL out of the index entirely.
+  if (!isKnownPath(path)) {
+    return buildSeo({
+      title: NOT_FOUND_TITLE,
+      description: NOT_FOUND_DESCRIPTION,
+      canonicalPath: path,
+      robots: PRIVATE_ROBOTS
+    });
+  }
 
   const privateRoute = findPrivateRoute(path);
   if (privateRoute) {
@@ -182,9 +214,9 @@ export function resolveSeoForPath(pathname) {
   return buildSeo({
     title: seo.title,
     description: seo.description,
-    // Unknown paths are redirected to the home page by the router, so point the
-    // canonical there rather than at a URL that never renders.
-    canonicalPath: alias?.canonicalPath || (known ? path : '/'),
+    // Unknown paths returned above, so every path that reaches here has a real
+    // page to point the canonical at.
+    canonicalPath: alias?.canonicalPath || path,
     robots: alias?.noindex ? PRIVATE_ROBOTS : DEFAULT_ROBOTS
   });
 }

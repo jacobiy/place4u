@@ -78,7 +78,7 @@ export const Modal = ({ isOpen, onClose, title, children, size = "md" }) => {
                 <X size={16} color={T.textSecondary} />
               </button>
             </div>
-            <div style={{ padding: "1.5rem", maxHeight: "72vh", overflowY: "auto" }}>{children}</div>
+            <div style={{ padding: "1.5rem", maxHeight: "72vh", overflowY: "auto", color: T.textPrimary || '#ffffff' }}>{children}</div>
           </div>
         </div>
       </div>

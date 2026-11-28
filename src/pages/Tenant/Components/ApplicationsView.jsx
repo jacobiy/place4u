@@ -12,7 +12,7 @@ import ApplicationFeeCardModal from '../../../component/ApplicationFeeCardModal'
 import FeeAmount from '../../../component/FeeAmount';
 import { useFeeQuote } from '../../../hooks/useFeeQuote';
 import { formatZarAmount } from '../../../services/promotionService';
-import Loading from '../../../component/loading';
+import { TenantApplicationsSkeleton } from '../../../component/DashboardSkeletons';
 import {
   subscribeToApplicationUpdates,
   mergeLocalAndDbApplications,
@@ -321,11 +321,7 @@ export default function ApplicationsView({
     STATUS_STYLES[normalizeApplicationStatus(status)] || STATUS_STYLES.default;
 
   if (loading) {
-    return (
-      <div className="p-8 flex items-center justify-center min-h-[16rem]">
-        <Loading message="Loading your applications & attached verification documents..." />
-      </div>
-    );
+    return <TenantApplicationsSkeleton label="Loading your applications & attached verification documents..." />;
   }
 
   const activeCount = applications.filter(isActiveApplication).length;

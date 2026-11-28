@@ -13,7 +13,7 @@ import MatchPipelineView from '../../component/MatchPipelineView';
 import { TenantQueries } from './db/queries';
 import { useAuth } from '../../hooks/useAuth';
 import { supabase } from '../../utils/Supabase';
-import Loading from '../../component/loading';
+import { TenantDashboardSkeleton } from '../../component/DashboardSkeletons';
 import { mergeLocalAndDbApplications, subscribeToApplicationUpdates } from '../../services/applicationSync';
 import { listTenantMatches } from '../../services/applicationMatchService';
 import { listPipelineMatches, subscribeToMatchPipeline } from '../../services/matchWorkflowService';
@@ -345,11 +345,7 @@ export default function MainTenant() {
 
   const renderContent = () => {
     if (loading || authLoading) {
-      return (
-        <div style={{ textAlign: "center", padding: "6rem 2rem" }}>
-          <Loading message="Preparing tenant portal…" />
-        </div>
-      );
+      return <TenantDashboardSkeleton label="Preparing tenant portal…" />;
     }
 
     switch (activeView) {

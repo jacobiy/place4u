@@ -12,11 +12,11 @@ import {
   HiShieldCheck,
   HiCheck,
   HiArrowRight,
-  HiArrowLeft
+  HiArrowLeft,
+  HiChevronDown
 } from 'react-icons/hi'
 import { FaGoogle } from 'react-icons/fa'
 import { Link, useNavigate } from 'react-router-dom'
-import { getDefaultAvatar, getGenderAvatar, createInitialsAvatar } from '../../utils/avatarHelper'
 
 const Signup = ({ isModal = false, onSwitchToLogin }) => {
   const [showPassword, setShowPassword] = useState(false)
@@ -25,7 +25,7 @@ const Signup = ({ isModal = false, onSwitchToLogin }) => {
   const [formData, setFormData] = useState({
     firstName: '',
     secondName: '',
-    gender: 'prefer_not_to_say', // 'male' | 'female' | 'prefer_not_to_say'
+    gender: '', // 'male' | 'female' | 'prefer_not_to_say' (must be explicitly chosen)
     email: '',
     phone: '',
     password: '',
@@ -54,7 +54,7 @@ const Signup = ({ isModal = false, onSwitchToLogin }) => {
   const validateStep1 = () => {
     if (!formData.firstName.trim()) return 'First name is required.'
     if (!formData.secondName.trim()) return 'Second name / surname is required.'
-    if (!formData.gender) return 'Please select your gender preference.'
+    if (!formData.gender) return 'Please choose your gender.'
     if (!formData.email.trim()) return 'Valid email address is required.'
     if (!formData.phone.trim()) return 'South African contact number is required.'
     if (!formData.password) return 'Password is required.'
@@ -369,7 +369,7 @@ const Signup = ({ isModal = false, onSwitchToLogin }) => {
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
                       <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1.5">
-                        First Name
+                        First Name <span className="text-red-500 font-bold ml-0.5" aria-hidden="true">*</span>
                       </label>
                       <div className="relative">
                         <HiUser className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500 w-4 h-4" />
@@ -387,7 +387,7 @@ const Signup = ({ isModal = false, onSwitchToLogin }) => {
 
                     <div>
                       <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1.5">
-                        Second Name / Surname
+                        Second Name / Surname <span className="text-red-500 font-bold ml-0.5" aria-hidden="true">*</span>
                       </label>
                       <div className="relative">
                         <HiUser className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500 w-4 h-4" />
@@ -404,60 +404,48 @@ const Signup = ({ isModal = false, onSwitchToLogin }) => {
                     </div>
                   </div>
 
-                  {/* Gender selection with live avatar preview */}
+                  {/* Gender Selection */}
                   <div>
-                    <div className="flex items-center justify-between mb-1.5">
-                      <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300">
-                        Gender
-                      </label>
-                      <span className="text-[10px] text-slate-400">
-                        {formData.gender === 'prefer_not_to_say' ? 'Displays monogram initials' : 'Sets character avatar'}
-                      </span>
-                    </div>
-
-                    <div className="flex items-center gap-3">
-                      {/* Live Avatar Preview */}
-                      <div className="relative flex-shrink-0">
-                        <img
-                          src={
-                            formData.gender === 'prefer_not_to_say'
-                              ? createInitialsAvatar(`${formData.firstName} ${formData.secondName}`.trim() || 'P4U', formData.email || 'seed')
-                              : getGenderAvatar(formData.userType || 'tenant', formData.gender, `${formData.firstName} ${formData.secondName}`.trim() || 'seed')
-                          }
-                          alt="Avatar preview"
-                          className="w-11 h-11 rounded-full object-cover border-2 border-blue-500/40 bg-slate-900 shadow-md"
-                        />
-                        <span className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full bg-emerald-500 border-2 border-slate-950" />
-                      </div>
-
-                      {/* Gender Options */}
-                      <div className="grid grid-cols-3 gap-2 flex-1">
-                        {[
-                          { id: 'male', label: 'Male' },
-                          { id: 'female', label: 'Female' },
-                          { id: 'prefer_not_to_say', label: 'Prefer not to say' }
-                        ].map((g) => (
-                          <button
-                            key={g.id}
-                            type="button"
-                            onClick={() => setFormData(prev => ({ ...prev, gender: g.id }))}
-                            className={`py-2 px-2 rounded-xl text-xs font-semibold border transition-all text-center cursor-pointer ${
-                              formData.gender === g.id
-                                ? 'bg-blue-600/30 border-blue-500 text-blue-300 shadow-sm'
-                                : 'bg-slate-950/80 border-white/10 text-slate-400 hover:text-white hover:border-white/20'
-                            }`}
-                          >
-                            {g.label}
-                          </button>
-                        ))}
-                      </div>
+                    <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1.5">
+                      Gender <span className="text-red-500 font-bold ml-0.5" aria-hidden="true">*</span>
+                    </label>
+                    <div className="relative">
+                      <HiUser className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500 w-4 h-4 pointer-events-none" />
+                      <select
+                        name="gender"
+                        value={formData.gender}
+                        onChange={handleChange}
+                        required
+                        data-placeholder={!formData.gender}
+                        className={`no-chevron w-full pl-10 pr-10 py-2.5 bg-slate-950/80 border rounded-xl text-sm focus:outline-none transition-colors appearance-none cursor-pointer ${
+                          formData.gender ? 'text-white' : 'text-slate-500'
+                        } ${
+                          error && error.toLowerCase().includes('gender')
+                            ? 'border-red-500 focus:border-red-500 ring-1 ring-red-500/20'
+                            : 'border-white/10 focus:border-blue-500'
+                        }`}
+                      >
+                        <option value="" disabled className="bg-slate-900 text-slate-500">
+                          Choose...
+                        </option>
+                        <option value="male" className="bg-slate-900 text-white">
+                          Male
+                        </option>
+                        <option value="female" className="bg-slate-900 text-white">
+                          Female
+                        </option>
+                        <option value="prefer_not_to_say" className="bg-slate-900 text-white">
+                          Prefer not to say
+                        </option>
+                      </select>
+                      <HiChevronDown className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4 pointer-events-none" />
                     </div>
                   </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
                       <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1.5">
-                        Email address
+                        Email address <span className="text-red-500 font-bold ml-0.5" aria-hidden="true">*</span>
                       </label>
                       <div className="relative">
                         <HiMail className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500 w-4 h-4" />
@@ -475,7 +463,7 @@ const Signup = ({ isModal = false, onSwitchToLogin }) => {
 
                     <div>
                       <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1.5">
-                        Phone or WhatsApp
+                        Phone or WhatsApp <span className="text-red-500 font-bold ml-0.5" aria-hidden="true">*</span>
                       </label>
                       <div className="relative">
                         <HiPhone className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500 w-4 h-4" />
@@ -495,7 +483,7 @@ const Signup = ({ isModal = false, onSwitchToLogin }) => {
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
                       <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1.5">
-                        Password (8 characters minimum)
+                        Password (8 chars min) <span className="text-red-500 font-bold ml-0.5" aria-hidden="true">*</span>
                       </label>
                       <div className="relative">
                         <HiLockClosed className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500 w-4 h-4" />
@@ -520,10 +508,16 @@ const Signup = ({ isModal = false, onSwitchToLogin }) => {
 
                     <div>
                       <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1.5">
-                        Confirm Password
+                        Confirm Password <span className="text-red-500 font-bold ml-0.5" aria-hidden="true">*</span>
                       </label>
                       <div className="relative">
-                        <HiShieldCheck className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500 w-4 h-4" />
+                        <HiShieldCheck className={`absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 ${
+                          formData.confirmPassword
+                            ? formData.password === formData.confirmPassword
+                              ? 'text-emerald-400'
+                              : 'text-red-400'
+                            : 'text-slate-500'
+                        }`} />
                         <input
                           type={showConfirmPassword ? 'text' : 'password'}
                           name="confirmPassword"
@@ -531,7 +525,13 @@ const Signup = ({ isModal = false, onSwitchToLogin }) => {
                           onChange={handleChange}
                           required
                           placeholder="••••••••"
-                          className="w-full pl-10 pr-10 py-2.5 bg-slate-950/80 border border-white/10 rounded-xl text-sm text-white placeholder-slate-600 focus:outline-none focus:border-blue-500 transition-colors"
+                          className={`w-full pl-10 pr-10 py-2.5 bg-slate-950/80 border rounded-xl text-sm text-white placeholder-slate-600 focus:outline-none transition-colors ${
+                            formData.confirmPassword
+                              ? formData.password === formData.confirmPassword
+                                ? 'border-emerald-500/60 focus:border-emerald-500'
+                                : 'border-red-500/60 focus:border-red-500'
+                              : 'border-white/10 focus:border-blue-500'
+                          }`}
                         />
                         <button
                           type="button"
@@ -541,6 +541,16 @@ const Signup = ({ isModal = false, onSwitchToLogin }) => {
                           {showConfirmPassword ? <HiEyeOff className="w-4 h-4" /> : <HiEye className="w-4 h-4" />}
                         </button>
                       </div>
+                      {formData.confirmPassword && formData.password !== formData.confirmPassword && (
+                        <p className="text-[11px] text-red-400 mt-1">
+                          Passwords do not match
+                        </p>
+                      )}
+                      {formData.confirmPassword && formData.password === formData.confirmPassword && formData.password.length >= 8 && (
+                        <p className="text-[11px] text-emerald-400 mt-1 flex items-center gap-1">
+                          <HiCheck className="w-3.5 h-3.5" /> Passwords match
+                        </p>
+                      )}
                     </div>
                   </div>
                 </div>
