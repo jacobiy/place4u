@@ -24,6 +24,7 @@ const ComplianceNotice = lazy(() => import("./pages/legal/ComplianceNotice"));
 const DisputeResolution = lazy(() => import("./pages/legal/DisputeResolution"));
 const CookiePreferences = lazy(() => import("./pages/legal/StoragePreferences"));
 const ResidenceDetail = lazy(() => import("./pages/landing/ResidenceDetail"));
+const NotFound = lazy(() => import("./pages/NotFound/NotFound"));
 
 // OAuth Callback handler component
 function AuthCallback() {
@@ -393,7 +394,9 @@ export default function App() {
           <Route path="/agent-applications" element={<Navigate to="/admin/agent-applications" replace />} />
           <Route path="/landlord-applications" element={<Navigate to="/admin/landlord-applications" replace />} />
           <Route path="/dashboard" element={<Navigate to="/login" replace />} />
-          <Route path="*" element={<Navigate to="/" replace />} />
+          {/* Real 404 instead of silently redirecting: keeps the address the
+              visitor typed, and lets RouteSeo mark the URL `noindex`. */}
+          <Route path="*" element={<NotFound />} />
         </Routes>
         <AuthModal />
       </Suspense>

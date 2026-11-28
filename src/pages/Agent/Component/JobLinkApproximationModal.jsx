@@ -106,6 +106,16 @@ export const JobLinkApproximationModal = ({
   const applicantName = tenant?.full_name || 'Applicant';
   const { affordability, proximity, employment, insights, compositeScore, tier, tierColor, verdict } = matchResult;
 
+  // The matcher's tier accents are tuned for a dark sheet; on paper they are too
+  // light for text. Keep the accent for rings/tints, darken it for ink.
+  const TIER_INK = {
+    '#10b981': '#047857',
+    '#4f7ef8': '#1d4ed8',
+    '#f59e0b': '#92400e',
+    '#ef4444': '#b91c1c'
+  };
+  const tierInk = TIER_INK[String(tierColor).toLowerCase()] || '#1f4468';
+
   return (
     <div className="job-link-modal-overlay" onClick={onClose}>
       <div className="job-link-modal-container" onClick={(e) => e.stopPropagation()}>
@@ -121,7 +131,7 @@ export const JobLinkApproximationModal = ({
               Job &amp; commute match
             </h2>
             <p className="job-link-modal-subtitle">
-              <strong style={{ color: '#fff' }}>{applicantName}</strong> #{String(application.id).slice(0, 8)}
+              <strong style={{ color: '#111827' }}>{applicantName}</strong> #{String(application.id).slice(0, 8)}
             </p>
           </div>
           <button className="job-link-modal-close" onClick={onClose} aria-label="Close modal">
@@ -176,12 +186,15 @@ export const JobLinkApproximationModal = ({
           
           {/* Top Score Banner */}
           <div className="job-score-banner" style={{ borderColor: `${tierColor}40` }}>
-            <div className="job-score-circle" style={{ background: `${tierColor}18`, borderColor: tierColor, color: tierColor }}>
+            <div className="job-score-circle" style={{ background: `${tierColor}14`, borderColor: tierColor, color: tierInk }}>
               <span className="score-number">{compositeScore}%</span>
               <span className="score-subtext">Match</span>
             </div>
             <div className="job-score-details">
-              <div className="score-tag" style={{ background: `${tierColor}20`, color: tierColor }}>
+              <div
+                className="score-tag"
+                style={{ background: `${tierColor}18`, border: `1px solid ${tierColor}55`, color: tierInk }}
+              >
                 {tier}
               </div>
               <h3 className="score-verdict">{verdict}</h3>
@@ -198,7 +211,7 @@ export const JobLinkApproximationModal = ({
             {/* 1. Affordability Pillar */}
             <div className="pillar-card">
               <div className="pillar-header">
-                <div className="pillar-icon" style={{ background: 'rgba(16, 185, 129, 0.15)', color: '#10b981' }}>
+                <div className="pillar-icon" style={{ background: '#ecfdf5', border: '1px solid #d1fae5', color: '#047857' }}>
                   <DollarSign size={20} />
                 </div>
                 <div>
@@ -210,7 +223,7 @@ export const JobLinkApproximationModal = ({
               <div className="pillar-stat-row">
                 <div className="pillar-stat">
                   <span className="stat-label">Coverage Multiplier</span>
-                  <span className="stat-value" style={{ color: '#10b981' }}>{affordability.multiplier}x</span>
+                  <span className="stat-value" style={{ color: '#047857' }}>{affordability.multiplier}x</span>
                   <span className="stat-hint">Min 3.0x recommended</span>
                 </div>
                 <div className="pillar-stat">
@@ -231,7 +244,7 @@ export const JobLinkApproximationModal = ({
                     className="meter-fill"
                     style={{
                       width: `${Math.min(100, (affordability.rentToIncomePercent / 50) * 100)}%`,
-                      backgroundColor: affordability.rentToIncomePercent <= 33 ? '#10b981' : '#f59e0b'
+                      backgroundColor: affordability.rentToIncomePercent <= 33 ? '#047857' : '#d97706'
                     }}
                   />
                   <div className="meter-benchmark" style={{ left: '66%' }} title="33% Standard Cap" />
@@ -257,7 +270,7 @@ export const JobLinkApproximationModal = ({
             {/* 2. Commute Proximity Pillar */}
             <div className="pillar-card">
               <div className="pillar-header">
-                <div className="pillar-icon" style={{ background: 'rgba(79, 126, 248, 0.15)', color: '#4f7ef8' }}>
+                <div className="pillar-icon" style={{ background: '#eaf1f8', border: '1px solid #dbe7f3', color: '#315f91' }}>
                   <Navigation size={20} />
                 </div>
                 <div>
@@ -269,7 +282,7 @@ export const JobLinkApproximationModal = ({
               <div className="pillar-stat-row">
                 <div className="pillar-stat">
                   <span className="stat-label">Approx Distance</span>
-                  <span className="stat-value" style={{ color: '#4f7ef8' }}>~{proximity.approxDistanceKm} km</span>
+                  <span className="stat-value" style={{ color: '#1d4ed8' }}>~{proximity.approxDistanceKm} km</span>
                   <span className="stat-hint">Cluster distance</span>
                 </div>
                 <div className="pillar-stat">
@@ -305,7 +318,7 @@ export const JobLinkApproximationModal = ({
             {/* 3. Employment & Verification Pillar */}
             <div className="pillar-card">
               <div className="pillar-header">
-                <div className="pillar-icon" style={{ background: 'rgba(79, 126, 248, 0.15)', color: '#7da2ff' }}>
+                <div className="pillar-icon" style={{ background: '#eaf1f8', border: '1px solid #dbe7f3', color: '#315f91' }}>
                   <Briefcase size={20} />
                 </div>
                 <div>
@@ -336,20 +349,20 @@ export const JobLinkApproximationModal = ({
                   <span className="doc-count-tag">{employment.docsCount} attached</span>
                 </div>
                 <div className="checklist-item">
-                  <CheckCircle2 size={15} color={employment.hasPayslip ? '#10b981' : '#64748b'} />
-                  <span style={{ color: employment.hasPayslip ? '#fff' : '#94a3b8' }}>
+                  <CheckCircle2 size={15} color={employment.hasPayslip ? '#047857' : '#cbd5e1'} />
+                  <span style={{ color: employment.hasPayslip ? '#111827' : '#94a3b8' }}>
                     Latest Payslip / Proof of Income
                   </span>
                 </div>
                 <div className="checklist-item">
-                  <CheckCircle2 size={15} color={employment.hasBankStatement ? '#10b981' : '#64748b'} />
-                  <span style={{ color: employment.hasBankStatement ? '#fff' : '#94a3b8' }}>
+                  <CheckCircle2 size={15} color={employment.hasBankStatement ? '#047857' : '#cbd5e1'} />
+                  <span style={{ color: employment.hasBankStatement ? '#111827' : '#94a3b8' }}>
                     3-Month Bank Statements (e-Stamped)
                   </span>
                 </div>
                 <div className="checklist-item">
-                  <CheckCircle2 size={15} color={employment.hasId ? '#10b981' : '#64748b'} />
-                  <span style={{ color: employment.hasId ? '#fff' : '#94a3b8' }}>
+                  <CheckCircle2 size={15} color={employment.hasId ? '#047857' : '#cbd5e1'} />
+                  <span style={{ color: employment.hasId ? '#111827' : '#94a3b8' }}>
                     Certified RSA ID / Passport Copy
                   </span>
                 </div>

@@ -51,7 +51,7 @@ import {
   AGENT_SELECTABLE_APPLICATION_STATUSES,
   applicationStatusLabel
 } from '../../services/applicationStatus';
-import { AvatarImage, getUserAvatar } from '../../utils/avatarHelper';
+import { AvatarImage, getUserAvatar, initialsFrom } from '../../utils/avatarHelper';
 import './Dashboard.css';
 
 const DEFAULT_PROPERTY_IMAGE = "https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=900&auto=format&fit=crop&q=60";
@@ -875,22 +875,57 @@ export const Dashboard = ({
             const docsCount = Array.isArray(selectedApp.documents) ? selectedApp.documents.length : 0;
 
             return (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 20, color: 'var(--ag-text)' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 14, paddingBottom: 18, borderBottom: '1px solid var(--ag-line)' }}>
-                  <div className="agent-avatar" style={{ width: 48, height: 48, fontSize: '1.05rem' }}>
-                    <AvatarImage src={getUserAvatar(tenant, 'tenant')} alt="Applicant" />
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 18, color: '#ffffff' }}>
+                {/* Header: Monogram Avatar + Applicant Info + Status Badge */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: 14, paddingBottom: 16, borderBottom: '1px solid rgba(255, 255, 255, 0.08)' }}>
+                  <div
+                    style={{
+                      width: 48,
+                      height: 48,
+                      borderRadius: '50%',
+                      background: 'linear-gradient(135deg, #2563eb, #1d4ed8)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      color: '#ffffff',
+                      fontWeight: 700,
+                      fontSize: '1rem',
+                      letterSpacing: '0.04em',
+                      flexShrink: 0,
+                      boxShadow: '0 4px 12px rgba(37, 99, 235, 0.35)'
+                    }}
+                  >
+                    {initialsFrom(tenant?.full_name || tenant?.email || 'Applicant')}
                   </div>
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <h3 style={{ margin: 0, fontSize: '1.05rem', fontWeight: 700 }}>{tenant?.full_name || "Applicant"}</h3>
-                    <p style={{ margin: '3px 0 0', fontSize: '0.83rem', color: 'var(--ag-muted)' }}>
+                    <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 700, color: '#ffffff' }}>
+                      {tenant?.full_name || "Applicant"}
+                    </h3>
+                    <p style={{ margin: '4px 0 0', fontSize: '0.82rem', color: '#94a3b8' }}>
                       {tenant?.email || "No email"} • {tenant?.phone || "No phone listed"}
                     </p>
                   </div>
-                  <span className="agent-status-badge" style={{ background: badge.bg, color: badge.color, borderColor: badge.border }}>
+                  <span
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: 6,
+                      padding: '5px 12px',
+                      borderRadius: 999,
+                      background: 'rgba(56, 189, 248, 0.12)',
+                      border: '1px solid rgba(56, 189, 248, 0.3)',
+                      color: '#38bdf8',
+                      fontSize: '0.76rem',
+                      fontWeight: 700,
+                      letterSpacing: '0.02em'
+                    }}
+                  >
+                    <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#38bdf8' }} />
                     {badge.label}
                   </span>
                 </div>
 
+                {/* Core Facts: 2x2 Grid with high contrast */}
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 12 }}>
                   {[
                     {
@@ -900,67 +935,186 @@ export const Dashboard = ({
                             ? `R${Number(selectedApp.min_budget).toLocaleString()} – R${Number(selectedApp.max_budget).toLocaleString()}`
                             : `Up to R${Number(selectedApp.max_budget).toLocaleString()}`)
                         : "Not specified",
-                      accent: true
+                      highlight: true
                     },
-                    { label: 'Preferred areas', value: selectedApp.preferred_areas?.join(', ') || "Any area" },
-                    { label: 'Move-in date', value: selectedApp.move_in_date ? new Date(selectedApp.move_in_date).toLocaleDateString() : "Flexible" },
-                    { label: 'Lease duration', value: selectedApp.lease_duration_months ? `${selectedApp.lease_duration_months} months` : "Not specified" }
+                    {
+                      label: 'Preferred areas',
+                      value: selectedApp.preferred_areas?.length
+                        ? selectedApp.preferred_areas.join(', ')
+                        : (selectedApp.location || "Any area")
+                    },
+                    {
+                      label: 'Move-in target',
+                      value: selectedApp.move_in_date
+                        ? new Date(selectedApp.move_in_date).toLocaleDateString('en-ZA', { day: 'numeric', month: 'short', year: 'numeric' })
+                        : "Flexible"
+                    },
+                    {
+                      label: 'Lease duration',
+                      value: selectedApp.lease_duration_months
+                        ? `${selectedApp.lease_duration_months} months`
+                        : "Standard (12 months)"
+                    }
                   ].map((f) => (
-                    <div key={f.label} style={{ padding: 14, background: 'var(--ag-panel)', border: '1px solid var(--ag-line)', borderRadius: 12 }}>
-                      <span style={{ fontSize: '0.68rem', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--ag-dim)' }}>{f.label}</span>
-                      <p className="ag-mono" style={{ margin: '7px 0 0', fontSize: '0.92rem', fontWeight: 600, color: f.accent ? '#34d399' : 'var(--ag-text)' }}>{f.value}</p>
+                    <div
+                      key={f.label}
+                      style={{
+                        padding: '14px 16px',
+                        background: '#1a273b',
+                        border: '1px solid rgba(255, 255, 255, 0.08)',
+                        borderRadius: 12
+                      }}
+                    >
+                      <span
+                        style={{
+                          fontSize: '0.68rem',
+                          fontWeight: 700,
+                          letterSpacing: '0.08em',
+                          textTransform: 'uppercase',
+                          color: '#94a3b8',
+                          display: 'block'
+                        }}
+                      >
+                        {f.label}
+                      </span>
+                      <p
+                        style={{
+                          margin: '6px 0 0',
+                          fontSize: '0.94rem',
+                          fontWeight: 600,
+                          color: '#ffffff',
+                          fontVariantNumeric: 'tabular-nums',
+                          lineHeight: 1.3
+                        }}
+                      >
+                        {f.value}
+                      </p>
                     </div>
                   ))}
                 </div>
 
+                {/* Job Link & Affordability Strip (High contrast dark theme) */}
                 <div
                   onClick={() => setActiveJobApp(selectedApp)}
                   style={{
-                    display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12,
-                    padding: '13px 15px', borderRadius: 12, cursor: 'pointer',
-                    background: 'var(--ag-accent-soft)', border: '1px dashed var(--ag-accent-line)'
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    gap: 14,
+                    padding: '14px 18px',
+                    borderRadius: 12,
+                    cursor: 'pointer',
+                    background: '#1a273b',
+                    border: '1px solid rgba(79, 126, 248, 0.25)',
+                    transition: 'all 0.15s ease'
                   }}
                   title="Open job linking & commute analysis"
                 >
                   <div style={{ display: 'flex', alignItems: 'center', gap: 12, minWidth: 0 }}>
-                    <span className="agent-score-pill" style={{ background: `${matchAnalysis.tierColor}20`, borderColor: matchAnalysis.tierColor, color: matchAnalysis.tierColor }}>
+                    <span
+                      style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: 6,
+                        padding: '5px 10px',
+                        borderRadius: 999,
+                        background: `${matchAnalysis.tierColor}18`,
+                        border: `1px solid ${matchAnalysis.tierColor}40`,
+                        color: matchAnalysis.tierColor,
+                        fontSize: '0.8rem',
+                        fontWeight: 700,
+                        flexShrink: 0
+                      }}
+                    >
                       <Waypoints size={13} /> {matchAnalysis.compositeScore}%
                     </span>
                     <div style={{ minWidth: 0 }}>
-                      <p style={{ margin: 0, fontSize: '0.82rem', fontWeight: 600, color: '#fff' }}>
+                      <p style={{ margin: 0, fontSize: '0.86rem', fontWeight: 600, color: '#ffffff' }}>
                         {matchAnalysis.employment.jobTitle} · {matchAnalysis.employment.employerName}
                       </p>
-                      <span style={{ fontSize: '0.72rem', color: 'var(--ag-muted)' }}>
+                      <span style={{ fontSize: '0.74rem', color: '#94a3b8' }}>
                         {matchAnalysis.affordability.multiplier}x rent coverage • ~{matchAnalysis.proximity.approxDistanceKm} km commute
                       </span>
                     </div>
                   </div>
-                  <span style={{ fontSize: '0.75rem', fontWeight: 700, color: matchAnalysis.tierColor, whiteSpace: 'nowrap' }}>
+                  <span
+                    style={{
+                      fontSize: '0.78rem',
+                      fontWeight: 700,
+                      color: matchAnalysis.tierColor,
+                      whiteSpace: 'nowrap',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 4
+                    }}
+                  >
                     {matchAnalysis.verdict}
+                    <ChevronRight size={15} />
                   </span>
                 </div>
 
+                {/* Quick Action Buttons */}
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-                  <button type="button" className="agent-btn agent-btn-secondary" onClick={() => setActiveDocApp(selectedApp)} style={{ color: '#34d399' }}>
-                    <FileCheck size={15} /> Documents ({docsCount})
+                  <button
+                    type="button"
+                    onClick={() => setActiveDocApp(selectedApp)}
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: 8,
+                      padding: '11px 16px',
+                      borderRadius: 10,
+                      background: 'rgba(255, 255, 255, 0.05)',
+                      border: '1px solid rgba(255, 255, 255, 0.1)',
+                      color: '#ffffff',
+                      fontSize: '0.84rem',
+                      fontWeight: 600,
+                      cursor: 'pointer',
+                      transition: 'background 0.15s ease'
+                    }}
+                  >
+                    <FileCheck size={16} className="text-emerald-400" />
+                    <span>Documents ({docsCount})</span>
                   </button>
-                  <button type="button" className="agent-btn agent-btn-secondary" onClick={() => setActiveJobApp(selectedApp)} style={{ color: '#7da2ff' }}>
-                    <Briefcase size={15} /> Job &amp; commute
+                  <button
+                    type="button"
+                    onClick={() => setActiveJobApp(selectedApp)}
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: 8,
+                      padding: '11px 16px',
+                      borderRadius: 10,
+                      background: 'rgba(255, 255, 255, 0.05)',
+                      border: '1px solid rgba(255, 255, 255, 0.1)',
+                      color: '#ffffff',
+                      fontSize: '0.84rem',
+                      fontWeight: 600,
+                      cursor: 'pointer',
+                      transition: 'background 0.15s ease'
+                    }}
+                  >
+                    <Briefcase size={16} className="text-blue-400" />
+                    <span>Job &amp; Commute</span>
                   </button>
                 </div>
 
+                {/* Special Requirements / Notes */}
                 {selectedApp.special_requirements && (
-                  <div style={{ padding: 14, background: 'var(--ag-panel)', border: '1px solid var(--ag-line)', borderRadius: 12 }}>
-                    <span style={{ fontSize: '0.68rem', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--ag-dim)' }}>Notes</span>
-                    <p style={{ margin: '7px 0 0', fontSize: '0.85rem', color: 'var(--ag-muted)', lineHeight: 1.55 }}>“{selectedApp.special_requirements}”</p>
+                  <div style={{ padding: '14px 16px', background: '#1a273b', border: '1px solid rgba(255, 255, 255, 0.08)', borderRadius: 12 }}>
+                    <span style={{ fontSize: '0.68rem', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#94a3b8', display: 'block' }}>Notes</span>
+                    <p style={{ margin: '6px 0 0', fontSize: '0.86rem', color: '#cbd5e1', lineHeight: 1.55 }}>“{selectedApp.special_requirements}”</p>
                   </div>
                 )}
 
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12, marginTop: 4 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <span style={{ fontSize: '0.8rem', color: 'var(--ag-muted)' }}>Status</span>
+                {/* Footer Controls: Status Select & Contact Actions */}
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12, paddingTop: 14, borderTop: '1px solid rgba(255, 255, 255, 0.08)' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                    <span style={{ fontSize: '0.8rem', fontWeight: 600, color: '#94a3b8' }}>Status</span>
                     {selectedApp.status === 'completed' ? (
-                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: '0.8rem', color: '#10b981', fontWeight: 700, padding: '5px 10px', background: 'rgba(16,185,129,0.15)', borderRadius: 8, border: '1px solid rgba(16,185,129,0.35)' }}>
+                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: '0.8rem', color: '#10b981', fontWeight: 700, padding: '5px 12px', background: 'rgba(16,185,129,0.15)', borderRadius: 8, border: '1px solid rgba(16,185,129,0.35)' }}>
                         <Check size={13} />
                         Completed (Admin Approved)
                       </span>
@@ -968,7 +1122,7 @@ export const Dashboard = ({
                       <select
                         value={selectedApp.status || 'submitted'}
                         onChange={(e) => handleQuickStatusChange(selectedApp.id, e.target.value)}
-                        style={{ background: '#101827', border: '1px solid var(--ag-line)', color: '#fff', padding: '7px 12px', borderRadius: 9, fontSize: '0.8rem' }}
+                        style={{ background: '#101827', border: '1px solid rgba(255, 255, 255, 0.15)', color: '#ffffff', padding: '7px 12px', borderRadius: 9, fontSize: '0.8rem', cursor: 'pointer' }}
                       >
                         {AGENT_SELECTABLE_APPLICATION_STATUSES.map((s) => (
                           <option key={s} value={s}>{applicationStatusLabel(s)}</option>
@@ -977,7 +1131,7 @@ export const Dashboard = ({
                     )}
                   </div>
 
-                  <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                  <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
                     <button
                       type="button"
                       className="agent-btn agent-btn-secondary"
@@ -993,11 +1147,18 @@ export const Dashboard = ({
                         defaultSubject: `Update on Place4U application #${String(selectedApp.id).slice(0, 8)}`,
                         defaultMessage: `Hello ${tenant?.full_name || 'Applicant'}, I am reviewing your application on Place4U.`
                       })}
-                      style={{ color: '#25D366' }}
+                      style={{ color: '#22c55e', borderColor: 'rgba(34, 197, 94, 0.3)', background: 'rgba(34, 197, 94, 0.08)' }}
                     >
                       <Phone size={14} /> Contact
                     </button>
-                    <button type="button" className="agent-btn agent-btn-primary" onClick={() => setSelectedApp(null)}>Done</button>
+                    <button
+                      type="button"
+                      className="agent-btn agent-btn-primary"
+                      onClick={() => setSelectedApp(null)}
+                      style={{ padding: '8px 20px' }}
+                    >
+                      Done
+                    </button>
                   </div>
                 </div>
               </div>
@@ -1009,17 +1170,17 @@ export const Dashboard = ({
       {/* Match tenant */}
       {isMatchModalOpen && (
         <Modal isOpen={isMatchModalOpen} onClose={() => setIsMatchModalOpen(false)} title="Matching engine" size="lg">
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 18, color: 'var(--ag-text)' }}>
-            <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--ag-muted)', lineHeight: 1.55 }}>
-              Filter listings by budget, area and unit type.
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 18, color: '#ffffff' }}>
+            <p style={{ margin: 0, fontSize: '0.85rem', color: '#94a3b8', lineHeight: 1.55 }}>
+              Filter listings by budget, area and unit type to send instant recommendations to this tenant.
             </p>
 
             <div style={{ display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap' }}>
-              <label style={{ fontSize: '0.84rem', fontWeight: 600 }}>Applicant</label>
+              <label style={{ fontSize: '0.84rem', fontWeight: 600, color: '#ffffff' }}>Applicant</label>
               <select
                 value={selectedMatchAppId || (applications[0]?.id || '')}
                 onChange={(e) => setSelectedMatchAppId(e.target.value)}
-                style={{ flex: 1, minWidth: 220, background: '#101827', border: '1px solid var(--ag-line)', color: '#fff', padding: '9px 12px', borderRadius: 10, fontSize: '0.85rem' }}
+                style={{ flex: 1, minWidth: 220, background: '#101827', border: '1px solid rgba(255, 255, 255, 0.15)', color: '#ffffff', padding: '9px 12px', borderRadius: 10, fontSize: '0.85rem', cursor: 'pointer' }}
               >
                 {applications.map(app => {
                   const t = tenantById.get(app.tenant_id);
@@ -1035,7 +1196,7 @@ export const Dashboard = ({
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
               {(() => {
                 const targetApp = applications.find(a => a.id === (selectedMatchAppId || applications[0]?.id)) || applications[0];
-                if (!targetApp) return <p style={{ color: 'var(--ag-dim)' }}>No applicant selected</p>;
+                if (!targetApp) return <p style={{ color: '#94a3b8' }}>No applicant selected</p>;
 
                 const ranked = properties
                   .map(prop => ({ prop, score: calculateMatchScore(targetApp, prop) }))
@@ -1045,7 +1206,7 @@ export const Dashboard = ({
                 return ranked.map(({ prop, score }) => (
                   <div
                     key={prop.id}
-                    style={{ display: 'flex', alignItems: 'center', gap: 14, padding: 13, borderRadius: 12, background: 'var(--ag-panel)', border: '1px solid var(--ag-line)' }}
+                    style={{ display: 'flex', alignItems: 'center', gap: 14, padding: 13, borderRadius: 12, background: '#1a273b', border: '1px solid rgba(255, 255, 255, 0.08)' }}
                   >
                     <img
                       src={prop.image_urls?.[0] || prop.images?.[0] || DEFAULT_PROPERTY_IMAGE}
@@ -1054,23 +1215,23 @@ export const Dashboard = ({
                     />
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 10 }}>
-                        <h4 style={{ margin: 0, fontSize: '0.9rem', fontWeight: 700, color: '#fff' }}>{prop.address || prop.title || "Listing"}</h4>
+                        <h4 style={{ margin: 0, fontSize: '0.9rem', fontWeight: 700, color: '#ffffff' }}>{prop.address || prop.title || "Listing"}</h4>
                         <span className="agent-score-pill">{score}%</span>
                       </div>
-                      <p style={{ margin: '4px 0 0', fontSize: '0.78rem', color: 'var(--ag-muted)' }}>
+                      <p style={{ margin: '4px 0 0', fontSize: '0.78rem', color: '#94a3b8' }}>
                         {prop.city || prop.area || "—"} • R{Number(prop.price).toLocaleString()}/month
                       </p>
                     </div>
                     <button
                       type="button"
                       className="agent-btn agent-btn-sparkle"
-                      style={{ padding: '8px 12px', fontSize: '0.75rem' }}
+                      style={{ padding: '8px 14px', fontSize: '0.78rem', fontWeight: 600 }}
                       onClick={() => {
                         handleQuickStatusChange(targetApp.id, 'matches_found');
                         setIsMatchModalOpen(false);
                       }}
                     >
-                      Send
+                      Send Match
                     </button>
                   </div>
                 ));

@@ -34,6 +34,54 @@ export const ROLE_AVATARS = {
 };
 
 /**
+ * Role-based avatars grouped by gender presentation.
+ */
+export const ROLE_GENDER_AVATARS = {
+  tenant: {
+    male: ['/avatars/tenant-1.svg', '/avatars/tenant-3.svg'],
+    female: ['/avatars/tenant.svg', '/avatars/tenant-2.svg'],
+  },
+  landlord: {
+    male: ['/avatars/landlord.svg', '/avatars/landlord-2.svg'],
+    female: ['/avatars/landlord-1.svg', '/avatars/landlord-3.svg'],
+  },
+  agent: {
+    male: ['/avatars/agent.svg', '/avatars/agent-2.svg'],
+    female: ['/avatars/agent-1.svg', '/avatars/agent-3.svg'],
+  },
+  admin: {
+    male: ['/avatars/admin.svg', '/avatars/admin-1.svg'],
+    female: ['/avatars/admin-2.svg', '/avatars/admin-3.svg'],
+  },
+};
+
+/**
+ * Global pool of gendered avatars.
+ */
+export const GENDER_AVATARS = {
+  male: [
+    '/avatars/tenant-1.svg',
+    '/avatars/tenant-3.svg',
+    '/avatars/agent.svg',
+    '/avatars/agent-2.svg',
+    '/avatars/landlord.svg',
+    '/avatars/landlord-2.svg',
+    '/avatars/admin.svg',
+    '/avatars/admin-1.svg',
+  ],
+  female: [
+    '/avatars/tenant.svg',
+    '/avatars/tenant-2.svg',
+    '/avatars/agent-1.svg',
+    '/avatars/agent-3.svg',
+    '/avatars/landlord-1.svg',
+    '/avatars/landlord-3.svg',
+    '/avatars/admin-2.svg',
+    '/avatars/admin-3.svg',
+  ]
+};
+
+/**
  * Simple stable string hash for deterministic avatar assignment.
  */
 function hashString(str = '') {
@@ -46,49 +94,80 @@ function hashString(str = '') {
 }
 
 /**
- * Derive up to two initials from a display name, used when an avatar image
- * cannot be loaded. Keeps a label in the layout instead of alt text.
+ * Derive up to two initials from a display name, used for crisp,
+ * executive monogram avatars across all dashboards.
  */
-function initialsFrom(value = '') {
+export function initialsFrom(value = '') {
   const parts = String(value).trim().split(/\s+/).filter(Boolean);
-  if (!parts.length) return '';
+  if (!parts.length) return 'P4U';
   const first = parts[0][0] || '';
   const last = parts.length > 1 ? parts[parts.length - 1][0] || '' : '';
-  return (first + last).toUpperCase();
+  return (first + last).toUpperCase() || 'P4U';
 }
 
 /**
- * Get the default animated character avatar URL for a given role.
- * If a seed (e.g. userId, email, or name) is provided, deterministically
- * selects one of the animated character variations for that role.
- *
- * @param {('tenant'|'landlord'|'agent'|'admin')} role
- * @param {string} [seed]
- * @returns {string} Relative public path to the character SVG
+ * Create an inline SVG data URI representing an initials avatar
+ * with a high-craft modern gradient circle.
  */
-export function getDefaultAvatar(role = 'tenant', seed = '') {
-  const normalizedRole = (role || 'tenant').toLowerCase().trim();
-  const list = ROLE_AVATARS[normalizedRole] || ROLE_AVATARS.tenant;
-  if (!seed) return list[0];
-  const index = hashString(String(seed)) % list.length;
-  return list[index];
+export function createInitialsAvatar(name = '', seed = '') {
+  const initials = initialsFrom(name);
+  const colorPairs = [
+    ['#2563eb', '#1d4ed8'], // blue
+    ['#059669', '#047857'], // emerald
+    ['#7c3aed', '#6d28d9'], // violet
+    ['#d97706', '#b45309'], // amber
+    ['#0891b2', '#0e7490'], // cyan
+    ['#4f46e5', '#4338ca'], // indigo
+    ['#0284c7', '#0369a1'], // sky
+    ['#334155', '#1e293b'], // slate
+  ];
+  const colorIndex = hashString(seed || name || 'seed') % colorPairs.length;
+  const [c1, c2] = colorPairs[colorIndex];
+  const gradId = `p4u-grad-${colorIndex}-${hashString(seed || name || 'seed') % 9999}`;
+
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100%" height="100%">
+    <defs>
+      <linearGradient id="${gradId}" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" stop-color="${c1}" />
+        <stop offset="100%" stop-color="${c2}" />
+      </linearGradient>
+    </defs>
+    <rect width="100" height="100" rx="50" fill="url(#${gradId})" />
+    <text x="50%" y="54%" text-anchor="middle" dominant-baseline="middle" fill="#ffffff" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="38" font-weight="700" letter-spacing="1">
+      ${initials}
+    </text>
+  </svg>`;
+
+  return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
+}
+
+/**
+ * Deterministically select an avatar for a given role or user.
+ * Defaults to clean, executive monogram initials.
+ */
+export function getGenderAvatar(role = 'tenant', gender = 'prefer_not_to_say', seed = '') {
+  return createInitialsAvatar(role.toUpperCase(), seed || role);
+}
+
+/**
+ * Get the default avatar URL for a given role and optional seed.
+ * Defaults to clean, executive monogram initials.
+ */
+export function getDefaultAvatar(role = 'tenant', seed = '', gender = '') {
+  return createInitialsAvatar(role.toUpperCase(), seed || role);
 }
 
 /**
  * Resolves a displayable avatar URL for a user or profile object.
  * Returns the uploaded profile image URL if set; otherwise defaults
- * to the role's animated character picture.
- *
- * The column name differs between portals (`profile_image_url` in the
- * profiles tables, `profile_picture` in the agent dashboard's user row),
- * so both are checked here rather than at every call site.
+ * to a clean, executive monogram initials avatar.
  *
  * @param {Object} [userOrProfile]
  * @param {('tenant'|'landlord'|'agent'|'admin')} [role]
  * @returns {string}
  */
 export function getUserAvatar(userOrProfile, role = 'tenant') {
-  if (!userOrProfile) return getDefaultAvatar(role);
+  if (!userOrProfile) return createInitialsAvatar(role.toUpperCase(), role);
   const custom =
     userOrProfile.profile_image_url ||
     userOrProfile.profile_picture ||
@@ -107,7 +186,16 @@ export function getUserAvatar(userOrProfile, role = 'tenant') {
     userOrProfile.full_name ||
     '';
 
-  return getDefaultAvatar(role, seed);
+  const displayName =
+    userOrProfile.full_name ||
+    (userOrProfile.first_name
+      ? `${userOrProfile.first_name} ${userOrProfile.second_name || userOrProfile.last_name || ''}`.trim()
+      : '') ||
+    userOrProfile.email ||
+    role ||
+    '';
+
+  return createInitialsAvatar(displayName, seed);
 }
 
 /**
@@ -162,7 +250,9 @@ export const AvatarImage = ({ src, alt = '', className = '', style, onError, ...
  */
 export const CharacterAvatar = ({
   src,
+  user = null,
   role = 'tenant',
+  gender = '',
   seed = '',
   alt = 'Character Avatar',
   className = '',
@@ -171,7 +261,9 @@ export const CharacterAvatar = ({
   fallbackInitials = '',
 }) => {
   const [failedSrc, setFailedSrc] = useState(null);
-  const avatarSrc = src || getDefaultAvatar(role, seed);
+  const resolvedSeed = seed || user?.id || user?.user_id || user?.email || user?.full_name || '';
+  const resolvedGender = gender || user?.gender || user?.user_metadata?.gender || user?.raw_user_meta_data?.gender || '';
+  const avatarSrc = src || (user ? getUserAvatar(user, role) : getDefaultAvatar(role, resolvedSeed, resolvedGender));
   const hasFailed = failedSrc === avatarSrc;
 
   useEffect(() => {

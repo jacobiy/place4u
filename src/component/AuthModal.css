@@ -91,20 +91,42 @@
   text-transform: none;
 }
 
-.place-auth-modal input:not([type="checkbox"]) {
+.place-auth-modal input:not([type="checkbox"]),
+.place-auth-modal select {
   min-height: 46px;
   border: 1px solid #cbd8d2 !important;
   border-radius: 11px !important;
-  background: #fff !important;
+  background-color: #fff !important;
   color: #1b3036 !important;
   box-shadow: inset 0 1px 1px rgba(20, 47, 51, 0.025);
+}
+
+.place-auth-modal select {
+  -webkit-appearance: none !important;
+  -moz-appearance: none !important;
+  appearance: none !important;
+  background-image: none !important;
+}
+
+.place-auth-modal select[data-placeholder="true"] {
+  color: #91a09e !important;
+}
+
+.place-auth-modal select option {
+  background-color: #fff !important;
+  color: #1b3036 !important;
+}
+
+.place-auth-modal select option:disabled {
+  color: #91a09e !important;
 }
 
 .place-auth-modal input:not([type="checkbox"])::placeholder {
   color: #91a09e !important;
 }
 
-.place-auth-modal input:not([type="checkbox"]):focus {
+.place-auth-modal input:not([type="checkbox"]):focus,
+.place-auth-modal select:focus {
   border-color: var(--auth-blue) !important;
   outline: 3px solid rgba(0, 97, 148, 0.13) !important;
   outline-offset: 0;
@@ -301,6 +323,15 @@
 
 .place-auth-reset .h-1 {
   display: none;
+}
+
+.place-auth-modal .text-red-500,
+.place-auth-modal .text-red-400 {
+  color: #dc2626 !important;
+}
+
+.place-auth-modal .text-emerald-400 {
+  color: #059669 !important;
 }
 
 @media (max-width: 520px) {

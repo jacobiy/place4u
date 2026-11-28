@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import Loading from '../../component/loading'
+import { AdminDashboardSkeleton } from '../../component/DashboardSkeletons'
 import {
   FileCheck2,
   Users,
@@ -140,11 +140,7 @@ export default function Dashboard() {
   })
 
   if (loading) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-[60vh]">
-        <Loading message="Connecting to live database & loading real applications..." />
-      </div>
-    )
+    return <AdminDashboardSkeleton label="Connecting to live database & loading real applications..." />
   }
 
   return (

@@ -15,10 +15,31 @@ import { PrimaryBtn } from './Component/Buttons';
 import { LandlordQueries } from './db/queries';
 import { useAuth } from '../../hooks/useAuth';
 import { supabase } from '../../utils/Supabase';
-import Loading from '../../component/loading';
+import { LandlordDashboardSkeleton } from '../../component/DashboardSkeletons';
 
 const placeholderImage =
   "https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=800&auto=format&fit=crop&q=60";
+
+// Cache key for the last-known landlord approval status. Prevents the
+// "locked → unlocked" flash on return visits while the profile loads.
+// DB (landlord_profiles.application_status) remains authoritative.
+const LL_APPROVED_CACHE_KEY = 'place4u_landlord_approved';
+
+function readCachedApproved(userId) {
+  if (!userId) return false;
+  try {
+    const raw = sessionStorage.getItem(LL_APPROVED_CACHE_KEY);
+    if (!raw) return false;
+    const parsed = JSON.parse(raw);
+    return parsed?.userId === userId ? Boolean(parsed.approved) : false;
+  } catch { return false; }
+}
+
+function writeCachedApproved(userId, approved) {
+  try {
+    sessionStorage.setItem(LL_APPROVED_CACHE_KEY, JSON.stringify({ userId, approved: Boolean(approved) }));
+  } catch { /* storage unavailable — no-op */ }
+}
 
 const formatZar = (amount) => {
   if (amount === null || amount === undefined || Number.isNaN(Number(amount))) return "—";
@@ -79,6 +100,10 @@ export default function MainLandlord() {
   const [properties, setProperties] = useState([]);
   const [activities, setActivities] = useState([]);
   const [loading, setLoading] = useState(true);
+  // Track whether the initial profile+property fetch has completed at least
+  // once. Until it has, renderContent shows a spinner rather than the locked
+  // state, eliminating the "flash of locked dashboard" for approved landlords.
+  const [initialLoadDone, setInitialLoadDone] = useState(false);
   const [error, setError] = useState("");
   const [isCreatingProperty, setIsCreatingProperty] = useState(false);
   const [isAddPropertyOpen, setIsAddPropertyOpen] = useState(false);
@@ -106,6 +131,7 @@ export default function MainLandlord() {
       if (authLoading) return;
       if (!user) {
         setLoading(false);
+        setInitialLoadDone(true);
         setError("You must be logged in to access the landlord portal.");
         return;
       }
@@ -158,13 +184,25 @@ export default function MainLandlord() {
       } catch (e) {
         if (!cancelled) setError(e?.message || "Failed to load landlord data.");
       } finally {
-        if (!cancelled) setLoading(false);
+        if (!cancelled) {
+          setLoading(false);
+          setInitialLoadDone(true);
+        }
       }
     };
 
     ensureProfile();
     return () => { cancelled = true; };
   }, [authLoading, user]);
+
+  // Write the approval status to sessionStorage whenever the authoritative
+  // values change, so the next page load starts with the correct layout.
+  useEffect(() => {
+    if (!user?.id || !initialLoadDone) return;
+    const approved = String(profile?.application_status || "").toLowerCase() === "approved"
+      && profile?.account_status !== "suspended";
+    writeCachedApproved(user.id, approved);
+  }, [user?.id, profile?.application_status, profile?.account_status, initialLoadDone]);
 
   const handleAddProperty = () => setIsAddPropertyOpen(true);
 
@@ -343,12 +381,12 @@ export default function MainLandlord() {
   const isRejected = String(profile?.application_status || "").toLowerCase() === "rejected" || profile?.account_status === "suspended";
 
   const renderContent = () => {
-    if (loading || authLoading) {
-      return (
-        <div style={{ textAlign: "center", padding: "4rem" }}>
-          <Loading message="Loading landlord portal…" />
-        </div>
-      );
+    // Show loading while either auth is resolving OR the initial data fetch
+    // hasn't completed. This prevents the "flash of locked dashboard" that
+    // previously appeared because isLandlordApproved was false before the
+    // profile had loaded from the DB.
+    if (loading || authLoading || !initialLoadDone) {
+      return <LandlordDashboardSkeleton label="Loading landlord portal…" />;
     }
 
     if (error) {
@@ -519,7 +557,7 @@ export default function MainLandlord() {
               {!isMobile && <p style={{ fontSize: "0.78rem", color: T.textMuted, marginTop: 2 }}>{meta.subtitle}</p>}
             </div>
 
-            {!isMobile && isLandlordApproved && (
+            {!isMobile && (isLandlordApproved || (!initialLoadDone && readCachedApproved(user?.id))) && (
               <PrimaryBtn onClick={handleAddProperty}>
                 <Plus size={16} /> Add Property
               </PrimaryBtn>

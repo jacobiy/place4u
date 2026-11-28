@@ -5,6 +5,7 @@
 // Edit the TEAM array below to change a name, role, photo or LinkedIn URL -
 // both surfaces update together.
 import React from 'react'
+import { Link } from 'react-router-dom'
 import { FaLinkedinIn } from 'react-icons/fa'
 
 // NOTE: the two non-founder blurbs are draft copy written to match the card
@@ -57,17 +58,18 @@ const TeamSection = ({
 	intro =
 		'Even the best technology needs the best people with the right spirit behind it. We are a small team of builders and operators, and these are the folks leading the charge.',
 	members = TEAM,
+	compact = false,
 	className = ''
 }) => {
 	return (
 		<section
 			id="team"
 			aria-labelledby="team-heading"
-			className={`py-20 px-6 lg:px-12 bg-white border-t border-[#d5e0df]/60 scroll-mt-24 ${className}`}
+			className={`${compact ? 'py-16' : 'py-20'} px-6 lg:px-12 bg-white border-t border-[#d5e0df]/60 scroll-mt-24 ${className}`}
 		>
 			<div className="max-w-7xl mx-auto">
 				{/* Heading block - centred, deliberately narrow so the intro wraps like a sentence. */}
-				<div className="text-center max-w-2xl mx-auto mb-14">
+				<div className={`text-center max-w-2xl mx-auto ${compact ? 'mb-10' : 'mb-14'}`}>
 					<span className="text-xs font-bold text-[#006194] uppercase tracking-wider">
 						{eyebrow}
 					</span>
@@ -77,9 +79,11 @@ const TeamSection = ({
 					>
 						{heading}
 					</h2>
-					<p className="text-sm sm:text-base text-[#47545a] mt-3 leading-relaxed">
-						{intro}
-					</p>
+					{!compact && (
+						<p className="text-sm sm:text-base text-[#47545a] mt-3 leading-relaxed">
+							{intro}
+						</p>
+					)}
 				</div>
 
 				{/* Cards */}
@@ -88,11 +92,11 @@ const TeamSection = ({
 						<article
 							key={member.id}
 							id={member.id}
-							className="group flex flex-col items-center text-center bg-[#f7f8f5] border border-[#d5e0df] rounded-3xl px-7 py-9 scroll-mt-28 transition-all duration-300 hover:border-[#86c1cc] hover:shadow-[0_28px_60px_-40px_rgba(0,97,148,0.55)]"
+							className={`group flex flex-col items-center text-center bg-[#f7f8f5] border border-[#d5e0df] rounded-3xl px-7 ${compact ? 'py-7' : 'py-9'} scroll-mt-28 transition-all duration-300 hover:border-[#86c1cc] hover:shadow-[0_28px_60px_-40px_rgba(0,97,148,0.55)]`}
 						>
 							{/* Circular portrait. Greyscale at rest, colour on hover - the
 							    photos are mixed sources, so this keeps the row visually even. */}
-							<div className="w-28 h-28 rounded-full overflow-hidden ring-4 ring-white shadow-[0_16px_34px_-20px_rgba(0,97,148,0.6)] bg-[#e7eef0]">
+							<div className={`${compact ? 'w-24 h-24' : 'w-28 h-28'} rounded-full overflow-hidden ring-4 ring-white shadow-[0_16px_34px_-20px_rgba(0,97,148,0.6)] bg-[#e7eef0]`}>
 								<img
 									src={member.photo}
 									alt={`${member.name}, ${member.role} at Place4U`}
@@ -103,11 +107,13 @@ const TeamSection = ({
 								/>
 							</div>
 
-							<p className="text-sm text-[#47545a] leading-relaxed mt-7">
-								&ldquo;{member.quote}&rdquo;
-							</p>
+							{!compact && (
+								<p className="text-sm text-[#47545a] leading-relaxed mt-7">
+									&ldquo;{member.quote}&rdquo;
+								</p>
+							)}
 
-							<div className="mt-6 pt-5 border-t border-[#d5e0df] w-full">
+							<div className={`${compact ? 'mt-5 pt-4' : 'mt-6 pt-5'} border-t border-[#d5e0df] w-full`}>
 								<h3 className="font-['Space_Grotesk'] text-lg font-bold text-[#18262d] tracking-tight">
 									{member.name}
 								</h3>
@@ -130,6 +136,17 @@ const TeamSection = ({
 						</article>
 					))}
 				</div>
+
+				{compact && (
+					<div className="mt-8 text-center">
+						<Link
+							to="/about"
+							className="inline-flex items-center gap-1.5 text-sm font-semibold text-[#006194] hover:text-[#004b73] underline underline-offset-4 decoration-[#c3cecd] hover:decoration-[#006194] transition-colors"
+						>
+							Read our story &amp; team bios &rarr;
+						</Link>
+					</div>
+				)}
 			</div>
 		</section>
 	)

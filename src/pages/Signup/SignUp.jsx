@@ -12,7 +12,8 @@ import {
   HiShieldCheck,
   HiCheck,
   HiArrowRight,
-  HiArrowLeft
+  HiArrowLeft,
+  HiChevronDown
 } from 'react-icons/hi'
 import { FaGoogle } from 'react-icons/fa'
 import { Link, useNavigate } from 'react-router-dom'
@@ -22,7 +23,9 @@ const Signup = ({ isModal = false, onSwitchToLogin }) => {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [currentStep, setCurrentStep] = useState(1)
   const [formData, setFormData] = useState({
-    fullName: '',
+    firstName: '',
+    secondName: '',
+    gender: '', // 'male' | 'female' | 'prefer_not_to_say' (must be explicitly chosen)
     email: '',
     phone: '',
     password: '',
@@ -49,7 +52,9 @@ const Signup = ({ isModal = false, onSwitchToLogin }) => {
   }
 
   const validateStep1 = () => {
-    if (!formData.fullName.trim()) return 'Full legal name is required.'
+    if (!formData.firstName.trim()) return 'First name is required.'
+    if (!formData.secondName.trim()) return 'Second name / surname is required.'
+    if (!formData.gender) return 'Please choose your gender.'
     if (!formData.email.trim()) return 'Valid email address is required.'
     if (!formData.phone.trim()) return 'South African contact number is required.'
     if (!formData.password) return 'Password is required.'
@@ -104,6 +109,7 @@ const Signup = ({ isModal = false, onSwitchToLogin }) => {
     // confirmation email. AuthCallback then resolves their role from
     // public.users and routes them to the correct portal.
     const emailRedirectTo = `${window.location.origin}/auth/callback`
+    const fullName = `${formData.firstName.trim()} ${formData.secondName.trim()}`.trim()
 
     try {
       const { data: authData, error: authError } = await supabase.auth.signUp({
@@ -112,7 +118,11 @@ const Signup = ({ isModal = false, onSwitchToLogin }) => {
         options: {
           emailRedirectTo,
           data: {
-            full_name: formData.fullName,
+            full_name: fullName,
+            first_name: formData.firstName.trim(),
+            second_name: formData.secondName.trim(),
+            last_name: formData.secondName.trim(),
+            gender: formData.gender,
             phone: formData.phone,
             user_type: formData.userType,
             popia_consented_at: new Date().toISOString(),
@@ -355,28 +365,87 @@ const Signup = ({ isModal = false, onSwitchToLogin }) => {
               {currentStep === 1 ? (
                 /* STEP 1: CREDENTIALS */
                 <div className="space-y-4">
+                  {/* Name details: First name and Second name / Surname */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1.5">
+                        First Name <span className="text-red-500 font-bold ml-0.5" aria-hidden="true">*</span>
+                      </label>
+                      <div className="relative">
+                        <HiUser className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500 w-4 h-4" />
+                        <input
+                          type="text"
+                          name="firstName"
+                          value={formData.firstName}
+                          onChange={handleChange}
+                          required
+                          placeholder="e.g. Jacob"
+                          className="w-full pl-10 pr-4 py-2.5 bg-slate-950/80 border border-white/10 rounded-xl text-sm text-white placeholder-slate-600 focus:outline-none focus:border-blue-500 transition-colors"
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1.5">
+                        Second Name / Surname <span className="text-red-500 font-bold ml-0.5" aria-hidden="true">*</span>
+                      </label>
+                      <div className="relative">
+                        <HiUser className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500 w-4 h-4" />
+                        <input
+                          type="text"
+                          name="secondName"
+                          value={formData.secondName}
+                          onChange={handleChange}
+                          required
+                          placeholder="e.g. Dlamini"
+                          className="w-full pl-10 pr-4 py-2.5 bg-slate-950/80 border border-white/10 rounded-xl text-sm text-white placeholder-slate-600 focus:outline-none focus:border-blue-500 transition-colors"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Gender Selection */}
                   <div>
                     <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1.5">
-                      Full name
+                      Gender <span className="text-red-500 font-bold ml-0.5" aria-hidden="true">*</span>
                     </label>
                     <div className="relative">
-                      <HiUser className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500 w-4 h-4" />
-                      <input
-                        type="text"
-                        name="fullName"
-                        value={formData.fullName}
+                      <HiUser className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500 w-4 h-4 pointer-events-none" />
+                      <select
+                        name="gender"
+                        value={formData.gender}
                         onChange={handleChange}
                         required
-                        placeholder="e.g. Jacob Dlamini"
-                        className="w-full pl-10 pr-4 py-2.5 bg-slate-950/80 border border-white/10 rounded-xl text-sm text-white placeholder-slate-600 focus:outline-none focus:border-blue-500 transition-colors"
-                      />
+                        data-placeholder={!formData.gender}
+                        className={`no-chevron w-full pl-10 pr-10 py-2.5 bg-slate-950/80 border rounded-xl text-sm focus:outline-none transition-colors appearance-none cursor-pointer ${
+                          formData.gender ? 'text-white' : 'text-slate-500'
+                        } ${
+                          error && error.toLowerCase().includes('gender')
+                            ? 'border-red-500 focus:border-red-500 ring-1 ring-red-500/20'
+                            : 'border-white/10 focus:border-blue-500'
+                        }`}
+                      >
+                        <option value="" disabled className="bg-slate-900 text-slate-500">
+                          Choose...
+                        </option>
+                        <option value="male" className="bg-slate-900 text-white">
+                          Male
+                        </option>
+                        <option value="female" className="bg-slate-900 text-white">
+                          Female
+                        </option>
+                        <option value="prefer_not_to_say" className="bg-slate-900 text-white">
+                          Prefer not to say
+                        </option>
+                      </select>
+                      <HiChevronDown className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4 pointer-events-none" />
                     </div>
                   </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
                       <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1.5">
-                        Email address
+                        Email address <span className="text-red-500 font-bold ml-0.5" aria-hidden="true">*</span>
                       </label>
                       <div className="relative">
                         <HiMail className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500 w-4 h-4" />
@@ -394,7 +463,7 @@ const Signup = ({ isModal = false, onSwitchToLogin }) => {
 
                     <div>
                       <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1.5">
-                        Phone or WhatsApp
+                        Phone or WhatsApp <span className="text-red-500 font-bold ml-0.5" aria-hidden="true">*</span>
                       </label>
                       <div className="relative">
                         <HiPhone className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500 w-4 h-4" />
@@ -414,7 +483,7 @@ const Signup = ({ isModal = false, onSwitchToLogin }) => {
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
                       <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1.5">
-                        Password (8 characters minimum)
+                        Password (8 chars min) <span className="text-red-500 font-bold ml-0.5" aria-hidden="true">*</span>
                       </label>
                       <div className="relative">
                         <HiLockClosed className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500 w-4 h-4" />
@@ -439,10 +508,16 @@ const Signup = ({ isModal = false, onSwitchToLogin }) => {
 
                     <div>
                       <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1.5">
-                        Confirm Password
+                        Confirm Password <span className="text-red-500 font-bold ml-0.5" aria-hidden="true">*</span>
                       </label>
                       <div className="relative">
-                        <HiShieldCheck className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500 w-4 h-4" />
+                        <HiShieldCheck className={`absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 ${
+                          formData.confirmPassword
+                            ? formData.password === formData.confirmPassword
+                              ? 'text-emerald-400'
+                              : 'text-red-400'
+                            : 'text-slate-500'
+                        }`} />
                         <input
                           type={showConfirmPassword ? 'text' : 'password'}
                           name="confirmPassword"
@@ -450,7 +525,13 @@ const Signup = ({ isModal = false, onSwitchToLogin }) => {
                           onChange={handleChange}
                           required
                           placeholder="••••••••"
-                          className="w-full pl-10 pr-10 py-2.5 bg-slate-950/80 border border-white/10 rounded-xl text-sm text-white placeholder-slate-600 focus:outline-none focus:border-blue-500 transition-colors"
+                          className={`w-full pl-10 pr-10 py-2.5 bg-slate-950/80 border rounded-xl text-sm text-white placeholder-slate-600 focus:outline-none transition-colors ${
+                            formData.confirmPassword
+                              ? formData.password === formData.confirmPassword
+                                ? 'border-emerald-500/60 focus:border-emerald-500'
+                                : 'border-red-500/60 focus:border-red-500'
+                              : 'border-white/10 focus:border-blue-500'
+                          }`}
                         />
                         <button
                           type="button"
@@ -460,6 +541,16 @@ const Signup = ({ isModal = false, onSwitchToLogin }) => {
                           {showConfirmPassword ? <HiEyeOff className="w-4 h-4" /> : <HiEye className="w-4 h-4" />}
                         </button>
                       </div>
+                      {formData.confirmPassword && formData.password !== formData.confirmPassword && (
+                        <p className="text-[11px] text-red-400 mt-1">
+                          Passwords do not match
+                        </p>
+                      )}
+                      {formData.confirmPassword && formData.password === formData.confirmPassword && formData.password.length >= 8 && (
+                        <p className="text-[11px] text-emerald-400 mt-1 flex items-center gap-1">
+                          <HiCheck className="w-3.5 h-3.5" /> Passwords match
+                        </p>
+                      )}
                     </div>
                   </div>
                 </div>

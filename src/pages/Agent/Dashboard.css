@@ -224,12 +224,12 @@
 .ag-kpi-value {
   font-family: var(--ag-font-mono);
   font-variant-numeric: tabular-nums;
-  font-size: 2.1rem;
-  font-weight: 600;
+  font-size: 2.25rem;
+  font-weight: 700;
   letter-spacing: -0.03em;
-  line-height: 1;
-  color: #ffffff;
-  margin: 15px 0 0;
+  line-height: 1.1;
+  color: #ffffff !important;
+  margin: 12px 0 0;
 }
 
 .ag-kpi-meta { font-size: 0.76rem; color: var(--ag-muted); margin: 9px 0 0; }
@@ -586,7 +586,6 @@
 .agent-dashboard.is-verified .ag-notif-head strong,
 .agent-dashboard.is-verified .ag-notif-text strong,
 .agent-dashboard.is-verified .ag-alert-title,
-.agent-dashboard.is-verified .ag-kpi-value,
 .agent-dashboard.is-verified .ag-panel-title,
 .agent-dashboard.is-verified .ag-tenant-name,
 .agent-dashboard.is-verified .ag-mono,
@@ -634,23 +633,41 @@
 
 .agent-dashboard.is-verified .ag-kpi {
   background: #141e2e;
-  box-shadow: none;
-  border: 0;
-  border-bottom: 1px solid #d8e0e9;
-  border-radius: 0;
+  box-shadow: 0 4px 20px -8px rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 14px;
 }
 
 .agent-dashboard.is-verified .ag-kpi-cell {
-  padding: 18px 20px;
-  border-left-color: #d8e0e9;
+  padding: 20px 24px;
+  border-left: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 .agent-dashboard.is-verified .ag-kpi-cell:first-child { border-left: 0; }
-.agent-dashboard.is-verified .ag-kpi-label { color: #5d6b7e; letter-spacing: 0.06em; }
-.agent-dashboard.is-verified .ag-kpi-label,
+.agent-dashboard.is-verified .ag-kpi-label {
+  color: #94a3b8;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
 .agent-dashboard.is-verified .ag-panel-meta { text-transform: none; letter-spacing: 0; }
 .agent-dashboard.is-verified .ag-kpi-icon { display: none; }
-.agent-dashboard.is-verified .ag-kpi-meta { color: #68778a; }
+.agent-dashboard.is-verified .ag-kpi-value {
+  color: #ffffff !important;
+  font-family: var(--ag-font-mono);
+  font-variant-numeric: tabular-nums;
+  font-size: 2.25rem;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  line-height: 1.1;
+  margin: 12px 0 0;
+}
+.agent-dashboard.is-verified .ag-kpi-meta {
+  color: #64748b;
+  font-size: 0.78rem;
+  margin: 8px 0 0;
+}
 
 .agent-dashboard.is-verified .ag-panel {
   background: transparent;
@@ -741,9 +758,9 @@
 
 @media (max-width: 768px) {
   .agent-dashboard.is-verified .ag-kpi-cell:nth-child(odd) { border-left: 0; }
-  .agent-dashboard.is-verified .ag-kpi-cell:nth-child(n + 3) { border-top: 1px solid #d8e0e9; }
+  .agent-dashboard.is-verified .ag-kpi-cell:nth-child(n + 3) { border-top: 1px solid rgba(255, 255, 255, 0.08); }
 }
 
 @media (max-width: 520px) {
-  .agent-dashboard.is-verified .ag-kpi-cell + .ag-kpi-cell { border-top: 1px solid #d8e0e9; }
+  .agent-dashboard.is-verified .ag-kpi-cell + .ag-kpi-cell { border-top: 1px solid rgba(255, 255, 255, 0.08); }
 }

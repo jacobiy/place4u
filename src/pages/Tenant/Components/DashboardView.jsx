@@ -111,14 +111,15 @@ function buildPipelineSteps(match) {
 }
 
 /* ------------------------------------------------------------------ */
-/*  Palette: white surfaces, light-blue washes, one confident blue.    */
-/*  Primary  sky-600 / blue-600   Soft  sky-50 / sky-100               */
-/*  Ink      slate-900            Muted slate-500                      */
+/*  Design Tokens: Executive standard for Tenant Dashboard            */
+/*  Base Card: bg-white rounded-2xl border border-slate-200/90 shadow-sm */
+/*  Secondary: bg-slate-50/80 rounded-xl border border-slate-100       */
+/*  Buttons: rounded-xl, Brand Primary: bg-sky-600 hover:bg-sky-700   */
 /* ------------------------------------------------------------------ */
 const BTN_PRIMARY =
-  'bg-sky-700 hover:bg-sky-800 text-white transition-colors duration-200 cursor-pointer';
+  'bg-sky-600 hover:bg-sky-700 text-white font-semibold rounded-xl transition-all duration-200 cursor-pointer shadow-xs';
 const BTN_OUTLINE =
-  'border border-sky-200 bg-white hover:bg-sky-50 hover:border-sky-300 text-slate-700 transition-colors duration-200 cursor-pointer';
+  'border border-slate-200 bg-white hover:bg-slate-50 hover:border-slate-300 text-slate-700 font-semibold rounded-xl transition-all duration-200 cursor-pointer';
 
 const Eyebrow = ({ children, className = '' }) => (
   <p className={`text-xs font-semibold tracking-wide text-slate-500 ${className}`}>{children}</p>
@@ -133,7 +134,7 @@ const SectionTitle = ({ eyebrow, title, subtitle }) => (
 );
 
 /* ------------------------------------------------------------------ */
-/*  Filter dropdown                                                    */
+/*  Filter dropdown: Unified rounded-xl control                       */
 /* ------------------------------------------------------------------ */
 const FilterDropdown = ({ label, value, options, onChange }) => {
   const [open, setOpen] = useState(false);
@@ -164,14 +165,14 @@ const FilterDropdown = ({ label, value, options, onChange }) => {
         aria-haspopup="listbox"
         aria-expanded={open}
         onClick={() => setOpen((p) => !p)}
-        className={`flex items-center gap-2 h-10 pl-3.5 pr-3 rounded-full text-xs font-medium border transition-colors duration-200 cursor-pointer ${
+        className={`flex items-center gap-2 h-10 px-3.5 rounded-xl text-xs font-medium border transition-all duration-200 cursor-pointer ${
           isActive
-            ? 'border-sky-400 bg-sky-50 text-sky-800'
-            : 'border-sky-100 bg-white text-slate-600 hover:border-sky-300 hover:text-slate-900'
+            ? 'border-sky-300 bg-sky-50/60 text-sky-800'
+            : 'border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50'
         }`}
       >
-        {label && <span className="text-slate-400">{label}</span>}
-        <span>{selectedOption?.label || value}</span>
+        {label && <span className="text-slate-400">{label}:</span>}
+        <span className="font-semibold">{selectedOption?.label || value}</span>
         <ChevronDown
           size={14}
           className={`transition-transform duration-200 ${open ? 'rotate-180 text-sky-600' : 'text-slate-400'}`}
@@ -181,7 +182,7 @@ const FilterDropdown = ({ label, value, options, onChange }) => {
       {open && (
         <div
           role="listbox"
-          className="absolute top-full left-0 mt-2 min-w-[190px] bg-white border border-sky-100 rounded-2xl p-1.5 shadow-[0_24px_50px_-12px_rgba(2,132,199,0.3)] z-50"
+          className="absolute top-full left-0 mt-2 min-w-[190px] bg-white border border-slate-200 rounded-xl p-1.5 shadow-lg z-50 animate-in fade-in-50 duration-100"
         >
           {options.map((opt) => {
             const isSelected = opt.value === value;
@@ -195,8 +196,8 @@ const FilterDropdown = ({ label, value, options, onChange }) => {
                   onChange(opt.value);
                   setOpen(false);
                 }}
-                className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs transition-colors cursor-pointer ${
-                  isSelected ? 'bg-sky-50 text-sky-700 font-semibold' : 'text-slate-600 hover:bg-sky-50/60 hover:text-slate-900'
+                className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-xs transition-colors cursor-pointer ${
+                  isSelected ? 'bg-sky-50 text-sky-700 font-semibold' : 'text-slate-700 hover:bg-slate-50 hover:text-slate-900'
                 }`}
               >
                 <span>{opt.label}</span>
@@ -211,7 +212,7 @@ const FilterDropdown = ({ label, value, options, onChange }) => {
 };
 
 /* ------------------------------------------------------------------ */
-/*  Receipt modal                                                      */
+/*  Receipt modal: Harmonized rounded-2xl modal dialog                */
 /* ------------------------------------------------------------------ */
 const ReceiptVoucherModal = ({ receipt, onClose }) => {
   useEffect(() => {
@@ -253,35 +254,33 @@ const ReceiptVoucherModal = ({ receipt, onClose }) => {
 
   return (
     <div
-      className="fixed inset-0 bg-slate-900/40 flex items-center justify-center z-[140] p-4 backdrop-blur-sm"
+      className="fixed inset-0 bg-slate-900/40 flex items-center justify-center z-[140] p-4 backdrop-blur-xs"
       onClick={onClose}
       role="dialog"
       aria-modal="true"
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        className="bg-white rounded-[28px] w-full max-w-md shadow-[0_40px_100px_-20px_rgba(2,132,199,0.45)] overflow-hidden flex flex-col max-h-[92vh]"
+        className="bg-white rounded-2xl w-full max-w-md shadow-2xl border border-slate-200 overflow-hidden flex flex-col max-h-[92vh]"
       >
-        <div className="h-1.5 bg-gradient-to-r from-sky-300 via-sky-500 to-blue-600" />
-
-        <div className="px-7 pt-6 pb-5 flex items-start justify-between">
+        <div className="px-6 pt-6 pb-4 flex items-start justify-between border-b border-slate-100">
           <div>
             <span className="font-serif text-2xl text-slate-900 tracking-tight">
               Place<span className="text-sky-600">4U</span>
             </span>
-            <Eyebrow className="mt-1.5">Official payment receipt</Eyebrow>
+            <Eyebrow className="mt-1">Official payment receipt</Eyebrow>
           </div>
           <button
             onClick={onClose}
             aria-label="Close receipt"
-            className="w-9 h-9 rounded-full border border-sky-100 hover:bg-sky-50 flex items-center justify-center text-slate-500 hover:text-slate-900 transition-colors cursor-pointer"
+            className="w-8 h-8 rounded-lg border border-slate-200 hover:bg-slate-50 flex items-center justify-center text-slate-500 hover:text-slate-900 transition-colors cursor-pointer"
           >
             <X size={16} />
           </button>
         </div>
 
-        <div className="px-7 pb-6 space-y-6 overflow-y-auto">
-          <div className="text-center py-6 border-y border-slate-200">
+        <div className="px-6 py-5 space-y-5 overflow-y-auto">
+          <div className="text-center py-5 rounded-xl bg-slate-50/80 border border-slate-100">
             <Eyebrow>Application vetting fee</Eyebrow>
             <div className="mt-2 flex justify-center">
               <FeeAmount
@@ -303,49 +302,49 @@ const ReceiptVoucherModal = ({ receipt, onClose }) => {
                 className="justify-center"
               />
             </div>
-            <div className="inline-flex items-center gap-1.5 mt-4 text-emerald-700 text-[11px] font-semibold">
-              <CheckCircle2 size={12} />
+            <div className="inline-flex items-center gap-1.5 mt-3 text-emerald-700 text-xs font-semibold">
+              <CheckCircle2 size={13} />
               {receipt.is_free || Number(receipt.amount) === 0 ? 'Fee waived' : 'Paid & settled'}
             </div>
           </div>
 
-          <dl className="text-xs">
+          <dl className="text-xs space-y-1">
             {rows.map(([k, v]) => (
-              <div key={k} className="flex justify-between gap-6 py-3 border-b border-sky-100">
+              <div key={k} className="flex justify-between gap-4 py-2.5 border-b border-slate-100">
                 <dt className="text-slate-400">{k}</dt>
-                <dd className="font-medium text-slate-900 text-right truncate max-w-[230px]">{v}</dd>
+                <dd className="font-medium text-slate-900 text-right truncate max-w-[220px]">{v}</dd>
               </div>
             ))}
-            <div className="flex justify-between gap-6 py-3 border-b border-sky-100">
+            <div className="flex justify-between gap-4 py-2.5 border-b border-slate-100">
               <dt className="text-slate-400">Receipt no.</dt>
-              <dd className="font-mono text-slate-700">
+              <dd className="font-mono text-slate-700 font-medium">
                 {receipt.receipt_number || receipt.receiptNumber || 'REC-P4U-VERIFIED'}
               </dd>
             </div>
-            <div className="flex justify-between gap-6 py-3">
+            <div className="flex justify-between gap-4 py-2.5">
               <dt className="text-slate-400">Status</dt>
               <dd className="font-semibold text-emerald-600">Completed</dd>
             </div>
           </dl>
 
-          <p className="flex items-start gap-2 text-[11px] text-slate-400 leading-relaxed">
-            <Lock size={12} className="mt-0.5 shrink-0" />
-            Confirms the non-refundable tenant screening and background vetting fee (Rental Housing Act).
+          <p className="flex items-start gap-2 text-[11px] text-slate-400 leading-relaxed bg-slate-50 p-3 rounded-lg border border-slate-100">
+            <Lock size={13} className="mt-0.5 shrink-0 text-slate-400" />
+            Confirms the tenant screening and background vetting fee (Rental Housing Act).
           </p>
         </div>
 
-        <div className="px-7 py-4 border-t border-sky-100 bg-sky-50/50 flex items-center justify-between gap-3">
+        <div className="px-6 py-4 border-t border-slate-100 bg-slate-50/50 flex items-center justify-between gap-3">
           <button
             type="button"
             onClick={onClose}
-            className="px-4 h-10 rounded-full text-xs font-semibold text-slate-500 hover:text-slate-900 transition-colors cursor-pointer"
+            className="px-4 h-10 rounded-xl text-xs font-semibold text-slate-500 hover:text-slate-900 transition-colors cursor-pointer"
           >
             Close
           </button>
           <button
             type="button"
             onClick={() => window.print()}
-            className={`px-5 h-10 rounded-full text-xs font-bold flex items-center gap-2 ${BTN_PRIMARY}`}
+            className={`px-5 h-10 rounded-xl text-xs font-semibold flex items-center gap-2 ${BTN_PRIMARY}`}
           >
             <Printer size={14} />
             Print receipt
@@ -357,7 +356,7 @@ const ReceiptVoucherModal = ({ receipt, onClose }) => {
 };
 
 /* ------------------------------------------------------------------ */
-/*  Main view                                                          */
+/*  Main View Component                                                */
 /* ------------------------------------------------------------------ */
 export default function DashboardView({
   profile,
@@ -392,8 +391,6 @@ export default function DashboardView({
     defaultMessage: ''
   });
 
-  /* Browse + dashboard are now a single view: the "Browse properties" action
-     simply scrolls down to the verified listings section below. */
   const listingsRef = useRef(null);
   const scrollToListings = () => {
     const el = listingsRef.current;
@@ -453,8 +450,6 @@ export default function DashboardView({
     [applications]
   );
 
-  /* Distinct locations among the properties currently shown, so the listings
-     heading reflects where the homes actually are rather than a fixed string. */
   const listingLocations = useMemo(() => {
     const seen = new Set();
     filteredProperties.forEach((p) => {
@@ -475,9 +470,6 @@ export default function DashboardView({
     return applications[0];
   }, [applications]);
 
-  /* Which property the latest application is actually for. Resolved from the
-     property_id link, then the stored title snapshot. A general application
-     has no linked unit, so we say that rather than inventing a property name. */
   const latestTarget = useMemo(() => {
     if (!latestApplication) {
       return { kind: 'none', property: null, label: null, location: null };
@@ -502,9 +494,6 @@ export default function DashboardView({
     return { kind, property: resolution.property, label, location };
   }, [latestApplication, properties]);
 
-  /* Active tenancy derived from a real matched application + property. There is
-     no demo lease any more: when nothing is matched, the concierge renders an
-     empty state. */
   const activeLease = useMemo(() => {
     const app = applications.find((a) => a.matched_property_id);
     if (!app) return null;
@@ -528,9 +517,6 @@ export default function DashboardView({
     };
   }, [applications, properties]);
 
-  /* The acceptance-pipeline match that belongs to the tenant's latest
-     application. Falls back to their most recently updated match so the tracker
-     still shows real progress when the latest application isn't the matched one. */
   const pipelineMatch = useMemo(() => {
     if (!Array.isArray(pipelineMatches) || pipelineMatches.length === 0) return null;
     const appIds = new Set(
@@ -544,9 +530,6 @@ export default function DashboardView({
     return forLatest || pipelineMatches[0] || null;
   }, [pipelineMatches, latestApplication]);
 
-  /* The match surfaced in the top banner: a freshly shipped match awaiting the
-     tenant's decision, otherwise the most recently updated one. Null when the
-     tenant has nothing in the pipeline, so the banner is hidden entirely. */
   const newestMatch = useMemo(() => {
     if (!Array.isArray(pipelineMatches) || pipelineMatches.length === 0) return null;
     return pipelineMatches.find((m) => m.state === 'shipped') || pipelineMatches[0];
@@ -575,16 +558,6 @@ export default function DashboardView({
     });
     return count;
   }, [applications]);
-
-  /* Whether the tenant has any student-accommodation application — drives which
-     document checklist the "Documents in vault" KPI advertises. */
-  const hasStudentApplication = useMemo(
-    () =>
-      applications.some(
-        (a) => a.accommodation_category === 'student_room' || a.category === 'student_room'
-      ),
-    [applications]
-  );
 
   const latestPayment = useMemo(() => {
     if (payments && payments.length > 0) return payments[0];
@@ -674,8 +647,6 @@ export default function DashboardView({
   );
   const feeWaived = Boolean(latestApplication?.fee_is_free || feeQuote?.isFree);
 
-  /* Real document/state facts for the fallback tracker. Nothing is assumed:
-     "Documents attached" only reads as complete when files actually exist. */
   const appDocs = Array.isArray(latestApplication?.documents) ? latestApplication.documents : [];
   const docsAttached = appDocs.length > 0;
   const isStudentApp = latestApplication?.accommodation_category === 'student_room';
@@ -708,7 +679,7 @@ export default function DashboardView({
   }, [latestApplication, pipelineMatch, reviewStarted, feeSettled]);
 
   return (
-    <div className="max-w-[1320px] mx-auto space-y-8 sm:space-y-10 pb-16 text-slate-900">
+    <div className="max-w-[1320px] mx-auto space-y-6 sm:space-y-8 pb-16 text-slate-900">
       <AlertToast toast={toast} onClose={() => setToast(null)} />
 
       {activeReceiptModal && (
@@ -717,12 +688,11 @@ export default function DashboardView({
 
       {/* ============================ HERO ============================ */}
       <section className="px-0 py-2 sm:py-3">
-        <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-8">
+        <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-6 sm:gap-8">
           <div className="max-w-2xl">
-            <p className="text-[11px] font-medium tracking-wide text-slate-500 mb-3">{todayLabel}</p>
-
-            <h1 className="font-sans text-3xl sm:text-4xl lg:text-[44px] font-semibold leading-tight tracking-tight text-slate-900">
-              {timeGreeting}, <span className="text-sky-700">{firstName}</span>
+            <p className="text-xs font-semibold tracking-wide text-slate-500 mb-2">{todayLabel}</p>
+            <h1 className="font-sans text-3xl sm:text-4xl lg:text-[42px] font-semibold leading-tight tracking-tight text-slate-900">
+              {timeGreeting}, <span className="text-sky-600">{firstName}</span>
             </h1>
           </div>
 
@@ -730,120 +700,158 @@ export default function DashboardView({
             <button
               type="button"
               onClick={onOpenCustomApplication}
-              className={`group h-11 px-5 rounded-lg font-semibold text-sm flex items-center gap-2.5 ${BTN_PRIMARY}`}
+              className={`group h-11 px-5 rounded-xl font-semibold text-sm flex items-center gap-2.5 ${BTN_PRIMARY}`}
             >
               <FileText size={16} />
-              Submit application
+              <span>Submit application</span>
               <ArrowUpRight size={16} className="transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
             </button>
             <button
               type="button"
               onClick={scrollToListings}
-              className={`h-11 px-5 rounded-lg font-medium text-sm flex items-center gap-2 ${BTN_OUTLINE}`}
+              className={`h-11 px-5 rounded-xl font-medium text-sm flex items-center gap-2 ${BTN_OUTLINE}`}
             >
               <Search size={15} className="text-sky-600" />
-              Browse properties
+              <span>Browse properties</span>
             </button>
           </div>
         </div>
       </section>
 
-      {/* ======================= AGENT MATCH ========================== */}
+      {/* ======================= AGENT MATCH BANNER ========================== */}
       {matchBanner && (
         <section
           onClick={go('matches')}
-          className="group cursor-pointer border-l-[3px] border-sky-700 bg-white/70 px-5 py-4 transition-colors duration-200 hover:bg-white flex flex-col sm:flex-row sm:items-center justify-between gap-5"
+          className="group cursor-pointer bg-white rounded-2xl border border-sky-200/90 shadow-sm p-5 sm:p-6 transition-all hover:border-sky-300 hover:shadow-md flex flex-col sm:flex-row sm:items-center justify-between gap-5"
         >
-          <div className="flex items-center gap-5 min-w-0">
-            <div className="w-11 h-11 rounded-xl bg-sky-50 border border-sky-100 flex items-center justify-center text-sky-700 shrink-0">
-              <Home size={19} />
+          <div className="flex items-center gap-4 sm:gap-5 min-w-0">
+            <div className="w-12 h-12 rounded-xl bg-sky-50 border border-sky-100 flex items-center justify-center text-sky-600 shrink-0 group-hover:scale-105 transition-transform">
+              <Home size={22} />
             </div>
             <div className="min-w-0">
-              <Eyebrow className="!text-sky-600">
-                {matchBanner.shipped ? 'New agent match' : 'Agent match'}
-              </Eyebrow>
-              <h4 className="font-sans text-base sm:text-lg font-semibold text-slate-900 mt-1">
+              <div className="flex items-center gap-2">
+                <span className="px-2.5 py-0.5 rounded-lg text-[11px] font-semibold bg-sky-50 border border-sky-100 text-sky-700">
+                  {matchBanner.shipped ? 'New Match' : 'Pipeline Match'}
+                </span>
+                {matchBanner.agentName && (
+                  <span className="text-xs text-slate-500 hidden sm:inline">
+                    Assigned to Agent {matchBanner.agentName}
+                  </span>
+                )}
+              </div>
+              <h4 className="font-sans text-base sm:text-lg font-semibold text-slate-900 mt-1.5 truncate">
                 {matchBanner.shipped ? 'Your agent matched a property' : matchBanner.stateLabel}
               </h4>
-              <p className="text-xs sm:text-sm text-slate-500 mt-1 flex flex-wrap items-center gap-x-2 gap-y-0.5">
-                <span className="truncate">{matchBanner.propertyLabel}</span>
-                {matchBanner.location && <span className="text-slate-400">{matchBanner.location}</span>}
-                {matchBanner.agentName && <span className="text-slate-400">Agent {matchBanner.agentName}</span>}
+              <p className="text-xs sm:text-sm text-slate-500 mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5">
+                <span className="font-medium text-slate-700 truncate">{matchBanner.propertyLabel}</span>
+                {matchBanner.location && <span className="text-slate-400">• {matchBanner.location}</span>}
               </p>
             </div>
           </div>
-          <span className="self-start sm:self-auto shrink-0 inline-flex items-center gap-1.5 text-sm font-semibold text-sky-700">
-            View match
-            <ChevronRight size={16} className="transition-transform group-hover:translate-x-1" />
-          </span>
+          <div className="self-start sm:self-auto shrink-0 inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-sky-50 text-sky-700 text-xs sm:text-sm font-semibold group-hover:bg-sky-600 group-hover:text-white transition-all">
+            <span>View match</span>
+            <ChevronRight size={16} className="transition-transform group-hover:translate-x-0.5" />
+          </div>
         </section>
       )}
 
-      {/* ======================= QUICK STATUS PILLS ========================== */}
-      <section className="flex flex-wrap items-center gap-2.5 pt-1">
+      {/* ======================= QUICK STATUS KPI STRIP ========================== */}
+      <section className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         <button
           type="button"
           onClick={go('applications')}
-          className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-white border border-slate-200 hover:border-sky-300 hover:bg-sky-50/40 text-xs font-medium text-slate-700 transition-colors cursor-pointer shadow-xs"
+          className="bg-white rounded-2xl border border-slate-200/90 shadow-sm p-4 sm:p-5 flex items-center justify-between gap-3 text-left transition-all hover:border-slate-300 hover:shadow-md cursor-pointer group"
         >
-          <FileText size={14} className="text-sky-600" />
-          <span><strong>{activeApplications.length}</strong> Active {activeApplications.length === 1 ? 'application' : 'applications'}</span>
+          <div>
+            <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">Applications</span>
+            <p className="text-xl sm:text-2xl font-bold text-slate-900 mt-1 tabular-nums">{activeApplications.length}</p>
+            <p className="text-xs text-slate-500 mt-0.5">
+              {activeApplications.length === 1 ? 'Active submission' : 'Active submissions'}
+            </p>
+          </div>
+          <div className="w-10 h-10 rounded-xl bg-sky-50 border border-sky-100 flex items-center justify-center text-sky-600 shrink-0 group-hover:scale-105 transition-transform">
+            <FileText size={18} />
+          </div>
         </button>
 
         <button
           type="button"
           onClick={go('applications')}
-          className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-white border border-slate-200 hover:border-sky-300 hover:bg-sky-50/40 text-xs font-medium text-slate-700 transition-colors cursor-pointer shadow-xs"
+          className="bg-white rounded-2xl border border-slate-200/90 shadow-sm p-4 sm:p-5 flex items-center justify-between gap-3 text-left transition-all hover:border-slate-300 hover:shadow-md cursor-pointer group"
         >
-          <ShieldCheck size={14} className="text-emerald-600" />
-          <span><strong>{totalVerifiedDocs}</strong> Documents on file</span>
+          <div>
+            <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">Verification</span>
+            <p className="text-xl sm:text-2xl font-bold text-slate-900 mt-1 tabular-nums">{totalVerifiedDocs}</p>
+            <p className="text-xs text-slate-500 mt-0.5">Documents on file</p>
+          </div>
+          <div className="w-10 h-10 rounded-xl bg-emerald-50 border border-emerald-100 flex items-center justify-center text-emerald-600 shrink-0 group-hover:scale-105 transition-transform">
+            <ShieldCheck size={18} />
+          </div>
         </button>
 
         <button
           type="button"
           onClick={openLatestReceipt}
-          className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-white border border-slate-200 hover:border-sky-300 hover:bg-sky-50/40 text-xs font-medium text-slate-700 transition-colors cursor-pointer shadow-xs"
+          className="bg-white rounded-2xl border border-slate-200/90 shadow-sm p-4 sm:p-5 flex items-center justify-between gap-3 text-left transition-all hover:border-slate-300 hover:shadow-md cursor-pointer group"
         >
-          <Receipt size={14} className="text-slate-400" />
-          <span>Fee:{' '}
-            <strong className={feeWaived || feeQuote?.isFree ? 'text-emerald-700 font-bold' : 'text-slate-900'}>
-              {feeWaived || feeQuote?.isFree ? 'FREE (Waived)' : latestPayment ? `R ${Number(latestPayment.amount).toLocaleString('en-ZA')}` : 'R100'}
-            </strong>
-          </span>
+          <div>
+            <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">Vetting Fee</span>
+            <p className={`text-xl sm:text-2xl font-bold mt-1 tabular-nums ${feeWaived || feeQuote?.isFree ? 'text-emerald-600' : 'text-slate-900'}`}>
+              {feeWaived || feeQuote?.isFree ? 'FREE' : latestPayment ? `R ${Number(latestPayment.amount).toLocaleString('en-ZA')}` : 'R 100'}
+            </p>
+            <p className="text-xs text-slate-500 mt-0.5">
+              {feeWaived || feeQuote?.isFree ? 'Promotion waived' : latestPayment ? 'Settled receipt' : 'Per application'}
+            </p>
+          </div>
+          <div className="w-10 h-10 rounded-xl bg-indigo-50 border border-indigo-100 flex items-center justify-center text-indigo-600 shrink-0 group-hover:scale-105 transition-transform">
+            <Receipt size={18} />
+          </div>
         </button>
 
         <button
           type="button"
           onClick={() => setShowSavedOnly(!showSavedOnly)}
-          className={`inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-medium transition-colors cursor-pointer shadow-xs ${
+          className={`rounded-2xl border shadow-sm p-4 sm:p-5 flex items-center justify-between gap-3 text-left transition-all hover:shadow-md cursor-pointer group ${
             showSavedOnly
-              ? 'bg-sky-100 text-sky-800 border border-sky-300 font-semibold'
-              : 'bg-white border border-slate-200 hover:border-sky-300 hover:bg-sky-50/40 text-slate-700'
+              ? 'bg-sky-50/40 border-sky-300 ring-2 ring-sky-100'
+              : 'bg-white border-slate-200/90 hover:border-slate-300'
           }`}
         >
-          <Heart size={14} className={savedPropertyIds.length > 0 ? 'text-rose-500 fill-rose-500' : 'text-slate-400'} />
-          <span><strong>{savedPropertyIds.length}</strong> Saved</span>
-          {showSavedOnly && <span className="text-[10px] bg-sky-200 text-sky-900 px-1.5 py-0.5 rounded-md font-bold">Active Filter</span>}
+          <div>
+            <div className="flex items-center gap-1.5">
+              <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">Shortlist</span>
+              {showSavedOnly && (
+                <span className="text-[10px] bg-sky-100 text-sky-800 px-1.5 py-0.5 rounded-md font-bold">Filtered</span>
+              )}
+            </div>
+            <p className="text-xl sm:text-2xl font-bold text-slate-900 mt-1 tabular-nums">{savedPropertyIds.length}</p>
+            <p className="text-xs text-slate-500 mt-0.5">
+              {showSavedOnly ? 'Showing saved only' : 'Saved properties'}
+            </p>
+          </div>
+          <div className="w-10 h-10 rounded-xl bg-rose-50 border border-rose-100 flex items-center justify-center text-rose-500 shrink-0 group-hover:scale-105 transition-transform">
+            <Heart size={18} className={savedPropertyIds.length > 0 ? 'fill-rose-500 text-rose-500' : 'text-slate-400'} />
+          </div>
         </button>
       </section>
 
       {/* ================= ACTIVE APPLICATION ACTION HUB ================= */}
       {latestApplication ? (
-        <section className="bg-white rounded-2xl border border-slate-200 p-5 sm:p-6 shadow-xs">
+        <section className="bg-white rounded-2xl border border-slate-200/90 shadow-sm p-5 sm:p-6 transition-all">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-5 border-b border-slate-100">
             <div>
               <div className="flex items-center gap-2 flex-wrap">
                 <span className="text-[11px] font-bold tracking-wider uppercase text-sky-700">
                   Application Status
                 </span>
-                <span className="px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-sky-50 border border-sky-100 text-sky-800">
+                <span className="px-2.5 py-0.5 rounded-lg text-[11px] font-semibold bg-sky-50 border border-sky-100 text-sky-800">
                   {latestApplication.accommodation_category === 'student_room'
                     ? 'Student Accommodation'
                     : 'Residential Lease'}
                 </span>
                 {pipelineMatch && (
                   <span
-                    className={`px-2.5 py-0.5 rounded-full text-[11px] font-semibold border ${
+                    className={`px-2.5 py-0.5 rounded-lg text-[11px] font-semibold border ${
                       isDeclined(pipelineMatch.state)
                         ? 'bg-rose-50 border-rose-200 text-rose-600'
                         : 'bg-emerald-50 border-emerald-200 text-emerald-700'
@@ -853,7 +861,7 @@ export default function DashboardView({
                   </span>
                 )}
               </div>
-              <h3 className="font-sans text-lg sm:text-xl font-semibold text-slate-900 mt-1">
+              <h3 className="font-sans text-lg sm:text-xl font-semibold text-slate-900 mt-1.5">
                 {latestTarget.label || (latestApplication ? 'General Application' : 'Rental Application')}
               </h3>
               <p className="text-xs text-slate-500 mt-1 flex items-center gap-1.5">
@@ -878,7 +886,7 @@ export default function DashboardView({
                       paidAt: latestApplication.submitted_at
                     })
                   }
-                  className="h-9 px-3.5 rounded-lg bg-white border border-slate-200 hover:border-slate-300 text-slate-700 text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer"
+                  className="h-9 px-3.5 rounded-xl bg-white border border-slate-200 hover:border-slate-300 text-slate-700 text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer"
                 >
                   <Receipt size={13} className="text-slate-500" />
                   <span>Receipt</span>
@@ -888,7 +896,7 @@ export default function DashboardView({
                 <button
                   type="button"
                   onClick={() => onPropertyClick(latestTarget.property)}
-                  className="h-9 px-3.5 rounded-lg bg-white border border-slate-200 hover:border-slate-300 text-slate-700 text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer"
+                  className="h-9 px-3.5 rounded-xl bg-white border border-slate-200 hover:border-slate-300 text-slate-700 text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer"
                 >
                   <Building2 size={13} className="text-sky-600" />
                   <span>View unit</span>
@@ -897,7 +905,7 @@ export default function DashboardView({
               <button
                 type="button"
                 onClick={pipelineMatch ? go('pipeline') : go('applications')}
-                className={`h-9 px-4 rounded-lg text-xs font-semibold flex items-center gap-1.5 cursor-pointer ${BTN_PRIMARY}`}
+                className={`h-9 px-4 rounded-xl text-xs font-semibold flex items-center gap-1.5 cursor-pointer ${BTN_PRIMARY}`}
               >
                 <span>{pipelineMatch ? 'Track pipeline' : 'Manage application'}</span>
                 <ArrowUpRight size={13} />
@@ -915,15 +923,15 @@ export default function DashboardView({
                   <div key={m.key} className="flex flex-col">
                     <div className="flex items-center mb-2">
                       <div
-                        className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold transition-all ${
+                        className={`w-7 h-7 rounded-xl flex items-center justify-center text-xs font-bold transition-all ${
                           isDone
-                            ? 'bg-sky-600 text-white'
+                            ? 'bg-sky-600 text-white shadow-xs'
                             : isCurrent
                               ? 'bg-sky-50 text-sky-700 border-2 border-sky-600 ring-2 ring-sky-100'
                               : 'bg-slate-100 text-slate-400 border border-slate-200'
                         }`}
                       >
-                        {isDone ? <Check size={12} strokeWidth={3} /> : idx + 1}
+                        {isDone ? <Check size={13} strokeWidth={2.5} /> : idx + 1}
                       </div>
                       {idx < 3 && (
                         <div
@@ -950,9 +958,9 @@ export default function DashboardView({
             </div>
 
             {/* Current Stage Note Callout */}
-            <div className="mt-4 p-3 rounded-xl bg-slate-50 border border-slate-100 text-xs text-slate-600 flex items-center justify-between gap-3">
+            <div className="mt-5 p-3.5 rounded-xl bg-slate-50/80 border border-slate-100 text-xs text-slate-600 flex items-center justify-between gap-3">
               <span className="flex items-center gap-2 min-w-0">
-                <Clock size={13} className="text-sky-600 shrink-0" />
+                <Clock size={14} className="text-sky-600 shrink-0" />
                 <span className="truncate">
                   {pipelineMatch
                     ? PIPELINE_STAGE_NOTES[pipelineMatch.state] || 'Match processing in pipeline.'
@@ -970,23 +978,23 @@ export default function DashboardView({
           </div>
         </section>
       ) : (
-        /* Empty State Prompt: Clean single-strip banner instead of big empty boxes */
-        <section className="rounded-2xl border border-sky-100 bg-gradient-to-r from-sky-50/40 via-white to-sky-50/20 p-5 sm:p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        /* Empty State Prompt: Clean card matching design tokens, no garish gradients */
+        <section className="bg-white rounded-2xl border border-slate-200/90 shadow-sm p-6 sm:p-7 flex flex-col sm:flex-row sm:items-center justify-between gap-5 transition-all">
           <div className="flex items-center gap-4">
-            <div className="w-10 h-10 rounded-xl bg-sky-50 border border-sky-100 flex items-center justify-center text-sky-600 shrink-0">
-              <Home size={18} />
+            <div className="w-12 h-12 rounded-xl bg-sky-50 border border-sky-100 flex items-center justify-center text-sky-600 shrink-0">
+              <Home size={22} />
             </div>
             <div>
-              <h3 className="text-base font-semibold text-slate-900">Find your ideal home</h3>
-              <p className="text-xs text-slate-500 mt-0.5">
-                Browse listings and apply once for all your target homes.
+              <h3 className="text-base sm:text-lg font-semibold text-slate-900">Find your ideal home</h3>
+              <p className="text-xs sm:text-sm text-slate-500 mt-0.5">
+                Browse verified listings and apply once for all your preferred homes in South Africa.
               </p>
             </div>
           </div>
           <button
             type="button"
             onClick={onOpenCustomApplication}
-            className={`h-10 px-5 rounded-lg text-xs font-semibold flex items-center gap-2 shrink-0 cursor-pointer ${BTN_PRIMARY}`}
+            className={`h-10 px-5 rounded-xl text-xs font-semibold flex items-center gap-2 shrink-0 cursor-pointer ${BTN_PRIMARY}`}
           >
             <FileText size={14} />
             <span>Start application</span>
@@ -997,103 +1005,109 @@ export default function DashboardView({
 
       {/* ===================== ACTIVE TENANCY (ONLY WHEN LEASE EXISTS) ===================== */}
       {activeLease && (
-        <section className="bg-white rounded-2xl border border-slate-200 p-5 sm:p-6 shadow-xs">
-          <div className="flex items-start justify-between mb-4">
+        <section className="bg-white rounded-2xl border border-slate-200/90 shadow-sm p-5 sm:p-6 transition-all">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-100">
             <div>
-              <Eyebrow className="!text-sky-600 mb-1">Your tenancy</Eyebrow>
-              <h3 className="font-sans text-xl font-semibold text-slate-900">{activeLease.property_title}</h3>
+              <div className="flex items-center gap-2">
+                <span className="px-2.5 py-0.5 rounded-lg text-[11px] font-semibold bg-emerald-50 border border-emerald-200 text-emerald-700">
+                  Active Lease
+                </span>
+              </div>
+              <h3 className="font-sans text-xl font-semibold text-slate-900 mt-1.5">{activeLease.property_title}</h3>
               <p className="text-xs text-slate-500 mt-1 flex items-center gap-1.5">
-                <MapPin size={12} className="text-sky-500" />
-                {activeLease.address || 'Address on file'}
+                <MapPin size={13} className="text-sky-500 shrink-0" />
+                <span>{activeLease.address || 'Address on file'}</span>
               </p>
             </div>
-            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold border border-emerald-200 bg-emerald-50 text-emerald-700">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-              {activeLease.status || 'Active Tenancy'}
-            </span>
+            <div className="flex items-center gap-2.5 self-start sm:self-auto shrink-0">
+              <button
+                type="button"
+                onClick={() =>
+                  setContactModal({
+                    isOpen: true,
+                    contact: {
+                      name: activeLease.landlord_name || 'Property Manager',
+                      role: 'Property Manager',
+                      email: activeLease.landlord_email || 'support@place4u.xyz',
+                      phone: activeLease.landlord_phone || '',
+                      unit: activeLease.property_title || 'Your unit'
+                    },
+                    defaultSubject: `Tenancy Inquiry for ${activeLease.property_title || 'my unit'}`,
+                    defaultMessage: `Hello ${(activeLease.landlord_name || 'there').split(' ')[0]}, this is ${displayName} regarding my tenancy.`
+                  })
+                }
+                className={`h-9 px-4 rounded-xl text-xs font-semibold flex items-center justify-center gap-2 cursor-pointer ${BTN_PRIMARY}`}
+              >
+                <Phone size={13} />
+                <span>Contact desk</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setShowMaintenanceModal(true)}
+                className={`h-9 px-4 rounded-xl text-xs font-semibold flex items-center justify-center gap-2 cursor-pointer ${BTN_OUTLINE}`}
+              >
+                <Wrench size={13} className="text-sky-600" />
+                <span>Log repair</span>
+              </button>
+            </div>
           </div>
 
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 py-4 border-y border-slate-100 my-4">
-            <div>
-              <Eyebrow>Monthly rent</Eyebrow>
-              <p className="text-lg font-semibold text-slate-900 mt-1 tabular-nums">
+          {/* 3-Stat Rent / Due / Manager Grid */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-4">
+            <div className="bg-slate-50/80 rounded-xl border border-slate-100 p-4">
+              <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">Monthly Rent</span>
+              <p className="text-lg font-bold text-slate-900 mt-1 tabular-nums">
                 {activeLease.monthly_rent != null
                   ? `R ${Number(activeLease.monthly_rent).toLocaleString('en-ZA')}`
                   : '—'}
               </p>
+              <p className="text-xs text-slate-500 mt-0.5">Payable per month</p>
             </div>
-            <div>
-              <Eyebrow>Next due</Eyebrow>
-              <p className="text-sm font-semibold text-slate-900 mt-1.5">
-                {activeLease.next_due_date || '—'}
+            <div className="bg-slate-50/80 rounded-xl border border-slate-100 p-4">
+              <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">Next Due Date</span>
+              <p className="text-lg font-bold text-slate-900 mt-1">
+                {activeLease.next_due_date || '1st of the month'}
+              </p>
+              <p className="text-xs text-slate-500 mt-0.5">Recurring schedule</p>
+            </div>
+            <div className="bg-slate-50/80 rounded-xl border border-slate-100 p-4">
+              <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">Property Manager</span>
+              <p className="text-lg font-bold text-slate-900 mt-1 truncate">
+                {activeLease.landlord_name || 'Assigned Officer'}
+              </p>
+              <p className="text-xs text-slate-500 mt-0.5 truncate">
+                {activeLease.landlord_email || 'Direct desk contact'}
               </p>
             </div>
-            <div className="col-span-2 sm:col-span-1">
-              <Eyebrow>Property manager</Eyebrow>
-              <p className="text-sm font-semibold text-slate-900 mt-1.5">
-                {activeLease.landlord_name || 'Unassigned'}
-              </p>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-3">
-            <button
-              type="button"
-              onClick={() =>
-                setContactModal({
-                  isOpen: true,
-                  contact: {
-                    name: activeLease.landlord_name || 'Property Manager',
-                    role: 'Property Manager',
-                    email: activeLease.landlord_email || 'support@place4u.xyz',
-                    phone: activeLease.landlord_phone || '',
-                    unit: activeLease.property_title || 'Your unit'
-                  },
-                  defaultSubject: `Tenancy Inquiry for ${activeLease.property_title || 'my unit'}`,
-                  defaultMessage: `Hello ${(activeLease.landlord_name || 'there').split(' ')[0]}, this is ${displayName} regarding my tenancy.`
-                })
-              }
-              className={`h-9 px-4 rounded-lg text-xs font-semibold flex items-center justify-center gap-2 cursor-pointer ${BTN_PRIMARY}`}
-            >
-              <Phone size={13} />
-              <span>Contact desk</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => setShowMaintenanceModal(true)}
-              className={`h-9 px-4 rounded-lg text-xs font-semibold flex items-center justify-center gap-2 cursor-pointer ${BTN_OUTLINE}`}
-            >
-              <Wrench size={13} className="text-sky-600" />
-              <span>Log repair</span>
-            </button>
           </div>
         </section>
       )}
 
       {/* ========================= LISTINGS =========================== */}
-      <section id="verified-listings" ref={listingsRef} className="space-y-8 scroll-mt-24">
+      <section id="verified-listings" ref={listingsRef} className="space-y-6 scroll-mt-24">
         <SectionTitle
           eyebrow="Curated"
           title={showSavedOnly ? 'Your shortlisted homes' : 'Verified available properties'}
           subtitle={`${filteredProperties.length} vetted ${filteredProperties.length === 1 ? 'unit' : 'units'} across ${locationLabel}`}
         />
 
+        {/* Filters and search bar */}
         <div className="flex flex-wrap items-center gap-2.5">
           <div className="relative min-w-[240px] flex-1 sm:flex-none sm:w-[280px]">
-            <Search size={15} className="absolute left-4 top-1/2 -translate-y-1/2 text-sky-500" />
+            <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
             <input
               type="text"
               aria-label="Search by suburb or city"
-              placeholder="Search suburb or city"
+              placeholder="Search suburb or city..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full h-10 pl-10 pr-9 rounded-full bg-white border border-sky-100 text-xs text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-sky-400 focus:ring-4 focus:ring-sky-100 transition"
+              className="w-full h-10 pl-10 pr-9 rounded-xl bg-white border border-slate-200 text-xs text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-100 transition-all shadow-2xs"
             />
             {searchQuery && (
               <button
                 onClick={() => setSearchQuery('')}
                 aria-label="Clear search"
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-900 cursor-pointer"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700 cursor-pointer"
               >
                 <X size={14} />
               </button>
@@ -1104,7 +1118,7 @@ export default function DashboardView({
             label="Type"
             value={selectedType}
             options={[
-              { value: 'All', label: 'All' },
+              { value: 'All', label: 'All types' },
               { value: 'Student Room', label: 'Student rooms' },
               { value: 'Apartment', label: 'Apartments' },
               { value: 'House', label: 'Houses' },
@@ -1117,10 +1131,10 @@ export default function DashboardView({
             label="Beds"
             value={selectedBedrooms}
             options={[
-              { value: 'All', label: 'Any' },
-              { value: '1', label: '1' },
-              { value: '2', label: '2' },
-              { value: '3+', label: '3+' }
+              { value: 'All', label: 'Any beds' },
+              { value: '1', label: '1 Bed' },
+              { value: '2', label: '2 Beds' },
+              { value: '3+', label: '3+ Beds' }
             ]}
             onChange={setSelectedBedrooms}
           />
@@ -1129,7 +1143,7 @@ export default function DashboardView({
             label="Budget"
             value={selectedPriceTier}
             options={[
-              { value: 'All', label: 'Any' },
+              { value: 'All', label: 'Any budget' },
               { value: 'under10k', label: 'Under R10,000' },
               { value: '10k-15k', label: 'R10k – R15k' },
               { value: 'above15k', label: 'Above R15,000' }
@@ -1141,30 +1155,33 @@ export default function DashboardView({
             <button
               type="button"
               onClick={resetFilters}
-              className="h-10 px-4 rounded-full text-xs font-semibold text-sky-700 hover:text-sky-900 underline-offset-4 hover:underline transition-colors cursor-pointer"
+              className="h-10 px-3.5 rounded-xl text-xs font-semibold text-sky-600 hover:text-sky-800 hover:bg-sky-50 transition-colors cursor-pointer"
             >
-              Reset
+              Reset filters
             </button>
           )}
         </div>
 
+        {/* Listings content */}
         {filteredProperties.length === 0 ? (
-          <div className="py-14 px-3 border-y border-slate-200 text-center space-y-4">
-            <Home size={36} className="mx-auto text-sky-300" />
+          <div className="bg-white rounded-2xl border border-slate-200/90 shadow-sm py-14 px-6 text-center space-y-4">
+            <div className="w-12 h-12 rounded-xl bg-sky-50 border border-sky-100 flex items-center justify-center text-sky-600 mx-auto">
+              <Home size={24} />
+            </div>
             <h3 className="font-sans text-xl font-semibold text-slate-900">No properties match your criteria</h3>
             <p className="text-sm text-slate-500 max-w-sm mx-auto">
-              Try clearing a filter or broadening your search to see more accommodation.
+              Try clearing a filter or broadening your search to see more accommodation options.
             </p>
             <button
               type="button"
               onClick={resetFilters}
-              className={`h-10 px-6 rounded-full text-xs font-bold ${BTN_PRIMARY}`}
+              className={`h-10 px-5 rounded-xl text-xs font-semibold ${BTN_PRIMARY}`}
             >
               Clear all filters
             </button>
           </div>
         ) : (
-          <div className="border-y border-slate-200">
+          <div className="space-y-4">
             {filteredProperties.map((p) => {
               const isSaved = savedPropertyIds.includes(p.id);
               const isStudent =
@@ -1181,76 +1198,81 @@ export default function DashboardView({
                 <article
                   key={p.id}
                   onClick={() => (onPropertyClick ? onPropertyClick(p) : null)}
-                  className="group flex flex-col sm:flex-row gap-4 sm:gap-6 py-5 border-b border-slate-200 last:border-b-0 cursor-pointer transition-colors duration-150 hover:bg-white/70"
+                  className="group bg-white rounded-2xl border border-slate-200/90 shadow-sm hover:border-slate-300 hover:shadow-md p-4 sm:p-5 flex flex-col sm:flex-row gap-5 items-stretch cursor-pointer transition-all duration-200"
                 >
-                  <div className="relative h-48 sm:h-36 sm:w-56 shrink-0 overflow-hidden rounded-lg">
+                  <div className="relative h-48 sm:h-auto sm:w-56 md:w-64 shrink-0 overflow-hidden rounded-xl border border-slate-100">
                     <img
                       src={imgUrl}
                       alt={p.title || 'Property'}
                       loading="lazy"
-                      className="w-full h-full object-cover group-hover:scale-[1.02] transition-transform duration-200"
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                     />
 
-                    <span className="absolute top-4 left-4 px-3 py-1.5 rounded-full text-[11px] font-semibold flex items-center gap-1.5 bg-white/90 backdrop-blur-md text-sky-800 shadow-sm">
-                      {isStudent ? <GraduationCap size={13} /> : <Home size={13} />}
-                      {isStudent ? 'Student room' : p.property_type || 'Apartment'}
+                    <span className="absolute top-3 left-3 px-2.5 py-1 rounded-lg text-[11px] font-semibold flex items-center gap-1.5 bg-white/95 backdrop-blur-md text-slate-800 shadow-xs border border-slate-100">
+                      {isStudent ? <GraduationCap size={13} className="text-sky-600" /> : <Home size={13} className="text-sky-600" />}
+                      <span>{isStudent ? 'Student room' : p.property_type || 'Apartment'}</span>
                     </span>
 
                     <button
                       type="button"
                       aria-label={isSaved ? 'Remove from wishlist' : 'Save to wishlist'}
                       onClick={(e) => handleToggleSave(p, e)}
-                      className={`absolute top-2 right-2 w-9 h-9 rounded-lg flex items-center justify-center transition-colors cursor-pointer ${
-                        isSaved ? 'bg-sky-600 text-white' : 'bg-white/90 text-slate-600 hover:text-sky-600'
+                      className={`absolute top-3 right-3 w-8 h-8 rounded-lg flex items-center justify-center transition-all cursor-pointer shadow-xs ${
+                        isSaved
+                          ? 'bg-rose-500 text-white hover:bg-rose-600'
+                          : 'bg-white/90 text-slate-600 hover:text-rose-500 hover:bg-white'
                       }`}
                     >
-                      <Heart size={16} fill={isSaved ? 'currentColor' : 'none'} />
+                      <Heart size={15} fill={isSaved ? 'currentColor' : 'none'} />
                     </button>
-
                   </div>
 
-                  <div className="py-1 flex-1 flex flex-col justify-between min-w-0">
+                  <div className="flex-1 flex flex-col justify-between min-w-0">
                     <div>
                       <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
-                        <h4 className="font-sans text-lg font-semibold text-slate-900 group-hover:text-sky-800 transition-colors truncate">
+                        <h4 className="font-sans text-lg font-semibold text-slate-900 group-hover:text-sky-700 transition-colors truncate">
                           {p.title || p.name || 'Rental Residence'}
                         </h4>
-                        <p className="text-base font-semibold text-slate-900 tabular-nums">
+                        <p className="text-lg font-bold text-slate-900 tabular-nums">
                           R {Number(p.price || 0).toLocaleString('en-ZA')} <span className="text-xs font-normal text-slate-500">/ month</span>
                         </p>
                       </div>
-                      <p className="text-xs text-slate-500 mt-1.5 flex items-center gap-1.5 truncate">
+                      <p className="text-xs text-slate-500 mt-1 flex items-center gap-1.5 truncate">
                         <MapPin size={13} className="text-sky-500 shrink-0" />
                         <span className="truncate">
                           {[p.address, p.city].filter(Boolean).join(', ') || 'Location not specified'}
                         </span>
                       </p>
 
-                      <div className="flex flex-wrap items-center gap-5 py-3 my-3 border-y border-slate-200 text-xs text-slate-600">
-                        <span className="flex items-center gap-1.5">
-                          <Bed size={14} className="text-sky-500" />
-                          {p.bedrooms || 1} bed
+                      <div className="flex flex-wrap items-center gap-2 sm:gap-3 py-3 my-3 border-y border-slate-100 text-xs text-slate-600">
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-50 border border-slate-100">
+                          <Bed size={14} className="text-sky-600" />
+                          <span>{p.bedrooms || 1} {Number(p.bedrooms) === 1 ? 'bed' : 'beds'}</span>
                         </span>
-                        <span className="flex items-center gap-1.5">
-                          <Bath size={14} className="text-sky-500" />
-                          {p.bathrooms || 1} bath
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-50 border border-slate-100">
+                          <Bath size={14} className="text-sky-600" />
+                          <span>{p.bathrooms || 1} {Number(p.bathrooms) === 1 ? 'bath' : 'baths'}</span>
                         </span>
-                        {p.size && <span className="text-slate-400">{p.size}</span>}
-                        <span className="ml-auto text-[10px] uppercase tracking-wider text-slate-400 flex items-center gap-1">
+                        {p.size && (
+                          <span className="inline-flex items-center px-2.5 py-1 rounded-lg bg-slate-50 border border-slate-100 text-slate-500">
+                            {p.size}
+                          </span>
+                        )}
+                        <span className="ml-auto text-[11px] text-slate-400 flex items-center gap-1">
                           <FeeAmount
                             quote={feeQuote}
                             amount={feeQuote?.originalAmount ?? 100}
                             size="xs"
                             tone="muted"
                           />
-                          vetting
+                          <span>screening fee</span>
                         </span>
                       </div>
                     </div>
 
                     <div className="flex items-center justify-between pt-1">
-                      <span className="text-xs font-semibold text-sky-700 group-hover:text-sky-800 flex items-center gap-1 transition-colors">
-                        View details
+                      <span className="text-xs font-semibold text-sky-600 group-hover:text-sky-700 flex items-center gap-1 transition-colors">
+                        <span>View property details</span>
                         <ChevronRight size={14} className="group-hover:translate-x-0.5 transition-transform" />
                       </span>
                       <button
@@ -1259,9 +1281,9 @@ export default function DashboardView({
                           e.stopPropagation();
                           if (onApplyClick) onApplyClick(p);
                         }}
-                        className={`h-9 px-4 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 ${BTN_PRIMARY}`}
+                        className={`h-9 px-4 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 ${BTN_PRIMARY}`}
                       >
-                        Apply
+                        <span>Apply now</span>
                         <ArrowUpRight size={13} />
                       </button>
                     </div>
@@ -1276,47 +1298,46 @@ export default function DashboardView({
       {/* ===================== MAINTENANCE MODAL ====================== */}
       {showMaintenanceModal && (
         <div
-          className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center z-[130] p-4"
+          className="fixed inset-0 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center z-[130] p-4"
           onClick={() => setShowMaintenanceModal(false)}
           role="dialog"
           aria-modal="true"
         >
           <div
-            className="bg-white rounded-[28px] max-w-lg w-full shadow-[0_40px_100px_-20px_rgba(2,132,199,0.45)] overflow-hidden"
+            className="bg-white rounded-2xl max-w-lg w-full shadow-2xl border border-slate-200 overflow-hidden"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="h-1.5 bg-gradient-to-r from-sky-300 via-sky-500 to-blue-600" />
-            <div className="p-7 sm:p-8">
-              <div className="flex items-start justify-between pb-6 mb-6 border-b border-sky-100">
+            <div className="p-6 sm:p-7">
+              <div className="flex items-start justify-between pb-5 mb-5 border-b border-slate-100">
                 <div>
-                  <Eyebrow className="!text-sky-600 mb-2">Maintenance</Eyebrow>
-                  <h3 className="font-serif text-2xl text-slate-900">Log a repair</h3>
+                  <Eyebrow className="!text-sky-600 mb-1">Maintenance</Eyebrow>
+                  <h3 className="font-sans text-xl sm:text-2xl font-semibold text-slate-900">Log a repair</h3>
                   <p className="text-xs text-slate-500 mt-1">We'll dispatch it to your property desk.</p>
                 </div>
                 <button
                   onClick={() => setShowMaintenanceModal(false)}
                   aria-label="Close"
-                  className="w-9 h-9 rounded-full border border-sky-100 hover:bg-sky-50 flex items-center justify-center text-slate-500 hover:text-slate-900 transition-colors cursor-pointer"
+                  className="w-8 h-8 rounded-lg border border-slate-200 hover:bg-slate-50 flex items-center justify-center text-slate-500 hover:text-slate-900 transition-colors cursor-pointer"
                 >
                   <X size={16} />
                 </button>
               </div>
 
               {maintenanceSuccess ? (
-                <div className="text-center py-10 space-y-4">
-                  <div className="w-16 h-16 rounded-full bg-sky-50 border border-sky-200 flex items-center justify-center text-sky-600 mx-auto">
-                    <Check size={28} />
+                <div className="text-center py-8 space-y-3">
+                  <div className="w-14 h-14 rounded-full bg-emerald-50 border border-emerald-200 flex items-center justify-center text-emerald-600 mx-auto">
+                    <Check size={26} strokeWidth={2.5} />
                   </div>
-                  <h4 className="font-serif text-2xl text-slate-900">Ticket created</h4>
-                  <p className="text-sm text-slate-500 max-w-xs mx-auto">
+                  <h4 className="font-sans text-xl font-semibold text-slate-900">Ticket created</h4>
+                  <p className="text-xs sm:text-sm text-slate-500 max-w-xs mx-auto">
                     Your property manager has received your maintenance request.
                   </p>
                 </div>
               ) : (
-                <form onSubmit={handleMaintenanceSubmit} className="space-y-6">
+                <form onSubmit={handleMaintenanceSubmit} className="space-y-5">
                   <div>
-                    <label className="block text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400 mb-2.5">
-                      Priority
+                    <label className="block text-[11px] font-semibold uppercase tracking-wider text-slate-400 mb-2">
+                      Priority level
                     </label>
                     <div className="grid grid-cols-3 gap-2">
                       {['Normal', 'High', 'Emergency'].map((prio) => (
@@ -1324,12 +1345,12 @@ export default function DashboardView({
                           key={prio}
                           type="button"
                           onClick={() => setMaintenancePriority(prio)}
-                          className={`h-10 rounded-full text-xs font-semibold border transition-colors cursor-pointer ${
+                          className={`h-10 rounded-xl text-xs font-semibold border transition-all cursor-pointer ${
                             maintenancePriority === prio
                               ? prio === 'Emergency'
-                                ? 'bg-rose-50 border-rose-400 text-rose-600'
-                                : 'bg-sky-50 border-sky-500 text-sky-700'
-                              : 'border-sky-100 text-slate-500 hover:border-sky-300 hover:text-slate-900'
+                                ? 'bg-rose-50 border-rose-300 text-rose-600 ring-2 ring-rose-100'
+                                : 'bg-sky-50 border-sky-300 text-sky-700 ring-2 ring-sky-100'
+                              : 'border-slate-200 text-slate-600 hover:border-slate-300 hover:bg-slate-50'
                           }`}
                         >
                           {prio}
@@ -1341,9 +1362,9 @@ export default function DashboardView({
                   <div>
                     <label
                       htmlFor="repair-description"
-                      className="block text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400 mb-2.5"
+                      className="block text-[11px] font-semibold uppercase tracking-wider text-slate-400 mb-2"
                     >
-                      Description
+                      Description of issue
                     </label>
                     <textarea
                       id="repair-description"
@@ -1352,7 +1373,7 @@ export default function DashboardView({
                       placeholder="Describe the issue, e.g. geyser pressure, leaking tap, electrical trip…"
                       value={maintenanceIssue}
                       onChange={(e) => setMaintenanceIssue(e.target.value)}
-                      className="w-full p-4 rounded-2xl bg-white border border-sky-100 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-sky-400 focus:ring-4 focus:ring-sky-100 transition resize-none"
+                      className="w-full p-3.5 rounded-xl bg-white border border-slate-200 text-xs sm:text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-100 transition resize-none"
                     />
                   </div>
 
@@ -1360,11 +1381,11 @@ export default function DashboardView({
                     <button
                       type="button"
                       onClick={() => setShowMaintenanceModal(false)}
-                      className="h-11 px-5 rounded-full text-xs font-semibold text-slate-500 hover:text-slate-900 transition-colors cursor-pointer"
+                      className="h-10 px-4 rounded-xl text-xs font-semibold text-slate-500 hover:text-slate-900 transition-colors cursor-pointer"
                     >
                       Cancel
                     </button>
-                    <button type="submit" className={`h-11 px-6 rounded-full text-xs font-bold ${BTN_PRIMARY}`}>
+                    <button type="submit" className={`h-10 px-5 rounded-xl text-xs font-semibold ${BTN_PRIMARY}`}>
                       Submit ticket
                     </button>
                   </div>

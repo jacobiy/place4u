@@ -324,6 +324,11 @@ select.no-chevron,
   padding-right: 2rem !important;
 }
 
+select.no-chevron::picker-icon,
+.select-wrapper select.status-select::picker-icon {
+  display: none;
+}
+
 /* Options styling */
 select option {
   background-color: #ffffff;

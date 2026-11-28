@@ -13,7 +13,8 @@ export default function TenantApplicationModal({
   application,
   tenant,
   property,
-  theme = 'light'
+  theme = 'light',
+  footerExtra = null
 }) {
   const [previewDoc, setPreviewDoc] = useState(null);
   const [openingDocId, setOpeningDocId] = useState(null);
@@ -425,10 +426,17 @@ export default function TenantApplicationModal({
             borderTop: `1px solid ${colors.border}`,
             background: colors.card,
             display: 'flex',
-            justifyContent: 'flex-end',
-            gap: 10
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            flexWrap: 'wrap',
+            gap: 12
           }}
         >
+          {footerExtra ? (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', flex: '1 1 auto' }}>
+              {footerExtra}
+            </div>
+          ) : <div />}
           <button
             type="button"
             onClick={onClose}
@@ -440,7 +448,8 @@ export default function TenantApplicationModal({
               border: 'none',
               fontSize: 13,
               fontWeight: 600,
-              cursor: 'pointer'
+              cursor: 'pointer',
+              flexShrink: 0
             }}
           >
             Close Application
