@@ -321,13 +321,11 @@ export default function MarketplaceFlowSection() {
 										<span className="h-5 w-[38px] rounded-full border border-[#e3e8e7]" />
 									</div>
 									<div className="mt-4 grid grid-cols-3 gap-2.5">
-										{['01 · Profile', '02 · FICA Docs', '03 · Matched'].map((stepLabel) => (
-											<div key={stepLabel} className="rounded-lg border border-[#e3e8e7] p-2">
-												<span className="block font-mono text-[9px] font-medium uppercase tracking-[0.1em] text-[#6b757a]">
-													{stepLabel}
-												</span>
-												<span className="mt-2 block h-[34px] rounded bg-[#f2f5f2]" aria-hidden="true" />
-												<span className="mt-2 block h-[6px] w-[72%] rounded bg-[#d9d9d9]" aria-hidden="true" />
+										{[0, 1, 2].map((i) => (
+											<div key={i} className="rounded-lg border border-[#e3e8e7] p-2">
+												<span className="block h-[54px] rounded bg-[#ececec]" aria-hidden="true" />
+												<span className="mt-2 block h-[7px] w-[82%] rounded bg-[#d9d9d9]" aria-hidden="true" />
+												<span className="mt-1.5 block h-[7px] w-[44%] rounded bg-[#e7e7e7]" aria-hidden="true" />
 											</div>
 										))}
 									</div>

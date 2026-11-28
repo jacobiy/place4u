@@ -5,7 +5,6 @@ import { motion, AnimatePresence } from 'framer-motion'
 import {
 	HiLocationMarker,
 	HiShieldCheck,
-	HiCheckCircle,
 	HiArrowRight,
 	HiHeart,
 	HiCheck,
@@ -489,21 +488,6 @@ const Landing = () => {
 							Apply once to reviewed homes across South Africa, with landlord ID and ownership checked before listing.
 						</p>
 
-						<div className="flex flex-wrap items-center gap-2 text-xs font-semibold text-[#28434e]">
-							<span className="inline-flex items-center gap-1.5 rounded-full bg-[#e7eef0] px-3 py-1.5">
-								<HiShieldCheck className="w-3.5 h-3.5 text-[#006c4a]" />
-								ID &amp; Title Checked
-							</span>
-							<span className="inline-flex items-center gap-1.5 rounded-full bg-[#e7eef0] px-3 py-1.5">
-								<HiCheckCircle className="w-3.5 h-3.5 text-[#006194]" />
-								Once-off Application
-							</span>
-							<span className="inline-flex items-center gap-1.5 rounded-full bg-[#e7eef0] px-3 py-1.5">
-								<Lock className="w-3.5 h-3.5 text-[#006194]" />
-								No Deposits Held
-							</span>
-						</div>
-
 						<div className="flex flex-wrap items-center gap-3 pt-1">
 							<button
 								onClick={() => openAuthModal('signup')}
@@ -852,13 +836,8 @@ const Landing = () => {
 							key={s.step}
 							className="pt-5 border-t border-[#c3cecd]"
 						>
-							<div className="flex items-center justify-between">
-								<span className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-[#e7eef0] text-[#006194]">
-									<span className="material-symbols-outlined text-[20px]" aria-hidden="true">{s.icon}</span>
-								</span>
-								<p className="text-xs font-semibold tracking-[0.12em] text-[#006194]">{s.step}</p>
-							</div>
-							<h3 className="font-['Space_Grotesk'] text-base font-semibold text-[#18262d] mt-3.5 mb-1.5">
+							<p className="text-xs font-semibold tracking-[0.12em] text-[#006194]">{s.step}</p>
+							<h3 className="font-['Space_Grotesk'] text-base font-semibold text-[#18262d] mt-3 mb-1.5">
 								{s.title}
 							</h3>
 							<p className="text-sm text-[#47545a] leading-relaxed">{s.body}</p>
