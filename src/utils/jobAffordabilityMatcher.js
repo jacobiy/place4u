@@ -30,7 +30,7 @@ const SA_SUBURB_CLUSTERS = {
     name: "Bryanston / Rivonia Corridor",
     metro: "Johannesburg",
     suburbs: ["bryanston", "rivonia", "morningside", "woodmead", "sunninghill", "paulshof", "gallo manor", "river club"],
-    centerKm: { lat: -26.0560, lng: 28.0580 }
+    centerKm: { lat: -26.056, lng: 28.058 }
   },
   // Randburg & West
   jhb_northwest: {
@@ -72,14 +72,14 @@ const SA_SUBURB_CLUSTERS = {
     name: "Cape Town Southern Suburbs",
     metro: "Cape Town",
     suburbs: ["rondebosch", "claremont", "newlands", "kenilworth", "wynberg", "rosebank cpt", "mowbray"],
-    centerKm: { lat: -33.9850, lng: 18.4680 }
+    centerKm: { lat: -33.985, lng: 18.468 }
   },
   // Cape Town Northern Suburbs
   cpt_northern: {
     name: "Cape Town Northern Suburbs & Century City",
     metro: "Cape Town",
     suburbs: ["century city", "bellville", "durbanville", "parow", "goodwood", "milnerton"],
-    centerKm: { lat: -33.8920, lng: 18.5110 }
+    centerKm: { lat: -33.892, lng: 18.511 }
   },
   // Durban Hub
   durban_coastal: {
@@ -115,14 +115,16 @@ export function approximateCommute(workplaceText = "", propertyText = "") {
   const pp = (propertyText || "").toLowerCase().trim();
 
   if (!wp || !pp) {
+    // No fabricated proximity: without workplace/property locations the commute
+    // cannot be scored, so the caller must treat it as unknown.
     return {
-      approxDistanceKm: 6.5,
-      commuteDurationMins: 16,
-      proximityScore: 82,
-      commuteRating: "Standard Metro Commute",
-      transitType: "Gautrain / Metro Transit",
+      approxDistanceKm: null,
+      commuteDurationMins: null,
+      proximityScore: null,
+      commuteRating: "Location not provided",
+      transitType: null,
       isEstimate: true,
-      summary: "Location proximity approximated within standard metro commuter radius."
+      summary: "Commute could not be approximated because workplace or property location is missing."
     };
   }
 
@@ -295,113 +297,119 @@ export function approximateCommute(workplaceText = "", propertyText = "") {
  * @returns {Object} Comprehensive underwriting analysis object
  */
 export function evaluateJobApplicationMatch({ application = {}, tenant = {}, property = {} } = {}) {
-  // 1. Resolve Monthly Rent
+  // 1. Resolve Monthly Rent — never invent a rent figure for an applicant.
   const monthlyRent = Number(
     property?.price || 
     application?.max_budget || 
     application?.min_budget || 
-    7500
-  );
+    0
+  ) || 0;
 
-  // 2. Resolve Monthly Income
-  // Checks tenant.monthly_income, application.monthly_income, or fallback based on max budget
+  // 2. Resolve Monthly Income — null unless the applicant supplied one. A
+  //    gross-income approximation is only derived from the applicant's own
+  //    stated max budget, never from a hardcoded figure.
   let rawIncome = tenant?.monthly_income || application?.monthly_income;
   if (!rawIncome && application?.max_budget) {
     // If budget is known, conservative gross income approximation is 3.2x their budget
     rawIncome = Math.round(application.max_budget * 3.25);
   }
-  const monthlyIncome = Number(rawIncome || 32000);
+  const monthlyIncome = rawIncome ? Number(rawIncome) : null;
+  const hasIncome = Boolean(monthlyIncome && monthlyIncome > 0);
 
-  // 3. Resolve Employment Status and Category
+  // 3. Resolve Employment Status and Category — "unknown" is a valid answer.
   const employmentStatus = (
     tenant?.employment_status || 
     application?.employment_status || 
-    "Permanently Employed"
+    null
   );
 
   const jobTitle = (
     tenant?.occupation || 
     tenant?.job_title || 
     application?.job_title || 
-    (employmentStatus.toLowerCase().includes('student') ? "Full-Time Student" : "Professional Specialist")
+    null
   );
 
   const employerName = (
     tenant?.employer || 
     tenant?.employer_name || 
     application?.employer_name || 
-    (employmentStatus.toLowerCase().includes('student') ? "University / Tertiary Institution" : "Corporate Enterprise")
+    null
   );
 
   const isStudent = (
-    employmentStatus.toLowerCase().includes('student') || 
+    Boolean(employmentStatus && employmentStatus.toLowerCase().includes('student')) || 
     (application?.accommodation_category || application?.category) === 'student_room' ||
     (property?.property_type || '').toLowerCase().includes('student')
   );
 
-  // 4. Resolve Locations for Commute Approximation
+  // 4. Resolve Locations for Commute Approximation — missing values stay missing.
   const workplaceLocation = (
     tenant?.workplace_location || 
     application?.workplace_location || 
     tenant?.city || 
-    "Rosebank, Johannesburg"
+    null
   );
 
   const propertyLocation = (
     property?.address || 
     property?.location || 
     property?.city || 
-    (application?.preferred_areas?.[0]) || 
-    "Johannesburg"
+    application?.preferred_areas?.[0] || 
+    null
   );
 
-  // 5. Compute Affordability Metrics (Rent-to-Income)
-  const multiplier = Number((monthlyIncome / Math.max(monthlyRent, 1)).toFixed(2));
-  const rentToIncomePercent = Number(((monthlyRent / Math.max(monthlyIncome, 1)) * 100).toFixed(1));
-  const disposableBuffer = Math.max(0, monthlyIncome - monthlyRent);
+  // 5. Compute Affordability Metrics (Rent-to-Income) — only when both rent
+  //    and income are known; otherwise the pillar stays unknown instead of
+  //    being scored against invented figures.
+  const multiplier = hasIncome ? Number((monthlyIncome / Math.max(monthlyRent, 1)).toFixed(2)) : null;
+  const rentToIncomePercent = hasIncome ? Number(((monthlyRent / Math.max(monthlyIncome, 1)) * 100).toFixed(1)) : null;
+  const disposableBuffer = hasIncome ? Math.max(0, monthlyIncome - monthlyRent) : null;
 
-  let affordabilityScore = 50;
-  let affordabilityGrade = "Moderate";
-  let affordabilityBadge = "Acceptable";
+  let affordabilityScore = null;
+  let affordabilityGrade = hasIncome && monthlyRent > 0 ? "Moderate" : "Insufficient Data";
+  let affordabilityBadge = hasIncome && monthlyRent > 0 ? "Acceptable" : "Income Not Provided";
 
-  if (isStudent) {
-    // Student Bursary / NSFAS benchmark
-    if (monthlyRent <= 6500) {
-      affordabilityScore = 96;
-      affordabilityGrade = "Pre-Approved Student Allocation";
-      affordabilityBadge = "Institutional Grant";
+  if (hasIncome && monthlyRent > 0) {
+    if (isStudent) {
+      // Student Bursary / NSFAS benchmark
+      if (monthlyRent <= 6500) {
+        affordabilityScore = 96;
+        affordabilityGrade = "Pre-Approved Student Allocation";
+        affordabilityBadge = "Institutional Grant";
+      } else {
+        affordabilityScore = 80;
+        affordabilityGrade = "Above Standard Bursary Cap";
+        affordabilityBadge = "Guarantor Recommended";
+      }
     } else {
-      affordabilityScore = 80;
-      affordabilityGrade = "Above Standard Bursary Cap";
-      affordabilityBadge = "Guarantor Recommended";
-    }
-  } else {
-    // Standard South African Property Underwriting Thresholds:
-    // Multiplier >= 3.33x: Rent is <= 30% of gross income (Ideal)
-    // Multiplier 3.0x - 3.33x: Rent is 30% - 33.3% of income (Conforms to standard)
-    // Multiplier 2.5x - 3.0x: Rent is 33.3% - 40% of income (Acceptable with good credit)
-    // Multiplier 2.0x - 2.5x: Rent is 40% - 50% of income (Stretched)
-    // Multiplier < 2.0x: Rent exceeds 50% of income (High default risk)
-    if (multiplier >= 3.5) {
-      affordabilityScore = 100;
-      affordabilityGrade = "Exceptional Income Buffer (Rent < 28%)";
-      affordabilityBadge = "Very Low Risk";
-    } else if (multiplier >= 3.0) {
-      affordabilityScore = 92;
-      affordabilityGrade = "Conforms to 33% SA Standard";
-      affordabilityBadge = "Low Risk";
-    } else if (multiplier >= 2.5) {
-      affordabilityScore = 75;
-      affordabilityGrade = "Moderate Rent Burden (33%–40%)";
-      affordabilityBadge = "Standard Risk";
-    } else if (multiplier >= 2.0) {
-      affordabilityScore = 52;
-      affordabilityGrade = "Tight Margin (40%–50% of Income)";
-      affordabilityBadge = "Elevated Risk";
-    } else {
-      affordabilityScore = 25;
-      affordabilityGrade = "Affordability Breach (Rent > 50% Income)";
-      affordabilityBadge = "High Risk";
+      // Standard South African Property Underwriting Thresholds:
+      // Multiplier >= 3.33x: Rent is <= 30% of gross income (Ideal)
+      // Multiplier 3.0x - 3.33x: Rent is 30% - 33.3% of income (Conforms to standard)
+      // Multiplier 2.5x - 3.0x: Rent is 33.3% - 40% of income (Acceptable with good credit)
+      // Multiplier 2.0x - 2.5x: Rent is 40% - 50% of income (Stretched)
+      // Multiplier < 2.0x: Rent exceeds 50% of income (High default risk)
+      if (multiplier >= 3.5) {
+        affordabilityScore = 100;
+        affordabilityGrade = "Exceptional Income Buffer (Rent < 28%)";
+        affordabilityBadge = "Very Low Risk";
+      } else if (multiplier >= 3.0) {
+        affordabilityScore = 92;
+        affordabilityGrade = "Conforms to 33% SA Standard";
+        affordabilityBadge = "Low Risk";
+      } else if (multiplier >= 2.5) {
+        affordabilityScore = 75;
+        affordabilityGrade = "Moderate Rent Burden (33%–40%)";
+        affordabilityBadge = "Standard Risk";
+      } else if (multiplier >= 2.0) {
+        affordabilityScore = 52;
+        affordabilityGrade = "Tight Margin (40%–50% of Income)";
+        affordabilityBadge = "Elevated Risk";
+      } else {
+        affordabilityScore = 25;
+        affordabilityGrade = "Affordability Breach (Rent > 50% Income)";
+        affordabilityBadge = "High Risk";
+      }
     }
   }
 
@@ -409,8 +417,8 @@ export function evaluateJobApplicationMatch({ application = {}, tenant = {}, pro
   const commute = approximateCommute(workplaceLocation, propertyLocation);
 
   // 7. Compute Employment Stability & Verification Score
-  let stabilitySubscore = 75;
-  const statusLower = employmentStatus.toLowerCase();
+  let stabilitySubscore = 60; // neutral when the applicant's status is unknown
+  const statusLower = (employmentStatus || "").toLowerCase();
   if (statusLower.includes('permanent') || statusLower.includes('employed')) {
     stabilitySubscore = 95;
   } else if (statusLower.includes('contract')) {
@@ -438,12 +446,16 @@ export function evaluateJobApplicationMatch({ application = {}, tenant = {}, pro
   const verificationScore = Math.round((stabilitySubscore * 0.4) + (docVerificationScore * 0.6));
 
   // 8. Compute Composite Job Compatibility Score
-  // Weighted: 45% Affordability + 30% Commute Proximity + 25% Stability & Docs
-  const compositeScore = Math.round(
-    (affordabilityScore * 0.45) + 
-    (commute.proximityScore * 0.30) + 
-    (verificationScore * 0.25)
-  );
+  // Weighted: 45% Affordability + 30% Commute Proximity + 25% Stability & Docs.
+  // When a pillar cannot be computed (no income, no locations) its weight drops
+  // out of the average instead of being scored against invented figures.
+  const affordabilityWeight = affordabilityScore != null ? 0.45 : 0;
+  const commuteWeight = commute.proximityScore != null ? 0.30 : 0;
+  const stabilityWeight = 0.25;
+  const compositeWeight = affordabilityWeight + commuteWeight + stabilityWeight;
+  const compositeScore = compositeWeight > 0
+    ? Math.round(((affordabilityScore * affordabilityWeight) + (commute.proximityScore * commuteWeight) + (verificationScore * stabilityWeight)) / compositeWeight)
+    : 0;
 
   // 9. Assign Tier & Color
   let tier = "Moderate Match";
@@ -474,14 +486,28 @@ export function evaluateJobApplicationMatch({ application = {}, tenant = {}, pro
   }
 
   // 10. Generate Explanatory Insights for Agent
-  const insights = [
-    `Income Coverage: Monthly salary of R${monthlyIncome.toLocaleString()} provides ${multiplier}x coverage on R${monthlyRent.toLocaleString()}/mo rent (${rentToIncomePercent}% rent-to-income).`,
-    `Commute Proximity: Workplace at "${workplaceLocation}" is approximately ${commute.approxDistanceKm} km from property (~${commute.commuteDurationMins} min transit). ${commute.commuteRating}.`,
-    isStudent 
-      ? `Funding Status: Student applicant evaluated with institutional bursary / NSFAS housing criteria.`
-      : `Employment Status: ${employmentStatus} (${jobTitle} at ${employerName}).`,
-    `FICA & Documents: ${docs.length} certified document${docs.length !== 1 ? 's' : ''} uploaded. ID: ${hasId ? 'Verified' : 'Pending'}, Income Proof: ${(hasPayslip || hasBursary) ? 'Verified' : 'Pending'}, Bank: ${(hasBankStatement || hasAcceptance) ? 'Verified' : 'Pending'}.`
-  ];
+  const insights = [];
+  if (hasIncome && monthlyRent > 0) {
+    insights.push(`Income Coverage: Monthly salary of R${monthlyIncome.toLocaleString()} provides ${multiplier}x coverage on R${monthlyRent.toLocaleString()}/mo rent (${rentToIncomePercent}% rent-to-income).`);
+  } else {
+    insights.push(`Income Coverage: Applicant has not provided a monthly income — affordability against the R${monthlyRent.toLocaleString()}/mo rent is unverified.`);
+  }
+
+  if (commute.proximityScore == null) {
+    insights.push(`Commute Proximity: Workplace location not provided for this applicant — a commute estimate is unavailable.`);
+  } else {
+    insights.push(`Commute Proximity: Workplace at "${workplaceLocation}" is approximately ${commute.approxDistanceKm} km from property (~${commute.commuteDurationMins} min transit). ${commute.commuteRating}.`);
+  }
+
+  if (isStudent) {
+    insights.push(`Funding Status: Student applicant evaluated with institutional bursary / NSFAS housing criteria.`);
+  } else if (employmentStatus) {
+    insights.push(`Employment Status: ${employmentStatus} (${jobTitle || "Occupation not provided"} at ${employerName || "Employer not provided"}).`);
+  } else {
+    insights.push(`Employment Status: not provided for this applicant.`);
+  }
+
+  insights.push(`FICA & Documents: ${docs.length} certified document${docs.length !== 1 ? 's' : ''} uploaded. ID: ${hasId ? 'Verified' : 'Pending'}, Income Proof: ${(hasPayslip || hasBursary) ? 'Verified' : 'Pending'}, Bank: ${(hasBankStatement || hasAcceptance) ? 'Verified' : 'Pending'}.`);
 
   return {
     compositeScore,
@@ -497,7 +523,8 @@ export function evaluateJobApplicationMatch({ application = {}, tenant = {}, pro
       rentToIncomePercent,
       disposableBuffer,
       grade: affordabilityGrade,
-      badge: affordabilityBadge
+      badge: affordabilityBadge,
+      provided: affordabilityScore != null
     },
     proximity: {
       score: commute.proximityScore,

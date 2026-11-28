@@ -643,24 +643,42 @@ export const AgentQueries = {
       const tpMap = new Map();
       tenantProfiles.forEach(tp => tpMap.set(tp.user_id, tp));
 
+      // Agents cannot read public.tenant_profiles directly (owner-or-admin RLS),
+      // so fall back to the scoped SECURITY DEFINER helper once applied in the
+      // Supabase project. Until then applicant fields simply come back empty and
+      // the UI renders "not provided" rather than invented demo data.
+      if (tenantProfiles.length === 0 && uniqueIds.length > 0) {
+        try {
+          const rpcRes = await supabase.rpc("agent_assigned_applicant_profiles", {
+            p_user_ids: uniqueIds
+          });
+          (rpcRes?.data || []).forEach((tp) => tpMap.set(tp.user_id || tp.id, tp));
+        } catch (rpcErr) {
+          console.warn("agent_assigned_applicant_profiles unavailable; proceeding with unverified values.", rpcErr?.message);
+        }
+      }
+
       // 3. Merge profiles
+      // Real applicant values only — never fabricate an identity, income,
+      // employer or phone number for an applicant without a verified record.
+      // Missing fields stay null and the surfaces render "not provided".
       const mergedUsers = (usersData || []).map(u => {
         const tp = tpMap.get(u.id) || {};
         return {
           ...u,
           full_name: u.full_name || tp.full_name || (u.email ? String(u.email).split("@")[0] : null),
           email: u.email || tp.email || null,
-          employment_status: tp.employment_status || "Permanently Employed",
-          monthly_income: tp.monthly_income ? Number(tp.monthly_income) : 38000,
-          occupation: tp.occupation || tp.job_title || "Financial Analyst",
-          employer: tp.employer || tp.employer_name || "Standard Bank",
-          job_title: tp.job_title || tp.occupation || "Financial Analyst",
-          employer_name: tp.employer_name || tp.employer || "Standard Bank",
-          workplace_location: tp.workplace_location || tp.city || "Rosebank, Johannesburg",
-          current_address: tp.current_address || "Johannesburg",
-          city: tp.city || "Johannesburg",
-          id_number: tp.id_number || u.id_number || "9204125800085",
-          phone: u.phone || tp.phone || "+27 82 555 1234"
+          employment_status: tp.employment_status || null,
+          monthly_income: tp.monthly_income ? Number(tp.monthly_income) : null,
+          occupation: tp.occupation || tp.job_title || null,
+          employer: tp.employer || tp.employer_name || null,
+          job_title: tp.job_title || tp.occupation || null,
+          employer_name: tp.employer_name || tp.employer || null,
+          workplace_location: tp.workplace_location || tp.city || null,
+          current_address: tp.current_address || null,
+          city: tp.city || null,
+          id_number: tp.id_number || u.id_number || null,
+          phone: u.phone || tp.phone || null
         };
       });
 

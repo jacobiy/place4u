@@ -205,7 +205,7 @@ export const ApplicationDetail = ({
     {
       icon: <Briefcase size={13} aria-hidden="true" />,
       label: "Employment",
-      value: matchAnalysis.employment.jobTitle || tenant?.occupation || "Employed",
+      value: matchAnalysis.employment.jobTitle || tenant?.occupation || "Not provided",
       sub: [matchAnalysis.employment.employerName || tenant?.employer, tenant?.employment_status]
         .filter(Boolean)
         .join(" · ") || "Employment not stated"
@@ -215,26 +215,35 @@ export const ApplicationDetail = ({
   const affordabilityFacts = [
     {
       label: "Rent coverage",
-      value: `${matchAnalysis.affordability.multiplier}x`,
+      value: matchAnalysis.affordability.multiplier != null
+        ? `${matchAnalysis.affordability.multiplier}x`
+        : "Not provided",
       sub: "Target 3x monthly income"
     },
     {
       label: "Monthly income",
-      value: matchAnalysis.affordability.monthlyIncome > 0
+      value: matchAnalysis.affordability.monthlyIncome
         ? `${formatRand(matchAnalysis.affordability.monthlyIncome)}/mo`
         : "Not stated",
       sub: "Verified documents"
     },
     {
       label: "Commute",
-      value: `~${matchAnalysis.proximity.approxDistanceKm} km`,
+      value: matchAnalysis.proximity.approxDistanceKm != null
+        ? `~${matchAnalysis.proximity.approxDistanceKm} km`
+        : "Not provided",
       sub: matchAnalysis.proximity.commuteDurationMins
         ? `${matchAnalysis.proximity.commuteDurationMins} min ${matchAnalysis.proximity.transitType || "transit"}`
-        : matchAnalysis.proximity.commuteRating || "Home to work estimate"
+        : matchAnalysis.proximity.commuteRating || "Location not provided"
     },
     {
       label: "Deposit guidance",
-      value: matchAnalysis.affordability.multiplier >= 3 ? "Standard" : "Double deposit",
+      value:
+        matchAnalysis.affordability.multiplier == null
+          ? "Unverified"
+          : matchAnalysis.affordability.multiplier >= 3
+          ? "Standard"
+          : "Double deposit",
       sub: "Based on rent coverage"
     }
   ];

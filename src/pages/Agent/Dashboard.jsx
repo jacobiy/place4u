@@ -1030,10 +1030,16 @@ export const Dashboard = ({
                     </span>
                     <div style={{ minWidth: 0 }}>
                       <p style={{ margin: 0, fontSize: '0.86rem', fontWeight: 600, color: '#ffffff' }}>
-                        {matchAnalysis.employment.jobTitle} · {matchAnalysis.employment.employerName}
+                        {matchAnalysis.employment.jobTitle || 'Applicant'} · {matchAnalysis.employment.employerName || 'Employment not provided'}
                       </p>
                       <span style={{ fontSize: '0.74rem', color: '#94a3b8' }}>
-                        {matchAnalysis.affordability.multiplier}x rent coverage • ~{matchAnalysis.proximity.approxDistanceKm} km commute
+                        {matchAnalysis.affordability.multiplier != null
+                          ? `${matchAnalysis.affordability.multiplier}x rent coverage`
+                          : 'Income not provided'}
+                        {' • '}
+                        {matchAnalysis.proximity.approxDistanceKm != null
+                          ? `~${matchAnalysis.proximity.approxDistanceKm} km commute`
+                          : 'Commute not provided'}
                       </span>
                     </div>
                   </div>

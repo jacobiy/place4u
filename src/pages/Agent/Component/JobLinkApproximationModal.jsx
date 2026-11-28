@@ -223,46 +223,50 @@ export const JobLinkApproximationModal = ({
               <div className="pillar-stat-row">
                 <div className="pillar-stat">
                   <span className="stat-label">Coverage Multiplier</span>
-                  <span className="stat-value" style={{ color: '#047857' }}>{affordability.multiplier}x</span>
+                  <span className="stat-value" style={{ color: '#047857' }}>
+                    {affordability.multiplier != null ? `${affordability.multiplier}x` : 'Not provided'}
+                  </span>
                   <span className="stat-hint">Min 3.0x recommended</span>
                 </div>
                 <div className="pillar-stat">
                   <span className="stat-label">Rent-to-Income</span>
-                  <span className="stat-value">{affordability.rentToIncomePercent}%</span>
+                  <span className="stat-value">{affordability.rentToIncomePercent != null ? `${affordability.rentToIncomePercent}%` : 'Not provided'}</span>
                   <span className="stat-hint">Standard ceiling: 33.3%</span>
                 </div>
               </div>
 
               {/* Affordability Progress Bar */}
-              <div className="pillar-meter-section">
-                <div className="meter-labels">
-                  <span>Current Rent Burden ({affordability.rentToIncomePercent}%)</span>
-                  <span>Max Limit (33%)</span>
+              {affordability.rentToIncomePercent != null && (
+                <div className="pillar-meter-section">
+                  <div className="meter-labels">
+                    <span>Current Rent Burden ({affordability.rentToIncomePercent}%)</span>
+                    <span>Max Limit (33%)</span>
+                  </div>
+                  <div className="meter-track">
+                    <div
+                      className="meter-fill"
+                      style={{
+                        width: `${Math.min(100, (affordability.rentToIncomePercent / 50) * 100)}%`,
+                        backgroundColor: affordability.rentToIncomePercent <= 33 ? '#047857' : '#d97706'
+                      }}
+                    />
+                    <div className="meter-benchmark" style={{ left: '66%' }} title="33% Standard Cap" />
+                  </div>
                 </div>
-                <div className="meter-track">
-                  <div
-                    className="meter-fill"
-                    style={{
-                      width: `${Math.min(100, (affordability.rentToIncomePercent / 50) * 100)}%`,
-                      backgroundColor: affordability.rentToIncomePercent <= 33 ? '#047857' : '#d97706'
-                    }}
-                  />
-                  <div className="meter-benchmark" style={{ left: '66%' }} title="33% Standard Cap" />
-                </div>
-              </div>
+              )}
 
               <div className="pillar-financial-chips">
                 <div className="financial-chip">
                   <span>Gross Income:</span>
-                  <strong>R{affordability.monthlyIncome.toLocaleString()}</strong>
+                  <strong>{affordability.monthlyIncome ? `R${affordability.monthlyIncome.toLocaleString()}` : 'Not provided'}</strong>
                 </div>
                 <div className="financial-chip">
                   <span>Monthly Rent:</span>
-                  <strong>R{affordability.monthlyRent.toLocaleString()}</strong>
+                  <strong>{affordability.monthlyRent ? `R${affordability.monthlyRent.toLocaleString()}` : 'Not provided'}</strong>
                 </div>
                 <div className="financial-chip highlight">
                   <span>Surplus Buffer:</span>
-                  <strong>R{affordability.disposableBuffer.toLocaleString()}</strong>
+                  <strong>{affordability.disposableBuffer != null ? `R${affordability.disposableBuffer.toLocaleString()}` : 'Not provided'}</strong>
                 </div>
               </div>
             </div>
@@ -282,13 +286,15 @@ export const JobLinkApproximationModal = ({
               <div className="pillar-stat-row">
                 <div className="pillar-stat">
                   <span className="stat-label">Approx Distance</span>
-                  <span className="stat-value" style={{ color: '#1d4ed8' }}>~{proximity.approxDistanceKm} km</span>
+                  <span className="stat-value" style={{ color: '#1d4ed8' }}>
+                    {proximity.approxDistanceKm != null ? `~${proximity.approxDistanceKm} km` : 'Not provided'}
+                  </span>
                   <span className="stat-hint">Cluster distance</span>
                 </div>
                 <div className="pillar-stat">
                   <span className="stat-label">Estimated Commute</span>
-                  <span className="stat-value">~{proximity.commuteDurationMins} min</span>
-                  <span className="stat-hint">{proximity.transitType}</span>
+                  <span className="stat-value">{proximity.commuteDurationMins != null ? `~${proximity.commuteDurationMins} min` : 'Not provided'}</span>
+                  <span className="stat-hint">{proximity.transitType || 'Not provided'}</span>
                 </div>
               </div>
 
@@ -297,7 +303,7 @@ export const JobLinkApproximationModal = ({
                   <div className="route-dot origin" />
                   <div className="route-text">
                     <span className="route-label">Workplace / Employer:</span>
-                    <span className="route-value">{proximity.workplaceLocation}</span>
+                    <span className="route-value">{proximity.workplaceLocation || 'Not provided'}</span>
                   </div>
                 </div>
                 <div className="route-connector" />
@@ -305,7 +311,7 @@ export const JobLinkApproximationModal = ({
                   <div className="route-dot destination" />
                   <div className="route-text">
                     <span className="route-label">Property Location:</span>
-                    <span className="route-value">{proximity.propertyLocation}</span>
+                    <span className="route-value">{proximity.propertyLocation || 'Not provided'}</span>
                   </div>
                 </div>
               </div>
@@ -330,15 +336,15 @@ export const JobLinkApproximationModal = ({
               <div className="employment-profile-box">
                 <div className="emp-row">
                   <span className="emp-label">Occupation:</span>
-                  <span className="emp-value">{employment.jobTitle}</span>
+                  <span className="emp-value">{employment.jobTitle || 'Not provided'}</span>
                 </div>
                 <div className="emp-row">
                   <span className="emp-label">Employer:</span>
-                  <span className="emp-value">{employment.employerName}</span>
+                  <span className="emp-value">{employment.employerName || 'Not provided'}</span>
                 </div>
                 <div className="emp-row">
                   <span className="emp-label">Status Category:</span>
-                  <span className="emp-value">{employment.employmentStatus}</span>
+                  <span className="emp-value">{employment.employmentStatus || 'Not provided'}</span>
                 </div>
               </div>
 
